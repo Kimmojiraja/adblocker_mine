@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AdShield</string>
+    <string name="accessibility_service_label">AdShield YouTube Assistant</string>
+    <string name="accessibility_service_desc">Automatically detects and skips video ads on YouTube, mutes unskippable ads, and closes sponsor cards.</string>
+    <string name="title_brand_guide">Brand Battery Optimizer</string>
+    <string name="title_settings">Settings &amp; Filters</string>
+</resources>

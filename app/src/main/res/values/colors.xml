@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#0D47A1</color>
+    <color name="primary_variant">#002171</color>
+    <color name="secondary">#00B0FF</color>
+    <color name="background_dark">#0F141C</color>
+    <color name="surface_dark">#18202E</color>
+    <color name="card_border">#253347</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#90A4AE</color>
+    <color name="accent_green">#00E676</color>
+    <color name="accent_red">#FF5252</color>
+    <color name="youtube_red">#FF0000</color>
+    <color name="instagram_pink">#E1306C</color>
+    <color name="twitter_blue">#1DA1F2</color>
+    <color name="reddit_orange">#FF4500</color>
+</resources>

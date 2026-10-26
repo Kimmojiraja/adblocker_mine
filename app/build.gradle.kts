@@ -17,18 +17,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("customRelease") {
+            storeFile = file("fokkshield.p12")
+            storePassword = "fokkshield123"
+            keyAlias = "fokkshield"
+            keyPassword = "fokkshield123"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("customRelease")
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
+            signingConfig = signingConfigs.getByName("customRelease")
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
         }
     }
 

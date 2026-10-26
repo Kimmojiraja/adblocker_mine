@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             if (isChecked && !isServiceActive) {
                 promptEnableAccessibility()
             } else if (!isChecked && isServiceActive) {
-                Toast.makeText(this, "To disable, turn off 'AdShield YouTube Assistant' in Accessibility Settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "To disable, turn off 'Fokk Shield Assistant' in Accessibility Settings", Toast.LENGTH_LONG).show()
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
     private fun showSpotifyGuide() {
         AlertDialog.Builder(this)
             .setTitle("Spotify Ad Silencer Setup")
-            .setMessage("To allow AdShield to detect and silence Spotify ads without VPN:\n\n1. Open Spotify.\n2. Tap Settings (⚙️ icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nAdShield will now automatically drop volume to 0 during ads and restore it the second your song resumes!")
+            .setMessage("To allow Fokk Shield to detect and silence Spotify ads without VPN:\n\n1. Open Spotify.\n2. Tap Settings (⚙️ icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nFokk Shield will now automatically drop volume to 0 during ads and restore it the second your song resumes!")
             .setPositiveButton("Open Spotify") { _, _ ->
                 val launchIntent = packageManager.getLaunchIntentForPackage("com.spotify.music")
                 if (launchIntent != null) {
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
     private fun promptEnableAccessibility() {
         AlertDialog.Builder(this)
             .setTitle("Enable YouTube Ad Assistant")
-            .setMessage("AdShield automatically clicks 'Skip Ad' in 0.05 seconds and mutes unskippable ads.\n\n👉 On OnePlus / Oppo / Xiaomi:\n1. Tap 'Open Settings'\n2. Scroll to the bottom and tap 'Downloaded apps'\n3. Tap 'AdShield YouTube Assistant' and turn it ON.")
+            .setMessage("Fokk Shield automatically clicks 'Skip Ad' in 0.05 seconds and mutes unskippable ads.\n\n👉 On OnePlus / Oppo / Xiaomi:\n1. Tap 'Open Settings'\n2. Scroll to the bottom and tap 'Downloaded apps'\n3. Tap 'Fokk Shield Assistant' and turn it ON.")
             .setPositiveButton("Open Settings") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
             }
             startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(this, "Please open Settings > Apps > AdShield manually", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Please open Settings > Apps > Fokk Shield manually", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -1,9 +1,11 @@
 package com.adshield.app.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Rect
+import android.media.AudioManager
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -19,6 +21,8 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private var lastSkipClickTime = 0L
     private val spotifyReceiver = SpotifyAdMuterReceiver()
+    private var isAdMuted = false
+    private var originalVolume = -1
 
     // Verified view IDs for the official Skip Ad button in YouTube
     private val skipButtonResourceIds = listOf(
@@ -113,8 +117,12 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
 
             // STEP 2: Strict Ad Presence Gating.
-            // If NO ad is active on screen, AdShield is 100% passive. ZERO clicks during regular videos!
-            if (!isAdActive(rootNode)) {
+            // If NO ad is active on screen, Fokk Shield is 100% passive. ZERO clicks during regular videos!
+            val adActive = isAdActive(rootNode)
+            if (!adActive) {
+                if (isAdMuted) {
+                    restoreVideoVolume()
+                }
                 return
             }
 
@@ -123,6 +131,13 @@ class YouTubeAdSkipperService : AccessibilityService() {
             val clicked = findAndClickSkipButton(rootNode)
             if (clicked) {
                 lastSkipClickTime = now
+                if (isAdMuted) {
+                    restoreVideoVolume()
+                }
+            } else {
+                // Ad is active but has no skip button yet (unskippable ad or countdown)
+                // Auto-mute sound so user never has to hear unskippable ads!
+                muteVideoAd()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error processing YouTube accessibility event", e)
@@ -266,6 +281,31 @@ class YouTubeAdSkipperService : AccessibilityService() {
         sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
     }
 
+    private fun muteVideoAd() {
+        if (!isAdMuted) {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            val cur = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (cur > 0) {
+                originalVolume = cur
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0)
+                isAdMuted = true
+                Log.d(TAG, "Unskippable ad muted (saved volume $cur)")
+            }
+        }
+    }
+
+    private fun restoreVideoVolume() {
+        if (isAdMuted) {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            if (originalVolume > 0) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
+                Log.d(TAG, "Ad ended, restored volume to $originalVolume")
+            }
+            isAdMuted = false
+            originalVolume = -1
+        }
+    }
+
     private fun recycleNodes(nodes: List<AccessibilityNodeInfo>) {
         for (node in nodes) {
             try {
@@ -279,6 +319,10 @@ class YouTubeAdSkipperService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (isAdMuted) {
+            restoreVideoVolume()
+        }
+
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, false).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", false))
 

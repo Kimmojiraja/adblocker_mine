@@ -18,6 +18,7 @@ import com.adshield.app.AdShieldApp
 import com.adshield.app.R
 import com.adshield.app.databinding.ActivityMediaHubBinding
 import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 
 class MediaHubActivity : AppCompatActivity() {
@@ -55,16 +56,26 @@ class MediaHubActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
+        // High-performance hardware acceleration
+        binding.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        // Enable third-party cookies for seamless YouTube media streaming
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
+
+        val defaultUa = WebSettings.getDefaultUserAgent(this)
         binding.webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
             loadsImagesAutomatically = true
             useWideViewPort = true
             loadWithOverviewMode = true
-            databaseEnabled = true
             cacheMode = WebSettings.LOAD_DEFAULT
-            userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            userAgentString = defaultUa
         }
 
         binding.webView.webViewClient = object : WebViewClient() {
@@ -83,10 +94,27 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
+                
+                // Never block core video streaming, thumbnail, or Google video infrastructure
+                if (isStreamingHost(host)) {
+                    return super.shouldInterceptRequest(view, request)
+                }
+
                 if (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) {
-                    // Block ad requests inside the WebView
                     AdShieldApp.instance.incrementBlockedAds()
-                    return WebResourceResponse("text/plain", "UTF-8", null)
+                    // Return valid 200 OK empty response with CORS headers to avoid network stalls
+                    return WebResourceResponse(
+                        "text/plain",
+                        "UTF-8",
+                        200,
+                        "OK",
+                        mapOf(
+                            "Access-Control-Allow-Origin" to "*",
+                            "Access-Control-Allow-Methods" to "GET, POST, OPTIONS",
+                            "Access-Control-Allow-Headers" to "*"
+                        ),
+                        ByteArrayInputStream(ByteArray(0))
+                    )
                 }
                 return super.shouldInterceptRequest(view, request)
             }
@@ -131,6 +159,17 @@ class MediaHubActivity : AppCompatActivity() {
         if (injectionScript.isNotEmpty() && webView != null) {
             webView.evaluateJavascript(injectionScript, null)
         }
+    }
+
+    private fun isStreamingHost(host: String): Boolean {
+        val lower = host.lowercase()
+        return lower.contains("googlevideo.com") ||
+                lower.contains("youtube.com") ||
+                lower.contains("ytimg.com") ||
+                lower.contains("ggpht.com") ||
+                lower.contains("googleapis.com") ||
+                lower.contains("gstatic.com") ||
+                lower.contains("google.com")
     }
 
     private fun setupControls() {

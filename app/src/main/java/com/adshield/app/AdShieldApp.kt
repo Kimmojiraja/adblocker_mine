@@ -61,16 +61,24 @@ class AdShieldApp : Application() {
         prefs.edit().putLong(KEY_SKIPPED_YT_ADS, current + 1).apply()
     }
 
+    fun incrementMutedSpotifyAds() {
+        val current = prefs.getLong(KEY_MUTED_SPOTIFY_ADS, 0L)
+        prefs.edit().putLong(KEY_MUTED_SPOTIFY_ADS, current + 1).apply()
+    }
+
     fun getBlockedAdsCount(): Long = prefs.getLong(KEY_BLOCKED_ADS, 0L)
     fun getSkippedYouTubeAdsCount(): Long = prefs.getLong(KEY_SKIPPED_YT_ADS, 0L)
+    fun getMutedSpotifyAdsCount(): Long = prefs.getLong(KEY_MUTED_SPOTIFY_ADS, 0L)
 
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"
         const val PREFS_NAME = "adshield_prefs"
         const val KEY_BLOCKED_ADS = "key_blocked_ads_count"
         const val KEY_SKIPPED_YT_ADS = "key_skipped_yt_ads_count"
+        const val KEY_MUTED_SPOTIFY_ADS = "key_muted_spotify_ads_count"
         const val KEY_VPN_ENABLED = "key_vpn_enabled"
         const val KEY_YT_SKIPPER_ENABLED = "key_yt_skipper_enabled"
+        const val KEY_SPOTIFY_MUTER_ENABLED = "key_spotify_muter_enabled"
         const val KEY_AUTO_MUTE_ENABLED = "key_auto_mute_enabled"
         const val KEY_UPSTREAM_DNS = "key_upstream_dns"
 

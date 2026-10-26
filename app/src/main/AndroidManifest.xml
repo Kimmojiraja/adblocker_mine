@@ -66,6 +66,16 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- Spotify Zero-VPN Audio Ad Silencer -->
+        <receiver
+            android:name=".receiver.SpotifyAdMuterReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.spotify.music.metadatachanged" />
+                <action android:name="com.spotify.music.playbackstatechanged" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

@@ -17,6 +17,8 @@ import com.adshield.app.ui.BrandGuideActivity
 import com.adshield.app.ui.MediaHubActivity
 import com.adshield.app.ui.SettingsActivity
 
+import com.adshield.app.receiver.SpotifyAdMuterReceiver
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         val filter = IntentFilter().apply {
             addAction(YouTubeAdSkipperService.ACTION_YT_STATE_CHANGED)
             addAction(YouTubeAdSkipperService.ACTION_YT_AD_SKIPPED)
+            addAction(SpotifyAdMuterReceiver.ACTION_SPOTIFY_AD_MUTED)
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         updateDashboard()
@@ -70,6 +73,20 @@ class MainActivity : AppCompatActivity() {
             showRestrictedSettingsGuide()
         }
 
+        // Spotify Ad Silencer Switch
+        val isSpotifyEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_SPOTIFY_MUTER_ENABLED, true)
+        binding.switchSpotifyMuter.isChecked = isSpotifyEnabled
+        binding.switchSpotifyMuter.setOnCheckedChangeListener { _, isChecked ->
+            AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_SPOTIFY_MUTER_ENABLED, isChecked).apply()
+            val msg = if (isChecked) "Spotify Ad Silencer active" else "Spotify Ad Silencer paused"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // Spotify Help Button
+        binding.btnSpotifyHelp.setOnClickListener {
+            showSpotifyGuide()
+        }
+
         // Feature 2: Ad-Free Media Hub Launcher
         binding.btnOpenMediaHub.setOnClickListener {
             startActivity(Intent(this, MediaHubActivity::class.java))
@@ -89,6 +106,22 @@ class MainActivity : AppCompatActivity() {
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+    }
+
+    private fun showSpotifyGuide() {
+        AlertDialog.Builder(this)
+            .setTitle("Spotify Ad Silencer Setup")
+            .setMessage("To allow AdShield to detect and silence Spotify ads without VPN:\n\n1. Open Spotify.\n2. Tap Settings (⚙️ icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nAdShield will now automatically drop volume to 0 during ads and restore it the second your song resumes!")
+            .setPositiveButton("Open Spotify") { _, _ ->
+                val launchIntent = packageManager.getLaunchIntentForPackage("com.spotify.music")
+                if (launchIntent != null) {
+                    startActivity(launchIntent)
+                } else {
+                    Toast.makeText(this, "Spotify app not installed", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Done", null)
+            .show()
     }
 
     private fun promptEnableAccessibility() {
@@ -159,6 +192,12 @@ class MainActivity : AppCompatActivity() {
 
         val skippedYtCount = AdShieldApp.instance.getSkippedYouTubeAdsCount()
         binding.textYtSkippedCount.text = skippedYtCount.toString()
+
+        val mutedSpotifyCount = AdShieldApp.instance.getMutedSpotifyAdsCount()
+        binding.textSpotifyMutedCount.text = mutedSpotifyCount.toString()
+
+        val isSpotifyEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_SPOTIFY_MUTER_ENABLED, true)
+        binding.switchSpotifyMuter.isChecked = isSpotifyEnabled
 
         // Brand Card details
         val brandName = BrandOptimizationHelper.getBrandName()

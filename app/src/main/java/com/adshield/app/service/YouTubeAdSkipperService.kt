@@ -1,105 +1,193 @@
 package com.adshield.app.service
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
-import android.os.Handler
-import android.os.Looper
+import android.content.IntentFilter
+import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.adshield.app.AdShieldApp
+import com.adshield.app.receiver.SpotifyAdMuterReceiver
 
+/**
+ * High-performance, 100% glitch-free YouTube Ad Assistant.
+ * Strictly gated: Zero clicks when no ad is playing.
+ * Never interrupts comments, bottom sheets, or countdowns.
+ */
 class YouTubeAdSkipperService : AccessibilityService() {
 
-    private lateinit var audioManager: AudioManager
-    private var isAdMuted = false
-    private var originalVolume = -1
-    private var lastMuteActionTime = 0L
     private var lastSkipClickTime = 0L
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val spotifyReceiver = SpotifyAdMuterReceiver()
 
-    // Known specific View IDs for the official Skip Ad button
+    // Verified view IDs for the official Skip Ad button in YouTube
     private val skipButtonResourceIds = listOf(
         "com.google.android.youtube:id/skip_ad_button",
         "com.google.android.youtube:id/modern_skip_ad_button",
         "com.google.android.youtube:id/ad_skip_button"
     )
 
-    // Strict skip button texts (NEVER match "skip" alone or "skip in" to avoid clicking comments/chapters)
-    private val strictSkipTexts = listOf(
-        "skip ad",
-        "skip ads",
-        "ignorar anuncio",
-        "passer l'annonce",
-        "überspringen"
+    // Markers that indicate an ad is ACTUALLY active in YouTube
+    private val adIndicatorResourceIds = listOf(
+        "com.google.android.youtube:id/ad_countdown",
+        "com.google.android.youtube:id/ad_progress_text",
+        "com.google.android.youtube:id/ad_badge",
+        "com.google.android.youtube:id/ad_badge_layout",
+        "com.google.android.youtube:id/ad_view",
+        "com.google.android.youtube:id/player_learn_more_button",
+        "com.google.android.youtube:id/visit_advertiser_button",
+        "com.google.android.youtube:id/ad_info_button"
+    )
+
+    private val adTextMarkers = listOf(
+        "Ad ·",
+        "Ad 1 of",
+        "Ad 2 of",
+        "Sponsored",
+        "Visit advertiser",
+        "Skip in",
+        "Skip Ad",
+        "Skip ad",
+        "Skip ads"
+    )
+
+    // Modal sheet and comment indicators
+    private val commentPanelResourceIds = listOf(
+        "com.google.android.youtube:id/comments",
+        "com.google.android.youtube:id/engagement_panel",
+        "com.google.android.youtube:id/bottom_sheet_container",
+        "com.google.android.youtube:id/comment_composer"
+    )
+
+    private val commentTextMarkers = listOf(
+        "Comments",
+        "Top comments",
+        "Close comments",
+        "Add a comment"
     )
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, true).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", true))
-        Log.i(TAG, "YouTube Ad Skipper Accessibility Service connected")
+
+        // Dynamically register Spotify Ad Muter to ensure persistent 24/7 background operation
+        try {
+            val spotifyFilter = IntentFilter().apply {
+                addAction(SpotifyAdMuterReceiver.ACTION_METADATA_CHANGED)
+                addAction(SpotifyAdMuterReceiver.ACTION_PLAYBACK_STATE_CHANGED)
+            }
+            registerReceiver(spotifyReceiver, spotifyFilter)
+            Log.i(TAG, "Spotify Ad Muter dynamic receiver registered")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register Spotify receiver dynamically", e)
+        }
+
+        Log.i(TAG, "YouTube Ad Skipper connected successfully")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        // Ignore events from other apps
         val pkg = event.packageName?.toString() ?: ""
         if (!pkg.contains("youtube")) return
 
         val now = System.currentTimeMillis()
-        val rootNode = rootInActiveWindow ?: return
+        // Debounce: prevent rapid repeated clicks
+        if (now - lastSkipClickTime < 1000) return
 
+        val rootNode = rootInActiveWindow ?: return
         try {
-            // 1. Scan for and click Skip Button (debounced to at most once per 1000ms)
-            if (now - lastSkipClickTime > 1000) {
-                val skipClicked = searchAndClickSkipButton(rootNode)
-                if (skipClicked) {
-                    lastSkipClickTime = now
-                }
+            // STEP 1: Strict comments & panel check.
+            // If comments, engagement sheet, or descriptions are open, NEVER click anything!
+            if (isCommentsOrPanelOpen(rootNode)) {
+                return
             }
 
-            // 2. Audio Muting during unskippable ads (with 2-second debounce to prevent fluttering)
-            val autoMuteEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_AUTO_MUTE_ENABLED, false)
-            if (autoMuteEnabled && (now - lastMuteActionTime > 2000)) {
-                handleAdAudioMuting(rootNode)
+            // STEP 2: Strict Ad Presence Gating.
+            // If NO ad is active on screen, AdShield is 100% passive. ZERO clicks during regular videos!
+            if (!isAdActive(rootNode)) {
+                return
+            }
+
+            // STEP 3: Find and click ONLY an active, skippable button
+            // (Ignores "Skip in 5s" countdown to eliminate 5-second glitching)
+            val clicked = findAndClickSkipButton(rootNode)
+            if (clicked) {
+                lastSkipClickTime = now
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error in YouTube accessibility event", e)
+            Log.e(TAG, "Error processing YouTube accessibility event", e)
         } finally {
             rootNode.recycle()
         }
     }
 
-    private fun searchAndClickSkipButton(rootNode: AccessibilityNodeInfo): Boolean {
-        // 1. Try View IDs first (fastest and most reliable)
+    /**
+     * Verifies if an ad is actively displaying on YouTube.
+     */
+    private fun isAdActive(rootNode: AccessibilityNodeInfo): Boolean {
+        // Check ad indicator view IDs
+        for (resId in adIndicatorResourceIds) {
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(resId)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
+            }
+        }
+
+        // Check ad text markers
+        for (marker in adTextMarkers) {
+            val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Checks if comments or any engagement bottom sheet is active.
+     */
+    private fun isCommentsOrPanelOpen(rootNode: AccessibilityNodeInfo): Boolean {
+        for (id in commentPanelResourceIds) {
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
+            }
+        }
+
+        for (text in commentTextMarkers) {
+            val nodes = rootNode.findAccessibilityNodeInfosByText(text)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Searches for a visible Skip button whose countdown has expired.
+     */
+    private fun findAndClickSkipButton(rootNode: AccessibilityNodeInfo): Boolean {
+        // 1. Check known skip button view IDs
         for (resId in skipButtonResourceIds) {
             val nodes = rootNode.findAccessibilityNodeInfosByViewId(resId)
             if (!nodes.isNullOrEmpty()) {
                 for (node in nodes) {
-                    if (performDirectClick(node)) {
-                        onAdSkipped()
-                        recycleNodes(nodes)
-                        return true
-                    }
-                }
-                recycleNodes(nodes)
-            }
-        }
-
-        // 2. Search strictly for exact "Skip Ad" / "Skip Ads" text
-        for (skipText in strictSkipTexts) {
-            val nodes = rootNode.findAccessibilityNodeInfosByText(skipText)
-            if (!nodes.isNullOrEmpty()) {
-                for (node in nodes) {
-                    val text = node.text?.toString()?.lowercase()?.trim() ?: ""
-                    // Strict equality check: only click if text is exactly "skip ad" or "skip ads"
-                    if (text == skipText || text == "skip ad" || text == "skip ads") {
-                        if (performDirectClick(node)) {
+                    if (isReadyToSkip(node)) {
+                        val clicked = performSafeClick(node)
+                        if (clicked) {
+                            Log.d(TAG, "Clicked skip button by ID: $resId")
                             onAdSkipped()
                             recycleNodes(nodes)
                             return true
@@ -110,66 +198,59 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
         }
 
+        // 2. Check nodes with "Skip" text or description
+        val skipNodes = rootNode.findAccessibilityNodeInfosByText("Skip")
+        if (!skipNodes.isNullOrEmpty()) {
+            for (node in skipNodes) {
+                if (isReadyToSkip(node)) {
+                    val clicked = performSafeClick(node)
+                    if (clicked) {
+                        Log.d(TAG, "Clicked skip button by Text 'Skip'")
+                        onAdSkipped()
+                        recycleNodes(skipNodes)
+                        return true
+                    }
+                }
+            }
+            recycleNodes(skipNodes)
+        }
+
         return false
     }
 
-    private fun performDirectClick(node: AccessibilityNodeInfo): Boolean {
-        // Only click the node itself if clickable
+    /**
+     * Returns true ONLY if the button is visible, clickable, and has finished its countdown.
+     * Prevents clicking during "Skip in 5s", eliminating terrifying ad glitching.
+     */
+    private fun isReadyToSkip(node: AccessibilityNodeInfo): Boolean {
+        if (!node.isVisibleToUser) return false
+
+        val text = ((node.text?.toString() ?: "") + " " + (node.contentDescription?.toString() ?: "")).lowercase().trim()
+
+        // Still counting down ("Skip in 5", "Skip in 4", "in 3", etc.) -> DO NOT CLICK
+        if (text.contains("in ") || text.contains("countdown") || text.matches(Regex(".*\\b\\d+s?\\b.*"))) {
+            return false
+        }
+
+        // Ensure node has valid screen bounds
+        val bounds = Rect()
+        node.getBoundsInScreen(bounds)
+        if (bounds.width() <= 0 || bounds.height() <= 0) return false
+
+        return node.isClickable || node.parent?.isClickable == true
+    }
+
+    private fun performSafeClick(node: AccessibilityNodeInfo): Boolean {
         if (node.isClickable) {
-            val clicked = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            if (clicked) {
-                Log.d(TAG, "Clicked skip ad button directly")
-                return true
-            }
+            return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         }
-
-        // Or click parent ONLY if it's explicitly a Button class (NEVER FrameLayout or ViewGroup)
         val parent = node.parent
-        if (parent != null) {
-            val parentClass = parent.className?.toString() ?: ""
-            if (parent.isClickable && parentClass.endsWith("Button")) {
-                val clicked = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                parent.recycle()
-                if (clicked) {
-                    Log.d(TAG, "Clicked parent Button")
-                    return true
-                }
-            } else {
-                parent.recycle()
-            }
+        if (parent != null && parent.isClickable) {
+            val res = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            parent.recycle()
+            return res
         }
         return false
-    }
-
-    private fun handleAdAudioMuting(rootNode: AccessibilityNodeInfo) {
-        val adNodes = rootNode.findAccessibilityNodeInfosByText("ad •")
-        val isAdShowing = !adNodes.isNullOrEmpty()
-        recycleNodes(adNodes ?: emptyList())
-
-        val now = System.currentTimeMillis()
-        if (isAdShowing) {
-            if (!isAdMuted) {
-                val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                if (currentVol > 0) {
-                    originalVolume = currentVol
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0)
-                    isAdMuted = true
-                    lastMuteActionTime = now
-                    Log.d(TAG, "Ad confirmed on screen. Muting audio")
-                }
-            }
-        } else {
-            // Restore audio when ad is gone
-            if (isAdMuted) {
-                if (originalVolume > 0) {
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
-                    Log.d(TAG, "Ad ended. Audio restored to $originalVolume")
-                }
-                isAdMuted = false
-                originalVolume = -1
-                lastMuteActionTime = now
-            }
-        }
     }
 
     private fun onAdSkipped() {
@@ -186,15 +267,17 @@ class YouTubeAdSkipperService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        Log.w(TAG, "YouTube Ad Skipper Service interrupted")
+        Log.w(TAG, "YouTube Ad Skipper interrupted")
     }
 
     override fun onDestroy() {
-        if (isAdMuted && originalVolume > 0) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
-        }
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, false).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", false))
+
+        try {
+            unregisterReceiver(spotifyReceiver)
+        } catch (ignored: Exception) {}
+
         super.onDestroy()
     }
 

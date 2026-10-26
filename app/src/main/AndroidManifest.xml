@@ -5,12 +5,6 @@
     <!-- Network permissions for local VPN & DNS resolving -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
     <!-- Audio control to mute sound during unskippable video ads -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
@@ -56,19 +50,6 @@
             android:exported="false"
             android:label="@string/title_settings" />
 
-        <!-- Local DNS VPN Service for System-Wide Ad Blocking -->
-        <service
-            android:name=".service.AdShieldVpnService"
-            android:permission="android.permission.BIND_VPN_SERVICE"
-            android:foregroundServiceType="specialUse"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.net.VpnService" />
-            </intent-filter>
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Local DNS filtering and privacy shield" />
-        </service>
 
         <!-- Accessibility Service for YouTube Auto-Skip and Audio Mute -->
         <service

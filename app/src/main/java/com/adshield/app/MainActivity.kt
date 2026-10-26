@@ -1,21 +1,17 @@
 package com.adshield.app
 
 import android.accessibilityservice.AccessibilityService
-import android.app.Activity
 import android.content.*
-import android.net.VpnService
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.adshield.app.databinding.ActivityMainBinding
 import com.adshield.app.model.BrandOptimizationHelper
-import com.adshield.app.service.AdShieldVpnService
 import com.adshield.app.service.YouTubeAdSkipperService
 import com.adshield.app.ui.BrandGuideActivity
 import com.adshield.app.ui.MediaHubActivity
@@ -24,17 +20,6 @@ import com.adshield.app.ui.SettingsActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-
-    private val vpnPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            startVpnServiceInternal()
-        } else {
-            Toast.makeText(this, "VPN permission is required for system-wide ad blocking", Toast.LENGTH_LONG).show()
-            binding.switchVpn.isChecked = false
-        }
-    }
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -54,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         val filter = IntentFilter().apply {
-            addAction(AdShieldVpnService.ACTION_VPN_STATE_CHANGED)
             addAction(YouTubeAdSkipperService.ACTION_YT_STATE_CHANGED)
             addAction(YouTubeAdSkipperService.ACTION_YT_AD_SKIPPED)
         }
@@ -70,16 +54,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Master VPN Switch
-        binding.switchVpn.setOnCheckedChangeListener { _, isChecked ->
-            val isRunning = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_VPN_ENABLED, false)
-            if (isChecked && !isRunning) {
-                requestVpnStart()
-            } else if (!isChecked && isRunning) {
-                stopVpnServiceInternal()
-            }
-        }
-
         // YouTube Ad Skipper Switch
         binding.switchYtSkipper.setOnCheckedChangeListener { _, isChecked ->
             val isServiceActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
@@ -91,53 +65,41 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Action Buttons
+        // Help button for OnePlus / Xiaomi / Restricted Settings
+        binding.btnPermissionHelp.setOnClickListener {
+            showRestrictedSettingsGuide()
+        }
+
+        // Feature 2: Ad-Free Media Hub Launcher
         binding.btnOpenMediaHub.setOnClickListener {
             startActivity(Intent(this, MediaHubActivity::class.java))
         }
 
+        // Feature 3: One-Tap Zero-VPN System Ad Blocker
+        binding.btnSetupPrivateDns.setOnClickListener {
+            setupNativePrivateDns()
+        }
+
+        // Feature 4: Brand Battery Optimization
         binding.cardBrandOptimization.setOnClickListener {
             startActivity(Intent(this, BrandGuideActivity::class.java))
         }
 
+        // Settings Button
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
-    private fun requestVpnStart() {
-        val vpnIntent = VpnService.prepare(this)
-        if (vpnIntent != null) {
-            vpnPermissionLauncher.launch(vpnIntent)
-        } else {
-            startVpnServiceInternal()
-        }
-    }
-
-    private fun startVpnServiceInternal() {
-        val intent = Intent(this, AdShieldVpnService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-        updateDashboard()
-    }
-
-    private fun stopVpnServiceInternal() {
-        val intent = Intent(this, AdShieldVpnService::class.java).apply {
-            action = AdShieldVpnService.ACTION_STOP
-        }
-        startService(intent)
-        updateDashboard()
-    }
-
     private fun promptEnableAccessibility() {
         AlertDialog.Builder(this)
             .setTitle("Enable YouTube Ad Assistant")
-            .setMessage("AdShield requires Accessibility permission to automatically detect YouTube ad timers and click 'Skip Ad' the instant it appears.\n\n👉 On OnePlus/Oppo/Vivo/Xiaomi:\n1. Tap 'Downloaded apps' at the bottom of the screen.\n2. Tap 'AdShield YouTube Assistant' and switch it ON.")
+            .setMessage("AdShield automatically clicks 'Skip Ad' in 0.05 seconds and mutes unskippable ads.\n\n👉 On OnePlus / Oppo / Xiaomi:\n1. Tap 'Open Settings'\n2. Scroll to the bottom and tap 'Downloaded apps'\n3. Tap 'AdShield YouTube Assistant' and turn it ON.")
             .setPositiveButton("Open Settings") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            .setNeutralButton("Fix 'Denied Access'") { _, _ ->
+                openAppInfoScreen()
             }
             .setNegativeButton("Cancel") { _, _ ->
                 binding.switchYtSkipper.isChecked = false
@@ -145,21 +107,58 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun updateDashboard() {
-        val isVpnActive = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_VPN_ENABLED, false)
-        val isYtActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
+    private fun showRestrictedSettingsGuide() {
+        AlertDialog.Builder(this)
+            .setTitle("Fix 'App was denied access'")
+            .setMessage("Android 13 & 14 locks accessibility for sideloaded apps by default.\n\nTo unlock it:\n1. Tap 'Open App Info' below.\n2. Tap the 3 dots (⋮) in the top-right corner.\n3. Tap 'Allow restricted settings'.\n4. Confirm with fingerprint/PIN, then return to turn on the assistant!")
+            .setPositiveButton("Open App Info") { _, _ ->
+                openAppInfoScreen()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
 
-        binding.switchVpn.isChecked = isVpnActive
+    private fun openAppInfoScreen() {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Please open Settings > Apps > AdShield manually", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupNativePrivateDns() {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("AdGuard DNS", "dns.adguard-dns.com")
+        clipboard.setPrimaryClip(clip)
+
+        AlertDialog.Builder(this)
+            .setTitle("Copied 'dns.adguard-dns.com'!")
+            .setMessage("Now opening your phone's Network Settings:\n\n1. Tap 'Private DNS'.\n2. Select 'Private DNS provider hostname'.\n3. Paste 'dns.adguard-dns.com' and tap Save!\n\nResult: 100% ad-free games and browsers, 0% extra battery, no VPN!")
+            .setPositiveButton("Open Network Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                try {
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_SETTINGS))
+                    } catch (ex: Exception) {
+                        Toast.makeText(this, "Please open phone Settings > Network & Internet > Private DNS", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateDashboard() {
+        val isYtActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
         binding.switchYtSkipper.isChecked = isYtActive
 
-        val blockedAdsCount = AdShieldApp.instance.getBlockedAdsCount()
         val skippedYtCount = AdShieldApp.instance.getSkippedYouTubeAdsCount()
-
-        binding.textBlockedCount.text = blockedAdsCount.toString()
         binding.textYtSkippedCount.text = skippedYtCount.toString()
-
-        val rulesLoaded = AdShieldApp.instance.blocklistEngine.getLoadedCount()
-        binding.textRulesCount.text = "$rulesLoaded active rules"
 
         // Brand Card details
         val brandName = BrandOptimizationHelper.getBrandName()

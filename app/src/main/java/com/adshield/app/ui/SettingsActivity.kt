@@ -88,9 +88,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupPrivateDnsGuide() {
         binding.btnCopyPrivateDns.setOnClickListener {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Private DNS Provider", "dns.adguard-dns.com")
+            val clip = ClipData.newPlainText("Private DNS Provider", "p2.freedns.controld.com")
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "Copied 'dns.adguard-dns.com' to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Copied 'p2.freedns.controld.com' to clipboard!", Toast.LENGTH_SHORT).show()
         }
     }
 }

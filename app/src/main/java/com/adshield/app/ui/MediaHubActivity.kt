@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.webkit.*
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -82,7 +83,9 @@ class MediaHubActivity : AppCompatActivity() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 binding.progressBar.visibility = View.VISIBLE
-                binding.urlInput.setText(url)
+                if (url != null && !binding.urlInput.hasFocus()) {
+                    binding.urlInput.setText(url)
+                }
                 injectAdblockScript(view)
             }
 
@@ -189,17 +192,33 @@ class MediaHubActivity : AppCompatActivity() {
             enterPipMode()
         }
 
-        binding.btnGo.setOnClickListener {
-            var url = binding.urlInput.text.toString().trim()
-            if (url.isNotEmpty()) {
-                if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                    url = "https://$url"
+        val navigateOrSearch: () -> Unit = {
+            val query = binding.urlInput.text.toString().trim()
+            if (query.isNotEmpty()) {
+                val targetUrl = when {
+                    query.startsWith("http://") || query.startsWith("https://") -> query
+                    query.contains(".") && !query.contains(" ") -> "https://$query"
+                    else -> "https://m.youtube.com/results?search_query=${Uri.encode(query)}"
                 }
-                binding.webView.loadUrl(url)
+                binding.webView.loadUrl(targetUrl)
+                binding.urlInput.clearFocus()
             }
         }
 
-        // Quick platform shortcuts
+        binding.btnGo.setOnClickListener { navigateOrSearch() }
+
+        binding.urlInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO ||
+                actionId == EditorInfo.IME_ACTION_SEARCH ||
+                actionId == EditorInfo.IME_ACTION_DONE) {
+                navigateOrSearch()
+                true
+            } else {
+                false
+            }
+        }
+
+        // Quick platform shortcuts in the Floating Island Dock
         binding.btnPlatformYoutube.setOnClickListener {
             binding.webView.loadUrl("https://m.youtube.com")
         }

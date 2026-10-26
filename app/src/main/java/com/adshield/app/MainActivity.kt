@@ -12,12 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.adshield.app.databinding.ActivityMainBinding
 import com.adshield.app.model.BrandOptimizationHelper
+import com.adshield.app.receiver.SpotifyAdMuterReceiver
 import com.adshield.app.service.YouTubeAdSkipperService
 import com.adshield.app.ui.BrandGuideActivity
 import com.adshield.app.ui.MediaHubActivity
 import com.adshield.app.ui.SettingsActivity
-
-import com.adshield.app.receiver.SpotifyAdMuterReceiver
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -87,17 +87,17 @@ class MainActivity : AppCompatActivity() {
             showSpotifyGuide()
         }
 
-        // Feature 2: Ad-Free Media Hub Launcher
+        // Feature 3: Ad-Free Media Hub Launcher
         binding.btnOpenMediaHub.setOnClickListener {
             startActivity(Intent(this, MediaHubActivity::class.java))
         }
 
-        // Feature 3: One-Tap Zero-VPN System Ad Blocker
+        // Feature 4: One-Tap Zero-VPN System Ad Blocker
         binding.btnSetupPrivateDns.setOnClickListener {
             setupNativePrivateDns()
         }
 
-        // Feature 4: Brand Battery Optimization
+        // Feature 5: Brand Battery Optimization
         binding.cardBrandOptimization.setOnClickListener {
             startActivity(Intent(this, BrandGuideActivity::class.java))
         }
@@ -106,12 +106,29 @@ class MainActivity : AppCompatActivity() {
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+
+        // Transparency & Community Modules
+        binding.btnPrivacyPolicy.setOnClickListener {
+            showPrivacyPolicyDialog()
+        }
+
+        binding.btnDisclaimer.setOnClickListener {
+            showDisclaimerDialog()
+        }
+
+        binding.btnSupport.setOnClickListener {
+            showSupportDialog()
+        }
+
+        binding.btnFundraising.setOnClickListener {
+            showFundraisingDialog()
+        }
     }
 
     private fun showSpotifyGuide() {
         AlertDialog.Builder(this)
             .setTitle("Spotify Ad Silencer Setup")
-            .setMessage("To allow Fokk Shield to detect and silence Spotify ads without VPN:\n\n1. Open Spotify.\n2. Tap Settings (⚙️ icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nFokk Shield will now automatically drop volume to 0 during ads and restore it the second your song resumes!")
+            .setMessage("To enable Fokk Shield to detect and silence Spotify ads without VPN:\n\n1. Open the official Spotify app.\n2. Tap Settings (gear icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nFokk Shield automatically drops media volume to zero during ads and restores volume the exact millisecond music resumes.")
             .setPositiveButton("Open Spotify") { _, _ ->
                 val launchIntent = packageManager.getLaunchIntentForPackage("com.spotify.music")
                 if (launchIntent != null) {
@@ -127,11 +144,11 @@ class MainActivity : AppCompatActivity() {
     private fun promptEnableAccessibility() {
         AlertDialog.Builder(this)
             .setTitle("Enable YouTube Ad Assistant")
-            .setMessage("Fokk Shield automatically clicks 'Skip Ad' in 0.05 seconds and mutes unskippable ads.\n\n👉 On OnePlus / Oppo / Xiaomi:\n1. Tap 'Open Settings'\n2. Scroll to the bottom and tap 'Downloaded apps'\n3. Tap 'Fokk Shield Assistant' and turn it ON.")
+            .setMessage("Fokk Shield automatically clicks 'Skip Ad' in 0.05 seconds and silences unskippable bumper ads.\n\nOn OnePlus, Oppo, Xiaomi, and Vivo:\n1. Tap 'Open Settings'\n2. Scroll down to 'Downloaded apps'\n3. Select 'Fokk Shield Assistant' and switch it ON.")
             .setPositiveButton("Open Settings") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
-            .setNeutralButton("Fix 'Denied Access'") { _, _ ->
+            .setNeutralButton("Fix Restricted Settings") { _, _ ->
                 openAppInfoScreen()
             }
             .setNegativeButton("Cancel") { _, _ ->
@@ -142,8 +159,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showRestrictedSettingsGuide() {
         AlertDialog.Builder(this)
-            .setTitle("Fix 'App was denied access'")
-            .setMessage("Android 13 & 14 locks accessibility for sideloaded apps by default.\n\nTo unlock it:\n1. Tap 'Open App Info' below.\n2. Tap the 3 dots (⋮) in the top-right corner.\n3. Tap 'Allow restricted settings'.\n4. Confirm with fingerprint/PIN, then return to turn on the assistant!")
+            .setTitle("Unlock Restricted Settings")
+            .setMessage("Android 13, 14, and 15 lock accessibility permissions for sideloaded APKs by default.\n\nTo unlock:\n1. Tap 'Open App Info' below.\n2. Tap the menu (three dots) in top-right corner.\n3. Tap 'Allow restricted settings'.\n4. Confirm with PIN/Fingerprint, then return to activate the assistant.")
             .setPositiveButton("Open App Info") { _, _ ->
                 openAppInfoScreen()
             }
@@ -168,8 +185,8 @@ class MainActivity : AppCompatActivity() {
         clipboard.setPrimaryClip(clip)
 
         AlertDialog.Builder(this)
-            .setTitle("Copied 'p2.freedns.controld.com'!")
-            .setMessage("Now opening your phone's Network Settings:\n\n1. Tap 'Private DNS' (or Specified DNS).\n2. Select 'Private DNS provider hostname'.\n3. Paste 'p2.freedns.controld.com' and tap Save!\n\n(100% unblocked in India on Jio, Airtel & 5G — blocks ads in games and Chrome with zero VPN!)")
+            .setTitle("Copied DNS Hostname")
+            .setMessage("Control D DNS address copied to clipboard.\n\nSetup instructions:\n1. Open your phone's Network & Internet Settings.\n2. Tap 'Private DNS' (or Specified DNS).\n3. Select 'Private DNS provider hostname'.\n4. Paste 'p2.freedns.controld.com' and tap Save.\n\nBlocks popup banners in Chrome, apps, and games system-wide with zero battery drain and zero VPN.")
             .setPositiveButton("Open Network Settings") { _, _ ->
                 val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
                 try {
@@ -186,6 +203,46 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showPrivacyPolicyDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Privacy & Security Architecture")
+            .setMessage("Fokk Shield is built with a 100% on-device architecture:\n\n• Zero Telemetry: No browsing data, traffic, or analytics leave your device.\n• No Remote Servers: All blocking logic and skip execution happen locally in real-time.\n• No VPN Tunnel: Does not inspect or intercept sensitive banking/UPI transactions.\n• Minimal Permissions: Accessibility is strictly used for YouTube skip-ad detection and never reads keystrokes or passwords.")
+            .setPositiveButton("Understood", null)
+            .show()
+    }
+
+    private fun showDisclaimerDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Legal Disclaimer")
+            .setMessage("Fokk Shield is an independent utility and assistive tool.\n\nIt is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube, Spotify AB, or any related entities. All brand names and trademarks belong to their respective owners.\n\nThis application is provided under open-source community terms for accessibility enhancement and user convenience.")
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun showSupportDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Fokk Shield Support")
+            .setMessage("Version: 1.1.0\nArchitecture: 100% No-VPN Native Assistant\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.")
+            .setPositiveButton("GitHub Repository") { _, _ ->
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/adblocker_mine"))
+                try {
+                    startActivity(browserIntent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Unable to launch browser", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showFundraisingDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Community Development")
+            .setMessage("Fokk Shield is committed to remaining 100% free with zero paywalls and zero data monetization.\n\n• Organization & Supporter Channels: Official donation accounts and contribution methods will be published here in an upcoming release.\n\nThank you for supporting open, independent digital privacy tools!")
+            .setPositiveButton("Got It", null)
+            .show()
+    }
+
     private fun updateDashboard() {
         val isYtActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
         binding.switchYtSkipper.isChecked = isYtActive
@@ -195,6 +252,15 @@ class MainActivity : AppCompatActivity() {
 
         val mutedSpotifyCount = AdShieldApp.instance.getMutedSpotifyAdsCount()
         binding.textSpotifyMutedCount.text = mutedSpotifyCount.toString()
+
+        // Calculate Time Reclaimed
+        val totalSeconds = (skippedYtCount * 20) + (mutedSpotifyCount * 30)
+        binding.textTimeReclaimed.text = if (totalSeconds < 60) {
+            "${totalSeconds}s"
+        } else {
+            val minutes = totalSeconds / 60.0
+            if (minutes < 10) String.format(Locale.US, "%.1fm", minutes) else "${minutes.toInt()}m"
+        }
 
         val isSpotifyEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_SPOTIFY_MUTER_ENABLED, true)
         binding.switchSpotifyMuter.isChecked = isSpotifyEnabled

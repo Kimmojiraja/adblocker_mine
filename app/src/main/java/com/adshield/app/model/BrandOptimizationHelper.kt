@@ -136,43 +136,43 @@ object BrandOptimizationHelper {
     fun getBrandInstructions(): String {
         return when (getDeviceBrand()) {
             DeviceBrand.XIAOMI -> """
-                1. Enable 'Autostart' for AdShield.
+                1. Enable 'Autostart' for Fokk Shield.
                 2. Set Battery Saver to 'No restrictions'.
-                3. Lock AdShield in the Recent Apps screen by holding the app card and tapping the Lock icon.
+                3. Lock Fokk Shield in the Recent Apps screen by holding the app card and tapping the Lock icon.
             """.trimIndent()
 
             DeviceBrand.SAMSUNG -> """
                 1. Go to Settings -> Battery and device care -> Battery.
                 2. Tap 'Background usage limits' -> 'Never sleeping apps'.
-                3. Tap '+' and add AdShield to ensure 24/7 continuous ad blocking.
+                3. Tap '+' and add Fokk Shield to ensure 24/7 continuous ad blocking.
             """.trimIndent()
 
             DeviceBrand.OPPO_REALME -> """
                 1. Open Phone Manager -> Privacy Permissions -> Startup Manager.
-                2. Turn ON 'Allow Auto-startup' for AdShield.
+                2. Turn ON 'Allow Auto-startup' for Fokk Shield.
                 3. In App Info, allow background activity.
             """.trimIndent()
 
             DeviceBrand.VIVO -> """
                 1. Open iManager -> App Manager -> Autostart Manager.
-                2. Enable AdShield.
+                2. Enable Fokk Shield.
                 3. Under Battery management, set 'High background power consumption' to Allowed.
             """.trimIndent()
 
             DeviceBrand.ONEPLUS -> """
                 1. Settings -> Battery -> Battery Optimization.
-                2. Select AdShield and choose 'Don't optimize'.
-                3. In Recent Apps, tap the 3 dots on AdShield and select 'Lock'.
+                2. Select Fokk Shield and choose 'Don't optimize'.
+                3. In Recent Apps, tap the 3 dots on Fokk Shield and select 'Lock'.
             """.trimIndent()
 
             DeviceBrand.HUAWEI_HONOR -> """
                 1. Settings -> Battery -> App launch.
-                2. Find AdShield, toggle off 'Manage automatically'.
+                2. Find Fokk Shield, toggle off 'Manage automatically'.
                 3. Enable 'Auto-launch', 'Secondary launch', and 'Run in background'.
             """.trimIndent()
 
             DeviceBrand.GENERIC -> """
-                1. Disable Battery Optimization for AdShield.
+                1. Disable Battery Optimization for Fokk Shield.
                 2. Allow background activity and autostart in system settings.
             """.trimIndent()
         }

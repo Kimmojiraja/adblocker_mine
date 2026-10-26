@@ -260,7 +260,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="3dp"
-                        android:text="Android 9+ includes native Private DNS (DoT) which blocks ads system-wide without running any VPN background app at all:\n1. Settings -> Network &amp; Internet -> Private DNS.\n2. Select 'Private DNS provider hostname'.\n3. Enter: dns.adguard-dns.com"
+                        android:text="Android 9+ includes native Private DNS (DoT) which blocks ads system-wide without running any VPN background app at all:\n1. Settings -> Network &amp; Internet -> Private DNS.\n2. Select 'Private DNS provider hostname'.\n3. Enter: p2.freedns.controld.com"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -270,7 +270,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
-                        android:text="Copy dns.adguard-dns.com"
+                        android:text="Copy p2.freedns.controld.com"
                         android:textSize="13sp"
                         app:cornerRadius="8dp" />
                 </LinearLayout>

@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#0D47A1</color>
-    <color name="primary_variant">#002171</color>
-    <color name="secondary">#00B0FF</color>
-    <color name="background_dark">#0F141C</color>
-    <color name="surface_dark">#18202E</color>
-    <color name="card_border">#253347</color>
+    <color name="primary">#0164FF</color>
+    <color name="primary_variant">#0047BA</color>
+    <color name="secondary">#00E5FF</color>
+    <color name="background_dark">#090D14</color>
+    <color name="surface_dark">#111622</color>
+    <color name="surface_elevated">#171E2E</color>
+    <color name="card_border">#1E283C</color>
+    <color name="fokk_blue">#0164FF</color>
+    <color name="fokk_cyan">#00E5FF</color>
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#90A4AE</color>
+    <color name="text_secondary">#8E9CAE</color>
+    <color name="text_tertiary">#5A687D</color>
     <color name="accent_green">#00E676</color>
     <color name="accent_red">#FF5252</color>
     <color name="youtube_red">#FF0000</color>

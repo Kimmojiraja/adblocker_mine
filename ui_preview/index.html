@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fokk Shield - Executive UI Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090D14;
+            --surface-dark: #111622;
+            --surface-elevated: #171E2E;
+            --card-border: #1E283C;
+            --fokk-blue: #0164FF;
+            --fokk-cyan: #00E5FF;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E9CAE;
+            --text-tertiary: #5A687D;
+            --accent-green: #00E676;
+            --youtube-red: #FF0000;
+            --spotify-green: #1DB954;
+            --instagram-pink: #E1306C;
+            --twitter-blue: #1DA1F2;
+            --reddit-orange: #FF4500;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #05070B;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+        }
+
+        /* Top Desktop Toolbar */
+        .desktop-bar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(17, 22, 34, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            padding: 12px 20px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+        }
+
+        .desktop-bar .title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-chips {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-chip {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-chip:hover, .nav-chip.active {
+            background: var(--fokk-blue);
+            color: #fff;
+            border-color: var(--fokk-blue);
+            box-shadow: 0 0 12px rgba(1, 100, 255, 0.4);
+        }
+
+        /* Interactive Simulator Controls */
+        .simulator-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sim-btn {
+            background: #171E2E;
+            border: 1px solid #283A5A;
+            color: var(--fokk-cyan);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .sim-btn:hover {
+            background: #202D45;
+        }
+
+        /* Phone Device Mockup */
+        .device-wrapper {
+            position: relative;
+            width: 390px;
+            height: 820px;
+            background: #000;
+            border-radius: 48px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 8px #1a202c, 0 0 0 10px #0c1017;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Phone Status Bar */
+        .status-bar {
+            height: 38px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--bg-dark);
+            z-index: 50;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* App Screen Frame */
+        .screen-container {
+            flex: 1;
+            background: var(--bg-dark);
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .screen-container::-webkit-scrollbar-thumb {
+            background: #1E283C;
+            border-radius: 4px;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            flex-direction: column;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Header Bar */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #0164FF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #0D2038;
+            border: 1px solid #1A4A7A;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 4px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--fokk-cyan);
+            box-shadow: 0 0 8px var(--fokk-cyan);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .status-pill-text {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--fokk-cyan);
+            letter-spacing: 0.4px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .icon-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface-dark);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .card.elevated {
+            background: var(--surface-elevated);
+            border-color: #283A5A;
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 15.5px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card-desc {
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            margin-top: 6px;
+        }
+
+        /* Material Switch Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #263348;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #8E9CAE;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--fokk-blue);
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+            background-color: #ffffff;
+        }
+
+        /* Live Matrix 3-Column Bar */
+        .matrix-title {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .stat-chip {
+            background: #0D131F;
+            border: 1px solid #1A263B;
+            border-radius: 14px;
+            padding: 12px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .stat-chip:hover {
+            border-color: var(--fokk-cyan);
+            background: #111928;
+        }
+        .stat-val {
+            font-size: 21px;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .stat-label {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+
+        /* Buttons */
+        .btn-link {
+            background: transparent;
+            border: none;
+            color: var(--fokk-cyan);
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            padding: 0;
+        }
+        .btn-link.spotify {
+            color: var(--spotify-green);
+        }
+
+        .btn-primary {
+            width: 100%;
+            height: 48px;
+            background: var(--fokk-blue);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: 0.2s;
+            box-shadow: 0 4px 16px rgba(1, 100, 255, 0.3);
+        }
+        .btn-primary:hover {
+            background: #0050d4;
+        }
+
+        .btn-tonal {
+            width: 100%;
+            height: 46px;
+            background: var(--surface-elevated);
+            color: #fff;
+            border: 1px solid #283A5A;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: 0.2s;
+        }
+        .btn-tonal:hover {
+            background: #202c40;
+            border-color: var(--fokk-cyan);
+        }
+
+        /* Media Studio Viewport */
+        .media-studio-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            background: #000;
+        }
+        .media-studio-screen.active {
+            display: flex;
+        }
+
+        .studio-top-bar {
+            height: 52px;
+            background: rgba(9, 13, 20, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        .search-chip-bar {
+            flex: 1;
+            height: 38px;
+            background: #0D131F;
+            border: 1px solid #1F2E47;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 8px;
+        }
+
+        .search-chip-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 12.5px;
+            width: 100%;
+        }
+
+        .studio-viewport {
+            flex: 1;
+            position: relative;
+            background: #05070B;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mock-video-area {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #101625, #0a0e18);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid #1E283C;
+        }
+
+        .mock-video-watermark {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #00E5FF;
+            color: #00E5FF;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .play-ring {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--fokk-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px rgba(1, 100, 255, 0.6);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .play-ring:hover {
+            transform: scale(1.08);
+        }
+
+        .stream-meta {
+            padding: 16px;
+        }
+        .stream-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.35;
+        }
+        .stream-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Floating Island Bottom Dock */
+        .floating-island-dock {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            height: 54px;
+            background: rgba(13, 20, 36, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid #283A5A;
+            border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(1, 100, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 6px;
+            z-index: 30;
+        }
+
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 16px;
+            transition: all 0.2s;
+        }
+        .dock-item.active {
+            background: rgba(255,255,255,0.08);
+        }
+        .dock-item span {
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            background: #111622;
+            border: 1px solid #283A5A;
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+        }
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .modal-body {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            white-space: pre-line;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .modal-btn {
+            background: transparent;
+            border: none;
+            color: var(--fokk-cyan);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .modal-btn.primary {
+            background: var(--fokk-blue);
+            color: #fff;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #172133;
+            border: 1px solid var(--fokk-cyan);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 200;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Desktop Testbar -->
+    <div class="desktop-bar">
+        <div class="title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#0164FF"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            <span>Fokk Shield Simulator (Localhost 8080)</span>
+        </div>
+        <div class="nav-chips">
+            <button class="nav-chip active" onclick="switchScreen('dashboard')">Dashboard</button>
+            <button class="nav-chip" onclick="switchScreen('studio')">Media Studio</button>
+            <button class="nav-chip" onclick="switchScreen('settings')">Settings</button>
+            <button class="nav-chip" onclick="switchScreen('brand')">Brand Guide</button>
+        </div>
+        <div class="simulator-actions">
+            <button class="sim-btn" onclick="simulateSkipYt()">+1 YT Skip</button>
+            <button class="sim-btn" onclick="simulateMuteSpotify()">+1 Spotify Mute</button>
+            <button class="sim-btn" onclick="resetSimStats()">Reset</button>
+        </div>
+    </div>
+
+    <!-- Realistic Smartphone Viewport -->
+    <div class="device-wrapper">
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>23:47</span>
+            <div class="status-icons">
+                <span>5G</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+            </div>
+        </div>
+
+        <!-- Scrollable Screen Content -->
+        <div class="screen-container">
+
+            <!-- SCREEN 1: MAIN DASHBOARD -->
+            <div id="screen-dashboard" class="screen active">
+
+                <!-- Header Bar -->
+                <div class="app-header">
+                    <div class="brand-cluster">
+                        <div class="brand-logo">
+                            <img src="logo.png" alt="Logo" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'white\'><path d=\'M12 2L4 19h16z\'/></svg>'">
+                        </div>
+                        <div>
+                            <div class="brand-title">Fokk Shield</div>
+                            <div class="status-pill">
+                                <span class="status-pill-text">ACTIVE DEFENSE • BANKING SAFE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="icon-btn" onclick="switchScreen('settings')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Live Impact Matrix -->
+                <div class="card" style="padding: 16px;">
+                    <div class="matrix-title">LIVE DEFENSE MATRIX</div>
+                    <div class="matrix-grid">
+                        <div class="stat-chip" onclick="simulateSkipYt()">
+                            <div class="stat-val" id="stat-yt" style="color: var(--youtube-red);">24</div>
+                            <div class="stat-label">YT Skipped</div>
+                        </div>
+                        <div class="stat-chip" onclick="simulateMuteSpotify()">
+                            <div class="stat-val" id="stat-spotify" style="color: var(--spotify-green);">12</div>
+                            <div class="stat-label">Audio Muted</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-val" id="stat-time" style="color: var(--fokk-cyan);">14.0m</div>
+                            <div class="stat-label">Time Saved</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 1: YouTube Ad Assistant -->
+                <div class="card">
+                    <div class="card-header-row">
+                        <div style="flex: 1; padding-right: 12px;">
+                            <div class="card-title-group">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="#FF0000"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>
+                                <span class="card-title">YouTube Ad Assistant</span>
+                            </div>
+                            <div class="card-desc">Instantly clicks 'Skip Ad' in 0.05s and silences unskippable bumper ads on official YouTube app.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="showToast(this.checked ? 'YouTube Ad Assistant Active' : 'YouTube Ad Assistant Paused')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button class="btn-link" onclick="openModal('ytHelp')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Troubleshoot &amp; Device Permissions
+                    </button>
+                </div>
+
+                <!-- Feature 2: Spotify Ad Silencer -->
+                <div class="card">
+                    <div class="card-header-row">
+                        <div style="flex: 1; padding-right: 12px;">
+                            <div class="card-title-group">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="#1DB954"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.59 14.42c-.18.29-.56.38-.85.2-2.33-1.42-5.26-1.74-8.72-.95-.33.08-.66-.13-.74-.46s.13-.66.46-.74c3.78-.86 7.03-.5 9.65 1.1.29.18.38.56.2.85zm1.22-2.72c-.23.37-.71.49-1.08.26-2.67-1.64-6.74-2.11-9.9-1.15-.42.13-.86-.11-.99-.53-.13-.42.11-.86.53-.99 3.61-1.1 8.09-.57 11.18 1.33.37.23.49.71.26 1.08zm.13-2.83c-3.2-1.9-8.49-2.08-11.55-1.15-.49.15-1.01-.13-1.16-.62-.15-.49.13-1.01.62-1.16 3.51-1.07 9.35-.86 13.03 1.33.44.26.59.83.33 1.27-.26.44-.83.59-1.27.33z"/></svg>
+                                <span class="card-title">Spotify Ad Silencer</span>
+                            </div>
+                            <div class="card-desc">Silences audio commercials automatically and restores music playback volume the exact millisecond music resumes.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="showToast(this.checked ? 'Spotify Ad Silencer Active' : 'Spotify Ad Silencer Paused')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button class="btn-link spotify" onclick="openModal('spotifyGuide')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Spotify Integration Guide
+                    </button>
+                </div>
+
+                <!-- Feature 3: Media Studio Banner -->
+                <div class="card elevated">
+                    <div class="card-title" style="margin-bottom: 2px;">Ad-Free Media Studio</div>
+                    <div class="card-desc">Stream YouTube, Instagram, X &amp; Reddit without video ads, with background audio and floating PiP.</div>
+                    <button class="btn-primary" onclick="switchScreen('studio')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                        Launch Media Studio
+                    </button>
+                </div>
+
+                <!-- Feature 4: System Ad Blocker (Private DNS) -->
+                <div class="card">
+                    <div class="card-title-group">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        <span class="card-title">System Ad Blocker (Native DNS)</span>
+                    </div>
+                    <div class="card-desc">Blocks banners, trackers, and popup ads across Chrome and games via Android's native Private DNS. Zero VPN tunnel, UPI &amp; banking safe.</div>
+                    <button class="btn-tonal" onclick="openModal('dnsSetup')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                        Configure Private DNS (1-Tap)
+                    </button>
+                </div>
+
+                <!-- Feature 5: Brand Battery Protection -->
+                <div class="card" onclick="switchScreen('brand')" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#00E676"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                            <div>
+                                <div class="card-title" style="font-size: 14.5px;">OnePlus Background Protection</div>
+                                <div class="card-desc" style="margin-top: 2px;">Prevent system background kills</div>
+                            </div>
+                        </div>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    </div>
+                </div>
+
+                <!-- Community Fundraising Card -->
+                <div class="card" style="border-color: #1E3048;">
+                    <div class="card-title-group">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        <span class="card-title" style="font-size: 14.5px;">Community Development</span>
+                    </div>
+                    <div class="card-desc">Fokk Shield is 100% free with zero ads and zero subscription fees. Back the ongoing independent engineering.</div>
+                    <button class="btn-tonal" onclick="openModal('fundraising')">
+                        Fundraising &amp; Contribution Details
+                    </button>
+                </div>
+
+                <!-- Footer Transparency Links -->
+                <div style="display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 10px; margin-bottom: 24px;">
+                    <span style="font-size: 12px; color: var(--text-secondary); cursor: pointer;" onclick="openModal('privacy')">Privacy</span>
+                    <span style="color: var(--text-tertiary);">•</span>
+                    <span style="font-size: 12px; color: var(--text-secondary); cursor: pointer;" onclick="openModal('disclaimer')">Disclaimer</span>
+                    <span style="color: var(--text-tertiary);">•</span>
+                    <span style="font-size: 12px; color: var(--text-secondary); cursor: pointer;" onclick="openModal('support')">Support</span>
+                </div>
+
+                <div style="text-align: center; font-size: 11px; color: var(--text-tertiary); margin-bottom: 10px;">
+                    Fokk Shield v1.1.0 • 100% No-VPN Architecture
+                </div>
+
+            </div>
+
+            <!-- SCREEN 2: MEDIA STUDIO -->
+            <div id="screen-studio" class="media-studio-screen">
+                <!-- Top Navigation Bar -->
+                <div class="studio-top-bar">
+                    <button class="icon-btn" onclick="switchScreen('dashboard')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <button class="icon-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                    </button>
+                    <div class="search-chip-bar">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input id="media-url-input" type="text" value="https://m.youtube.com">
+                        <button style="background:none; border:none; cursor:pointer;" onclick="showToast('Navigating stream...')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                        </button>
+                    </div>
+                    <button class="icon-btn" onclick="showToast('Picture-in-Picture active')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-blue)"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Studio Stream Viewport -->
+                <div class="studio-viewport">
+                    <div class="mock-video-area">
+                        <div class="mock-video-watermark">AD-FREE STREAM ACTIVE</div>
+                        <div class="play-ring" onclick="showToast('Playing stream ad-free...')">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                    </div>
+                    <div class="stream-meta">
+                        <div class="stream-title">Official Stream Player (Zero Mid-roll &amp; Pre-roll Ads)</div>
+                        <div class="stream-sub">Direct hardware accelerated viewport • uBlock engine active</div>
+                    </div>
+
+                    <!-- Floating Island Dock -->
+                    <div class="floating-island-dock">
+                        <div class="dock-item active" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>
+                            <span>YouTube</span>
+                        </div>
+                        <div class="dock-item" onclick="switchDockPlatform('Instagram', 'https://www.instagram.com', this)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2.5"></line>
+                            </svg>
+                            <span>Instagram</span>
+                        </div>
+                        <div class="dock-item" onclick="switchDockPlatform('Twitter / X', 'https://mobile.twitter.com', this)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            <span>Twitter / X</span>
+                        </div>
+                        <div class="dock-item" onclick="switchDockPlatform('Reddit', 'https://www.reddit.com', this)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF4500"><path d="M12 0C5.373 0 0 5.373 0 12c0 6.627 5.373 12 12 12s12-5.373 12-12c0-6.627-5.373-12-12-12zm6.066 13.31c.054.245.084.5.084.763 0 2.69-3.197 4.87-7.15 4.87s-7.15-2.18-7.15-4.87c0-.263.03-.518.084-.763-.638-.37-1.066-1.07-1.066-1.87 0-1.2.97-2.17 2.17-2.17.63 0 1.2.27 1.59.7 1.25-.85 2.94-1.4 4.8-1.46l.82-3.87 2.68.57c.07-.6.58-1.07 1.2-1.07.67 0 1.22.55 1.22 1.22 0 .67-.55 1.22-1.22 1.22-.57 0-1.05-.39-1.18-.92l-2.38-.5-.73 3.46c1.84.06 3.51.61 4.75 1.45.39-.42.95-.68 1.57-.68 1.2 0 2.17.97 2.17 2.17 0 .8-.43 1.5-1.06 1.87zM9.25 12.25c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm5.5 0c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm-5.75 4.35c.23.23.6.23.83 0 .67-.67 1.48-.92 2.17-.92s1.5.25 2.17.92c.23.23.6.23.83 0 .23-.23.23-.6 0-.83-.89-.89-2.01-1.27-3-1.27s-2.11.38-3 1.27c-.23.23-.23.6 0 .83z"/></svg>
+                            <span>Reddit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 3: SETTINGS -->
+            <div id="screen-settings" class="screen">
+                <div class="app-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button class="icon-btn" onclick="switchScreen('dashboard')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <span class="card-title" style="font-size: 18px;">Settings &amp; Filters</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Upstream DNS Server</div>
+                    <div class="card-desc" style="margin-bottom: 12px;">Used to securely resolve non-ad domain queries</div>
+                    <select style="width: 100%; height: 42px; background: #0D131F; border: 1px solid #1E283C; border-radius: 8px; color: #fff; padding: 0 10px; outline: none;">
+                        <option>Cloudflare (1.1.1.1) - Ultra Fast &amp; Privacy First</option>
+                        <option>Quad9 (9.9.9.9) - Malware Blocking</option>
+                        <option>Control D (p2.freedns.controld.com)</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-row">
+                        <div>
+                            <div class="card-title">Auto-Mute Unskippable Ads</div>
+                            <div class="card-desc">Silences audio during 6-second bumper ads on YouTube</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked onchange="showToast('Auto-Mute setting updated')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Native Private DNS Guide</div>
+                    <div class="card-desc">Zero background battery consumption system ad blocker via Android Settings.</div>
+                    <button class="btn-tonal" onclick="copyDns()">
+                        Copy p2.freedns.controld.com
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCREEN 4: BRAND GUIDE -->
+            <div id="screen-brand" class="screen">
+                <div class="app-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button class="icon-btn" onclick="switchScreen('dashboard')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <span class="card-title" style="font-size: 18px;">Brand Whitelist Guide</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Detected Device: OnePlus</div>
+                    <div class="card-desc">OxygenOS / Android 14</div>
+                    <div style="margin-top: 10px; display: inline-block; background: #00E676; color: #000; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">
+                        PROTECTED
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Recommended Steps</div>
+                    <div class="card-desc" style="margin-top: 10px; line-height: 1.6;">
+                        1. Open Settings → Battery → Battery Optimization.<br>
+                        2. Select Fokk Shield and choose 'Don't optimize'.<br>
+                        3. In Recent Apps, tap the 3 dots on Fokk Shield and select 'Lock'.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Android Modal Dialog Component -->
+        <div id="modalOverlay" class="modal-overlay" onclick="closeModalOnBg(event)">
+            <div class="modal-card">
+                <div class="modal-title" id="modalTitle">Dialog Title</div>
+                <div class="modal-body" id="modalBody">Dialog body text goes here...</div>
+                <div class="modal-actions" id="modalActions">
+                    <button class="modal-btn primary" onclick="closeModal()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- In-app Toast message -->
+        <div id="toast" class="toast">Action performed</div>
+
+    </div>
+
+    <script>
+        let ytSkipped = 24;
+        let spotifyMuted = 12;
+
+        function updateMatrix() {
+            document.getElementById('stat-yt').innerText = ytSkipped;
+            document.getElementById('stat-spotify').innerText = spotifyMuted;
+            const totalSec = (ytSkipped * 20) + (spotifyMuted * 30);
+            const mins = (totalSec / 60).toFixed(1);
+            document.getElementById('stat-time').innerText = mins + 'm';
+        }
+
+        function simulateSkipYt() {
+            ytSkipped++;
+            updateMatrix();
+            showToast('YouTube ad skipped in 0.05s!');
+        }
+
+        function simulateMuteSpotify() {
+            spotifyMuted++;
+            updateMatrix();
+            showToast('Spotify ad audio silenced!');
+        }
+
+        function resetSimStats() {
+            ytSkipped = 0;
+            spotifyMuted = 0;
+            updateMatrix();
+            showToast('Stats reset to 0');
+        }
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.media-studio-screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-chip').forEach(c => c.classList.remove('active'));
+
+            if (screenId === 'dashboard') {
+                document.getElementById('screen-dashboard').classList.add('active');
+                document.querySelectorAll('.nav-chip')[0].classList.add('active');
+            } else if (screenId === 'studio') {
+                document.getElementById('screen-studio').classList.add('active');
+                document.querySelectorAll('.nav-chip')[1].classList.add('active');
+            } else if (screenId === 'settings') {
+                document.getElementById('screen-settings').classList.add('active');
+                document.querySelectorAll('.nav-chip')[2].classList.add('active');
+            } else if (screenId === 'brand') {
+                document.getElementById('screen-brand').classList.add('active');
+                document.querySelectorAll('.nav-chip')[3].classList.add('active');
+            }
+        }
+
+        function switchDockPlatform(name, url, element) {
+            document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('media-url-input').value = url;
+            showToast('Loaded ' + name + ' Ad-Free');
+        }
+
+        function copyDns() {
+            navigator.clipboard.writeText('p2.freedns.controld.com');
+            showToast('Copied p2.freedns.controld.com!');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        const modalData = {
+            ytHelp: {
+                title: "Unlock Restricted Settings",
+                body: "Android 13, 14, and 15 lock accessibility permissions for sideloaded APKs by default.\n\nTo unlock:\n1. Tap 'Open App Info' below.\n2. Tap the menu (three dots) in top-right corner.\n3. Tap 'Allow restricted settings'.\n4. Confirm with PIN/Fingerprint, then return to activate the assistant.",
+                actions: `<button class="modal-btn" onclick="closeModal()">Close</button><button class="modal-btn primary" onclick="showToast('Opening App Info...'); closeModal();">Open App Info</button>`
+            },
+            spotifyGuide: {
+                title: "Spotify Ad Silencer Setup",
+                body: "To enable Fokk Shield to detect and silence Spotify ads without VPN:\n\n1. Open official Spotify app.\n2. Tap Settings (gear icon in top-right).\n3. Scroll down and turn ON 'Device Broadcast Status'.\n\nFokk Shield automatically drops media volume to zero during ads and restores volume the exact millisecond music resumes.",
+                actions: `<button class="modal-btn" onclick="closeModal()">Done</button><button class="modal-btn primary" onclick="showToast('Opening Spotify...'); closeModal();">Open Spotify</button>`
+            },
+            dnsSetup: {
+                title: "Copied DNS Hostname",
+                body: "Control D address copied to clipboard!\n\nSetup instructions:\n1. Open your phone's Network & Internet Settings.\n2. Tap 'Private DNS' (or Specified DNS).\n3. Select 'Private DNS provider hostname'.\n4. Paste 'p2.freedns.controld.com' and tap Save.\n\nBlocks popup banners in Chrome, apps, and games system-wide with zero battery drain and zero VPN.",
+                actions: `<button class="modal-btn" onclick="closeModal()">Close</button><button class="modal-btn primary" onclick="copyDns(); closeModal();">Copy &amp; Open Settings</button>`
+            },
+            fundraising: {
+                title: "Community Development",
+                body: "Fokk Shield is committed to remaining 100% free with zero paywalls and zero data monetization.\n\n• Organization & Supporter Channels: Official donation accounts and contribution methods will be published here in an upcoming release.\n\nThank you for supporting open, independent digital privacy tools!",
+                actions: `<button class="modal-btn primary" onclick="closeModal()">Got It</button>`
+            },
+            privacy: {
+                title: "Privacy & Security Architecture",
+                body: "Fokk Shield is built with a 100% on-device architecture:\n\n• Zero Telemetry: No browsing data, traffic, or analytics leave your device.\n• No Remote Servers: All blocking logic and skip execution happen locally in real-time.\n• No VPN Tunnel: Does not inspect or intercept sensitive banking/UPI transactions.\n• Minimal Permissions: Accessibility is strictly used for YouTube skip-ad detection and never reads keystrokes or passwords.",
+                actions: `<button class="modal-btn primary" onclick="closeModal()">Understood</button>`
+            },
+            disclaimer: {
+                title: "Legal Disclaimer",
+                body: "Fokk Shield is an independent utility and assistive tool.\n\nIt is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube, Spotify AB, or any related entities. All brand names and trademarks belong to their respective owners.\n\nThis application is provided under open-source community terms for accessibility enhancement and user convenience.",
+                actions: `<button class="modal-btn primary" onclick="closeModal()">Close</button>`
+            },
+            support: {
+                title: "Fokk Shield Support",
+                body: "Version: 1.1.0\nArchitecture: 100% No-VPN Native Assistant\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.",
+                actions: `<button class="modal-btn" onclick="closeModal()">Close</button><button class="modal-btn primary" onclick="window.open('https://github.com/Kimmojiraja/adblocker_mine'); closeModal();">GitHub Repo</button>`
+            }
+        };
+
+        function openModal(type) {
+            const data = modalData[type];
+            if (!data) return;
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalBody').innerText = data.body;
+            document.getElementById('modalActions').innerHTML = data.actions;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function closeModalOnBg(e) {
+            if (e.target.id === 'modalOverlay') closeModal();
+        }
+
+        updateMatrix();
+    </script>
+</body>
+</html>

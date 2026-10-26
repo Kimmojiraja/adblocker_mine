@@ -5,19 +5,23 @@
     window.__adshield_loaded = true;
 
     // 1. YouTube Player Ad Config Stripper (Safe array clearing)
+    function sanitizePlayerResponse(resp) {
+        if (resp && typeof resp === 'object') {
+            if (resp.adPlacements) resp.adPlacements = [];
+            if (resp.playerAds) resp.playerAds = [];
+            if (resp.adSlots) resp.adSlots = [];
+            if (resp.playbackTracking) {
+                delete resp.playbackTracking.videostatsPlaybackUrl;
+                delete resp.playbackTracking.videostatsDelayplayUrl;
+            }
+        }
+    }
+
     function interceptYouTubeConfigs() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        function cleanPlayerResponse(resp) {
-            if (resp && typeof resp === 'object') {
-                if (resp.adPlacements) resp.adPlacements = [];
-                if (resp.playerAds) resp.playerAds = [];
-                if (resp.adSlots) resp.adSlots = [];
-            }
-        }
-
         if (window.ytInitialPlayerResponse) {
-            cleanPlayerResponse(window.ytInitialPlayerResponse);
+            sanitizePlayerResponse(window.ytInitialPlayerResponse);
         }
 
         try {
@@ -25,12 +29,59 @@
             Object.defineProperty(window, 'ytInitialPlayerResponse', {
                 get() { return playerResponseVal; },
                 set(val) {
-                    cleanPlayerResponse(val);
+                    sanitizePlayerResponse(val);
                     playerResponseVal = val;
                 },
                 configurable: true
             });
         } catch (e) {}
+
+        // uBlock Origin / Brave Engine: Dynamic Fetch Interceptor for /youtubei/v1/player
+        // Eliminates both pre-roll and mid-roll ad breaks before playback begins
+        const origFetch = window.fetch;
+        if (typeof origFetch === 'function') {
+            window.fetch = async function(...args) {
+                const url = args[0] ? (typeof args[0] === 'string' ? args[0] : (args[0].url || '')) : '';
+                const response = await origFetch.apply(this, args);
+                if (url && typeof url === 'string' && url.includes('/youtubei/v1/player')) {
+                    try {
+                        const cloned = response.clone();
+                        const json = await cloned.json();
+                        sanitizePlayerResponse(json);
+                        return new Response(JSON.stringify(json), {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: response.headers
+                        });
+                    } catch (e) {}
+                }
+                return response;
+            };
+        }
+
+        // uBlock Origin / Brave Engine: Dynamic XHR Interceptor
+        const origXhrOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            this._reqUrl = url;
+            return origXhrOpen.apply(this, [method, url, ...rest]);
+        };
+
+        const origResponseTextDesc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
+        if (origResponseTextDesc) {
+            Object.defineProperty(XMLHttpRequest.prototype, 'responseText', {
+                get() {
+                    let text = origResponseTextDesc.get.call(this);
+                    if (this._reqUrl && typeof this._reqUrl === 'string' && this._reqUrl.includes('/youtubei/v1/player')) {
+                        try {
+                            const json = JSON.parse(text);
+                            sanitizePlayerResponse(json);
+                            return JSON.stringify(json);
+                        } catch (e) {}
+                    }
+                    return text;
+                }
+            });
+        }
     }
 
     interceptYouTubeConfigs();

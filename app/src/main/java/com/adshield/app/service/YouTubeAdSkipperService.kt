@@ -51,19 +51,27 @@ class YouTubeAdSkipperService : AccessibilityService() {
         "Skip ads"
     )
 
-    // Modal sheet and comment indicators
-    private val commentPanelResourceIds = listOf(
+    // Interactive panels that should NEVER be touched (Comments, Playlists, Queues)
+    private val interactivePanelResourceIds = listOf(
         "com.google.android.youtube:id/comments",
         "com.google.android.youtube:id/engagement_panel",
         "com.google.android.youtube:id/bottom_sheet_container",
-        "com.google.android.youtube:id/comment_composer"
+        "com.google.android.youtube:id/comment_composer",
+        "com.google.android.youtube:id/playlist",
+        "com.google.android.youtube:id/playlist_panel",
+        "com.google.android.youtube:id/playlist_header",
+        "com.google.android.youtube:id/playlist_items",
+        "com.google.android.youtube:id/queue_panel"
     )
 
-    private val commentTextMarkers = listOf(
+    private val interactiveTextMarkers = listOf(
         "Comments",
         "Top comments",
         "Close comments",
-        "Add a comment"
+        "Add a comment",
+        "Playlist",
+        "Playlists",
+        "Queue"
     )
 
     override fun onServiceConnected() {
@@ -154,7 +162,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
      * Checks if comments or any engagement bottom sheet is active.
      */
     private fun isCommentsOrPanelOpen(rootNode: AccessibilityNodeInfo): Boolean {
-        for (id in commentPanelResourceIds) {
+        for (id in interactivePanelResourceIds) {
             val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
             if (!nodes.isNullOrEmpty()) {
                 val hasVisible = nodes.any { it.isVisibleToUser }
@@ -163,7 +171,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
         }
 
-        for (text in commentTextMarkers) {
+        for (text in interactiveTextMarkers) {
             val nodes = rootNode.findAccessibilityNodeInfosByText(text)
             if (!nodes.isNullOrEmpty()) {
                 val hasVisible = nodes.any { it.isVisibleToUser }

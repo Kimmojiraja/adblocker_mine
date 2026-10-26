@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
     private fun promptEnableAccessibility() {
         AlertDialog.Builder(this)
             .setTitle("Enable YouTube Ad Assistant")
-            .setMessage("AdShield requires Accessibility permission to automatically detect YouTube ad timers and click 'Skip Ad' the instant it appears.\n\nOn the next screen, find 'AdShield YouTube Assistant' and turn it ON.")
+            .setMessage("AdShield requires Accessibility permission to automatically detect YouTube ad timers and click 'Skip Ad' the instant it appears.\n\n👉 On OnePlus/Oppo/Vivo/Xiaomi:\n1. Tap 'Downloaded apps' at the bottom of the screen.\n2. Tap 'AdShield YouTube Assistant' and switch it ON.")
             .setPositiveButton("Open Settings") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }

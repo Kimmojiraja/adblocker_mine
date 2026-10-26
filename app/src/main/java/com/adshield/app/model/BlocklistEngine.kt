@@ -55,11 +55,32 @@ class BlocklistEngine(private val context: Context) {
         whitelistDomains.addAll(customWhitelist.map { it.lowercase() })
     }
 
+    private val essentialWhitelist = setOf(
+        "youtube.com",
+        "m.youtube.com",
+        "googlevideo.com",
+        "ytimg.com",
+        "i.ytimg.com",
+        "ggpht.com",
+        "gstatic.com",
+        "googleapis.com",
+        "google.com",
+        "accounts.google.com",
+        "play.google.com",
+        "gvt1.com",
+        "googleusercontent.com",
+        "1e100.net",
+        "android.com"
+    )
+
     fun isDomainBlocked(rawDomain: String): Boolean {
         if (!isReady.get()) return false
 
         val domain = rawDomain.lowercase().trimEnd('.')
         if (domain.isEmpty()) return false
+
+        // Never block essential video streaming or core infrastructure
+        if (isWhitelisted(domain)) return false
 
         // 1. Whitelist always takes precedence
         if (whitelistDomains.contains(domain)) return false
@@ -71,11 +92,20 @@ class BlocklistEngine(private val context: Context) {
         var dotIndex = domain.indexOf('.')
         while (dotIndex != -1 && dotIndex < domain.length - 1) {
             val parentDomain = domain.substring(dotIndex + 1)
+            if (isWhitelisted(parentDomain)) return false
             if (whitelistDomains.contains(parentDomain)) return false
             if (blockedDomains.contains(parentDomain)) return true
             dotIndex = domain.indexOf('.', dotIndex + 1)
         }
 
+        return false
+    }
+
+    private fun isWhitelisted(domain: String): Boolean {
+        if (essentialWhitelist.contains(domain)) return true
+        for (w in essentialWhitelist) {
+            if (domain.endsWith(".$w")) return true
+        }
         return false
     }
 

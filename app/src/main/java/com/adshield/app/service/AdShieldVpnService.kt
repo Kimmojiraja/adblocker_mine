@@ -63,12 +63,7 @@ class AdShieldVpnService : VpnService() {
                     .setSession("AdShield System Protection")
                     .addAddress("10.1.10.1", 32)
                     .addDnsServer("10.1.10.1")
-
-                // Route common DNS servers to intercept all queries
-                builder.addRoute("10.1.10.1", 32)
-                for (ip in upstreamDnsIps) {
-                    builder.addRoute(ip, 32)
-                }
+                    .addRoute("10.1.10.1", 32)
 
                 // Exclude AdShield itself so our upstream socket connects directly
                 try {
@@ -106,11 +101,7 @@ class AdShieldVpnService : VpnService() {
         val inputStream = FileInputStream(descriptor)
         val outputStream = FileOutputStream(descriptor)
         val packetBuffer = ByteArray(4096)
-
-        // Socket for forwarding allowed DNS queries to upstream
-        val upstreamSocket = DatagramSocket()
-        protect(upstreamSocket) // Ensures socket bypasses VPN
-        upstreamSocket.soTimeout = 2000
+        val outputLock = Any()
 
         var lastNotificationUpdate = System.currentTimeMillis()
 
@@ -119,55 +110,66 @@ class AdShieldVpnService : VpnService() {
                 val bytesRead = inputStream.read(packetBuffer)
                 if (bytesRead <= 0) continue
 
-                val query = DnsPacketParser.parseDnsQuery(packetBuffer, bytesRead)
-                if (query != null) {
-                    val isBlocked = AdShieldApp.instance.blocklistEngine.isDomainBlocked(query.domain)
+                val packetCopy = packetBuffer.copyOf(bytesRead)
 
-                    if (isBlocked) {
-                        // Immediately synthesize a 0.0.0.0 / NXDOMAIN response and return into TUN
-                        val blockedPacket = DnsPacketParser.createBlockedResponse(
-                            packetBuffer,
-                            query,
-                            returnSinkholeIp = true
-                        )
-                        outputStream.write(blockedPacket)
-                        outputStream.flush()
+                // Process each DNS packet concurrently so upstream queries never block each other
+                serviceScope.launch(Dispatchers.IO) {
+                    try {
+                        val query = DnsPacketParser.parseDnsQuery(packetCopy, packetCopy.size) ?: return@launch
+                        val isBlocked = AdShieldApp.instance.blocklistEngine.isDomainBlocked(query.domain)
 
-                        AdShieldApp.instance.incrementBlockedAds()
+                        if (isBlocked) {
+                            val blockedPacket = DnsPacketParser.createBlockedResponse(
+                                packetCopy,
+                                query,
+                                returnSinkholeIp = true
+                            )
+                            synchronized(outputLock) {
+                                outputStream.write(blockedPacket)
+                                outputStream.flush()
+                            }
 
-                        // Update notification periodically
-                        val now = System.currentTimeMillis()
-                        if (now - lastNotificationUpdate > 5000) {
-                            lastNotificationUpdate = now
-                            updateNotification()
+                            AdShieldApp.instance.incrementBlockedAds()
+
+                            val now = System.currentTimeMillis()
+                            if (now - lastNotificationUpdate > 5000) {
+                                lastNotificationUpdate = now
+                                updateNotification()
+                            }
+                        } else {
+                            // Forward legitimate query to upstream DNS
+                            val activeDns = AdShieldApp.instance.prefs.getString(AdShieldApp.KEY_UPSTREAM_DNS, primaryUpstreamDns) ?: primaryUpstreamDns
+                            val upstreamIp = InetAddress.getByName(activeDns)
+
+                            DatagramSocket().use { socket ->
+                                protect(socket)
+                                socket.soTimeout = 1200
+
+                                val dnsPayload = ByteArray(query.dnsPayloadLen)
+                                System.arraycopy(packetCopy, query.dnsPayloadOffset, dnsPayload, 0, query.dnsPayloadLen)
+
+                                val outPacket = DatagramPacket(dnsPayload, dnsPayload.size, upstreamIp, DnsPacketParser.DNS_PORT)
+                                socket.send(outPacket)
+
+                                val respBuffer = ByteArray(2048)
+                                val inPacket = DatagramPacket(respBuffer, respBuffer.size)
+                                socket.receive(inPacket)
+
+                                val responsePacket = buildUdpResponsePacket(query, inPacket.data, inPacket.length)
+                                synchronized(outputLock) {
+                                    outputStream.write(responsePacket)
+                                    outputStream.flush()
+                                }
+                            }
                         }
-                    } else {
-                        // Forward legitimate query to upstream DNS
-                        val upstreamIp = InetAddress.getByName(primaryUpstreamDns)
-                        val dnsPayload = ByteArray(query.dnsPayloadLen)
-                        System.arraycopy(packetBuffer, query.dnsPayloadOffset, dnsPayload, 0, query.dnsPayloadLen)
-
-                        val outPacket = DatagramPacket(dnsPayload, dnsPayload.size, upstreamIp, DnsPacketParser.DNS_PORT)
-                        upstreamSocket.send(outPacket)
-
-                        val respBuffer = ByteArray(2048)
-                        val inPacket = DatagramPacket(respBuffer, respBuffer.size)
-                        upstreamSocket.receive(inPacket)
-
-                        // Reconstruct IPv4 UDP response packet
-                        val responsePacket = buildUdpResponsePacket(query, inPacket.data, inPacket.length)
-                        outputStream.write(responsePacket)
-                        outputStream.flush()
+                    } catch (e: Exception) {
+                        // Query timeout or network error, silently ignore
                     }
                 }
             } catch (e: Exception) {
                 if (!isRunning.get()) break
             }
         }
-
-        try {
-            upstreamSocket.close()
-        } catch (ignored: Exception) {}
     }
 
     private fun buildUdpResponsePacket(query: DnsPacketParser.DnsQuery, dnsPayload: ByteArray, dnsLen: Int): ByteArray {

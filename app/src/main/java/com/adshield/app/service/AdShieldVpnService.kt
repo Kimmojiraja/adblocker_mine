@@ -65,11 +65,19 @@ class AdShieldVpnService : VpnService() {
                     .addDnsServer("10.1.10.1")
                     .addRoute("10.1.10.1", 32)
 
-                // Exclude AdShield itself so our upstream socket connects directly
-                try {
-                    builder.addDisallowedApplication(packageName)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Could not disallow self package from VPN", e)
+                // Exclude AdShield and YouTube from VPN so YouTube video streams connect at full native speed
+                val exemptPackages = listOf(
+                    packageName,
+                    "com.google.android.youtube",
+                    "com.google.android.apps.youtube.music",
+                    "com.google.android.youtube.tv"
+                )
+                for (pkg in exemptPackages) {
+                    try {
+                        builder.addDisallowedApplication(pkg)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Could not disallow package: $pkg", e)
+                    }
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

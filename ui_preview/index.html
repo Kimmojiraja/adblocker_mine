@@ -729,7 +729,7 @@
                         <div>
                             <div class="brand-title">Fokk Shield</div>
                             <div class="status-pill">
-                                <span class="status-pill-text">ACTIVE DEFENSE • BANKING SAFE</span>
+                                <span class="status-pill-text">NO-VPN ARCHITECTURE • ON-DEVICE</span>
                             </div>
                         </div>
                     </div>
@@ -880,13 +880,16 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                         </button>
                     </div>
+                    <button class="icon-btn" onclick="toggleDock()" title="Platform Switcher">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-blue)"><path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/></svg>
+                    </button>
                     <button class="icon-btn" onclick="showToast('Picture-in-Picture active')">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-blue)"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>
                     </button>
                 </div>
 
                 <!-- Studio Stream Viewport -->
-                <div class="studio-viewport">
+                <div class="studio-viewport" style="position: relative;">
                     <div class="mock-video-area">
                         <div class="mock-video-watermark">AD-FREE STREAM ACTIVE</div>
                         <div class="play-ring" onclick="showToast('Playing stream ad-free...')">
@@ -898,8 +901,13 @@
                         <div class="stream-sub">Direct hardware accelerated viewport • uBlock engine active</div>
                     </div>
 
-                    <!-- Floating Island Dock -->
-                    <div class="floating-island-dock">
+                    <!-- Mini Studio Floating Chip (Elevated above native bottom bars) -->
+                    <div id="preview-studio-toggle" style="position: absolute; bottom: 64px; right: 16px; height: 36px; background: rgba(13,20,36,0.92); backdrop-filter: blur(12px); border: 1px solid #283A5A; border-radius: 20px; display: none; align-items: center; padding: 0 12px; gap: 6px; cursor: pointer; z-index: 40; box-shadow: 0 4px 16px rgba(0,0,0,0.6);" onclick="toggleDock()">
+                        <span style="font-size: 11px; font-weight: 700; color: #fff;">Studio Hub ▾</span>
+                    </div>
+
+                    <!-- Floating Island Dock (Collapsible) -->
+                    <div id="preview-floating-dock" class="floating-island-dock" style="bottom: 60px;">
                         <div class="dock-item active" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>
                             <span>YouTube</span>
@@ -920,6 +928,9 @@
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF4500"><path d="M12 0C5.373 0 0 5.373 0 12c0 6.627 5.373 12 12 12s12-5.373 12-12c0-6.627-5.373-12-12-12zm6.066 13.31c.054.245.084.5.084.763 0 2.69-3.197 4.87-7.15 4.87s-7.15-2.18-7.15-4.87c0-.263.03-.518.084-.763-.638-.37-1.066-1.07-1.066-1.87 0-1.2.97-2.17 2.17-2.17.63 0 1.2.27 1.59.7 1.25-.85 2.94-1.4 4.8-1.46l.82-3.87 2.68.57c.07-.6.58-1.07 1.2-1.07.67 0 1.22.55 1.22 1.22 0 .67-.55 1.22-1.22 1.22-.57 0-1.05-.39-1.18-.92l-2.38-.5-.73 3.46c1.84.06 3.51.61 4.75 1.45.39-.42.95-.68 1.57-.68 1.2 0 2.17.97 2.17 2.17 0 .8-.43 1.5-1.06 1.87zM9.25 12.25c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm5.5 0c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm-5.75 4.35c.23.23.6.23.83 0 .67-.67 1.48-.92 2.17-.92s1.5.25 2.17.92c.23.23.6.23.83 0 .23-.23.23-.6 0-.83-.89-.89-2.01-1.27-3-1.27s-2.11.38-3 1.27c-.23.23-.23.6 0 .83z"/></svg>
                             <span>Reddit</span>
                         </div>
+                        <button style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; display:flex; align-items:center;" onclick="collapseDockPreview()" title="Minimize Dock">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1065,10 +1076,27 @@
             }
         }
 
+        function toggleDock() {
+            const dock = document.getElementById('preview-floating-dock');
+            const toggle = document.getElementById('preview-studio-toggle');
+            if (dock.style.display === 'none') {
+                dock.style.display = 'flex';
+                toggle.style.display = 'none';
+            } else {
+                collapseDockPreview();
+            }
+        }
+
+        function collapseDockPreview() {
+            document.getElementById('preview-floating-dock').style.display = 'none';
+            document.getElementById('preview-studio-toggle').style.display = 'flex';
+        }
+
         function switchDockPlatform(name, url, element) {
             document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
             element.classList.add('active');
             document.getElementById('media-url-input').value = url;
+            collapseDockPreview();
             showToast('Loaded ' + name + ' Ad-Free');
         }
 

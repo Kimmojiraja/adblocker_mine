@@ -19,12 +19,12 @@
             android:background="#F0090D14"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp">
+            android:paddingHorizontal="6dp">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_back"
                 app:tint="@color/text_primary"
@@ -32,8 +32,8 @@
 
             <ImageButton
                 android:id="@+id/btnForward"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_forward"
                 app:tint="@color/text_secondary"
@@ -41,8 +41,8 @@
 
             <ImageButton
                 android:id="@+id/btnRefresh"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_refresh"
                 app:tint="@color/text_secondary"
@@ -51,17 +51,17 @@
             <!-- Stream / Search Input Chip -->
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="38dp"
+                android:layout_height="36dp"
                 android:layout_weight="1"
-                android:layout_marginHorizontal="6dp"
+                android:layout_marginHorizontal="4dp"
                 android:background="@drawable/bg_search_chip"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp">
+                android:paddingHorizontal="8dp">
 
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
                     android:src="@drawable/ic_search"
                     app:tint="@color/text_secondary" />
 
@@ -70,7 +70,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="6dp"
                     android:background="@null"
                     android:hint="Search or stream URL..."
                     android:imeOptions="actionGo"
@@ -78,25 +78,35 @@
                     android:maxLines="1"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
                 <ImageButton
                     android:id="@+id/btnGo"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_launch"
                     app:tint="@color/fokk_cyan"
                     android:contentDescription="Navigate" />
             </LinearLayout>
 
+            <!-- Quick Platform Switcher Icon in Top Bar -->
+            <ImageButton
+                android:id="@+id/btnPlatformMenu"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_layers"
+                app:tint="@color/fokk_blue"
+                android:contentDescription="Switch Platform" />
+
             <ImageButton
                 android:id="@+id/btnPip"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_pip"
-                app:tint="@color/fokk_blue"
+                app:tint="@color/fokk_cyan"
                 android:contentDescription="Picture-in-Picture" />
         </LinearLayout>
 
@@ -120,19 +130,52 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-            <!-- Floating Island Bottom Studio Dock -->
+            <!-- Compact Floating Studio Badge (Safe above YouTube bottom bar: marginBottom=64dp) -->
+            <LinearLayout
+                android:id="@+id/btnStudioToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="64dp"
+                android:background="@drawable/bg_floating_dock"
+                android:elevation="6dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgTogglePlatform"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_youtube" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="Studio Hub"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Floating Island Bottom Studio Dock (Collapsible) -->
             <LinearLayout
                 android:id="@+id/bottomNav"
                 android:layout_width="match_parent"
                 android:layout_height="54dp"
                 android:layout_gravity="bottom"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginBottom="16dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="60dp"
                 android:background="@drawable/bg_floating_dock"
-                android:elevation="6dp"
+                android:elevation="8dp"
                 android:gravity="center"
                 android:orientation="horizontal"
-                android:paddingHorizontal="8dp">
+                android:paddingHorizontal="6dp">
 
                 <!-- YouTube Dock Item -->
                 <LinearLayout
@@ -241,6 +284,17 @@
                         android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <!-- Close / Minimize Dock Button -->
+                <ImageButton
+                    android:id="@+id/btnMinimizeDock"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Minimize dock" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>

@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.adshield.app.AdShieldApp
+import com.adshield.app.model.SelectorSyncManager
 import com.adshield.app.receiver.SpotifyAdMuterReceiver
 
 /**
@@ -82,6 +83,9 @@ class YouTubeAdSkipperService : AccessibilityService() {
         super.onServiceConnected()
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, true).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", true))
+
+        // Trigger remote dynamic selector cloud sync to handle YouTube UI updates
+        SelectorSyncManager.syncSelectorsAsync()
 
         // Dynamically register Spotify Ad Muter to ensure persistent 24/7 background operation
         try {
@@ -177,8 +181,10 @@ class YouTubeAdSkipperService : AccessibilityService() {
      * Checks if comments or any engagement bottom sheet is active.
      */
     private fun isCommentsOrPanelOpen(rootNode: AccessibilityNodeInfo): Boolean {
-        for (id in interactivePanelResourceIds) {
-            val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+        val dynamicPanelIds = (interactivePanelResourceIds + SelectorSyncManager.getProtectedPanelIds()).distinct()
+        for (id in dynamicPanelIds) {
+            val fullId = if (id.contains(":id/")) id else "com.google.android.youtube:id/$id"
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(fullId)
             if (!nodes.isNullOrEmpty()) {
                 val hasVisible = nodes.any { it.isVisibleToUser }
                 recycleNodes(nodes)
@@ -202,15 +208,17 @@ class YouTubeAdSkipperService : AccessibilityService() {
      * Searches for a visible Skip button whose countdown has expired.
      */
     private fun findAndClickSkipButton(rootNode: AccessibilityNodeInfo): Boolean {
-        // 1. Check known skip button view IDs
-        for (resId in skipButtonResourceIds) {
-            val nodes = rootNode.findAccessibilityNodeInfosByViewId(resId)
+        // 1. Check known and cloud-synced skip button view IDs
+        val dynamicButtonIds = (skipButtonResourceIds + SelectorSyncManager.getSkipButtonIds()).distinct()
+        for (resId in dynamicButtonIds) {
+            val fullId = if (resId.contains(":id/")) resId else "com.google.android.youtube:id/$resId"
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(fullId)
             if (!nodes.isNullOrEmpty()) {
                 for (node in nodes) {
                     if (isReadyToSkip(node)) {
                         val clicked = performSafeClick(node)
                         if (clicked) {
-                            Log.d(TAG, "Clicked skip button by ID: $resId")
+                            Log.d(TAG, "Clicked skip button by ID: $fullId")
                             onAdSkipped()
                             recycleNodes(nodes)
                             return true
@@ -221,21 +229,24 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
         }
 
-        // 2. Check nodes with "Skip" text or description
-        val skipNodes = rootNode.findAccessibilityNodeInfosByText("Skip")
-        if (!skipNodes.isNullOrEmpty()) {
-            for (node in skipNodes) {
-                if (isReadyToSkip(node)) {
-                    val clicked = performSafeClick(node)
-                    if (clicked) {
-                        Log.d(TAG, "Clicked skip button by Text 'Skip'")
-                        onAdSkipped()
-                        recycleNodes(skipNodes)
-                        return true
+        // 2. Check localized and cloud-synced skip texts
+        val dynamicSkipTexts = SelectorSyncManager.getSkipTexts()
+        for (skipText in dynamicSkipTexts) {
+            val skipNodes = rootNode.findAccessibilityNodeInfosByText(skipText)
+            if (!skipNodes.isNullOrEmpty()) {
+                for (node in skipNodes) {
+                    if (isReadyToSkip(node)) {
+                        val clicked = performSafeClick(node)
+                        if (clicked) {
+                            Log.d(TAG, "Clicked skip button by Text '$skipText'")
+                            onAdSkipped()
+                            recycleNodes(skipNodes)
+                            return true
+                        }
                     }
                 }
+                recycleNodes(skipNodes)
             }
-            recycleNodes(skipNodes)
         }
 
         return false

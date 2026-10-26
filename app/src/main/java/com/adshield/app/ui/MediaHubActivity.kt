@@ -28,6 +28,7 @@ class MediaHubActivity : AppCompatActivity() {
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var injectionScript = ""
+    private var isDockExpanded = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +61,7 @@ class MediaHubActivity : AppCompatActivity() {
         // High-performance hardware acceleration
         binding.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
-        // Enable third-party cookies for seamless YouTube media streaming
+        // Enable third-party cookies for seamless media streaming
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
@@ -218,18 +219,77 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
+        // Collapsible Dock Mechanics
+        fun expandDock() {
+            isDockExpanded = true
+            binding.btnStudioToggle.visibility = View.GONE
+            binding.bottomNav.visibility = View.VISIBLE
+            binding.bottomNav.alpha = 0f
+            binding.bottomNav.translationY = 50f
+            binding.bottomNav.animate().alpha(1f).translationY(0f).setDuration(220).start()
+        }
+
+        fun collapseDock() {
+            isDockExpanded = false
+            binding.bottomNav.animate().alpha(0f).translationY(50f).setDuration(200).withEndAction {
+                binding.bottomNav.visibility = View.GONE
+                binding.btnStudioToggle.visibility = View.VISIBLE
+                binding.btnStudioToggle.alpha = 0f
+                binding.btnStudioToggle.animate().alpha(1f).setDuration(200).start()
+            }.start()
+        }
+
+        binding.btnMinimizeDock.setOnClickListener {
+            collapseDock()
+        }
+
+        binding.btnStudioToggle.setOnClickListener {
+            expandDock()
+        }
+
+        binding.btnPlatformMenu.setOnClickListener {
+            if (isDockExpanded) collapseDock() else expandDock()
+        }
+
         // Quick platform shortcuts in the Floating Island Dock
         binding.btnPlatformYoutube.setOnClickListener {
+            binding.imgTogglePlatform.setImageResource(R.drawable.ic_youtube)
             binding.webView.loadUrl("https://m.youtube.com")
+            collapseDock()
         }
         binding.btnPlatformInstagram.setOnClickListener {
+            binding.imgTogglePlatform.setImageResource(R.drawable.ic_instagram)
             binding.webView.loadUrl("https://www.instagram.com")
+            collapseDock()
         }
         binding.btnPlatformTwitter.setOnClickListener {
+            binding.imgTogglePlatform.setImageResource(R.drawable.ic_twitter)
             binding.webView.loadUrl("https://mobile.twitter.com")
+            collapseDock()
         }
         binding.btnPlatformReddit.setOnClickListener {
+            binding.imgTogglePlatform.setImageResource(R.drawable.ic_reddit)
             binding.webView.loadUrl("https://www.reddit.com")
+            collapseDock()
+        }
+
+        // Auto-hide bottom controls on scroll down so web navigation is 100% accessible
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            binding.webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                val dy = scrollY - oldScrollY
+                if (dy > 12) {
+                    // Scrolling down: hide both dock and toggle chip
+                    binding.bottomNav.animate().translationY(150f).alpha(0f).setDuration(180).start()
+                    binding.btnStudioToggle.animate().translationY(150f).alpha(0f).setDuration(180).start()
+                } else if (dy < -12) {
+                    // Scrolling up: reveal active control
+                    if (isDockExpanded) {
+                        binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                    } else {
+                        binding.btnStudioToggle.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                    }
+                }
+            }
         }
     }
 
@@ -251,9 +311,14 @@ class MediaHubActivity : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             binding.topBar.visibility = View.GONE
             binding.bottomNav.visibility = View.GONE
+            binding.btnStudioToggle.visibility = View.GONE
         } else {
             binding.topBar.visibility = View.VISIBLE
-            binding.bottomNav.visibility = View.VISIBLE
+            if (isDockExpanded) {
+                binding.bottomNav.visibility = View.VISIBLE
+            } else {
+                binding.btnStudioToggle.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -261,6 +326,8 @@ class MediaHubActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (customView != null) {
             binding.webView.webChromeClient?.onHideCustomView()
+        } else if (isDockExpanded) {
+            binding.btnMinimizeDock.performClick()
         } else if (binding.webView.canGoBack()) {
             binding.webView.goBack()
         } else {

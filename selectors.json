@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "last_updated": "2026-10-27",
+  "button_ids": [
+    "skip_ad_button",
+    "ad_skip_button",
+    "skip_ad_button_native",
+    "modern_skip_ad_button",
+    "action_button"
+  ],
+  "skip_texts": [
+    "Skip Ad",
+    "Skip",
+    "Saltar",
+    "Passer",
+    "Overskrid",
+    "Pular",
+    "Überspringen",
+    "Пропустить",
+    "Ignorar",
+    "विज्ञापन छोड़ें"
+  ],
+  "protected_panel_ids": [
+    "comments",
+    "playlist_panel",
+    "playlist_header",
+    "playlist_items",
+    "queue_panel"
+  ]
+}

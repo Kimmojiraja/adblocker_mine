@@ -32,6 +32,7 @@ class AdShieldApp : Application() {
         blocklistEngine = BlocklistEngine(this)
         applicationScope.launch {
             blocklistEngine.initialize()
+            com.adshield.app.model.SelectorSyncManager.syncSelectorsAsync()
         }
     }
 

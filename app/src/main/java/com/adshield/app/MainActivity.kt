@@ -131,12 +131,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupNativePrivateDns() {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("AdGuard DNS", "dns.adguard-dns.com")
+        val clip = ClipData.newPlainText("Control D Ad Blocker", "p2.freedns.controld.com")
         clipboard.setPrimaryClip(clip)
 
         AlertDialog.Builder(this)
-            .setTitle("Copied 'dns.adguard-dns.com'!")
-            .setMessage("Now opening your phone's Network Settings:\n\n1. Tap 'Private DNS'.\n2. Select 'Private DNS provider hostname'.\n3. Paste 'dns.adguard-dns.com' and tap Save!\n\nResult: 100% ad-free games and browsers, 0% extra battery, no VPN!")
+            .setTitle("Copied 'p2.freedns.controld.com'!")
+            .setMessage("Now opening your phone's Network Settings:\n\n1. Tap 'Private DNS' (or Specified DNS).\n2. Select 'Private DNS provider hostname'.\n3. Paste 'p2.freedns.controld.com' and tap Save!\n\n(100% unblocked in India on Jio, Airtel & 5G — blocks ads in games and Chrome with zero VPN!)")
             .setPositiveButton("Open Network Settings") { _, _ ->
                 val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
                 try {

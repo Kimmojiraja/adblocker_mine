@@ -47,14 +47,12 @@
             overflow-x: hidden;
         }
 
-        /* Atmospheric Scrim Overlay ensures 100% legibility over any wallpaper */
+        /* Atmospheric Scrim Overlay (Clean & Sharp, ZERO blur so wallpapers are crystal clear) */
         body::before {
             content: '';
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(180deg, rgba(8, 12, 20, 0.35) 0%, rgba(8, 12, 20, 0.65) 50%, rgba(6, 9, 15, 0.88) 100%);
-            backdrop-filter: blur(1px);
-            -webkit-backdrop-filter: blur(1px);
+            background: linear-gradient(180deg, rgba(8, 12, 20, 0.12) 0%, rgba(8, 12, 20, 0.38) 50%, rgba(6, 9, 15, 0.72) 100%);
             z-index: 0;
             pointer-events: none;
         }
@@ -90,9 +88,11 @@
         .brand-logo-clean {
             width: 44px;
             height: 44px;
-            object-fit: contain;
+            border-radius: 12px; /* Smooth Firefox squircle edges matching all cards */
+            overflow: hidden;
+            object-fit: cover;
             display: block;
-            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
         }
 
         .brand-title-box {
@@ -773,16 +773,16 @@
             <!-- Category 1: Sea & Ocean -->
             <div class="category-header">🌊 Sea &amp; Ocean</div>
             <div class="wallpaper-grid">
-                <div class="wallpaper-card active" onclick="setWallpaper('twilight_ocean')" style="background: radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%);">
+                <div class="wallpaper-card active" onclick="setWallpaper('twilight_ocean')" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Twilight Ocean</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('azure_waves')" style="background: radial-gradient(ellipse at 70% 30%, #064060 0%, #04253a 50%, #02111d 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('azure_waves')" style="background-image: url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Azure Waves</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('biowave')" style="background: radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('biowave')" style="background-image: url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Bioluminescent Tide</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('coral_coast')" style="background: radial-gradient(ellipse at 30% 70%, #0a4d5c 0%, #062f38 50%, #031418 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('coral_coast')" style="background-image: url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Coral Coast</span>
                 </div>
             </div>
@@ -790,16 +790,16 @@
             <!-- Category 2: Sailboats & Marine -->
             <div class="category-header">⛵ Sailboats &amp; Marine</div>
             <div class="wallpaper-grid">
-                <div class="wallpaper-card" onclick="setWallpaper('sunset_sailboat')" style="background: radial-gradient(ellipse at 40% 30%, #542238 0%, #29122c 45%, #0b0714 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('sunset_sailboat')" style="background-image: url('https://images.unsplash.com/photo-1500930287596-c1ecaa373bb2?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Sunset Sailboat</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('clipper_horizon')" style="background: radial-gradient(ellipse at 60% 40%, #173852 0%, #0d2030 50%, #060e17 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('clipper_horizon')" style="background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Clipper Horizon</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('moonlight_yacht')" style="background: radial-gradient(ellipse at 50% 10%, #2a3c50 0%, #121c28 50%, #080d14 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('moonlight_yacht')" style="background-image: url('https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Moonlight Yacht</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('regatta')" style="background: radial-gradient(ellipse at 20% 80%, #0e4c63 0%, #0a2f3d 50%, #05141a 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('regatta')" style="background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Regatta Bay</span>
                 </div>
             </div>
@@ -807,16 +807,16 @@
             <!-- Category 3: Nature & Landscapes -->
             <div class="category-header">🌲 Nature &amp; Landscapes</div>
             <div class="wallpaper-grid">
-                <div class="wallpaper-card" onclick="setWallpaper('misty_pines')" style="background: radial-gradient(ellipse at 50% 30%, #153a29 0%, #0e241b 50%, #07120e 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('misty_pines')" style="background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Misty Pines</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('aurora')" style="background: radial-gradient(ellipse at 70% 20%, #104e43 0%, #0a2b38 45%, #06111a 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('aurora')" style="background-image: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Aurora Borealis</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('alpine_lake')" style="background: radial-gradient(ellipse at 30% 40%, #1b384d 0%, #0e2030 50%, #071018 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('alpine_lake')" style="background-image: url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Alpine Lake</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('desert_dusk')" style="background: radial-gradient(ellipse at 50% 60%, #4a2820 0%, #2b1720 50%, #120914 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('desert_dusk')" style="background-image: url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Desert Dunes</span>
                 </div>
             </div>
@@ -830,7 +830,7 @@
                 <div class="wallpaper-card" onclick="setWallpaper('cyber_navy')" style="background: radial-gradient(ellipse at 50% 50%, #0F172A 0%, #090D16 100%);">
                     <span class="wp-title">Cyber Navy</span>
                 </div>
-                <div class="wallpaper-card" onclick="setWallpaper('deep_cosmos')" style="background: radial-gradient(ellipse at 80% 20%, #201335 0%, #0d0a1c 50%, #06050e 100%);">
+                <div class="wallpaper-card" onclick="setWallpaper('deep_cosmos')" style="background-image: url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=400&q=80'); background-size: cover; background-position: center;">
                     <span class="wp-title">Deep Cosmos</span>
                 </div>
                 <div class="wallpaper-card" onclick="setWallpaper('slate_carbon')" style="background: radial-gradient(ellipse at 50% 30%, #1e2630 0%, #12171d 50%, #090c0f 100%);">
@@ -1130,24 +1130,24 @@
 
         // 3. WALLPAPERS & THEMES LOGIC
         const wallpaperPresets = {
-            twilight_ocean: "radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%)",
-            azure_waves: "radial-gradient(ellipse at 70% 30%, #064060 0%, #04253a 50%, #02111d 100%)",
-            biowave: "radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%)",
-            coral_coast: "radial-gradient(ellipse at 30% 70%, #0a4d5c 0%, #062f38 50%, #031418 100%)",
+            twilight_ocean: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85')",
+            azure_waves: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1200&q=85')",
+            biowave: "url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=85')",
+            coral_coast: "url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85')",
 
-            sunset_sailboat: "radial-gradient(ellipse at 40% 30%, #542238 0%, #29122c 45%, #0b0714 100%)",
-            clipper_horizon: "radial-gradient(ellipse at 60% 40%, #173852 0%, #0d2030 50%, #060e17 100%)",
-            moonlight_yacht: "radial-gradient(ellipse at 50% 10%, #2a3c50 0%, #121c28 50%, #080d14 100%)",
-            regatta: "radial-gradient(ellipse at 20% 80%, #0e4c63 0%, #0a2f3d 50%, #05141a 100%)",
+            sunset_sailboat: "url('https://images.unsplash.com/photo-1500930287596-c1ecaa373bb2?auto=format&fit=crop&w=1200&q=85')",
+            clipper_horizon: "url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=85')",
+            moonlight_yacht: "url('https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1200&q=85')",
+            regatta: "url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=85')",
 
-            misty_pines: "radial-gradient(ellipse at 50% 30%, #153a29 0%, #0e241b 50%, #07120e 100%)",
-            aurora: "radial-gradient(ellipse at 70% 20%, #104e43 0%, #0a2b38 45%, #06111a 100%)",
-            alpine_lake: "radial-gradient(ellipse at 30% 40%, #1b384d 0%, #0e2030 50%, #071018 100%)",
-            desert_dusk: "radial-gradient(ellipse at 50% 60%, #4a2820 0%, #2b1720 50%, #120914 100%)",
+            misty_pines: "url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=85')",
+            aurora: "url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1200&q=85')",
+            alpine_lake: "url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1200&q=85')",
+            desert_dusk: "url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=85')",
 
             pure_obsidian: "#090D14",
             cyber_navy: "radial-gradient(ellipse at 50% 50%, #0F172A 0%, #090D16 100%)",
-            deep_cosmos: "radial-gradient(ellipse at 80% 20%, #201335 0%, #0d0a1c 50%, #06050e 100%)",
+            deep_cosmos: "url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&q=85')",
             slate_carbon: "radial-gradient(ellipse at 50% 30%, #1e2630 0%, #12171d 50%, #090c0f 100%)"
         };
 

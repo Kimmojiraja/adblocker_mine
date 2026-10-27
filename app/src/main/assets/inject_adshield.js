@@ -214,20 +214,64 @@
         .promotedlink,
         .promoted,
 
-        /* Cookie & GDPR Consent Walls Auto-Dismiss */
+        /* Universal Cookie & GDPR Consent Walls Auto-Dismiss (uBlock Annoyances Grade) */
         #onetrust-consent-sdk,
         #onetrust-banner-sdk,
         .onetrust-pc-dark,
+        #onetrust-policy,
         .cookie-banner,
         .cookie-notice,
         #cookie-notice,
+        .cookie-bar,
+        #cookie-bar,
+        .cookie-box,
+        #cookie-box,
+        [id*="cookie-banner"],
+        [class*="cookie-banner"],
+        [id*="cookie-notice"],
+        [class*="cookie-notice"],
+        [id*="cookie-consent"],
+        [class*="cookie-consent"],
+        [id*="cookie-popup"],
+        [class*="cookie-popup"],
         .qc-cmp2-container,
         #cmp-app-container,
+        #cmpbox,
+        #cmp-banner,
         .fc-consent-root,
+        .fc-dialog-container,
+        .fc-dialog-overlay,
         .cc-window,
+        .cc-banner,
+        .cc-floating,
         #CybotCookiebotDialog,
+        #CybotCookiebotDialogBody,
         div[aria-label="cookieconsent"],
-        .osano-cm-window {
+        div[aria-label*="cookie"],
+        div[aria-label*="Cookie"],
+        .osano-cm-window,
+        #didomi-host,
+        #didomi-notice,
+        #didomi-popup,
+        #usercentrics-root,
+        div[id*="usercentrics"],
+        div.sp_message_container,
+        #sp_message_panel_container,
+        ytm-consent-bump-renderer,
+        .consent-bump-v2,
+        #consent-bump,
+        .eom-v1-container,
+        div[data-dialog-type="CONSENT_DIALOG"],
+        div[id*="gdpr"],
+        div[class*="gdpr"],
+        .gdpr-banner,
+        #gdpr-consent,
+        .axeptio_mount,
+        #axeptio_overlay,
+        .trustarc-banner-container,
+        #truste-consent-track,
+        .cookieyes,
+        #cookieyes {
             display: none !important;
             height: 0px !important;
             min-height: 0px !important;
@@ -243,20 +287,33 @@
     `;
 
 
-        /* Fullscreen PiP Video Mode (Ensures video fills floating PiP window) */
+        /* Fullscreen PiP Video Mode (Ensures video fills floating PiP window without blank spaces) */
         html.fokk-pip-active, html.fokk-pip-active body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
             background: #000 !important;
             overflow: hidden !important;
         }
+        html.fokk-pip-active .html5-video-player,
+        html.fokk-pip-active #player,
+        html.fokk-pip-active .player-container,
+        html.fokk-pip-active #movie_player,
         html.fokk-pip-active video {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
             z-index: 2147483647 !important;
-            object-fit: contain !important;
+            transform: none !important;
             background: #000 !important;
+        }
+        html.fokk-pip-active video {
+            object-fit: contain !important;
         }
         html.fokk-pip-active .ytp-chrome-bottom,
         html.fokk-pip-active .ytp-chrome-top,
@@ -264,8 +321,14 @@
         html.fokk-pip-active .ytp-gradient-bottom,
         html.fokk-pip-active #masthead-container,
         html.fokk-pip-active ytm-mobile-topbar-renderer,
+        html.fokk-pip-active ytm-pivot-bar-renderer,
+        html.fokk-pip-active .related-items,
+        html.fokk-pip-active #comments,
+        html.fokk-pip-active ytm-comment-section-renderer,
+        html.fokk-pip-active ytm-item-section-renderer,
         html.fokk-pip-active .header-bar,
-        html.fokk-pip-active #player-control-overlay {
+        html.fokk-pip-active #player-control-overlay,
+        html.fokk-pip-active ytm-engagement-panel {
             display: none !important;
         }
 
@@ -461,20 +524,112 @@
         };
     } catch (e) {}
 
-    // 6. Media Playback State Reporter & PiP Presentation Controllers
+    // 6. Media Playback State Reporter & Universal PiP Controllers
     window.__fokk_enter_pip_view = function() {
-        document.documentElement.classList.add('fokk-pip-active');
         const video = document.querySelector('video');
-        if (video) {
-            if (video.paused && video.currentTime > 0) {
-                video.play().catch(() => {});
-            }
+        if (!video) return;
+
+        // Ensure video is playing
+        if (video.paused && video.currentTime > 0) {
+            video.play().catch(() => {});
         }
+
+        // Move video directly to body so no parent container transforms can clip or offset it
+        if (!video.__origParent) {
+            video.__origParent = video.parentElement;
+            video.__origNextSibling = video.nextSibling;
+        }
+        document.body.appendChild(video);
+        document.documentElement.classList.add('fokk-pip-active');
     };
 
     window.__fokk_exit_pip_view = function() {
+        const video = document.querySelector('video');
+        if (video && video.__origParent) {
+            if (video.__origNextSibling) {
+                video.__origParent.insertBefore(video, video.__origNextSibling);
+            } else {
+                video.__origParent.appendChild(video);
+            }
+            delete video.__origParent;
+            delete video.__origNextSibling;
+        }
         document.documentElement.classList.remove('fokk-pip-active');
     };
+
+    // Continuous PiP Playback Watchdog
+    setInterval(() => {
+        if (document.documentElement.classList.contains('fokk-pip-active')) {
+            const v = document.querySelector('video');
+            if (v && v.paused && v.currentTime > 0 && !v.ended) {
+                v.play().catch(() => {});
+            }
+        }
+    }, 400);
+
+    // Universal Cookie Banner Auto-Dismiss & Scroll Unlocker
+    function dismissCookieWalls() {
+        // A. Auto-click Accept/Reject/Dismiss buttons on banners
+        const cookieButtons = document.querySelectorAll(`
+            #onetrust-accept-btn-handler,
+            #onetrust-reject-all-handler,
+            .cc-btn.cc-dismiss,
+            .cc-btn.cc-allow,
+            button.fc-cta-consent,
+            .fc-cta-do-not-consent,
+            #didomi-notice-agree-button,
+            #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll,
+            #CybotCookiebotDialogBodyButtonDecline,
+            ytm-consent-bump-renderer button,
+            .eom-button-row button,
+            button[aria-label*="Accept all"],
+            button[aria-label*="Reject all"],
+            button[aria-label*="I agree"],
+            button[id*="accept-cookie"],
+            button[id*="reject-cookie"],
+            button[class*="accept-cookie"],
+            button[class*="reject-cookie"]
+        `);
+        cookieButtons.forEach(btn => {
+            try { btn.click(); } catch(e) {}
+        });
+
+        // B. Hide all known cookie elements
+        const cookieEls = document.querySelectorAll(`
+            #onetrust-consent-sdk, #onetrust-banner-sdk, .onetrust-pc-dark,
+            .cookie-banner, .cookie-notice, #cookie-notice, .cookie-bar, #cookie-bar,
+            .qc-cmp2-container, #cmp-app-container, #cmpbox,
+            .fc-consent-root, .fc-dialog-container, .fc-dialog-overlay,
+            .cc-window, .cc-banner,
+            #CybotCookiebotDialog,
+            div[aria-label*="cookie"], div[aria-label*="Cookie"],
+            .osano-cm-window, #didomi-host, #usercentrics-root,
+            div.sp_message_container, #sp_message_panel_container,
+            ytm-consent-bump-renderer, .consent-bump-v2, #consent-bump,
+            .eom-v1-container, div[data-dialog-type="CONSENT_DIALOG"],
+            [class*="cookie-popup"], [id*="cookie-popup"],
+            [class*="cookie-consent"], [id*="cookie-consent"],
+            [class*="gdpr-banner"], [id*="gdpr-banner"]
+        `);
+        cookieEls.forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+            el.style.setProperty('height', '0px', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+        });
+
+        // C. Clear backdrop overlays & unlock page scroll
+        const overlays = document.querySelectorAll('.modal-backdrop, .fade, .sp_message_panel_container, .fc-dialog-overlay');
+        overlays.forEach(o => o.style.setProperty('display', 'none', 'important'));
+
+        if (document.body) {
+            document.body.style.setProperty('overflow', 'auto', 'important');
+            document.body.style.setProperty('position', 'static', 'important');
+        }
+        if (document.documentElement) {
+            document.documentElement.style.setProperty('overflow', 'auto', 'important');
+        }
+    }
 
     function notifyNativePlayback(isPlaying) {
         try {
@@ -509,6 +664,7 @@
         const observer = new MutationObserver(() => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
+            dismissCookieWalls();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
         observer.observe(document.documentElement, {
@@ -523,6 +679,7 @@
     setInterval(() => {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
+        dismissCookieWalls();
     }, 400);
 
     // Initial pass on DOMContentLoaded
@@ -530,10 +687,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
+            dismissCookieWalls();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
+        dismissCookieWalls();
     }
 })();

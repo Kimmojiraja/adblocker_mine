@@ -329,9 +329,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        if (!isPrivate) {
-            cookieManager.setAcceptThirdPartyCookies(webView, true)
-        }
+        // Block third-party tracking cookies globally for privacy
+        cookieManager.setAcceptThirdPartyCookies(webView, false)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -1355,20 +1354,21 @@ class MediaHubActivity : AppCompatActivity() {
     private fun enterPipMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                // Tell page to maximize video element to fill PiP viewport
+                // Maximize HTML5 video element so it fills 100% of the PiP viewport cleanly
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
 
-                val rect = android.graphics.Rect()
-                if (customView != null) {
-                    customView?.getGlobalVisibleRect(rect)
-                } else {
-                    activeWebView?.getGlobalVisibleRect(rect)
-                }
                 val builder = PictureInPictureParams.Builder()
                     .setAspectRatio(Rational(16, 9))
-                if (!rect.isEmpty) {
-                    builder.setSourceRectHint(rect)
+
+                // Only set sourceRectHint if customView is active and wide (landscape); otherwise let system scale smoothly without blank space
+                if (customView != null) {
+                    val rect = android.graphics.Rect()
+                    customView?.getGlobalVisibleRect(rect)
+                    if (!rect.isEmpty && rect.width() > rect.height()) {
+                        builder.setSourceRectHint(rect)
+                    }
                 }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     builder.setAutoEnterEnabled(true)
                     builder.setSeamlessResizeEnabled(true)

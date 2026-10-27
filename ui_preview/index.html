@@ -57,7 +57,7 @@
             backdrop-filter: blur(12px);
             border: 1px solid var(--card-border);
             padding: 12px 20px;
-            border-radius: 14px;
+            border-radius: 18px;
             margin-bottom: 24px;
         }
 
@@ -196,7 +196,7 @@
         .brand-logo {
             width: 40px;
             height: 40px;
-            border-radius: 12px;
+            border-radius: 18px;
             background: #0164FF;
             display: flex;
             align-items: center;
@@ -361,7 +361,7 @@
         .stat-chip {
             background: #0D131F;
             border: 1px solid #1A263B;
-            border-radius: 14px;
+            border-radius: 18px;
             padding: 12px 6px;
             display: flex;
             flex-direction: column;
@@ -409,7 +409,7 @@
             background: var(--fokk-blue);
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 18px;
             font-size: 14px;
             font-weight: 700;
             display: flex;
@@ -431,7 +431,7 @@
             background: var(--surface-elevated);
             color: #fff;
             border: 1px solid #283A5A;
-            border-radius: 12px;
+            border-radius: 18px;
             font-size: 13px;
             font-weight: 600;
             display: flex;
@@ -698,11 +698,12 @@
     <div class="desktop-bar">
         <div class="title">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="#0164FF"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-            <span>Fokk Shield Simulator (Localhost 8080)</span>
+            <span>Fokk Shield Simulator (Localhost 8085)</span>
         </div>
         <div class="nav-chips">
             <button class="nav-chip active" onclick="switchScreen('dashboard')">Dashboard</button>
             <button class="nav-chip" onclick="switchScreen('studio')">Media Studio</button>
+            <button class="nav-chip" onclick="switchScreen('startpage')">Start Page</button>
             <button class="nav-chip" onclick="switchScreen('settings')">Settings</button>
             <button class="nav-chip" onclick="switchScreen('brand')">Brand Guide</button>
         </div>
@@ -962,7 +963,7 @@
                     <button class="icon-btn" onclick="showToast('Navigated Forward')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
                     </button>
-                    <button class="icon-btn" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
+                    <button class="icon-btn" onclick="switchScreen('startpage')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                     </button>
                     <button class="icon-btn" onclick="openModal('tabSwitcher')">
@@ -1017,6 +1018,11 @@
                         Copy p2.freedns.controld.com
                     </button>
                 </div>
+            </div>
+
+            <!-- SCREEN 5: START PAGE (FOKK START) -->
+            <div id="screen-startpage" class="screen" style="padding:0; height:100%; display:none; flex-direction:column; overflow:hidden;">
+                <iframe src="fokk_start.html" style="width:100%; height:100%; border:none; background:#090D14;"></iframe>
             </div>
 
             <!-- SCREEN 4: BRAND GUIDE -->
@@ -1105,18 +1111,23 @@
             document.querySelectorAll('.media-studio-screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-chip').forEach(c => c.classList.remove('active'));
 
+            document.getElementById('screen-startpage').style.display = 'none';
             if (screenId === 'dashboard') {
                 document.getElementById('screen-dashboard').classList.add('active');
                 document.querySelectorAll('.nav-chip')[0].classList.add('active');
             } else if (screenId === 'studio') {
                 document.getElementById('screen-studio').classList.add('active');
                 document.querySelectorAll('.nav-chip')[1].classList.add('active');
+            } else if (screenId === 'startpage') {
+                document.getElementById('screen-startpage').classList.add('active');
+                document.getElementById('screen-startpage').style.display = 'flex';
+                document.querySelectorAll('.nav-chip')[2].classList.add('active');
             } else if (screenId === 'settings') {
                 document.getElementById('screen-settings').classList.add('active');
-                document.querySelectorAll('.nav-chip')[2].classList.add('active');
+                document.querySelectorAll('.nav-chip')[3].classList.add('active');
             } else if (screenId === 'brand') {
                 document.getElementById('screen-brand').classList.add('active');
-                document.querySelectorAll('.nav-chip')[3].classList.add('active');
+                document.querySelectorAll('.nav-chip')[4].classList.add('active');
             }
         }
 

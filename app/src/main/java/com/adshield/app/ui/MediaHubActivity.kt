@@ -159,6 +159,25 @@ class MediaHubActivity : AppCompatActivity() {
             val savedMb = (total * 0.035).toLong() + 12L
             return """{"blocked":$total,"trackers":$trackers,"savedMb":$savedMb}"""
         }
+
+        @JavascriptInterface
+        fun setSearchEngine(engineName: String) {
+            activity.runOnUiThread {
+                val found = SearchEngine.values().find {
+                    it.name.equals(engineName, ignoreCase = true) || it.displayName.equals(engineName, ignoreCase = true)
+                }
+                if (found != null) {
+                    activity.currentSearchEngine = found
+                    activity.prefs.edit().putString(PREF_SEARCH_ENGINE, found.name).apply()
+                    activity.binding.urlInput.hint = "Search with ${found.displayName} or enter URL..."
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun getSearchEngine(): String {
+            return activity.currentSearchEngine.name
+        }
     }
 
     private fun recordHistory(title: String, url: String) {

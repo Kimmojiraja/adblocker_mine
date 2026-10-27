@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fokk Privacy Start</title>
+    <style>
+        :root {
+            --bg-color: #090D14;
+            --surface-color: rgba(17, 24, 38, 0.72);
+            --surface-elevated: rgba(23, 32, 50, 0.85);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --fokk-cyan: #00E5FF;
+            --fokk-blue: #0164FF;
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --card-radius: 20px;
+            --pill-radius: 28px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Full bleed wallpaper support with ambient scrim */
+        body {
+            position: relative;
+            background-color: var(--bg-color);
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px 18px 80px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.4s ease;
+            overflow-x: hidden;
+        }
+
+        /* Atmospheric Scrim Overlay ensures 100% legibility over any wallpaper */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(8, 12, 20, 0.45) 0%, rgba(8, 12, 20, 0.72) 45%, rgba(6, 9, 15, 0.94) 100%);
+            backdrop-filter: blur(1.5px);
+            -webkit-backdrop-filter: blur(1.5px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .content-layer {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Brand Header with Perfectly Fitted Sailboat Logo */
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 6px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: var(--pill-radius);
+            background: rgba(17, 24, 38, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .brand-header:hover {
+            background: rgba(17, 24, 38, 0.65);
+            border-color: rgba(0, 229, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .brand-logo-container {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 18px; /* Firefox curved squircle */
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(1, 100, 255, 0.12));
+            border: 1.5px solid rgba(0, 229, 255, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(0, 229, 255, 0.22);
+            flex-shrink: 0;
+            transition: all 0.25s ease;
+        }
+
+        .brand-logo-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .brand-title-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-title {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            background: linear-gradient(135deg, #FFFFFF 30%, var(--fokk-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-tag {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 8px;
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--fokk-cyan);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            letter-spacing: 0.8px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        /* Clean Search Card with Collapsible Engine Selector */
+        .search-container {
+            width: 100%;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .search-box-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--surface-color);
+            border: 1.5px solid var(--card-border);
+            border-radius: var(--pill-radius);
+            padding: 6px 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 48px;
+        }
+
+        .search-box-card:focus-within {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            background: rgba(20, 29, 45, 0.85);
+        }
+
+        /* Collapsible Trigger Pill with Real Brand Logo */
+        .engine-pill-trigger {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .engine-pill-trigger:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: var(--fokk-cyan);
+        }
+
+        .engine-pill-trigger .brand-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .engine-pill-trigger .chevron {
+            font-size: 9px;
+            color: var(--text-secondary);
+            transition: transform 0.25s ease;
+        }
+
+        .engine-pill-trigger.active .chevron {
+            transform: rotate(180deg);
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 13.5px;
+            min-width: 0;
+            font-weight: 500;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+            font-size: 12.5px;
+        }
+
+        .search-submit-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fokk-cyan);
+            transition: transform 0.2s ease;
+        }
+
+        .search-submit-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .search-submit-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Collapsible Search Engine Selector Dropdown */
+        .engine-dropdown-collapse {
+            width: 100%;
+            background: rgba(14, 20, 32, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--card-radius);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            top: 54px;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            padding: 0 8px;
+        }
+
+        .engine-dropdown-collapse.open {
+            max-height: 280px;
+            opacity: 1;
+            transform: translateY(0);
+            padding: 8px;
+        }
+
+        .engine-option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            margin-bottom: 2px;
+        }
+
+        .engine-option-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .engine-option-row.active {
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+        }
+
+        .engine-option-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .engine-option-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .engine-option-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .engine-option-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .engine-option-desc {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+        }
+
+        .engine-option-check {
+            color: var(--fokk-cyan);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Compact Live Defense Matrix (Small Mini-Pill Card, NO "Active Shield" Text) */
+        .defense-mini-card {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: var(--surface-color);
+            border: 1px solid var(--card-border);
+            border-radius: var(--pill-radius);
+            padding: 8px 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            height: 40px;
+        }
+
+        .mini-stat-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mini-stat-icon {
+            width: 14px;
+            height: 14px;
+            color: var(--fokk-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-stat-val {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: var(--fokk-cyan);
+            letter-spacing: 0.2px;
+        }
+
+        .mini-stat-lbl {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .mini-stat-bullet {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+        }
+
+        /* Section Header Row */
+        .section-header-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+
+        .section-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--fokk-cyan);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .header-btn:hover {
+            border-color: var(--fokk-cyan);
+            background: rgba(0, 229, 255, 0.12);
+        }
+
+        /* Firefox-Style Curved Speed Dial Grid */
+        .speed-dial-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .dial-item-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .dial-icon-box {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--card-radius); /* Firefox squircle edges */
+            background: var(--surface-color);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .dial-item-wrapper:hover .dial-icon-box, .dial-item-wrapper:active .dial-icon-box {
+            border-color: var(--fokk-cyan);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 24px rgba(0, 229, 255, 0.25);
+            background: rgba(26, 36, 56, 0.8);
+        }
+
+        .dial-icon-box svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .dial-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            max-width: 68px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dial-delete-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #FF0055;
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(255, 0, 85, 0.6);
+            z-index: 10;
+        }
+
+        body.edit-mode .dial-delete-badge {
+            display: flex;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(0.95); }
+            to { transform: scale(1.1); }
+        }
+
+        .add-dial-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+        }
+
+        .add-dial-box {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--card-radius);
+            background: rgba(0, 229, 255, 0.06);
+            border: 1.5px dashed rgba(0, 229, 255, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fokk-cyan);
+            font-size: 22px;
+            font-weight: 300;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .add-dial-box:hover {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: var(--fokk-cyan);
+            transform: scale(1.05);
+        }
+
+        /* Modal Overlays with Firefox Curved Squircles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 18px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(15, 21, 33, 0.95);
+            border: 1.5px solid rgba(255, 255, 255, 0.14);
+            border-radius: 24px; /* Firefox squircle modal */
+            padding: 22px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 88vh;
+            overflow-y: auto;
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--text-secondary);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
+        /* Wallpaper Thumbnails Grid */
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .wallpaper-card {
+            height: 72px;
+            border-radius: 14px;
+            border: 1.5px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            padding: 6px;
+            transition: all 0.2s ease;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .wallpaper-card:hover, .wallpaper-card.active {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
+            transform: scale(1.02);
+        }
+
+        .wallpaper-card .wp-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #FFFFFF;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+        }
+
+        .logo-options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .logo-option-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .logo-option-card:hover, .logo-option-card.active {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .logo-option-card svg, .logo-option-card img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .logo-option-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: rgba(9, 13, 20, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-size: 13.5px;
+            outline: none;
+            transition: border 0.2s ease;
+        }
+
+        .modal-input:focus {
+            border-color: var(--fokk-cyan);
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, var(--fokk-cyan), var(--fokk-blue));
+            border: none;
+            border-radius: 14px;
+            padding: 12px;
+            color: #090D14;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.3);
+        }
+
+        .modal-btn:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: var(--text-primary);
+            border-radius: 14px;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--fokk-cyan);
+            color: var(--fokk-cyan);
+        }
+    </style>
+</head>
+<body id="pageBody">
+
+    <div class="content-layer">
+
+        <!-- Brand Header with Perfectly Fitted Sailboat Logo -->
+        <div class="brand-header" onclick="openThemeModal()">
+            <div class="brand-logo-container">
+                <img id="mainLogoImg" class="brand-logo-img" src="fokk_logo.png" alt="Fokk Sailboat Logo">
+            </div>
+            <div class="brand-title-box">
+                <div class="brand-title-row">
+                    <span class="brand-title">Fokk Browser</span>
+                    <span class="brand-tag">v2.1</span>
+                </div>
+                <span class="brand-subtitle">Private • Ultra-Fast • No-VPN</span>
+            </div>
+        </div>
+
+        <!-- Clean Search Box Card with Collapsible Engine Selector & Real Brand Logos -->
+        <div class="search-container">
+            <form id="searchForm" onsubmit="handleSearch(event)">
+                <div class="search-box-card">
+                    <!-- Engine Pill Trigger -->
+                    <div class="engine-pill-trigger" id="enginePillTrigger" onclick="toggleEngineDropdown(event)">
+                        <div class="brand-icon" id="activeEngineIcon">
+                            <!-- Injected dynamically: Real Brand Logo -->
+                        </div>
+                        <span id="activeEngineName" style="font-weight: 700;">Brave</span>
+                        <span class="chevron">▼</span>
+                    </div>
+
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search with Brave or enter URL..." autocomplete="off">
+
+                    <button type="submit" class="search-submit-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Collapsible Search Engine Selector Dropdown with REAL BRAND LOGOS -->
+            <div class="engine-dropdown-collapse" id="engineDropdown">
+                <!-- Option 1: Brave Search (Real Brand Logo) -->
+                <div class="engine-option-row active" onclick="selectEngine('brave')">
+                    <div class="engine-option-left">
+                        <div class="engine-option-icon">
+                            <svg width="22" height="22" viewBox="0 0 32 32">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2.5C13.8 2.5 12.3 4.2 11.2 5.6L10.3 6.7C9.9 7.2 9.4 7.6 8.8 7.8L6.4 8.6C4.6 9.2 3.5 10.9 3.5 12.8C3.5 14.2 4.1 15.6 5.1 16.6L7.3 18.7C7.7 19.1 8 19.6 8.1 20.2L8.6 22.8C8.9 24.7 10.3 26.2 12.1 26.7L14.7 27.4C15.5 27.6 16.5 27.6 17.3 27.4L19.9 26.7C21.7 26.2 23.1 24.7 23.4 22.8L23.9 20.2C24 19.6 24.3 19.1 24.7 18.7L26.9 16.6C27.9 15.6 28.5 14.2 28.5 12.8C28.5 10.9 27.4 9.2 25.6 8.6L23.2 7.8C22.6 7.6 22.1 7.2 21.7 6.7L20.8 5.6C19.7 4.2 18.2 2.5 16 2.5Z" fill="url(#brave-grad-dropdown)"/>
+                                <path d="M16 8L13 12H19L16 8Z" fill="#FFF"/>
+                                <path d="M12 14L10 18H22L20 14H12Z" fill="#FFF" fill-opacity="0.9"/>
+                                <defs>
+                                    <linearGradient id="brave-grad-dropdown" x1="3.5" y1="2.5" x2="28.5" y2="27.5" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#FF5A00"/>
+                                        <stop offset="1" stop-color="#FF1E00"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="engine-option-meta">
+                            <span class="engine-option-name">Brave Search</span>
+                            <span class="engine-option-desc">Independent privacy index • Zero tracking</span>
+                        </div>
+                    </div>
+                    <div class="engine-option-check" id="check-brave">✓</div>
+                </div>
+
+                <!-- Option 2: Google Clean Web (Real Brand Logo) -->
+                <div class="engine-option-row" onclick="selectEngine('google')">
+                    <div class="engine-option-left">
+                        <div class="engine-option-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/>
+                                <path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/>
+                            </svg>
+                        </div>
+                        <div class="engine-option-meta">
+                            <span class="engine-option-name">Google</span>
+                            <span class="engine-option-desc">Comprehensive web results</span>
+                        </div>
+                    </div>
+                    <div class="engine-option-check" id="check-google" style="display:none;">✓</div>
+                </div>
+
+                <!-- Option 3: DuckDuckGo (Real Brand Logo) -->
+                <div class="engine-option-row" onclick="selectEngine('ddg')">
+                    <div class="engine-option-left">
+                        <div class="engine-option-icon">
+                            <svg width="22" height="22" viewBox="0 0 48 48">
+                                <circle cx="24" cy="24" r="23" fill="#DE5833"/>
+                                <circle cx="24" cy="24" r="21" fill="#FFFFFF"/>
+                                <path d="M24 8c-7.7 0-14 5.5-14 13 0 4.5 2.5 8.5 6.4 10.9l-1.4 5.1 5.3-2.4c1.2.3 2.4.4 3.7.4 7.7 0 14-5.5 14-13S31.7 8 24 8z" fill="#DE5833"/>
+                                <path d="M24 10c-6.6 0-12 4.7-12 11 0 3.8 2.1 7.2 5.5 9.2l-1.2 4.3 4.5-2c1 .3 2.1.5 3.2.5 6.6 0 12-4.7 12-11s-5.4-12-12-12z" fill="#FFFFFF"/>
+                                <circle cx="20" cy="18" r="2.5" fill="#333333"/><circle cx="28" cy="18" r="2.5" fill="#333333"/>
+                                <path d="M22 21h4c0 1.5-1 2.5-2 2.5s-2-1-2-2.5z" fill="#F8A51D"/>
+                                <path d="M20 28l4 3 4-3-4-1.5z" fill="#67B246"/>
+                            </svg>
+                        </div>
+                        <div class="engine-option-meta">
+                            <span class="engine-option-name">DuckDuckGo</span>
+                            <span class="engine-option-desc">Tracker-free anonymous search</span>
+                        </div>
+                    </div>
+                    <div class="engine-option-check" id="check-ddg" style="display:none;">✓</div>
+                </div>
+
+                <!-- Option 4: Startpage (Real Brand Logo) -->
+                <div class="engine-option-row" onclick="selectEngine('startpage')">
+                    <div class="engine-option-left">
+                        <div class="engine-option-icon">
+                            <svg width="22" height="22" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="15" fill="#0164FF"/>
+                                <path d="M12 9h8c1.1 0 2 .9 2 2v2h-8v4h6c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-8c-1.1 0-2-.9-2-2v-2h8v-4h-6c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z" fill="#FFFFFF"/>
+                                <circle cx="23" cy="9" r="2.5" fill="#00E5FF"/>
+                            </svg>
+                        </div>
+                        <div class="engine-option-meta">
+                            <span class="engine-option-name">Startpage</span>
+                            <span class="engine-option-desc">Google results with total privacy</span>
+                        </div>
+                    </div>
+                    <div class="engine-option-check" id="check-startpage" style="display:none;">✓</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compact Live Defense Matrix (Small Mini-Pill Card, NO "Active Shield" Text) -->
+        <div class="defense-mini-card">
+            <div class="mini-stat-group">
+                <div class="mini-stat-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                </div>
+                <span class="mini-stat-val" id="statBlocked">1,420</span>
+                <span class="mini-stat-lbl">Ads</span>
+            </div>
+            <div class="mini-stat-bullet">•</div>
+            <div class="mini-stat-group">
+                <span class="mini-stat-val" id="statTrackers">890</span>
+                <span class="mini-stat-lbl">Trackers</span>
+            </div>
+            <div class="mini-stat-bullet">•</div>
+            <div class="mini-stat-group">
+                <span class="mini-stat-val" id="statBandwidth">42 MB</span>
+                <span class="mini-stat-lbl">Saved</span>
+            </div>
+        </div>
+
+        <!-- Speed Dial Shortcuts Section -->
+        <div class="section-header-row">
+            <span class="section-title">Speed Dial Shortcuts</span>
+            <div class="header-actions">
+                <button class="header-btn" id="btnToggleEdit" onclick="toggleEditMode()">Edit</button>
+                <button class="header-btn" onclick="openThemeModal()">Wallpapers &amp; Themes</button>
+            </div>
+        </div>
+
+        <!-- Dynamic Firefox-Style Curved Speed Dial Grid -->
+        <div class="speed-dial-grid" id="speedDialGrid">
+            <!-- Rendered dynamically by script -->
+        </div>
+
+    </div>
+
+    <!-- Wallpaper & Themes Customizer Modal -->
+    <div class="modal-overlay" id="themeModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card">
+            <div class="modal-title">
+                <span>🎨 Wallpapers &amp; Themes</span>
+                <button class="modal-close" onclick="closeThemeModal()">✕</button>
+            </div>
+
+            <!-- Homepage Wallpaper (Background Image) Selector -->
+            <div>
+                <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HOMEPAGE WALLPAPERS (BACKGROUND IMAGES)</div>
+                <div class="wallpaper-grid">
+                    <!-- Preset 1: Deep Twilight Ocean -->
+                    <div class="wallpaper-card active" onclick="setWallpaper('ocean')" style="background: radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%);">
+                        <span class="wp-title">Twilight Ocean</span>
+                    </div>
+
+                    <!-- Preset 2: Bioluminescent Wave -->
+                    <div class="wallpaper-card" onclick="setWallpaper('biowave')" style="background: radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%);">
+                        <span class="wp-title">Bio Cyan</span>
+                    </div>
+
+                    <!-- Preset 3: Sunset Harbor -->
+                    <div class="wallpaper-card" onclick="setWallpaper('sunset')" style="background: radial-gradient(ellipse at 30% 20%, #4A1A2C 0%, #1F0D24 40%, #0A0714 100%);">
+                        <span class="wp-title">Sunset Harbor</span>
+                    </div>
+
+                    <!-- Preset 4: Emerald Fjord -->
+                    <div class="wallpaper-card" onclick="setWallpaper('emerald')" style="background: radial-gradient(ellipse at 70% 30%, #0A3626 0%, #061F17 50%, #030F0B 100%);">
+                        <span class="wp-title">Emerald Fjord</span>
+                    </div>
+
+                    <!-- Preset 5: Minimal Obsidian -->
+                    <div class="wallpaper-card" onclick="setWallpaper('dark')" style="background: #090D14;">
+                        <span class="wp-title">Minimal Dark</span>
+                    </div>
+
+                    <!-- Option 6: Custom User Upload from Device -->
+                    <div class="wallpaper-card" onclick="triggerWallpaperUpload()" style="background: rgba(0,229,255,0.08); border-style: dashed; align-items: center; justify-content: center;">
+                        <span class="wp-title" style="background: var(--fokk-blue);">+ Upload Image</span>
+                        <input type="file" id="wallpaperUploadInput" accept="image/*" style="display:none;" onchange="handleWallpaperUpload(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sailboat Logo Customizer -->
+            <div>
+                <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">SAILBOAT &amp; APP LOGO</div>
+                <div class="logo-options-grid">
+                    <div class="logo-option-card active" onclick="selectLogo('classic')">
+                        <img src="fokk_logo.png" alt="Classic Sailboat">
+                        <span class="logo-option-name">Sailboat</span>
+                    </div>
+
+                    <div class="logo-option-card" onclick="selectLogo('clipper')">
+                        <svg viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>
+                        <span class="logo-option-name">Clipper</span>
+                    </div>
+
+                    <div class="logo-option-card" onclick="selectLogo('galleon')">
+                        <svg viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>
+                        <span class="logo-option-name">Galleon</span>
+                    </div>
+
+                    <div class="logo-option-card" onclick="selectLogo('catamaran')">
+                        <svg viewBox="0 0 24 24" fill="#FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>
+                        <span class="logo-option-name">Catamaran</span>
+                    </div>
+
+                    <div class="logo-option-card" onclick="selectLogo('drakkar')">
+                        <svg viewBox="0 0 24 24" fill="#A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>
+                        <span class="logo-option-name">Drakkar</span>
+                    </div>
+
+                    <div class="logo-option-card" onclick="triggerLogoUpload()">
+                        <svg viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                        <span class="logo-option-name">Upload</span>
+                        <input type="file" id="logoUploadInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+                    </div>
+                </div>
+            </div>
+
+            <button class="modal-btn" onclick="closeThemeModal()">Done</button>
+        </div>
+    </div>
+
+    <!-- Add Custom Shortcut Modal -->
+    <div class="modal-overlay" id="addShortcutModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card">
+            <div class="modal-title">
+                <span>Add Custom Shortcut</span>
+                <button class="modal-close" onclick="closeAddShortcutModal()">✕</button>
+            </div>
+            <input type="text" id="inputShortcutTitle" class="modal-input" placeholder="Title (e.g. YouTube)">
+            <input type="text" id="inputShortcutUrl" class="modal-input" placeholder="URL (e.g. https://m.youtube.com)">
+            <button class="modal-btn" onclick="saveNewShortcut()">Add Shortcut</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. REAL BRAND LOGOS & SEARCH ENGINE LOGIC
+        const realBrandSvgs = {
+            brave: `<svg width="18" height="18" viewBox="0 0 32 32">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2.5C13.8 2.5 12.3 4.2 11.2 5.6L10.3 6.7C9.9 7.2 9.4 7.6 8.8 7.8L6.4 8.6C4.6 9.2 3.5 10.9 3.5 12.8C3.5 14.2 4.1 15.6 5.1 16.6L7.3 18.7C7.7 19.1 8 19.6 8.1 20.2L8.6 22.8C8.9 24.7 10.3 26.2 12.1 26.7L14.7 27.4C15.5 27.6 16.5 27.6 17.3 27.4L19.9 26.7C21.7 26.2 23.1 24.7 23.4 22.8L23.9 20.2C24 19.6 24.3 19.1 24.7 18.7L26.9 16.6C27.9 15.6 28.5 14.2 28.5 12.8C28.5 10.9 27.4 9.2 25.6 8.6L23.2 7.8C22.6 7.6 22.1 7.2 21.7 6.7L20.8 5.6C19.7 4.2 18.2 2.5 16 2.5Z" fill="url(#brave-pill-grad)"/>
+                <path d="M16 8L13 12H19L16 8Z" fill="#FFF"/>
+                <path d="M12 14L10 18H22L20 14H12Z" fill="#FFF" fill-opacity="0.9"/>
+                <defs>
+                    <linearGradient id="brave-pill-grad" x1="3.5" y1="2.5" x2="28.5" y2="27.5" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FF5A00"/><stop offset="1" stop-color="#FF1E00"/>
+                    </linearGradient>
+                </defs>
+            </svg>`,
+            google: `<svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/>
+            </svg>`,
+            ddg: `<svg width="18" height="18" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="23" fill="#DE5833"/>
+                <circle cx="24" cy="24" r="21" fill="#FFFFFF"/>
+                <path d="M24 8c-7.7 0-14 5.5-14 13 0 4.5 2.5 8.5 6.4 10.9l-1.4 5.1 5.3-2.4c1.2.3 2.4.4 3.7.4 7.7 0 14-5.5 14-13S31.7 8 24 8z" fill="#DE5833"/>
+                <path d="M24 10c-6.6 0-12 4.7-12 11 0 3.8 2.1 7.2 5.5 9.2l-1.2 4.3 4.5-2c1 .3 2.1.5 3.2.5 6.6 0 12-4.7 12-11s-5.4-12-12-12z" fill="#FFFFFF"/>
+                <circle cx="20" cy="18" r="2.5" fill="#333333"/><circle cx="28" cy="18" r="2.5" fill="#333333"/>
+                <path d="M22 21h4c0 1.5-1 2.5-2 2.5s-2-1-2-2.5z" fill="#F8A51D"/>
+                <path d="M20 28l4 3 4-3-4-1.5z" fill="#67B246"/>
+            </svg>`,
+            startpage: `<svg width="18" height="18" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="15" fill="#0164FF"/>
+                <path d="M12 9h8c1.1 0 2 .9 2 2v2h-8v4h6c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-8c-1.1 0-2-.9-2-2v-2h8v-4h-6c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z" fill="#FFFFFF"/>
+                <circle cx="23" cy="9" r="2.5" fill="#00E5FF"/>
+            </svg>`
+        };
+
+        const engines = {
+            brave: { key: "brave", name: "Brave", url: "https://search.brave.com/search?q=" },
+            google: { key: "google", name: "Google", url: "https://www.google.com/search?q=" },
+            ddg: { key: "ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
+            startpage: { key: "startpage", name: "Startpage", url: "https://www.startpage.com/sp/search?query=" }
+        };
+
+        let currentEngineKey = 'brave';
+
+        function updateEngineUI(key) {
+            currentEngineKey = key;
+            const engine = engines[key];
+            document.getElementById('activeEngineIcon').innerHTML = realBrandSvgs[key];
+            document.getElementById('activeEngineName').innerText = engine.name;
+            document.getElementById('searchInput').placeholder = `Search with ${engine.name} or enter URL...`;
+
+            document.querySelectorAll('.engine-option-row').forEach(row => row.classList.remove('active'));
+            document.querySelectorAll('.engine-option-check').forEach(chk => chk.style.display = 'none');
+
+            const check = document.getElementById('check-' + key);
+            if (check) check.style.display = 'block';
+            if (check && check.parentElement) check.parentElement.classList.add('active');
+
+            try {
+                localStorage.setItem('fokk_search_engine_key', key);
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setSearchEngine === 'function') {
+                    window.FokkShieldBridge.setSearchEngine(engine.name);
+                }
+            } catch (e) {}
+        }
+
+        function toggleEngineDropdown(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('engineDropdown');
+            const trigger = document.getElementById('enginePillTrigger');
+            dropdown.classList.toggle('open');
+            trigger.classList.toggle('active');
+        }
+
+        function selectEngine(key) {
+            updateEngineUI(key);
+            closeEngineDropdown();
+        }
+
+        function closeEngineDropdown() {
+            const dropdown = document.getElementById('engineDropdown');
+            const trigger = document.getElementById('enginePillTrigger');
+            dropdown.classList.remove('open');
+            trigger.classList.remove('active');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                closeEngineDropdown();
+            }
+        });
+
+        function handleSearch(e) {
+            e.preventDefault();
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            let targetUrl = "";
+            if (query.startsWith("http://") || query.startsWith("https://")) {
+                targetUrl = query;
+            } else if (query.includes(".") && !query.includes(" ")) {
+                targetUrl = "https://" + query;
+            } else {
+                targetUrl = engines[currentEngineKey].url + encodeURIComponent(query);
+            }
+            window.location.href = targetUrl;
+        }
+
+        // 2. CUSTOMIZABLE SPEED DIAL ENGINE
+        const defaultDials = [
+            { id: "yt", title: "YouTube", url: "https://m.youtube.com", color: "#FF0000", icon: "youtube" },
+            { id: "reddit", title: "Reddit", url: "https://www.reddit.com", color: "#FF4500", icon: "reddit" },
+            { id: "wiki", title: "Wikipedia", url: "https://en.m.wikipedia.org", color: "#FFFFFF", icon: "wikipedia" },
+            { id: "x", title: "X", url: "https://x.com", color: "#FFFFFF", icon: "x" },
+            { id: "brave", title: "Brave", url: "https://search.brave.com", color: "#FF5000", icon: "brave" },
+            { id: "ddg", title: "DuckDuckGo", url: "https://duckduckgo.com", color: "#DE5833", icon: "ddg" }
+        ];
+
+        let speedDials = [];
+        let isEditMode = false;
+
+        function loadSpeedDials() {
+            try {
+                const saved = localStorage.getItem('fokk_speed_dials');
+                speedDials = saved ? JSON.parse(saved) : defaultDials;
+            } catch (e) {
+                speedDials = defaultDials;
+            }
+            renderSpeedDials();
+        }
+
+        function saveSpeedDials() {
+            try {
+                localStorage.setItem('fokk_speed_dials', JSON.stringify(speedDials));
+            } catch (e) {}
+        }
+
+        function getIconSvg(type, color) {
+            if (type === "youtube") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M21.58 7.19a2.506 2.506 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42c-.87.23-1.54.91-1.77 1.77A26.4 26.4 0 0 0 2 12a26.4 26.4 0 0 0 .41 4.81c.23.86.9 1.54 1.77 1.77C5.74 19 12 19 12 19s6.26 0 7.82-.42c.87-.23 1.54-.91 1.77-1.77.28-1.57.41-3.19.41-4.81s-.13-3.24-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>`;
+            } else if (type === "reddit") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 2C6.48 2 2 6.48 2 12c0 3.31 1.61 6.24 4.09 8.04l-.84 3.09 3.25-1.12C9.57 22.58 10.76 22.8 12 22.8c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.78 12.82c-.89.89-2.28 1.18-4.78 1.18s-3.89-.29-4.78-1.18a.65.65 0 0 1 .92-.92c.62.62 1.83.85 3.86.85s3.24-.23 3.86-.85a.65.65 0 1 1 .92.92zm-7.03-3.57a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm6.5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>`;
+            } else if (type === "wikipedia") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12.09 2.91C6.98 2.91 2.84 7.05 2.84 12.16c0 5.11 4.14 9.25 9.25 9.25 5.11 0 9.25-4.14 9.25-9.25 0-5.11-4.14-9.25-9.25-9.25zm5.54 12.88h-1.28l-1.39-4.74-1.39 4.74h-1.28l-2.09-7.22h1.44l1.32 4.96 1.34-4.96h1.36l1.34 4.96 1.32-4.96h1.44l-2.13 7.22z"/></svg>`;
+            } else if (type === "x") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+            } else if (type === "brave") {
+                return realBrandSvgs.brave;
+            } else if (type === "ddg") {
+                return realBrandSvgs.ddg;
+            } else {
+                return `<svg viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`;
+            }
+        }
+
+        function renderSpeedDials() {
+            const grid = document.getElementById('speedDialGrid');
+            grid.innerHTML = '';
+
+            speedDials.forEach((dial, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'dial-item-wrapper';
+                wrapper.innerHTML = `
+                    <div class="dial-delete-badge" onclick="deleteShortcut(event, ${idx})">✕</div>
+                    <div class="dial-icon-box" onclick="handleDialClick('${dial.url}')">
+                        ${getIconSvg(dial.icon, dial.color)}
+                    </div>
+                    <span class="dial-title">${dial.title}</span>
+                `;
+                grid.appendChild(wrapper);
+            });
+
+            // Add shortcut card
+            const addCard = document.createElement('div');
+            addCard.className = 'add-dial-card';
+            addCard.innerHTML = `
+                <div class="add-dial-box" onclick="openAddShortcutModal()">+</div>
+                <span class="dial-title" style="color:var(--text-secondary);">Add</span>
+            `;
+            grid.appendChild(addCard);
+        }
+
+        function handleDialClick(url) {
+            if (!isEditMode) {
+                window.location.href = url;
+            }
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            document.getElementById('pageBody').classList.toggle('edit-mode', isEditMode);
+            document.getElementById('btnToggleEdit').innerText = isEditMode ? 'Done' : 'Edit';
+        }
+
+        function deleteShortcut(e, idx) {
+            e.stopPropagation();
+            speedDials.splice(idx, 1);
+            saveSpeedDials();
+            renderSpeedDials();
+        }
+
+        function openAddShortcutModal() {
+            document.getElementById('addShortcutModal').classList.add('active');
+        }
+
+        function closeAddShortcutModal() {
+            document.getElementById('addShortcutModal').classList.remove('active');
+        }
+
+        function saveNewShortcut() {
+            const title = document.getElementById('inputShortcutTitle').value.trim();
+            let url = document.getElementById('inputShortcutUrl').value.trim();
+            if (!title || !url) return;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            speedDials.push({
+                id: 'custom_' + Date.now(),
+                title: title,
+                url: url,
+                color: 'var(--fokk-cyan)',
+                icon: 'generic'
+            });
+            saveSpeedDials();
+            renderSpeedDials();
+            closeAddShortcutModal();
+            document.getElementById('inputShortcutTitle').value = '';
+            document.getElementById('inputShortcutUrl').value = '';
+        }
+
+        // 3. HOMEPAGE WALLPAPER & BACKGROUND THEMES ENGINE
+        const wallpaperStyles = {
+            ocean: "radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%)",
+            biowave: "radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%)",
+            sunset: "radial-gradient(ellipse at 30% 20%, #4A1A2C 0%, #1F0D24 40%, #0A0714 100%)",
+            emerald: "radial-gradient(ellipse at 70% 30%, #0A3626 0%, #061F17 50%, #030F0B 100%)",
+            dark: "#090D14"
+        };
+
+        function setWallpaper(type) {
+            const body = document.getElementById('pageBody');
+            if (wallpaperStyles[type]) {
+                body.style.backgroundImage = wallpaperStyles[type];
+                try {
+                    localStorage.setItem('fokk_wallpaper_type', type);
+                    localStorage.removeItem('fokk_custom_wallpaper');
+                } catch (e) {}
+            }
+            highlightActiveWallpaper(type);
+        }
+
+        function triggerWallpaperUpload() {
+            document.getElementById('wallpaperUploadInput').click();
+        }
+
+        function handleWallpaperUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result;
+                const body = document.getElementById('pageBody');
+                body.style.backgroundImage = `url("${dataUrl}")`;
+                try {
+                    localStorage.setItem('fokk_custom_wallpaper', dataUrl);
+                    localStorage.setItem('fokk_wallpaper_type', 'custom');
+                } catch (err) {}
+                highlightActiveWallpaper('custom');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function highlightActiveWallpaper(type) {
+            document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));
+            if (event && event.target && event.target.closest('.wallpaper-card')) {
+                event.target.closest('.wallpaper-card').classList.add('active');
+            }
+        }
+
+        // 4. SAILBOAT LOGO CUSTOMIZER
+        function openThemeModal() {
+            document.getElementById('themeModal').classList.add('active');
+        }
+
+        function closeThemeModal() {
+            document.getElementById('themeModal').classList.remove('active');
+        }
+
+        function closeModalOnBg(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.classList.remove('active');
+            }
+        }
+
+        function selectLogo(type) {
+            const logoImg = document.getElementById('mainLogoImg');
+            if (type === 'classic') {
+                logoImg.src = 'fokk_logo.png';
+            } else if (type === 'clipper') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>';
+            } else if (type === 'galleon') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>';
+            } else if (type === 'catamaran') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>';
+            } else if (type === 'drakkar') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>';
+            }
+            try {
+                localStorage.setItem('fokk_logo_type', type);
+            } catch (e) {}
+
+            document.querySelectorAll('.logo-option-card').forEach(el => el.classList.remove('active'));
+            if (event && event.target && event.target.closest('.logo-option-card')) {
+                event.target.closest('.logo-option-card').classList.add('active');
+            }
+        }
+
+        function triggerLogoUpload() {
+            document.getElementById('logoUploadInput').click();
+        }
+
+        function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result;
+                document.getElementById('mainLogoImg').src = dataUrl;
+                try {
+                    localStorage.setItem('fokk_custom_logo', dataUrl);
+                    localStorage.setItem('fokk_logo_type', 'custom');
+                } catch (err) {}
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 5. INITIALIZE STATE ON LOAD
+        try {
+            // Restore wallpaper
+            const savedWpType = localStorage.getItem('fokk_wallpaper_type') || 'ocean';
+            if (savedWpType === 'custom') {
+                const customWp = localStorage.getItem('fokk_custom_wallpaper');
+                if (customWp) document.getElementById('pageBody').style.backgroundImage = `url("${customWp}")`;
+            } else {
+                setWallpaper(savedWpType);
+            }
+
+            // Restore logo
+            const savedLogoType = localStorage.getItem('fokk_logo_type');
+            if (savedLogoType === 'custom') {
+                const customLogo = localStorage.getItem('fokk_custom_logo');
+                if (customLogo) document.getElementById('mainLogoImg').src = customLogo;
+            } else if (savedLogoType) {
+                selectLogo(savedLogoType);
+            }
+
+            // Restore engine
+            const savedEngine = localStorage.getItem('fokk_search_engine_key') || 'brave';
+            updateEngineUI(savedEngine);
+        } catch (e) {}
+
+        loadSpeedDials();
+
+        // 6. LIVE STATS SYNC VIA BRIDGE
+        try {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getStats === 'function') {
+                const stats = JSON.parse(window.FokkShieldBridge.getStats());
+                if (stats.blocked) document.getElementById('statBlocked').innerText = Number(stats.blocked).toLocaleString();
+                if (stats.trackers) document.getElementById('statTrackers').innerText = Number(stats.trackers).toLocaleString();
+                if (stats.savedMb) document.getElementById('statBandwidth').innerText = stats.savedMb + " MB";
+            }
+        } catch (e) {}
+    </script>
+</body>
+</html>

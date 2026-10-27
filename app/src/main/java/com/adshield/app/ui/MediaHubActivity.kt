@@ -86,6 +86,7 @@ class MediaHubActivity : AppCompatActivity() {
     private var isShieldEnabled = true
     private var isDarkMode = false
     private var showingPrivateTabs = false
+    private var isMediaPlaying = false
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
 
@@ -264,6 +265,13 @@ class MediaHubActivity : AppCompatActivity() {
         fun pickWallpaperImage() {
             activity.runOnUiThread {
                 activity.openWallpaperGalleryPicker()
+            }
+        }
+
+        @JavascriptInterface
+        fun onMediaPlaybackChanged(isPlaying: Boolean) {
+            activity.runOnUiThread {
+                activity.isMediaPlaying = isPlaying
             }
         }
 
@@ -693,12 +701,8 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        binding.btnBack.setOnClickListener { handleBack() }
         binding.btnNavBack.setOnClickListener { handleBack() }
 
-        binding.btnForward.setOnClickListener {
-            if (activeWebView?.canGoForward() == true) activeWebView?.goForward()
-        }
         binding.btnNavForward.setOnClickListener {
             if (activeWebView?.canGoForward() == true) activeWebView?.goForward()
         }
@@ -1340,12 +1344,20 @@ class MediaHubActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        enterPipMode()
+        // Only enter PiP if video is actively playing or in custom fullscreen view!
+        // Prevents entering PiP on homepage which would show an empty static "Fokk Browser" card!
+        val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
+        if (!isStartPage && (isMediaPlaying || customView != null)) {
+            enterPipMode()
+        }
     }
 
     private fun enterPipMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
+                // Tell page to maximize video element to fill PiP viewport
+                activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
+
                 val rect = android.graphics.Rect()
                 if (customView != null) {
                     customView?.getGlobalVisibleRect(rect)
@@ -1381,9 +1393,13 @@ class MediaHubActivity : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             binding.topBar.visibility = View.GONE
             binding.bottomNav.visibility = View.GONE
+            binding.progressBar.visibility = View.GONE
+            binding.cardSuggestions.visibility = View.GONE
+            activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
         } else {
             binding.topBar.visibility = View.VISIBLE
             binding.bottomNav.visibility = View.VISIBLE
+            activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
         }
     }
 

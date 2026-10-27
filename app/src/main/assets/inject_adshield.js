@@ -242,6 +242,33 @@
         }
     `;
 
+
+        /* Fullscreen PiP Video Mode (Ensures video fills floating PiP window) */
+        html.fokk-pip-active, html.fokk-pip-active body {
+            background: #000 !important;
+            overflow: hidden !important;
+        }
+        html.fokk-pip-active video {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483647 !important;
+            object-fit: contain !important;
+            background: #000 !important;
+        }
+        html.fokk-pip-active .ytp-chrome-bottom,
+        html.fokk-pip-active .ytp-chrome-top,
+        html.fokk-pip-active .ytp-gradient-top,
+        html.fokk-pip-active .ytp-gradient-bottom,
+        html.fokk-pip-active #masthead-container,
+        html.fokk-pip-active ytm-mobile-topbar-renderer,
+        html.fokk-pip-active .header-bar,
+        html.fokk-pip-active #player-control-overlay {
+            display: none !important;
+        }
+
     const styleEl = document.createElement('style');
     styleEl.type = 'text/css';
     styleEl.appendChild(document.createTextNode(cosmeticCss));
@@ -401,28 +428,88 @@
         }
     }
 
-    // 5. Flawless Background Playback & PiP Enabler
+    // 5. Flawless Background Playback & PiP Enabler (Never pause on minimize/app switch)
+    let lastUserTapTime = 0;
+    ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            lastUserTapTime = Date.now();
+        }, { capture: true, passive: true });
+    });
+
     try {
+        // Prevent websites from listening to visibility/blur to pause videos
+        const origAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (type === 'visibilitychange' || type === 'pagehide' || (type === 'blur' && this === window)) {
+                return;
+            }
+            return origAddEventListener.call(this, type, listener, options);
+        };
+
         Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
         Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-        window.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
-        window.addEventListener('pagehide', (e) => e.stopImmediatePropagation(), true);
 
-        // Prevent YouTube/browser from auto-pausing video when switching apps or minimizing
+        // Discard background auto-pause (only pause when user intentionally tapped within 400ms)
         const origPause = HTMLVideoElement.prototype.pause;
         HTMLVideoElement.prototype.pause = function(...args) {
-            if (document.hidden || document.visibilityState === 'hidden') {
-                return; // Discard background auto-pause!
+            const isUserTap = (Date.now() - lastUserTapTime) < 400;
+            if (!isUserTap && this.currentTime > 0 && !this.ended) {
+                // Background auto-pause discarded - keep video & audio playing!
+                return;
             }
             return origPause.apply(this, args);
         };
     } catch (e) {}
+
+    // 6. Media Playback State Reporter & PiP Presentation Controllers
+    window.__fokk_enter_pip_view = function() {
+        document.documentElement.classList.add('fokk-pip-active');
+        const video = document.querySelector('video');
+        if (video) {
+            if (video.paused && video.currentTime > 0) {
+                video.play().catch(() => {});
+            }
+        }
+    };
+
+    window.__fokk_exit_pip_view = function() {
+        document.documentElement.classList.remove('fokk-pip-active');
+    };
+
+    function notifyNativePlayback(isPlaying) {
+        try {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaPlaybackChanged === 'function') {
+                window.FokkShieldBridge.onMediaPlaybackChanged(isPlaying);
+            }
+        } catch (e) {}
+    }
+
+    function hookVideoPlayback(video) {
+        if (!video || video.__fokk_hooked) return;
+        video.__fokk_hooked = true;
+        video.addEventListener('play', () => notifyNativePlayback(true));
+        video.addEventListener('playing', () => notifyNativePlayback(true));
+        video.addEventListener('pause', () => {
+            const anyPlaying = Array.from(document.querySelectorAll('video')).some(v => !v.paused && !v.ended);
+            notifyNativePlayback(anyPlaying);
+        });
+        video.addEventListener('ended', () => {
+            const anyPlaying = Array.from(document.querySelectorAll('video')).some(v => !v.paused && !v.ended);
+            notifyNativePlayback(anyPlaying);
+        });
+        if (!video.paused && !video.ended) {
+            notifyNativePlayback(true);
+        }
+    }
+
+    document.querySelectorAll('video').forEach(hookVideoPlayback);
 
     // 6. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
     try {
         const observer = new MutationObserver(() => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
+            document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
         observer.observe(document.documentElement, {
             childList: true,
@@ -443,6 +530,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
+            document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
         checkAndSkipWebAd();

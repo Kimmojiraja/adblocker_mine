@@ -1121,7 +1121,7 @@ class MediaHubActivity : AppCompatActivity() {
             val privateTabs = tabs.filter { it.isPrivate }
 
             sheetBinding.btnFilterNormal.text = "Tabs (${normalTabs.size})"
-            sheetBinding.btnFilterPrivate.text = "🕶️ Private (${privateTabs.size})"
+            sheetBinding.btnFilterPrivate.text = "Private (${privateTabs.size})"
 
             if (showingPrivateTabs) {
                 sheetBinding.btnFilterPrivate.setBackgroundResource(R.drawable.bg_stat_chip)

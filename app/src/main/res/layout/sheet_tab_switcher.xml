@@ -42,7 +42,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="🕶️ Private (0)"
+            android:text="Private (0)"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -92,7 +92,7 @@
             android:layout_marginEnd="6dp"
             android:backgroundTint="#241738"
             android:paddingHorizontal="10dp"
-            android:text="🕶️ Private"
+            android:text="Private"
             android:textColor="#C084FC"
             android:textSize="11.5sp"
             android:textStyle="bold"

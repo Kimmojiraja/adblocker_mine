@@ -271,7 +271,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
                         android:layout_marginBottom="10dp"
-                        android:text="🎨 Wallpapers &amp; Background Themes"
+                        android:text="Wallpapers &amp; Background Themes"
                         android:textSize="13sp"
                         app:cornerRadius="8dp" />
 
@@ -280,7 +280,7 @@
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
-                        android:text="⚡ Customize Speed Dial Shortcuts"
+                        android:text="Customize Speed Dial Shortcuts"
                         android:textSize="13sp"
                         app:cornerRadius="8dp" />
                 </LinearLayout>

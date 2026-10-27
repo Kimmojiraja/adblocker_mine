@@ -323,7 +323,7 @@
                         android:background="@drawable/bg_stat_chip"
                         android:paddingHorizontal="7dp"
                         android:paddingVertical="3dp"
-                        android:text="🛡️ Zero Ads"
+                        android:text="Zero Ads"
                         android:textColor="@color/fokk_cyan"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -335,7 +335,7 @@
                         android:background="@drawable/bg_stat_chip"
                         android:paddingHorizontal="7dp"
                         android:paddingVertical="3dp"
-                        android:text="📑 Multi-Tab"
+                        android:text="Multi-Tab"
                         android:textColor="@color/fokk_cyan"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -347,7 +347,7 @@
                         android:background="@drawable/bg_stat_chip"
                         android:paddingHorizontal="7dp"
                         android:paddingVertical="3dp"
-                        android:text="⚡ Auto PiP"
+                        android:text="Auto PiP"
                         android:textColor="@color/fokk_cyan"
                         android:textSize="10sp"
                         android:textStyle="bold" />

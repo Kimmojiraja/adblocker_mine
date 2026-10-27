@@ -1,6 +1,9 @@
 package com.adshield.app.ui
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.util.Base64
+import androidx.activity.result.contract.ActivityResultContracts
 import android.app.DownloadManager
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -84,6 +87,75 @@ class MediaHubActivity : AppCompatActivity() {
     private var isDarkMode = false
     private var showingPrivateTabs = false
 
+    private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val results = if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val dataUri = result.data?.data
+            val clipData = result.data?.clipData
+            if (clipData != null && clipData.itemCount > 0) {
+                Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+            } else if (dataUri != null) {
+                arrayOf(dataUri)
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+        fileUploadCallback?.onReceiveValue(results)
+        fileUploadCallback = null
+    }
+
+    private val wallpaperPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val uri = result.data?.data ?: return@registerForActivityResult
+            try {
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val bytes = stream.readBytes()
+                    val mime = contentResolver.getType(uri) ?: "image/jpeg"
+                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                    val dataUri = "data:$mime;base64,$base64"
+                    activeWebView?.post {
+                        activeWebView?.evaluateJavascript("if (typeof applyCustomWallpaper === 'function') applyCustomWallpaper('$dataUri');", null)
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun openWallpaperGalleryPicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+        wallpaperPickerLauncher.launch(Intent.createChooser(intent, "Choose Wallpaper Image"))
+    }
+
+    fun openWallpapersCustomizer() {
+        val currentUrl = activeTab?.url ?: ""
+        if (currentUrl.contains("fokk_start.html")) {
+            activeWebView?.evaluateJavascript("if (typeof openThemeModal === 'function') openThemeModal();", null)
+        } else {
+            addNewTab("file:///android_asset/fokk_start.html?action=wallpapers", isPrivate = activeTab?.isPrivate == true)
+        }
+    }
+
+    fun openShortcutsCustomizer() {
+        val currentUrl = activeTab?.url ?: ""
+        if (currentUrl.contains("fokk_start.html")) {
+            activeWebView?.evaluateJavascript("if (typeof openShortcutsManager === 'function') openShortcutsManager();", null)
+        } else {
+            addNewTab("file:///android_asset/fokk_start.html?action=shortcuts", isPrivate = activeTab?.isPrivate == true)
+        }
+    }
+
     private val prefs: SharedPreferences by lazy {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
@@ -122,6 +194,20 @@ class MediaHubActivity : AppCompatActivity() {
 
         val initialUrl = intent.getStringExtra(EXTRA_URL) ?: "file:///android_asset/fokk_start.html"
         addNewTab(initialUrl, isPrivate = false)
+        handleOpenAction(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleOpenAction(intent)
+    }
+
+    private fun handleOpenAction(intent: Intent?) {
+        when (intent?.getStringExtra(EXTRA_OPEN_ACTION)) {
+            "wallpapers" -> openWallpapersCustomizer()
+            "shortcuts" -> openShortcutsCustomizer()
+        }
     }
 
     private fun loadInjectionScript() {
@@ -171,6 +257,13 @@ class MediaHubActivity : AppCompatActivity() {
                     activity.prefs.edit().putString(PREF_SEARCH_ENGINE, found.name).apply()
                     activity.binding.urlInput.hint = "Search with ${found.displayName} or enter URL..."
                 }
+            }
+        }
+
+        @JavascriptInterface
+        fun pickWallpaperImage() {
+            activity.runOnUiThread {
+                activity.openWallpaperGalleryPicker()
             }
         }
 
@@ -387,6 +480,27 @@ class MediaHubActivity : AppCompatActivity() {
                 super.onReceivedTitle(view, title)
                 if (!title.isNullOrEmpty() && activeTab?.url?.contains("fokk_start.html") != true) {
                     tabs.find { it.webView == view }?.title = title
+                }
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = filePathCallback
+                try {
+                    val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                    fileChooserLauncher.launch(intent)
+                    return true
+                } catch (e: Exception) {
+                    fileUploadCallback?.onReceiveValue(null)
+                    fileUploadCallback = null
+                    return false
                 }
             }
 
@@ -1187,6 +1301,16 @@ class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
+        sheetBinding.rowWallpapers.setOnClickListener {
+            dialog.dismiss()
+            openWallpapersCustomizer()
+        }
+
+        sheetBinding.rowCustomizeShortcuts.setOnClickListener {
+            dialog.dismiss()
+            openShortcutsCustomizer()
+        }
+
         sheetBinding.rowClearData.setOnClickListener {
             clearBrowsingData()
             dialog.dismiss()
@@ -1295,6 +1419,7 @@ class MediaHubActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_URL = "extra_url"
+        const val EXTRA_OPEN_ACTION = "extra_open_action"
         private const val TAG = "FokkBrowser"
         private const val PREFS_NAME = "fokk_browser_prefs"
         private const val PREF_SEARCH_ENGINE = "fokk_search_engine"

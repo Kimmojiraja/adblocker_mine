@@ -3,6 +3,7 @@ package com.adshield.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -34,6 +35,7 @@ class SettingsActivity : AppCompatActivity() {
         setupSwitches()
         setupCustomRuleButtons()
         setupPrivateDnsGuide()
+        setupPersonalizationButtons()
     }
 
     private fun setupToolbar() {
@@ -91,6 +93,25 @@ class SettingsActivity : AppCompatActivity() {
             val clip = ClipData.newPlainText("Private DNS Provider", "p2.freedns.controld.com")
             clipboard.setPrimaryClip(clip)
             Toast.makeText(this, "Copied 'p2.freedns.controld.com' to clipboard!", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun setupPersonalizationButtons() {
+        binding.btnWallpapersThemes.setOnClickListener {
+            val intent = Intent(this, MediaHubActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(MediaHubActivity.EXTRA_OPEN_ACTION, "wallpapers")
+            }
+            startActivity(intent)
+            finish()
+        }
+
+        binding.btnCustomizeSpeedDials.setOnClickListener {
+            val intent = Intent(this, MediaHubActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(MediaHubActivity.EXTRA_OPEN_ACTION, "shortcuts")
+            }
+            startActivity(intent)
+            finish()
         }
     }
 }

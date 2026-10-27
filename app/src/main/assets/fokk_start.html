@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fokk Privacy Start</title>
+    <title>Fokk Browser</title>
     <style>
         :root {
             --bg-color: #090D14;
             --surface-color: rgba(17, 24, 38, 0.72);
-            --surface-elevated: rgba(23, 32, 50, 0.85);
+            --surface-elevated: rgba(23, 32, 50, 0.88);
             --card-border: rgba(255, 255, 255, 0.1);
             --fokk-cyan: #00E5FF;
             --fokk-blue: #0164FF;
             --text-primary: #FFFFFF;
             --text-secondary: #94A3B8;
             --text-muted: #64748B;
-            --card-radius: 20px;
-            --pill-radius: 28px;
+            --squircle-radius: 14px;
+            --squircle-sm: 10px;
         }
 
         * {
@@ -38,10 +38,11 @@
             background-repeat: no-repeat;
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 24px 18px 80px 18px;
+            padding: 24px 18px 24px 18px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
             transition: background 0.4s ease;
             overflow-x: hidden;
         }
@@ -51,14 +52,14 @@
             content: '';
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(180deg, rgba(8, 12, 20, 0.45) 0%, rgba(8, 12, 20, 0.72) 45%, rgba(6, 9, 15, 0.94) 100%);
-            backdrop-filter: blur(1.5px);
-            -webkit-backdrop-filter: blur(1.5px);
+            background: linear-gradient(180deg, rgba(8, 12, 20, 0.35) 0%, rgba(8, 12, 20, 0.65) 50%, rgba(6, 9, 15, 0.88) 100%);
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
             z-index: 0;
             pointer-events: none;
         }
 
-        .content-layer {
+        .main-container {
             position: relative;
             z-index: 1;
             width: 100%;
@@ -66,99 +67,60 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            flex: 1;
         }
 
-        /* Brand Header with Perfectly Fitted Sailboat Logo */
-        .brand-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-top: 6px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            padding: 6px 14px;
-            border-radius: var(--pill-radius);
-            background: rgba(17, 24, 38, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .brand-header:hover {
-            background: rgba(17, 24, 38, 0.65);
-            border-color: rgba(0, 229, 255, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .brand-logo-container {
-            position: relative;
-            width: 46px;
-            height: 46px;
-            border-radius: 18px; /* Firefox curved squircle */
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(1, 100, 255, 0.12));
-            border: 1.5px solid rgba(0, 229, 255, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-            overflow: hidden;
-            box-shadow: 0 4px 18px rgba(0, 229, 255, 0.22);
-            flex-shrink: 0;
-            transition: all 0.25s ease;
-        }
-
-        .brand-logo-img {
+        .top-content {
             width: 100%;
-            height: 100%;
-            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 1. CLEAN UNBOXED APP LOGO & TITLE (NO NESTED EDGES, NO BOXES, NO GLOWS) */
+        .brand-header-unboxed {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            margin-bottom: 22px;
+            cursor: default;
+        }
+
+        .brand-logo-clean {
+            width: 44px;
+            height: 44px;
             object-fit: contain;
             display: block;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
         }
 
         .brand-title-box {
             display: flex;
             flex-direction: column;
+            justify-content: center;
         }
 
-        .brand-title-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .brand-title {
-            font-size: 19px;
+        .brand-title-text {
+            font-size: 21px;
             font-weight: 800;
-            letter-spacing: 0.3px;
-            background: linear-gradient(135deg, #FFFFFF 30%, var(--fokk-cyan) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.2px;
+            color: #FFFFFF;
+            line-height: 1.15;
         }
 
-        .brand-tag {
-            font-size: 9.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 8px;
-            background: rgba(0, 229, 255, 0.15);
-            color: var(--fokk-cyan);
-            border: 1px solid rgba(0, 229, 255, 0.35);
-            letter-spacing: 0.8px;
-        }
-
-        .brand-subtitle {
+        .brand-tagline-text {
             font-size: 11px;
             color: var(--text-secondary);
             font-weight: 500;
-            margin-top: 1px;
+            letter-spacing: 0.3px;
+            margin-top: 2px;
         }
 
-        /* Clean Search Card with Collapsible Engine Selector */
+        /* 2. FIREFOX-STYLE SQUIRCLE SEARCH BAR WITH LOGO-ONLY ENGINE SELECTOR */
         .search-container {
             width: 100%;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             position: relative;
         }
 
@@ -167,57 +129,57 @@
             display: flex;
             align-items: center;
             background: var(--surface-color);
-            border: 1.5px solid var(--card-border);
-            border-radius: var(--pill-radius);
-            padding: 6px 14px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border: 1.2px solid var(--card-border);
+            border-radius: var(--squircle-radius); /* Firefox squircle radius */
+            padding: 4px 12px 4px 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.22s ease;
             height: 48px;
         }
 
         .search-box-card:focus-within {
             border-color: var(--fokk-cyan);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-            background: rgba(20, 29, 45, 0.85);
+            background: rgba(20, 29, 45, 0.9);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
         }
 
-        /* Collapsible Trigger Pill with Real Brand Logo */
+        /* Brand Icon ONLY (No engine name text taking space) */
         .engine-pill-trigger {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            gap: 4px;
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 6px 8px;
+            border-radius: 9px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-right: 8px;
             flex-shrink: 0;
-            transition: all 0.2s ease;
+            transition: all 0.18s ease;
+            height: 32px;
         }
 
-        .engine-pill-trigger:hover {
+        .engine-pill-trigger:hover, .engine-pill-trigger.active {
             background: rgba(255, 255, 255, 0.14);
             border-color: var(--fokk-cyan);
         }
 
         .engine-pill-trigger .brand-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .engine-pill-trigger .chevron {
-            font-size: 9px;
+            font-size: 8px;
             color: var(--text-secondary);
-            transition: transform 0.25s ease;
+            transition: transform 0.2s ease;
+            margin-left: 1px;
         }
 
         .engine-pill-trigger.active .chevron {
@@ -230,14 +192,14 @@
             border: none;
             outline: none;
             color: var(--text-primary);
-            font-size: 13.5px;
+            font-size: 14px;
             min-width: 0;
-            font-weight: 500;
+            font-weight: 450;
         }
 
         .search-input::placeholder {
             color: var(--text-muted);
-            font-size: 12.5px;
+            font-size: 13px;
         }
 
         .search-submit-btn {
@@ -249,7 +211,7 @@
             align-items: center;
             justify-content: center;
             color: var(--fokk-cyan);
-            transition: transform 0.2s ease;
+            transition: transform 0.18s ease;
         }
 
         .search-submit-btn:hover {
@@ -257,38 +219,38 @@
         }
 
         .search-submit-btn svg {
-            width: 20px;
-            height: 20px;
+            width: 19px;
+            height: 19px;
             fill: currentColor;
         }
 
         /* Collapsible Search Engine Selector Dropdown */
         .engine-dropdown-collapse {
             width: 100%;
-            background: rgba(14, 20, 32, 0.94);
+            background: rgba(14, 20, 32, 0.96);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: var(--card-radius);
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            border-radius: var(--squircle-radius);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             overflow: hidden;
             max-height: 0;
             opacity: 0;
-            transform: translateY(-8px);
-            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(-6px);
+            transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1);
             position: absolute;
             top: 54px;
             left: 0;
             right: 0;
             z-index: 50;
-            padding: 0 8px;
+            padding: 0 6px;
         }
 
         .engine-dropdown-collapse.open {
             max-height: 280px;
             opacity: 1;
             transform: translateY(0);
-            padding: 8px;
+            padding: 6px;
         }
 
         .engine-option-row {
@@ -296,9 +258,9 @@
             align-items: center;
             justify-content: space-between;
             padding: 10px 12px;
-            border-radius: 14px;
+            border-radius: var(--squircle-sm);
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.16s ease;
             margin-bottom: 2px;
         }
 
@@ -332,13 +294,13 @@
         }
 
         .engine-option-name {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 700;
             color: var(--text-primary);
         }
 
         .engine-option-desc {
-            font-size: 10.5px;
+            font-size: 11px;
             color: var(--text-secondary);
         }
 
@@ -348,104 +310,12 @@
             font-weight: bold;
         }
 
-        /* Compact Live Defense Matrix (Small Mini-Pill Card, NO "Active Shield" Text) */
-        .defense-mini-card {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            background: var(--surface-color);
-            border: 1px solid var(--card-border);
-            border-radius: var(--pill-radius);
-            padding: 8px 16px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            height: 40px;
-        }
-
-        .mini-stat-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .mini-stat-icon {
-            width: 14px;
-            height: 14px;
-            color: var(--fokk-cyan);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .mini-stat-val {
-            font-size: 12.5px;
-            font-weight: 800;
-            color: var(--fokk-cyan);
-            letter-spacing: 0.2px;
-        }
-
-        .mini-stat-lbl {
-            font-size: 10.5px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .mini-stat-bullet {
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 12px;
-        }
-
-        /* Section Header Row */
-        .section-header-row {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 0 4px;
-        }
-
-        .section-title {
-            font-size: 11.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-secondary);
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .header-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: var(--fokk-cyan);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-        }
-
-        .header-btn:hover {
-            border-color: var(--fokk-cyan);
-            background: rgba(0, 229, 255, 0.12);
-        }
-
-        /* Firefox-Style Curved Speed Dial Grid */
+        /* 3. CLEAN SHORTCUTS GRID (NO HEADER, NO EDIT BUTTON, NO WALLPAPERS BUTTON, NO + ADD TILE) */
         .speed-dial-grid {
             width: 100%;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
+            gap: 16px 12px;
             margin-bottom: 24px;
         }
 
@@ -461,35 +331,35 @@
 
         .dial-icon-box {
             position: relative;
-            width: 56px;
-            height: 56px;
-            border-radius: var(--card-radius); /* Firefox squircle edges */
+            width: 54px;
+            height: 54px;
+            border-radius: var(--squircle-radius); /* Firefox squircle edges */
             background: var(--surface-color);
             border: 1px solid var(--card-border);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
         }
 
         .dial-item-wrapper:hover .dial-icon-box, .dial-item-wrapper:active .dial-icon-box {
             border-color: var(--fokk-cyan);
-            transform: translateY(-3px) scale(1.03);
-            box-shadow: 0 8px 24px rgba(0, 229, 255, 0.25);
-            background: rgba(26, 36, 56, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 229, 255, 0.22);
+            background: rgba(26, 36, 56, 0.85);
         }
 
         .dial-icon-box svg {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
         }
 
         .dial-title {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 11.5px;
+            font-weight: 500;
             color: var(--text-primary);
             text-align: center;
             max-width: 68px;
@@ -498,76 +368,59 @@
             white-space: nowrap;
         }
 
-        .dial-delete-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #FF0055;
-            color: #fff;
-            display: none;
+        /* 4. UNBOXED DEFENSE MATRIX AT THE BOTTOM JUST ABOVE BOTTOM NAV */
+        .bottom-defense-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(255, 0, 85, 0.6);
-            z-index: 10;
+            padding: 12px 10px 4px 10px;
+            cursor: default;
         }
 
-        body.edit-mode .dial-delete-badge {
+        .defense-unboxed-row {
             display: flex;
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.1); }
-        }
-
-        .add-dial-card {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 7px;
-            cursor: pointer;
+            justify-content: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
         }
 
-        .add-dial-box {
-            width: 56px;
-            height: 56px;
-            border-radius: var(--card-radius);
-            background: rgba(0, 229, 255, 0.06);
-            border: 1.5px dashed rgba(0, 229, 255, 0.35);
-            display: flex;
+        .defense-unboxed-row .shield-icon {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             color: var(--fokk-cyan);
-            font-size: 22px;
-            font-weight: 300;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
         }
 
-        .add-dial-box:hover {
-            background: rgba(0, 229, 255, 0.15);
-            border-color: var(--fokk-cyan);
-            transform: scale(1.05);
+        .defense-stat-val {
+            font-weight: 700;
+            color: var(--fokk-cyan);
         }
 
-        /* Modal Overlays with Firefox Curved Squircles */
+        .defense-bullet {
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 11px;
+        }
+
+        /* Modals for Settings/Browser Menu Navigation */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            padding: 18px;
+            padding: 16px;
         }
 
         .modal-overlay.active {
@@ -577,15 +430,15 @@
         .modal-card {
             width: 100%;
             max-width: 440px;
-            background: rgba(15, 21, 33, 0.95);
-            border: 1.5px solid rgba(255, 255, 255, 0.14);
-            border-radius: 24px; /* Firefox squircle modal */
-            padding: 22px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            background: rgba(14, 20, 32, 0.96);
+            border: 1.2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px; /* Firefox squircle modal */
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
             display: flex;
             flex-direction: column;
             gap: 16px;
-            max-height: 88vh;
+            max-height: 85vh;
             overflow-y: auto;
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
@@ -602,320 +455,307 @@
 
         .modal-close {
             background: rgba(255, 255, 255, 0.08);
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.18s ease;
         }
 
         .modal-close:hover {
-            background: rgba(255, 255, 255, 0.18);
             color: #fff;
+            background: rgba(255, 255, 255, 0.18);
         }
 
-        /* Wallpaper Thumbnails Grid */
+        .category-header {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .wallpaper-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
 
         .wallpaper-card {
             height: 72px;
-            border-radius: 14px;
-            border: 1.5px solid var(--card-border);
+            border-radius: 12px;
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
-            cursor: pointer;
-            display: flex;
-            align-items: flex-end;
-            padding: 6px;
-            transition: all 0.2s ease;
             background-size: cover;
             background-position: center;
         }
 
-        .wallpaper-card:hover, .wallpaper-card.active {
+        .wallpaper-card:hover {
             border-color: var(--fokk-cyan);
-            box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
             transform: scale(1.02);
         }
 
-        .wallpaper-card .wp-title {
-            font-size: 10px;
-            font-weight: 700;
-            color: #FFFFFF;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-            background: rgba(0, 0, 0, 0.5);
+        .wallpaper-card.active {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+        }
+
+        .wallpaper-card.active::after {
+            content: '✓';
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            color: var(--fokk-cyan);
+            font-weight: bold;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wp-title {
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.65);
             padding: 2px 6px;
             border-radius: 6px;
+            width: fit-content;
             backdrop-filter: blur(4px);
         }
 
-        .logo-options-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .logo-option-card {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 10px;
+        .upload-card-full {
+            grid-column: span 2;
+            height: 52px;
+            background: rgba(0, 229, 255, 0.08);
+            border: 1.5px dashed rgba(0, 229, 255, 0.4);
+            border-radius: 12px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            gap: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            color: var(--fokk-cyan);
+            font-size: 12.5px;
+            font-weight: 600;
         }
 
-        .logo-option-card:hover, .logo-option-card.active {
+        .upload-card-full:hover {
+            background: rgba(0, 229, 255, 0.16);
             border-color: var(--fokk-cyan);
-            box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
-            background: rgba(0, 229, 255, 0.1);
         }
 
-        .logo-option-card svg, .logo-option-card img {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            object-fit: contain;
+        /* Shortcuts Manager in Modal */
+        .shortcut-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 6px;
         }
 
-        .logo-option-name {
-            font-size: 11px;
+        .shortcut-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .shortcut-item-title {
+            font-size: 13px;
             font-weight: 600;
             color: var(--text-primary);
-            text-align: center;
+        }
+
+        .shortcut-item-url {
+            font-size: 11px;
+            color: var(--text-secondary);
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .shortcut-del-btn {
+            background: rgba(255, 0, 85, 0.15);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            color: #FF3366;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .shortcut-del-btn:hover {
+            background: rgba(255, 0, 85, 0.3);
+            color: #FFF;
         }
 
         .modal-input {
             width: 100%;
-            background: rgba(9, 13, 20, 0.8);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 12px 14px;
-            color: var(--text-primary);
-            font-size: 13.5px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 13px;
             outline: none;
-            transition: border 0.2s ease;
         }
 
         .modal-input:focus {
             border-color: var(--fokk-cyan);
+            background: rgba(255, 255, 255, 0.09);
         }
 
         .modal-btn {
-            background: linear-gradient(135deg, var(--fokk-cyan), var(--fokk-blue));
+            background: linear-gradient(135deg, var(--fokk-blue), var(--fokk-cyan));
             border: none;
-            border-radius: 14px;
-            padding: 12px;
-            color: #090D14;
-            font-size: 13.5px;
-            font-weight: 800;
+            color: #fff;
+            padding: 11px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.3);
+            transition: opacity 0.2s ease;
         }
 
         .modal-btn:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            color: var(--text-primary);
-            border-radius: 14px;
-            padding: 10px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-outline:hover {
-            border-color: var(--fokk-cyan);
-            color: var(--fokk-cyan);
+            opacity: 0.9;
         }
     </style>
 </head>
 <body id="pageBody">
 
-    <div class="content-layer">
-
-        <!-- Brand Header with Perfectly Fitted Sailboat Logo -->
-        <div class="brand-header" onclick="openThemeModal()">
-            <div class="brand-logo-container">
-                <img id="mainLogoImg" class="brand-logo-img" src="fokk_logo.png" alt="Fokk Sailboat Logo">
-            </div>
-            <div class="brand-title-box">
-                <div class="brand-title-row">
-                    <span class="brand-title">Fokk Browser</span>
-                    <span class="brand-tag">v2.1</span>
+    <div class="main-container">
+        <div class="top-content">
+            <!-- 1. Unboxed Clean App Logo & Title -->
+            <div class="brand-header-unboxed">
+                <img src="fokk_logo.png" alt="Fokk Logo" class="brand-logo-clean" onerror="this.src='ic_fokk_logo.png'">
+                <div class="brand-title-box">
+                    <span class="brand-title-text">Fokk Browser</span>
+                    <span class="brand-tagline-text">Privacy First • Local Zero-VPN Shield</span>
                 </div>
-                <span class="brand-subtitle">Private • Ultra-Fast • No-VPN</span>
             </div>
-        </div>
 
-        <!-- Clean Search Box Card with Collapsible Engine Selector & Real Brand Logos -->
-        <div class="search-container">
-            <form id="searchForm" onsubmit="handleSearch(event)">
+            <!-- 2. Clean Squircle Search Box (Logo-Only Engine Selector) -->
+            <div class="search-container">
                 <div class="search-box-card">
-                    <!-- Engine Pill Trigger -->
+                    <!-- Brand Icon ONLY -->
                     <div class="engine-pill-trigger" id="enginePillTrigger" onclick="toggleEngineDropdown(event)">
                         <div class="brand-icon" id="activeEngineIcon">
-                            <!-- Injected dynamically: Real Brand Logo -->
+                            <!-- Injected SVG -->
                         </div>
-                        <span id="activeEngineName" style="font-weight: 700;">Brave</span>
                         <span class="chevron">▼</span>
                     </div>
 
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search with Brave or enter URL..." autocomplete="off">
-
-                    <button type="submit" class="search-submit-btn">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                        </svg>
-                    </button>
+                    <!-- Search Input -->
+                    <form onsubmit="handleSearch(event)" style="display:flex; flex:1; align-items:center;">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search or enter web address..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                        <button type="submit" class="search-submit-btn" aria-label="Search">
+                            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        </button>
+                    </form>
                 </div>
-            </form>
 
-            <!-- Collapsible Search Engine Selector Dropdown with REAL BRAND LOGOS -->
-            <div class="engine-dropdown-collapse" id="engineDropdown">
-                <!-- Option 1: Brave Search (Real Brand Logo) -->
-                <div class="engine-option-row active" onclick="selectEngine('brave')">
-                    <div class="engine-option-left">
-                        <div class="engine-option-icon">
-                            <svg width="22" height="22" viewBox="0 0 32 32">
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2.5C13.8 2.5 12.3 4.2 11.2 5.6L10.3 6.7C9.9 7.2 9.4 7.6 8.8 7.8L6.4 8.6C4.6 9.2 3.5 10.9 3.5 12.8C3.5 14.2 4.1 15.6 5.1 16.6L7.3 18.7C7.7 19.1 8 19.6 8.1 20.2L8.6 22.8C8.9 24.7 10.3 26.2 12.1 26.7L14.7 27.4C15.5 27.6 16.5 27.6 17.3 27.4L19.9 26.7C21.7 26.2 23.1 24.7 23.4 22.8L23.9 20.2C24 19.6 24.3 19.1 24.7 18.7L26.9 16.6C27.9 15.6 28.5 14.2 28.5 12.8C28.5 10.9 27.4 9.2 25.6 8.6L23.2 7.8C22.6 7.6 22.1 7.2 21.7 6.7L20.8 5.6C19.7 4.2 18.2 2.5 16 2.5Z" fill="url(#brave-grad-dropdown)"/>
-                                <path d="M16 8L13 12H19L16 8Z" fill="#FFF"/>
-                                <path d="M12 14L10 18H22L20 14H12Z" fill="#FFF" fill-opacity="0.9"/>
-                                <defs>
-                                    <linearGradient id="brave-grad-dropdown" x1="3.5" y1="2.5" x2="28.5" y2="27.5" gradientUnits="userSpaceOnUse">
-                                        <stop stop-color="#FF5A00"/>
-                                        <stop offset="1" stop-color="#FF1E00"/>
-                                    </linearGradient>
-                                </defs>
-                            </svg>
+                <!-- Collapsible Engine Dropdown -->
+                <div class="engine-dropdown-collapse" id="engineDropdown">
+                    <!-- Brave -->
+                    <div class="engine-option-row" onclick="selectEngine('brave')">
+                        <div class="engine-option-left">
+                            <div class="engine-option-icon" id="dd-icon-brave"></div>
+                            <div class="engine-option-meta">
+                                <span class="engine-option-name">Brave Search</span>
+                                <span class="engine-option-desc">Independent index &amp; zero tracking</span>
+                            </div>
                         </div>
-                        <div class="engine-option-meta">
-                            <span class="engine-option-name">Brave Search</span>
-                            <span class="engine-option-desc">Independent privacy index • Zero tracking</span>
-                        </div>
+                        <div class="engine-option-check" id="check-brave">✓</div>
                     </div>
-                    <div class="engine-option-check" id="check-brave">✓</div>
-                </div>
 
-                <!-- Option 2: Google Clean Web (Real Brand Logo) -->
-                <div class="engine-option-row" onclick="selectEngine('google')">
-                    <div class="engine-option-left">
-                        <div class="engine-option-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
-                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/>
-                                <path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/>
-                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/>
-                            </svg>
+                    <!-- Google -->
+                    <div class="engine-option-row" onclick="selectEngine('google')">
+                        <div class="engine-option-left">
+                            <div class="engine-option-icon" id="dd-icon-google"></div>
+                            <div class="engine-option-meta">
+                                <span class="engine-option-name">Google</span>
+                                <span class="engine-option-desc">Comprehensive global web search</span>
+                            </div>
                         </div>
-                        <div class="engine-option-meta">
-                            <span class="engine-option-name">Google</span>
-                            <span class="engine-option-desc">Comprehensive web results</span>
-                        </div>
+                        <div class="engine-option-check" id="check-google" style="display:none;">✓</div>
                     </div>
-                    <div class="engine-option-check" id="check-google" style="display:none;">✓</div>
-                </div>
 
-                <!-- Option 3: DuckDuckGo (Real Brand Logo) -->
-                <div class="engine-option-row" onclick="selectEngine('ddg')">
-                    <div class="engine-option-left">
-                        <div class="engine-option-icon">
-                            <svg width="22" height="22" viewBox="0 0 48 48">
-                                <circle cx="24" cy="24" r="23" fill="#DE5833"/>
-                                <circle cx="24" cy="24" r="21" fill="#FFFFFF"/>
-                                <path d="M24 8c-7.7 0-14 5.5-14 13 0 4.5 2.5 8.5 6.4 10.9l-1.4 5.1 5.3-2.4c1.2.3 2.4.4 3.7.4 7.7 0 14-5.5 14-13S31.7 8 24 8z" fill="#DE5833"/>
-                                <path d="M24 10c-6.6 0-12 4.7-12 11 0 3.8 2.1 7.2 5.5 9.2l-1.2 4.3 4.5-2c1 .3 2.1.5 3.2.5 6.6 0 12-4.7 12-11s-5.4-12-12-12z" fill="#FFFFFF"/>
-                                <circle cx="20" cy="18" r="2.5" fill="#333333"/><circle cx="28" cy="18" r="2.5" fill="#333333"/>
-                                <path d="M22 21h4c0 1.5-1 2.5-2 2.5s-2-1-2-2.5z" fill="#F8A51D"/>
-                                <path d="M20 28l4 3 4-3-4-1.5z" fill="#67B246"/>
-                            </svg>
+                    <!-- DuckDuckGo -->
+                    <div class="engine-option-row" onclick="selectEngine('ddg')">
+                        <div class="engine-option-left">
+                            <div class="engine-option-icon" id="dd-icon-ddg"></div>
+                            <div class="engine-option-meta">
+                                <span class="engine-option-name">DuckDuckGo</span>
+                                <span class="engine-option-desc">Tracker-free private search</span>
+                            </div>
                         </div>
-                        <div class="engine-option-meta">
-                            <span class="engine-option-name">DuckDuckGo</span>
-                            <span class="engine-option-desc">Tracker-free anonymous search</span>
-                        </div>
+                        <div class="engine-option-check" id="check-ddg" style="display:none;">✓</div>
                     </div>
-                    <div class="engine-option-check" id="check-ddg" style="display:none;">✓</div>
-                </div>
 
-                <!-- Option 4: Startpage (Real Brand Logo) -->
-                <div class="engine-option-row" onclick="selectEngine('startpage')">
-                    <div class="engine-option-left">
-                        <div class="engine-option-icon">
-                            <svg width="22" height="22" viewBox="0 0 32 32">
-                                <circle cx="16" cy="16" r="15" fill="#0164FF"/>
-                                <path d="M12 9h8c1.1 0 2 .9 2 2v2h-8v4h6c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-8c-1.1 0-2-.9-2-2v-2h8v-4h-6c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z" fill="#FFFFFF"/>
-                                <circle cx="23" cy="9" r="2.5" fill="#00E5FF"/>
-                            </svg>
+                    <!-- Startpage -->
+                    <div class="engine-option-row" onclick="selectEngine('startpage')">
+                        <div class="engine-option-left">
+                            <div class="engine-option-icon" id="dd-icon-startpage"></div>
+                            <div class="engine-option-meta">
+                                <span class="engine-option-name">Startpage</span>
+                                <span class="engine-option-desc">Google results with privacy</span>
+                            </div>
                         </div>
-                        <div class="engine-option-meta">
-                            <span class="engine-option-name">Startpage</span>
-                            <span class="engine-option-desc">Google results with total privacy</span>
-                        </div>
+                        <div class="engine-option-check" id="check-startpage" style="display:none;">✓</div>
                     </div>
-                    <div class="engine-option-check" id="check-startpage" style="display:none;">✓</div>
                 </div>
+            </div>
+
+            <!-- 3. Clean Shortcuts Grid (No headers, no buttons, no + Add) -->
+            <div class="speed-dial-grid" id="speedDialGrid">
+                <!-- Dynamically populated -->
             </div>
         </div>
-
-        <!-- Compact Live Defense Matrix (Small Mini-Pill Card, NO "Active Shield" Text) -->
-        <div class="defense-mini-card">
-            <div class="mini-stat-group">
-                <div class="mini-stat-icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-                </div>
-                <span class="mini-stat-val" id="statBlocked">1,420</span>
-                <span class="mini-stat-lbl">Ads</span>
-            </div>
-            <div class="mini-stat-bullet">•</div>
-            <div class="mini-stat-group">
-                <span class="mini-stat-val" id="statTrackers">890</span>
-                <span class="mini-stat-lbl">Trackers</span>
-            </div>
-            <div class="mini-stat-bullet">•</div>
-            <div class="mini-stat-group">
-                <span class="mini-stat-val" id="statBandwidth">42 MB</span>
-                <span class="mini-stat-lbl">Saved</span>
-            </div>
-        </div>
-
-        <!-- Speed Dial Shortcuts Section -->
-        <div class="section-header-row">
-            <span class="section-title">Speed Dial Shortcuts</span>
-            <div class="header-actions">
-                <button class="header-btn" id="btnToggleEdit" onclick="toggleEditMode()">Edit</button>
-                <button class="header-btn" onclick="openThemeModal()">Wallpapers &amp; Themes</button>
-            </div>
-        </div>
-
-        <!-- Dynamic Firefox-Style Curved Speed Dial Grid -->
-        <div class="speed-dial-grid" id="speedDialGrid">
-            <!-- Rendered dynamically by script -->
-        </div>
-
     </div>
 
-    <!-- Wallpaper & Themes Customizer Modal -->
+    <!-- 4. Unboxed Ad Tracker Matrix at Bottom (Directly Above Nav) -->
+    <div class="bottom-defense-container">
+        <div class="defense-unboxed-row">
+            <span class="shield-icon">🛡️</span>
+            <span><span class="defense-stat-val" id="statBlocked">1,420</span> Ads Blocked</span>
+            <span class="defense-bullet">•</span>
+            <span><span class="defense-stat-val" id="statTrackers">890</span> Trackers</span>
+            <span class="defense-bullet">•</span>
+            <span><span class="defense-stat-val" id="statBandwidth">42 MB</span> Saved</span>
+        </div>
+    </div>
+
+    <!-- Wallpapers & Themes Customizer Modal (Opened via Browser Menu / Settings) -->
     <div class="modal-overlay" id="themeModal" onclick="closeModalOnBg(event)">
         <div class="modal-card">
             <div class="modal-title">
@@ -923,101 +763,116 @@
                 <button class="modal-close" onclick="closeThemeModal()">✕</button>
             </div>
 
-            <!-- Homepage Wallpaper (Background Image) Selector -->
-            <div>
-                <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">HOMEPAGE WALLPAPERS (BACKGROUND IMAGES)</div>
-                <div class="wallpaper-grid">
-                    <!-- Preset 1: Deep Twilight Ocean -->
-                    <div class="wallpaper-card active" onclick="setWallpaper('ocean')" style="background: radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%);">
-                        <span class="wp-title">Twilight Ocean</span>
-                    </div>
+            <!-- Upload Custom Wallpaper Button -->
+            <div class="upload-card-full" onclick="triggerCustomWallpaperUpload()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                <span>Upload Custom Image from Device</span>
+                <input type="file" id="wallpaperFileInput" accept="image/*" style="display:none;" onchange="handleNativeFileChange(event)">
+            </div>
 
-                    <!-- Preset 2: Bioluminescent Wave -->
-                    <div class="wallpaper-card" onclick="setWallpaper('biowave')" style="background: radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%);">
-                        <span class="wp-title">Bio Cyan</span>
-                    </div>
-
-                    <!-- Preset 3: Sunset Harbor -->
-                    <div class="wallpaper-card" onclick="setWallpaper('sunset')" style="background: radial-gradient(ellipse at 30% 20%, #4A1A2C 0%, #1F0D24 40%, #0A0714 100%);">
-                        <span class="wp-title">Sunset Harbor</span>
-                    </div>
-
-                    <!-- Preset 4: Emerald Fjord -->
-                    <div class="wallpaper-card" onclick="setWallpaper('emerald')" style="background: radial-gradient(ellipse at 70% 30%, #0A3626 0%, #061F17 50%, #030F0B 100%);">
-                        <span class="wp-title">Emerald Fjord</span>
-                    </div>
-
-                    <!-- Preset 5: Minimal Obsidian -->
-                    <div class="wallpaper-card" onclick="setWallpaper('dark')" style="background: #090D14;">
-                        <span class="wp-title">Minimal Dark</span>
-                    </div>
-
-                    <!-- Option 6: Custom User Upload from Device -->
-                    <div class="wallpaper-card" onclick="triggerWallpaperUpload()" style="background: rgba(0,229,255,0.08); border-style: dashed; align-items: center; justify-content: center;">
-                        <span class="wp-title" style="background: var(--fokk-blue);">+ Upload Image</span>
-                        <input type="file" id="wallpaperUploadInput" accept="image/*" style="display:none;" onchange="handleWallpaperUpload(event)">
-                    </div>
+            <!-- Category 1: Sea & Ocean -->
+            <div class="category-header">🌊 Sea &amp; Ocean</div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-card active" onclick="setWallpaper('twilight_ocean')" style="background: radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%);">
+                    <span class="wp-title">Twilight Ocean</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('azure_waves')" style="background: radial-gradient(ellipse at 70% 30%, #064060 0%, #04253a 50%, #02111d 100%);">
+                    <span class="wp-title">Azure Waves</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('biowave')" style="background: radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%);">
+                    <span class="wp-title">Bioluminescent Tide</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('coral_coast')" style="background: radial-gradient(ellipse at 30% 70%, #0a4d5c 0%, #062f38 50%, #031418 100%);">
+                    <span class="wp-title">Coral Coast</span>
                 </div>
             </div>
 
-            <!-- Sailboat Logo Customizer -->
-            <div>
-                <div style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">SAILBOAT &amp; APP LOGO</div>
-                <div class="logo-options-grid">
-                    <div class="logo-option-card active" onclick="selectLogo('classic')">
-                        <img src="fokk_logo.png" alt="Classic Sailboat">
-                        <span class="logo-option-name">Sailboat</span>
-                    </div>
-
-                    <div class="logo-option-card" onclick="selectLogo('clipper')">
-                        <svg viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>
-                        <span class="logo-option-name">Clipper</span>
-                    </div>
-
-                    <div class="logo-option-card" onclick="selectLogo('galleon')">
-                        <svg viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>
-                        <span class="logo-option-name">Galleon</span>
-                    </div>
-
-                    <div class="logo-option-card" onclick="selectLogo('catamaran')">
-                        <svg viewBox="0 0 24 24" fill="#FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>
-                        <span class="logo-option-name">Catamaran</span>
-                    </div>
-
-                    <div class="logo-option-card" onclick="selectLogo('drakkar')">
-                        <svg viewBox="0 0 24 24" fill="#A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>
-                        <span class="logo-option-name">Drakkar</span>
-                    </div>
-
-                    <div class="logo-option-card" onclick="triggerLogoUpload()">
-                        <svg viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-                        <span class="logo-option-name">Upload</span>
-                        <input type="file" id="logoUploadInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
-                    </div>
+            <!-- Category 2: Sailboats & Marine -->
+            <div class="category-header">⛵ Sailboats &amp; Marine</div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-card" onclick="setWallpaper('sunset_sailboat')" style="background: radial-gradient(ellipse at 40% 30%, #542238 0%, #29122c 45%, #0b0714 100%);">
+                    <span class="wp-title">Sunset Sailboat</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('clipper_horizon')" style="background: radial-gradient(ellipse at 60% 40%, #173852 0%, #0d2030 50%, #060e17 100%);">
+                    <span class="wp-title">Clipper Horizon</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('moonlight_yacht')" style="background: radial-gradient(ellipse at 50% 10%, #2a3c50 0%, #121c28 50%, #080d14 100%);">
+                    <span class="wp-title">Moonlight Yacht</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('regatta')" style="background: radial-gradient(ellipse at 20% 80%, #0e4c63 0%, #0a2f3d 50%, #05141a 100%);">
+                    <span class="wp-title">Regatta Bay</span>
                 </div>
             </div>
 
-            <button class="modal-btn" onclick="closeThemeModal()">Done</button>
+            <!-- Category 3: Nature & Landscapes -->
+            <div class="category-header">🌲 Nature &amp; Landscapes</div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-card" onclick="setWallpaper('misty_pines')" style="background: radial-gradient(ellipse at 50% 30%, #153a29 0%, #0e241b 50%, #07120e 100%);">
+                    <span class="wp-title">Misty Pines</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('aurora')" style="background: radial-gradient(ellipse at 70% 20%, #104e43 0%, #0a2b38 45%, #06111a 100%);">
+                    <span class="wp-title">Aurora Borealis</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('alpine_lake')" style="background: radial-gradient(ellipse at 30% 40%, #1b384d 0%, #0e2030 50%, #071018 100%);">
+                    <span class="wp-title">Alpine Lake</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('desert_dusk')" style="background: radial-gradient(ellipse at 50% 60%, #4a2820 0%, #2b1720 50%, #120914 100%);">
+                    <span class="wp-title">Desert Dunes</span>
+                </div>
+            </div>
+
+            <!-- Category 4: Minimal & Dark -->
+            <div class="category-header">🌌 Minimal &amp; Dark</div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-card" onclick="setWallpaper('pure_obsidian')" style="background: #090D14;">
+                    <span class="wp-title">Obsidian Pure</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('cyber_navy')" style="background: radial-gradient(ellipse at 50% 50%, #0F172A 0%, #090D16 100%);">
+                    <span class="wp-title">Cyber Navy</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('deep_cosmos')" style="background: radial-gradient(ellipse at 80% 20%, #201335 0%, #0d0a1c 50%, #06050e 100%);">
+                    <span class="wp-title">Deep Cosmos</span>
+                </div>
+                <div class="wallpaper-card" onclick="setWallpaper('slate_carbon')" style="background: radial-gradient(ellipse at 50% 30%, #1e2630 0%, #12171d 50%, #090c0f 100%);">
+                    <span class="wp-title">Slate Carbon</span>
+                </div>
+            </div>
+
+            <button class="modal-btn" onclick="closeThemeModal()" style="margin-top: 10px;">Done</button>
         </div>
     </div>
 
-    <!-- Add Custom Shortcut Modal -->
-    <div class="modal-overlay" id="addShortcutModal" onclick="closeModalOnBg(event)">
+    <!-- Customize Speed Dials Modal (Opened via Browser Menu / Settings) -->
+    <div class="modal-overlay" id="shortcutsModal" onclick="closeModalOnBg(event)">
         <div class="modal-card">
             <div class="modal-title">
-                <span>Add Custom Shortcut</span>
-                <button class="modal-close" onclick="closeAddShortcutModal()">✕</button>
+                <span>⚡ Customize Speed Dials</span>
+                <button class="modal-close" onclick="closeShortcutsManager()">✕</button>
             </div>
-            <input type="text" id="inputShortcutTitle" class="modal-input" placeholder="Title (e.g. YouTube)">
-            <input type="text" id="inputShortcutUrl" class="modal-input" placeholder="URL (e.g. https://m.youtube.com)">
-            <button class="modal-btn" onclick="saveNewShortcut()">Add Shortcut</button>
+
+            <div style="font-size: 11.5px; color: var(--text-secondary);">
+                Keep only the shortcuts you use (e.g. YouTube), remove others, or add your favorites:
+            </div>
+
+            <!-- List of shortcuts with Delete buttons -->
+            <div id="shortcutsManagerList"></div>
+
+            <!-- Add new shortcut form -->
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding-top:12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <span style="font-size:12px; font-weight:700; color:var(--fokk-cyan);">+ Add New Shortcut</span>
+                <input type="text" id="newShortcutTitle" class="modal-input" placeholder="Title (e.g. YouTube)">
+                <input type="text" id="newShortcutUrl" class="modal-input" placeholder="URL (e.g. https://m.youtube.com)">
+                <button class="modal-btn" onclick="addNewShortcut()">Add Shortcut</button>
+            </div>
+
+            <button class="modal-btn" onclick="closeShortcutsManager()" style="background: rgba(255,255,255,0.08); color: var(--text-primary);">Done</button>
         </div>
     </div>
 
     <script>
-        // 1. REAL BRAND LOGOS & SEARCH ENGINE LOGIC
+        // 1. BRAND SVGS (Real Brand Logos)
         const realBrandSvgs = {
-            brave: `<svg width="18" height="18" viewBox="0 0 32 32">
+            brave: `<svg width="20" height="20" viewBox="0 0 32 32">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2.5C13.8 2.5 12.3 4.2 11.2 5.6L10.3 6.7C9.9 7.2 9.4 7.6 8.8 7.8L6.4 8.6C4.6 9.2 3.5 10.9 3.5 12.8C3.5 14.2 4.1 15.6 5.1 16.6L7.3 18.7C7.7 19.1 8 19.6 8.1 20.2L8.6 22.8C8.9 24.7 10.3 26.2 12.1 26.7L14.7 27.4C15.5 27.6 16.5 27.6 17.3 27.4L19.9 26.7C21.7 26.2 23.1 24.7 23.4 22.8L23.9 20.2C24 19.6 24.3 19.1 24.7 18.7L26.9 16.6C27.9 15.6 28.5 14.2 28.5 12.8C28.5 10.9 27.4 9.2 25.6 8.6L23.2 7.8C22.6 7.6 22.1 7.2 21.7 6.7L20.8 5.6C19.7 4.2 18.2 2.5 16 2.5Z" fill="url(#brave-pill-grad)"/>
                 <path d="M16 8L13 12H19L16 8Z" fill="#FFF"/>
                 <path d="M12 14L10 18H22L20 14H12Z" fill="#FFF" fill-opacity="0.9"/>
@@ -1027,13 +882,13 @@
                     </linearGradient>
                 </defs>
             </svg>`,
-            google: `<svg width="18" height="18" viewBox="0 0 24 24">
+            google: `<svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/>
                 <path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/>
                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/>
             </svg>`,
-            ddg: `<svg width="18" height="18" viewBox="0 0 48 48">
+            ddg: `<svg width="20" height="20" viewBox="0 0 48 48">
                 <circle cx="24" cy="24" r="23" fill="#DE5833"/>
                 <circle cx="24" cy="24" r="21" fill="#FFFFFF"/>
                 <path d="M24 8c-7.7 0-14 5.5-14 13 0 4.5 2.5 8.5 6.4 10.9l-1.4 5.1 5.3-2.4c1.2.3 2.4.4 3.7.4 7.7 0 14-5.5 14-13S31.7 8 24 8z" fill="#DE5833"/>
@@ -1042,7 +897,7 @@
                 <path d="M22 21h4c0 1.5-1 2.5-2 2.5s-2-1-2-2.5z" fill="#F8A51D"/>
                 <path d="M20 28l4 3 4-3-4-1.5z" fill="#67B246"/>
             </svg>`,
-            startpage: `<svg width="18" height="18" viewBox="0 0 32 32">
+            startpage: `<svg width="20" height="20" viewBox="0 0 32 32">
                 <circle cx="16" cy="16" r="15" fill="#0164FF"/>
                 <path d="M12 9h8c1.1 0 2 .9 2 2v2h-8v4h6c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-8c-1.1 0-2-.9-2-2v-2h8v-4h-6c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2z" fill="#FFFFFF"/>
                 <circle cx="23" cy="9" r="2.5" fill="#00E5FF"/>
@@ -1058,12 +913,18 @@
 
         let currentEngineKey = 'brave';
 
+        // Render drop-down icons once
+        document.getElementById('dd-icon-brave').innerHTML = realBrandSvgs.brave;
+        document.getElementById('dd-icon-google').innerHTML = realBrandSvgs.google;
+        document.getElementById('dd-icon-ddg').innerHTML = realBrandSvgs.ddg;
+        document.getElementById('dd-icon-startpage').innerHTML = realBrandSvgs.startpage;
+
         function updateEngineUI(key) {
             currentEngineKey = key;
             const engine = engines[key];
+            // ONLY LOGO in the input pill trigger!
             document.getElementById('activeEngineIcon').innerHTML = realBrandSvgs[key];
-            document.getElementById('activeEngineName').innerText = engine.name;
-            document.getElementById('searchInput').placeholder = `Search with ${engine.name} or enter URL...`;
+            document.getElementById('searchInput').placeholder = `Search or enter web address...`;
 
             document.querySelectorAll('.engine-option-row').forEach(row => row.classList.remove('active'));
             document.querySelectorAll('.engine-option-check').forEach(chk => chk.style.display = 'none');
@@ -1122,7 +983,7 @@
             window.location.href = targetUrl;
         }
 
-        // 2. CUSTOMIZABLE SPEED DIAL ENGINE
+        // 2. SPEED DIALS ENGINE
         const defaultDials = [
             { id: "yt", title: "YouTube", url: "https://m.youtube.com", color: "#FF0000", icon: "youtube" },
             { id: "reddit", title: "Reddit", url: "https://www.reddit.com", color: "#FF4500", icon: "reddit" },
@@ -1133,7 +994,6 @@
         ];
 
         let speedDials = [];
-        let isEditMode = false;
 
         function loadSpeedDials() {
             try {
@@ -1143,6 +1003,7 @@
                 speedDials = defaultDials;
             }
             renderSpeedDials();
+            renderShortcutsManagerList();
         }
 
         function saveSpeedDials() {
@@ -1173,90 +1034,127 @@
             const grid = document.getElementById('speedDialGrid');
             grid.innerHTML = '';
 
-            speedDials.forEach((dial, idx) => {
+            speedDials.forEach((dial) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'dial-item-wrapper';
+                wrapper.onclick = () => { window.location.href = dial.url; };
                 wrapper.innerHTML = `
-                    <div class="dial-delete-badge" onclick="deleteShortcut(event, ${idx})">✕</div>
-                    <div class="dial-icon-box" onclick="handleDialClick('${dial.url}')">
+                    <div class="dial-icon-box">
                         ${getIconSvg(dial.icon, dial.color)}
                     </div>
                     <span class="dial-title">${dial.title}</span>
                 `;
                 grid.appendChild(wrapper);
             });
-
-            // Add shortcut card
-            const addCard = document.createElement('div');
-            addCard.className = 'add-dial-card';
-            addCard.innerHTML = `
-                <div class="add-dial-box" onclick="openAddShortcutModal()">+</div>
-                <span class="dial-title" style="color:var(--text-secondary);">Add</span>
-            `;
-            grid.appendChild(addCard);
         }
 
-        function handleDialClick(url) {
-            if (!isEditMode) {
-                window.location.href = url;
+        // Shortcuts Manager Modal Logic
+        function openShortcutsManager() {
+            renderShortcutsManagerList();
+            document.getElementById('shortcutsModal').classList.add('active');
+        }
+
+        function closeShortcutsManager() {
+            document.getElementById('shortcutsModal').classList.remove('active');
+        }
+
+        function renderShortcutsManagerList() {
+            const list = document.getElementById('shortcutsManagerList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (speedDials.length === 0) {
+                list.innerHTML = '<div style="font-size:12px; color:var(--text-secondary); text-align:center; padding:12px;">No shortcuts configured. Add one below!</div>';
+                return;
             }
+
+            speedDials.forEach((dial, idx) => {
+                const row = document.createElement('div');
+                row.className = 'shortcut-item-row';
+                row.innerHTML = `
+                    <div class="shortcut-item-left">
+                        <div style="width:24px; height:24px; display:flex; align-items:center; justify-content:center;">
+                            ${getIconSvg(dial.icon, dial.color)}
+                        </div>
+                        <div>
+                            <div class="shortcut-item-title">${dial.title}</div>
+                            <div class="shortcut-item-url">${dial.url}</div>
+                        </div>
+                    </div>
+                    <button class="shortcut-del-btn" onclick="removeShortcut(${idx})">Remove</button>
+                `;
+                list.appendChild(row);
+            });
         }
 
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            document.getElementById('pageBody').classList.toggle('edit-mode', isEditMode);
-            document.getElementById('btnToggleEdit').innerText = isEditMode ? 'Done' : 'Edit';
-        }
-
-        function deleteShortcut(e, idx) {
-            e.stopPropagation();
+        function removeShortcut(idx) {
             speedDials.splice(idx, 1);
             saveSpeedDials();
             renderSpeedDials();
+            renderShortcutsManagerList();
         }
 
-        function openAddShortcutModal() {
-            document.getElementById('addShortcutModal').classList.add('active');
-        }
+        function addNewShortcut() {
+            const titleInput = document.getElementById('newShortcutTitle');
+            const urlInput = document.getElementById('newShortcutUrl');
+            const title = titleInput.value.trim();
+            let url = urlInput.value.trim();
 
-        function closeAddShortcutModal() {
-            document.getElementById('addShortcutModal').classList.remove('active');
-        }
-
-        function saveNewShortcut() {
-            const title = document.getElementById('inputShortcutTitle').value.trim();
-            let url = document.getElementById('inputShortcutUrl').value.trim();
             if (!title || !url) return;
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
+
+            let icon = 'generic';
+            let color = 'var(--fokk-cyan)';
+            if (url.includes('youtube.com') || url.includes('youtu.be')) { icon = 'youtube'; color = '#FF0000'; }
+            else if (url.includes('reddit.com')) { icon = 'reddit'; color = '#FF4500'; }
+            else if (url.includes('wikipedia.org')) { icon = 'wikipedia'; color = '#FFFFFF'; }
+            else if (url.includes('x.com') || url.includes('twitter.com')) { icon = 'x'; color = '#FFFFFF'; }
+
             speedDials.push({
                 id: 'custom_' + Date.now(),
                 title: title,
                 url: url,
-                color: 'var(--fokk-cyan)',
-                icon: 'generic'
+                color: color,
+                icon: icon
             });
+
             saveSpeedDials();
             renderSpeedDials();
-            closeAddShortcutModal();
-            document.getElementById('inputShortcutTitle').value = '';
-            document.getElementById('inputShortcutUrl').value = '';
+            renderShortcutsManagerList();
+
+            titleInput.value = '';
+            urlInput.value = '';
         }
 
-        // 3. HOMEPAGE WALLPAPER & BACKGROUND THEMES ENGINE
-        const wallpaperStyles = {
-            ocean: "radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%)",
+        // 3. WALLPAPERS & THEMES LOGIC
+        const wallpaperPresets = {
+            twilight_ocean: "radial-gradient(ellipse at 50% 20%, #1A2E4C 0%, #0B1626 50%, #050B14 100%)",
+            azure_waves: "radial-gradient(ellipse at 70% 30%, #064060 0%, #04253a 50%, #02111d 100%)",
             biowave: "radial-gradient(ellipse at 80% 90%, #004d40 0%, #00242C 45%, #040D17 100%)",
-            sunset: "radial-gradient(ellipse at 30% 20%, #4A1A2C 0%, #1F0D24 40%, #0A0714 100%)",
-            emerald: "radial-gradient(ellipse at 70% 30%, #0A3626 0%, #061F17 50%, #030F0B 100%)",
-            dark: "#090D14"
+            coral_coast: "radial-gradient(ellipse at 30% 70%, #0a4d5c 0%, #062f38 50%, #031418 100%)",
+
+            sunset_sailboat: "radial-gradient(ellipse at 40% 30%, #542238 0%, #29122c 45%, #0b0714 100%)",
+            clipper_horizon: "radial-gradient(ellipse at 60% 40%, #173852 0%, #0d2030 50%, #060e17 100%)",
+            moonlight_yacht: "radial-gradient(ellipse at 50% 10%, #2a3c50 0%, #121c28 50%, #080d14 100%)",
+            regatta: "radial-gradient(ellipse at 20% 80%, #0e4c63 0%, #0a2f3d 50%, #05141a 100%)",
+
+            misty_pines: "radial-gradient(ellipse at 50% 30%, #153a29 0%, #0e241b 50%, #07120e 100%)",
+            aurora: "radial-gradient(ellipse at 70% 20%, #104e43 0%, #0a2b38 45%, #06111a 100%)",
+            alpine_lake: "radial-gradient(ellipse at 30% 40%, #1b384d 0%, #0e2030 50%, #071018 100%)",
+            desert_dusk: "radial-gradient(ellipse at 50% 60%, #4a2820 0%, #2b1720 50%, #120914 100%)",
+
+            pure_obsidian: "#090D14",
+            cyber_navy: "radial-gradient(ellipse at 50% 50%, #0F172A 0%, #090D16 100%)",
+            deep_cosmos: "radial-gradient(ellipse at 80% 20%, #201335 0%, #0d0a1c 50%, #06050e 100%)",
+            slate_carbon: "radial-gradient(ellipse at 50% 30%, #1e2630 0%, #12171d 50%, #090c0f 100%)"
         };
 
         function setWallpaper(type) {
             const body = document.getElementById('pageBody');
-            if (wallpaperStyles[type]) {
-                body.style.backgroundImage = wallpaperStyles[type];
+            if (wallpaperPresets[type]) {
+                body.style.backgroundImage = wallpaperPresets[type];
                 try {
                     localStorage.setItem('fokk_wallpaper_type', type);
                     localStorage.removeItem('fokk_custom_wallpaper');
@@ -1265,35 +1163,43 @@
             highlightActiveWallpaper(type);
         }
 
-        function triggerWallpaperUpload() {
-            document.getElementById('wallpaperUploadInput').click();
+        // Direct bridge and file-input fallback
+        function triggerCustomWallpaperUpload() {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.pickWallpaperImage === 'function') {
+                window.FokkShieldBridge.pickWallpaperImage();
+            } else {
+                const input = document.getElementById('wallpaperFileInput');
+                if (input) input.click();
+            }
         }
 
-        function handleWallpaperUpload(e) {
+        function handleNativeFileChange(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const dataUrl = evt.target.result;
-                const body = document.getElementById('pageBody');
-                body.style.backgroundImage = `url("${dataUrl}")`;
-                try {
-                    localStorage.setItem('fokk_custom_wallpaper', dataUrl);
-                    localStorage.setItem('fokk_wallpaper_type', 'custom');
-                } catch (err) {}
-                highlightActiveWallpaper('custom');
+                applyCustomWallpaper(evt.target.result);
             };
             reader.readAsDataURL(file);
         }
 
+        // Global hook callable by Android Native bridge or web reader
+        window.applyCustomWallpaper = function(dataUrl) {
+            const body = document.getElementById('pageBody');
+            body.style.backgroundImage = `url("${dataUrl}")`;
+            try {
+                localStorage.setItem('fokk_custom_wallpaper', dataUrl);
+                localStorage.setItem('fokk_wallpaper_type', 'custom');
+            } catch (e) {}
+            highlightActiveWallpaper('custom');
+        };
+
         function highlightActiveWallpaper(type) {
             document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));
-            if (event && event.target && event.target.closest('.wallpaper-card')) {
-                event.target.closest('.wallpaper-card').classList.add('active');
-            }
+            const matched = document.querySelector(`.wallpaper-card[onclick*="'${type}'"]`);
+            if (matched) matched.classList.add('active');
         }
 
-        // 4. SAILBOAT LOGO CUSTOMIZER
         function openThemeModal() {
             document.getElementById('themeModal').classList.add('active');
         }
@@ -1308,76 +1214,38 @@
             }
         }
 
-        function selectLogo(type) {
-            const logoImg = document.getElementById('mainLogoImg');
-            if (type === 'classic') {
-                logoImg.src = 'fokk_logo.png';
-            } else if (type === 'clipper') {
-                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>';
-            } else if (type === 'galleon') {
-                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>';
-            } else if (type === 'catamaran') {
-                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>';
-            } else if (type === 'drakkar') {
-                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>';
-            }
-            try {
-                localStorage.setItem('fokk_logo_type', type);
-            } catch (e) {}
-
-            document.querySelectorAll('.logo-option-card').forEach(el => el.classList.remove('active'));
-            if (event && event.target && event.target.closest('.logo-option-card')) {
-                event.target.closest('.logo-option-card').classList.add('active');
+        // 4. URL PARAMS DISPATCHER (for Browser Menu & Settings actions)
+        function checkUrlActions() {
+            const params = new URLSearchParams(window.location.search);
+            const action = params.get('action') || params.get('open');
+            if (action === 'wallpapers' || action === 'themes') {
+                openThemeModal();
+            } else if (action === 'shortcuts' || action === 'speeddials') {
+                openShortcutsManager();
             }
         }
 
-        function triggerLogoUpload() {
-            document.getElementById('logoUploadInput').click();
-        }
-
-        function handleLogoUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const dataUrl = evt.target.result;
-                document.getElementById('mainLogoImg').src = dataUrl;
-                try {
-                    localStorage.setItem('fokk_custom_logo', dataUrl);
-                    localStorage.setItem('fokk_logo_type', 'custom');
-                } catch (err) {}
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 5. INITIALIZE STATE ON LOAD
+        // 5. RESTORE STATE ON LOAD
         try {
             // Restore wallpaper
-            const savedWpType = localStorage.getItem('fokk_wallpaper_type') || 'ocean';
+            const savedWpType = localStorage.getItem('fokk_wallpaper_type') || 'twilight_ocean';
             if (savedWpType === 'custom') {
                 const customWp = localStorage.getItem('fokk_custom_wallpaper');
                 if (customWp) document.getElementById('pageBody').style.backgroundImage = `url("${customWp}")`;
+                highlightActiveWallpaper('custom');
             } else {
                 setWallpaper(savedWpType);
             }
 
-            // Restore logo
-            const savedLogoType = localStorage.getItem('fokk_logo_type');
-            if (savedLogoType === 'custom') {
-                const customLogo = localStorage.getItem('fokk_custom_logo');
-                if (customLogo) document.getElementById('mainLogoImg').src = customLogo;
-            } else if (savedLogoType) {
-                selectLogo(savedLogoType);
-            }
-
-            // Restore engine
+            // Restore search engine
             const savedEngine = localStorage.getItem('fokk_search_engine_key') || 'brave';
             updateEngineUI(savedEngine);
         } catch (e) {}
 
         loadSpeedDials();
+        checkUrlActions();
 
-        // 6. LIVE STATS SYNC VIA BRIDGE
+        // 6. SYNC LIVE STATS VIA BRIDGE
         try {
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getStats === 'function') {
                 const stats = JSON.parse(window.FokkShieldBridge.getStats());

@@ -134,7 +134,7 @@
         }
     }
 
-    // 3. Universal Brave/uBlock Cosmetic CSS (Collapses empty ad slots and dismisses cookie consent walls)
+    // 3. Universal Brave/uBlock Cosmetic CSS (Zero-box collapse & GDPR suppression)
     const cosmeticCss = `
         /* Generic Ad Containers & Empty Box Collapsers */
         ins.adsbygoogle,
@@ -179,8 +179,18 @@
         [id*="outbrain"],
         [class*="taboola"],
         [id*="taboola"],
+
+        /* Sponsored Search Result Ads */
+        #tads,
+        #tadsb,
+        #bottomads,
+        [data-text-ad],
+        .commercial-unit-desktop-top,
+        .commercial-unit-mobile-top,
+        .uEierd,
+        .pla-unit-container,
         
-        /* YouTube Web Ad Selectors (Safe - avoids breaking player initialization) */
+        /* YouTube Web Ad Selectors */
         ytd-promoted-video-renderer,
         ytd-compact-promoted-video-renderer,
         ytd-promoted-sparkles-web-renderer,
@@ -204,7 +214,7 @@
         .promotedlink,
         .promoted,
 
-        /* Cookie & GDPR Consent Walls Auto-Dismiss (uBlock Annoyances style) */
+        /* Cookie & GDPR Consent Walls Auto-Dismiss */
         #onetrust-consent-sdk,
         #onetrust-banner-sdk,
         .onetrust-pc-dark,
@@ -213,17 +223,22 @@
         #cookie-notice,
         .qc-cmp2-container,
         #cmp-app-container,
-        .fc-consent-root {
+        .fc-consent-root,
+        .cc-window,
+        #CybotCookiebotDialog,
+        div[aria-label="cookieconsent"],
+        .osano-cm-window {
             display: none !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            max-height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            height: 0px !important;
+            min-height: 0px !important;
+            max-height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
             border: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
+            background: transparent !important;
         }
     `;
 
@@ -232,11 +247,81 @@
     styleEl.appendChild(document.createTextNode(cosmeticCss));
     (document.head || document.documentElement).appendChild(styleEl);
 
-    // 4. Dynamic Empty Box Collapser (Eliminates empty black rectangles on livescore.in & other sites)
+    // 4. Multi-Level DOM Parent Collapser (Eradicates empty black/dark rectangular boxes)
     function collapseEmptyAdBoxes() {
         let collapsed = 0;
 
-        // A. Collapse empty or blocked iframes and their reserved wrappers
+        // A. Process all ad elements and iframes
+        const adElements = document.querySelectorAll(`
+            ins.adsbygoogle,
+            .adsbygoogle,
+            [id*="google_ads"],
+            [class*="google_ads"],
+            iframe[id*="google_ads"],
+            iframe[id*="aswift"],
+            iframe[src*="doubleclick"],
+            iframe[src*="adservice"],
+            iframe[src*="googlesyndication"],
+            iframe[src*="googleadservices"],
+            div[id^="div-gpt-ad"],
+            div[id*="gpt-ad"],
+            div[data-ad-type],
+            [class*="ad-banner"],
+            [class*="ad-wrapper"],
+            [class*="ad-container"],
+            [class*="ad-slot"],
+            [id*="ad-slot"],
+            [id*="ad-banner"],
+            [class*="adbox"],
+            [id*="adbox"],
+            [class*="ad-holder"],
+            [class*="ad_holder"],
+            div[data-ad-unit],
+            div[data-ad],
+            div[data-ad-slot],
+            div[data-ad-placeholder],
+            .OUTBRAIN,
+            [id*="outbrain"],
+            [class*="taboola"],
+            [id*="taboola"],
+            #tads, #tadsb, #bottomads, [data-text-ad], .commercial-unit-desktop-top, .commercial-unit-mobile-top, .uEierd
+        `);
+
+        adElements.forEach(el => {
+            if (el && el.style.display !== 'none') {
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('height', '0px', 'important');
+                el.style.setProperty('min-height', '0px', 'important');
+                el.style.setProperty('margin', '0px', 'important');
+                el.style.setProperty('padding', '0px', 'important');
+                el.style.setProperty('background', 'transparent', 'important');
+                collapsed++;
+
+                // Collapse parent container if it's an empty wrapper leaving dark spaces
+                let parent = el.parentElement;
+                for (let level = 0; level < 3 && parent && parent !== document.body && parent !== document.documentElement; level++) {
+                    const text = (parent.innerText || '').trim();
+                    const visibleNonAdChildren = Array.from(parent.children).filter(child => {
+                        const style = window.getComputedStyle(child);
+                        return style.display !== 'none' && !child.matches('ins, iframe, [id*="ad"], [class*="ad"], style, script');
+                    });
+
+                    if (visibleNonAdChildren.length === 0 && text.length < 20) {
+                        parent.style.setProperty('display', 'none', 'important');
+                        parent.style.setProperty('height', '0px', 'important');
+                        parent.style.setProperty('min-height', '0px', 'important');
+                        parent.style.setProperty('margin', '0px', 'important');
+                        parent.style.setProperty('padding', '0px', 'important');
+                        parent.style.setProperty('background', 'transparent', 'important');
+                        parent = parent.parentElement;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        });
+
+        // B. Collapse remaining empty or ad iframes
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
@@ -249,12 +334,13 @@
                 
                 if (isAdFrame || !iframe.src || iframe.src === 'about:blank') {
                     const parent = iframe.parentElement;
-                    if (parent && parent !== document.body && parent.offsetHeight > 10) {
+                    if (parent && parent !== document.body && parent.offsetHeight > 5) {
                         parent.style.setProperty('display', 'none', 'important');
                         parent.style.setProperty('height', '0px', 'important');
                         parent.style.setProperty('min-height', '0px', 'important');
                         parent.style.setProperty('margin', '0px', 'important');
                         parent.style.setProperty('padding', '0px', 'important');
+                        parent.style.setProperty('background', 'transparent', 'important');
                         collapsed++;
                     }
                     iframe.style.setProperty('display', 'none', 'important');
@@ -262,7 +348,7 @@
             } catch (e) {}
         });
 
-        // B. Reddit in-feed promoted posts
+        // C. Reddit in-feed promoted posts
         const redditAds = document.querySelectorAll('shreddit-ad-post, shreddit-comment-ad, [data-adclicklocation], div[data-testid="ad-post"]');
         redditAds.forEach(el => {
             if (el.style.display !== 'none') {
@@ -272,7 +358,7 @@
             }
         });
 
-        // C. Reddit & generic feed posts containing "• Ad" text
+        // D. Reddit & generic feed posts containing "• Ad" text
         const badges = document.querySelectorAll('span, div');
         badges.forEach(badge => {
             if (badge.textContent && badge.textContent.trim() === 'Ad' && badge.children.length === 0) {
@@ -284,6 +370,31 @@
                 }
             }
         });
+
+        // E. Unlock body scroll if blocked by cookie banners
+        const cookieBanners = document.querySelectorAll(`
+            #onetrust-consent-sdk,
+            #onetrust-banner-sdk,
+            .cookie-banner,
+            .cookie-notice,
+            #cookie-notice,
+            .qc-cmp2-container,
+            #cmp-app-container,
+            .fc-consent-root,
+            .cc-window,
+            #CybotCookiebotDialog
+        `);
+        if (cookieBanners.length > 0) {
+            cookieBanners.forEach(banner => {
+                banner.style.setProperty('display', 'none', 'important');
+            });
+            if (document.body && window.getComputedStyle(document.body).overflow === 'hidden') {
+                document.body.style.setProperty('overflow', 'auto', 'important');
+            }
+            if (document.documentElement && window.getComputedStyle(document.documentElement).overflow === 'hidden') {
+                document.documentElement.style.setProperty('overflow', 'auto', 'important');
+            }
+        }
 
         if (collapsed > 0) {
             reportBlocked(collapsed);

@@ -104,20 +104,26 @@
 
     // 2. Video Ad Fast-Forward & Skip (Zero-Lag Engine)
     function checkAndSkipWebAd() {
-        const moviePlayer = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-        if (!moviePlayer) return;
+        const player = document.querySelector('.html5-video-player') || document.getElementById('movie_player');
+        if (!player) return;
 
-        const isAd = moviePlayer.classList.contains('ad-showing') || 
-                     moviePlayer.classList.contains('ad-interrupting') ||
-                     document.querySelector('.ytp-ad-player-overlay, .ytm-ad-badge, .ytp-ad-module');
-
-        if (isAd) {
-            // 1. YouTube native player API instant ad dismissal
-            if (typeof moviePlayer.skipAd === 'function') {
-                try { moviePlayer.skipAd(); } catch (e) {}
+        const isAdShowing = player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting');
+        if (isAdShowing) {
+            // 1. Instant player API skip if exposed by YouTube
+            if (typeof player.skipAd === 'function') {
+                try { player.skipAd(); } catch (e) {}
             }
 
-            // 2. Trigger skip button click instantly
+            // 2. Fast-forward video - STRICTLY guarded to ads (duration < 120s) to never affect regular videos!
+            const video = player.querySelector('video') || document.querySelector('video');
+            if (video) {
+                video.muted = true;
+                if (video.duration && !isNaN(video.duration) && video.duration < 120) {
+                    video.currentTime = video.duration;
+                }
+            }
+
+            // 3. Trigger skip button click instantly
             const skipBtn = document.querySelector(
                 '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .videoAdUiSkipButton, button.ytp-ad-skip-button-text, .ytp-ad-skip-button-slot button, [class*="skip-button"]'
             );
@@ -125,20 +131,10 @@
                 skipBtn.click();
                 reportBlocked(1);
             }
-
-            // 3. Fast-forward video without decoder stall (no blank screen!)
-            const video = moviePlayer.querySelector('video') || document.querySelector('video');
-            if (video) {
-                video.muted = true;
-                video.playbackRate = 16.0;
-                if (video.duration && !isNaN(video.duration) && video.duration > 0.1) {
-                    video.currentTime = Math.max(0, video.duration - 0.05);
-                }
-            }
         }
     }
 
-    // 3. Universal Brave/uBlock Cosmetic CSS (Collapses blank spaces on livescore.in, Reddit, news)
+    // 3. Universal Brave/uBlock Cosmetic CSS (Collapses empty ad slots and dismisses cookie consent walls)
     const cosmeticCss = `
         /* Generic Ad Containers & Empty Box Collapsers */
         ins.adsbygoogle,
@@ -184,7 +180,7 @@
         [class*="taboola"],
         [id*="taboola"],
         
-        /* YouTube Web Ad Selectors */
+        /* YouTube Web Ad Selectors (Safe - avoids breaking player initialization) */
         ytd-promoted-video-renderer,
         ytd-compact-promoted-video-renderer,
         ytd-promoted-sparkles-web-renderer,
@@ -196,9 +192,6 @@
         #masthead-ad,
         .sparkles-light-cta,
         .ytm-ad-badge,
-        .ytp-ad-player-overlay,
-        .ytp-ad-module,
-        .ytp-ad-overlay-container,
         .ad-showing .ytp-ad-player-overlay,
         
         /* Modern Reddit Web Ad Selectors */
@@ -209,7 +202,18 @@
         div[adcontent],
         shreddit-post[is-promoted="true"],
         .promotedlink,
-        .promoted {
+        .promoted,
+
+        /* Cookie & GDPR Consent Walls Auto-Dismiss (uBlock Annoyances style) */
+        #onetrust-consent-sdk,
+        #onetrust-banner-sdk,
+        .onetrust-pc-dark,
+        .cookie-banner,
+        .cookie-notice,
+        #cookie-notice,
+        .qc-cmp2-container,
+        #cmp-app-container,
+        .fc-consent-root {
             display: none !important;
             height: 0 !important;
             min-height: 0 !important;

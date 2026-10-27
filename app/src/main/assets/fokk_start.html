@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fokk Privacy Start</title>
+    <style>
+        :root {
+            --bg-color: #090D14;
+            --surface-color: #111723;
+            --card-border: #1F2C40;
+            --fokk-cyan: #00E5FF;
+            --fokk-blue: #0164FF;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E9CAE;
+            --text-muted: #536277;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px 18px 80px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Hero Shield Brand */
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 22px;
+        }
+
+        .shield-icon {
+            width: 34px;
+            height: 34px;
+            fill: var(--fokk-cyan);
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.4));
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #FFFFFF 30%, var(--fokk-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-tag {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--fokk-cyan);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.8px;
+        }
+
+        /* Search Section */
+        .search-container {
+            width: 100%;
+            max-width: 480px;
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--surface-color);
+            border: 1.5px solid var(--card-border);
+            border-radius: 24px;
+            padding: 10px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+        }
+
+        .search-engine-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #172233;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--fokk-cyan);
+            cursor: pointer;
+            margin-right: 8px;
+            flex-shrink: 0;
+            border: 1px solid #283A54;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            min-width: 0;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-submit-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-submit-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--fokk-cyan);
+        }
+
+        /* Live Defense Matrix Card */
+        .defense-card {
+            width: 100%;
+            max-width: 480px;
+            background: linear-gradient(145deg, #101622 0%, #0B0E16 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .defense-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .defense-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .defense-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #00E676;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #00E676;
+            box-shadow: 0 0 8px #00E676;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #141C2B;
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #1E2B3E;
+        }
+
+        .stat-number {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--fokk-cyan);
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 9.5px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Speed Dial Section */
+        .section-header {
+            width: 100%;
+            max-width: 480px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .speed-dial-grid {
+            width: 100%;
+            max-width: 480px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .dial-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .dial-icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: var(--surface-color);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .dial-item:hover .dial-icon-box, .dial-item:active .dial-icon-box {
+            border-color: var(--fokk-cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 229, 255, 0.2);
+        }
+
+        .dial-icon-box svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        .dial-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            max-width: 65px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Privacy Highlights */
+        .privacy-pills {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .priv-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: #111724;
+            border: 1px solid #1E283A;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-weight: 500;
+        }
+
+        .priv-pill svg {
+            width: 13px;
+            height: 13px;
+            fill: var(--fokk-cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Brand -->
+    <div class="brand-header">
+        <svg class="shield-icon" viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+        </svg>
+        <span class="brand-title">Fokk Privacy Browser</span>
+        <span class="brand-tag">v2.0</span>
+    </div>
+
+    <!-- Search Box -->
+    <div class="search-container">
+        <form id="searchForm" onsubmit="handleSearch(event)">
+            <div class="search-box">
+                <div class="search-engine-pill" id="enginePill" onclick="cycleEngine()">
+                    <span id="engineName">Brave</span>
+                    <span style="font-size: 9px; opacity: 0.7;">▼</span>
+                </div>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search with Brave or enter URL..." autocomplete="off">
+                <button type="submit" class="search-submit-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Live Defense Matrix -->
+    <div class="defense-card">
+        <div class="defense-card-header">
+            <div class="defense-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#00E5FF">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                <span>Live Protection Matrix</span>
+            </div>
+            <div class="defense-status">
+                <span class="status-dot"></span>
+                <span>Active Shield</span>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" id="statBlocked">1,420+</div>
+                <div class="stat-label">Ads Intercepted</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="statTrackers">890+</div>
+                <div class="stat-label">Trackers Dropped</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="statBandwidth">42 MB</div>
+                <div class="stat-label">Data Saved</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speed Dial -->
+    <div class="section-header">
+        <span>Speed Dial Shortcuts</span>
+    </div>
+    <div class="speed-dial-grid">
+        <!-- YouTube -->
+        <a class="dial-item" href="https://m.youtube.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FF0000">
+                    <path d="M21.58 7.19a2.506 2.506 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42c-.87.23-1.54.91-1.77 1.77A26.4 26.4 0 0 0 2 12a26.4 26.4 0 0 0 .41 4.81c.23.86.9 1.54 1.77 1.77C5.74 19 12 19 12 19s6.26 0 7.82-.42c.87-.23 1.54-.91 1.77-1.77.28-1.57.41-3.19.41-4.81s-.13-3.24-.42-4.81zM10 15V9l5.2 3-5.2 3z"/>
+                </svg>
+            </div>
+            <span class="dial-title">YouTube</span>
+        </a>
+
+        <!-- Reddit -->
+        <a class="dial-item" href="https://www.reddit.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FF4500">
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 3.31 1.61 6.24 4.09 8.04l-.84 3.09 3.25-1.12C9.57 22.58 10.76 22.8 12 22.8c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.78 12.82c-.89.89-2.28 1.18-4.78 1.18s-3.89-.29-4.78-1.18a.65.65 0 0 1 .92-.92c.62.62 1.83.85 3.86.85s3.24-.23 3.86-.85a.65.65 0 1 1 .92.92zm-7.03-3.57a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm6.5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/>
+                </svg>
+            </div>
+            <span class="dial-title">Reddit</span>
+        </a>
+
+        <!-- Wikipedia -->
+        <a class="dial-item" href="https://en.m.wikipedia.org">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path d="M12.09 2.91C6.98 2.91 2.84 7.05 2.84 12.16c0 5.11 4.14 9.25 9.25 9.25 5.11 0 9.25-4.14 9.25-9.25 0-5.11-4.14-9.25-9.25-9.25zm5.54 12.88h-1.28l-1.39-4.74-1.39 4.74h-1.28l-2.09-7.22h1.44l1.32 4.96 1.34-4.96h1.36l1.34 4.96 1.32-4.96h1.44l-2.13 7.22z"/>
+                </svg>
+            </div>
+            <span class="dial-title">Wikipedia</span>
+        </a>
+
+        <!-- Twitter / X -->
+        <a class="dial-item" href="https://x.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </div>
+            <span class="dial-title">X (Twitter)</span>
+        </a>
+
+        <!-- Brave Search -->
+        <a class="dial-item" href="https://search.brave.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FF5000">
+                    <path d="M12 2L3 6v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V6l-9-4z"/>
+                </svg>
+            </div>
+            <span class="dial-title">Brave</span>
+        </a>
+
+        <!-- DuckDuckGo -->
+        <a class="dial-item" href="https://duckduckgo.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#DE5833">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-4c0-.28.22-.5.5-.5s.5.22.5.5v4zm-1-6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                </svg>
+            </div>
+            <span class="dial-title">DuckDuckGo</span>
+        </a>
+
+        <!-- LiveScore -->
+        <a class="dial-item" href="https://www.livescore.in">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#00E5FF">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                </svg>
+            </div>
+            <span class="dial-title">LiveScore</span>
+        </a>
+
+        <!-- GitHub -->
+        <a class="dial-item" href="https://github.com">
+            <div class="dial-icon-box">
+                <svg viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                </svg>
+            </div>
+            <span class="dial-title">GitHub</span>
+        </a>
+    </div>
+
+    <!-- Privacy Feature Highlights -->
+    <div class="privacy-pills">
+        <div class="priv-pill">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            <span>100% Local Privacy</span>
+        </div>
+        <div class="priv-pill">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>Zero Tracking</span>
+        </div>
+        <div class="priv-pill">
+            <svg viewBox="0 0 24 24"><path d="M13 3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Hardware Accelerated</span>
+        </div>
+    </div>
+
+    <script>
+        const engines = [
+            { name: "Brave", url: "https://search.brave.com/search?q=" },
+            { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
+            { name: "Startpage", url: "https://www.startpage.com/sp/search?query=" },
+            { name: "Google", url: "https://www.google.com/search?q=" }
+        ];
+        let currentEngineIdx = 0;
+
+        function cycleEngine() {
+            currentEngineIdx = (currentEngineIdx + 1) % engines.length;
+            const engine = engines[currentEngineIdx];
+            document.getElementById('engineName').innerText = engine.name;
+            document.getElementById('searchInput').placeholder = `Search with ${engine.name} or enter URL...`;
+        }
+
+        function handleSearch(e) {
+            e.preventDefault();
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            let targetUrl = "";
+            if (query.startsWith("http://") || query.startsWith("https://")) {
+                targetUrl = query;
+            } else if (query.includes(".") && !query.includes(" ")) {
+                targetUrl = "https://" + query;
+            } else {
+                targetUrl = engines[currentEngineIdx].url + encodeURIComponent(query);
+            }
+            window.location.href = targetUrl;
+        }
+
+        // Live stats update from bridge if available
+        try {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getStats === 'function') {
+                const stats = JSON.parse(window.FokkShieldBridge.getStats());
+                if (stats.blocked) document.getElementById('statBlocked').innerText = stats.blocked.toLocaleString() + "+";
+                if (stats.trackers) document.getElementById('statTrackers').innerText = stats.trackers.toLocaleString() + "+";
+                if (stats.savedMb) document.getElementById('statBandwidth').innerText = stats.savedMb + " MB";
+            }
+        } catch (e) {}
+    </script>
+</body>
+</html>

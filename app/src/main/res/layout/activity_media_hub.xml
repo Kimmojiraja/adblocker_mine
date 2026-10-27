@@ -50,13 +50,14 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="8dp">
 
-                <!-- Security & Shield Indicator -->
+                <!-- Security & Search Engine Indicator -->
                 <ImageView
-                    android:id="@+id/imgSecurityLock"
-                    android:layout_width="13dp"
-                    android:layout_height="13dp"
-                    android:src="@drawable/ic_lock"
-                    app:tint="@color/fokk_cyan" />
+                    android:id="@+id/imgEngineIcon"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/fokk_cyan"
+                    android:contentDescription="Search Engine" />
 
                 <EditText
                     android:id="@+id/urlInput"
@@ -65,13 +66,25 @@
                     android:layout_weight="1"
                     android:layout_marginStart="5dp"
                     android:background="@null"
-                    android:hint="Search or enter URL..."
+                    android:hint="Search with Brave or enter URL..."
                     android:imeOptions="actionGo"
                     android:inputType="textUri"
                     android:maxLines="1"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
                     android:textSize="11.5sp" />
+
+                <!-- Clear input button -->
+                <ImageButton
+                    android:id="@+id/btnClearUrl"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_secondary"
+                    android:visibility="gone"
+                    android:contentDescription="Clear" />
 
                 <!-- Live Shield Blocked Counter Badge in URL Bar (Brave style) -->
                 <LinearLayout
@@ -228,6 +241,28 @@
                 android:contentDescription="Browser Menu" />
         </LinearLayout>
     </LinearLayout>
+
+    <!-- Real-time Privacy Search Suggestions Overlay -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardSuggestions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="46dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#131B2B"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="12dp"
+        app:strokeColor="#24344D"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:id="@+id/layoutSuggestionsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="6dp" />
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Fullscreen Video Container -->
     <FrameLayout

@@ -1226,6 +1226,14 @@
                         </div>
                         <span style="color:#00E676; font-size:11px; font-weight:700; background:rgba(0,230,118,0.12); padding:2px 8px; border-radius:6px;">ON</span>
                     </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="closeModal(); openModal('searchEngine');">
+                        <span>🔍 Search Engine</span>
+                        <span style="color:var(--fokk-cyan); font-weight:600;">Brave Search ▾</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="closeModal(); openModal('extensions');">
+                        <span>🧩 Extensions &amp; Filters</span>
+                        <span style="color:var(--fokk-cyan); font-weight:600;">Manage ▾</span>
+                    </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Desktop Mode Toggled'); closeModal();">
                         <span>🖥️ Desktop Site</span>
                         <span style="color:var(--text-secondary);">Toggle</span>
@@ -1248,6 +1256,70 @@
                     </div>
                 </div>`,
                 actions: `<button class="modal-btn primary" onclick="closeModal()">Close</button>`
+            },
+            searchEngine: {
+                title: "Default Search Engine",
+                isHtml: true,
+                body: `<div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:#131B2B; border:1.5px solid var(--fokk-cyan); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Engine set to Brave Search'); closeModal();">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">🦁 Brave Search (Default)</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Independent index • Zero tracking</div>
+                        </div>
+                        <span style="color:var(--fokk-cyan); font-weight:700;">✓</span>
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Engine set to DuckDuckGo'); closeModal();">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">🦆 DuckDuckGo</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Privacy without profiling</div>
+                        </div>
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Engine set to Startpage'); closeModal();">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">🛡️ Startpage</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Google search results in privacy</div>
+                        </div>
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Engine set to Google Clean'); closeModal();">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">🌐 Google Clean Web</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">Filtered web search</div>
+                        </div>
+                    </div>
+                </div>`,
+                actions: `<button class="modal-btn" onclick="closeModal()">Cancel</button>`
+            },
+            extensions: {
+                title: "Extensions & Custom Filters",
+                isHtml: true,
+                body: `<div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px;">
+                        <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:6px;">Built-in Privacy Shields</div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;">
+                            <span>Strict Ad &amp; Banner Killer</span>
+                            <span style="color:#00E676; font-weight:700;">ON</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;">
+                            <span>Cookie / GDPR Auto-Dismiss</span>
+                            <span style="color:#00E676; font-weight:700;">ON</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;">
+                            <span>Social Widget / Telemetry Shield</span>
+                            <span style="color:#00E676; font-weight:700;">ON</span>
+                        </div>
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px;">
+                        <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">Custom Userscript (JavaScript)</div>
+                        <div style="font-size:10.5px; color:var(--text-secondary); margin-bottom:6px;">Runs Tampermonkey scripts locally</div>
+                        <input type="text" placeholder="// Paste custom JS code" style="width:100%; background:#090D14; border:1px solid #1E283C; border-radius:6px; color:#fff; padding:6px; font-size:11px; font-family:monospace;">
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:10px; padding:10px;">
+                        <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">Custom CSS Filters</div>
+                        <div style="font-size:10.5px; color:var(--text-secondary); margin-bottom:6px;">Custom selectors to hide elements</div>
+                        <input type="text" placeholder="/* e.g. .ad { display:none; } */" style="width:100%; background:#090D14; border:1px solid #1E283C; border-radius:6px; color:#fff; padding:6px; font-size:11px; font-family:monospace;">
+                    </div>
+                </div>`,
+                actions: `<button class="modal-btn" onclick="closeModal()">Cancel</button><button class="modal-btn primary" onclick="showToast('Custom Filters &amp; Scripts Applied!'); closeModal();">Save &amp; Apply</button>`
             }
         };
 

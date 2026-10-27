@@ -8,12 +8,50 @@
         :root {
             --bg-color: #090D14;
             --surface-color: #111723;
+            --surface-elevated: #162030;
             --card-border: #1F2C40;
             --fokk-cyan: #00E5FF;
             --fokk-blue: #0164FF;
             --text-primary: #FFFFFF;
             --text-secondary: #8E9CAE;
             --text-muted: #536277;
+        }
+
+        /* Themes */
+        body.theme-ocean {
+            --bg-color: #061224;
+            --surface-color: #0C1D38;
+            --surface-elevated: #12284C;
+            --card-border: #1B3864;
+            --fokk-cyan: #00B4D8;
+            --fokk-blue: #0077B6;
+        }
+
+        body.theme-abyss {
+            --bg-color: #000000;
+            --surface-color: #0E0B16;
+            --surface-elevated: #181226;
+            --card-border: #281D40;
+            --fokk-cyan: #C084FC;
+            --fokk-blue: #9333EA;
+        }
+
+        body.theme-gold {
+            --bg-color: #100C06;
+            --surface-color: #1C150C;
+            --surface-elevated: #281F13;
+            --card-border: #3D2F1E;
+            --fokk-cyan: #FFB703;
+            --fokk-blue: #FB8500;
+        }
+
+        body.theme-emerald {
+            --bg-color: #05130E;
+            --surface-color: #0A221A;
+            --surface-elevated: #0F3025;
+            --card-border: #164636;
+            --fokk-cyan: #00E676;
+            --fokk-blue: #00B862;
         }
 
         * {
@@ -29,30 +67,62 @@
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 24px 18px 80px 18px;
+            padding: 20px 18px 80px 18px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: background 0.3s ease;
         }
 
-        /* Hero Shield Brand */
+        /* Brand Header with Sailboat Logo */
         .brand-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            margin-bottom: 22px;
+            gap: 12px;
+            margin-top: 6px;
+            margin-bottom: 20px;
+            cursor: pointer;
         }
 
-        .shield-icon {
-            width: 34px;
-            height: 34px;
-            fill: var(--fokk-cyan);
-            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.4));
+        .brand-logo-container {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--surface-color);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .brand-logo-container:hover {
+            transform: scale(1.05);
+            border-color: var(--fokk-cyan);
+        }
+
+        .brand-logo-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .brand-title-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .brand-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             letter-spacing: 0.5px;
             background: linear-gradient(135deg, #FFFFFF 30%, var(--fokk-cyan) 100%);
@@ -61,22 +131,28 @@
         }
 
         .brand-tag {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
             text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 6px;
+            padding: 2px 6px;
+            border-radius: 5px;
             background: rgba(0, 229, 255, 0.12);
             color: var(--fokk-cyan);
             border: 1px solid rgba(0, 229, 255, 0.3);
             letter-spacing: 0.8px;
         }
 
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
         /* Search Section */
         .search-container {
             width: 100%;
             max-width: 480px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .search-box {
@@ -100,7 +176,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #172233;
+            background: var(--surface-elevated);
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 11px;
@@ -109,7 +185,7 @@
             cursor: pointer;
             margin-right: 8px;
             flex-shrink: 0;
-            border: 1px solid #283A54;
+            border: 1px solid var(--card-border);
         }
 
         .search-input {
@@ -118,7 +194,7 @@
             border: none;
             outline: none;
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 13.5px;
             min-width: 0;
         }
 
@@ -142,15 +218,167 @@
             fill: var(--fokk-cyan);
         }
 
+        /* Speed Dial Header & Customizer Bar */
+        .section-header-row {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--card-border);
+            color: var(--fokk-cyan);
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .header-btn:hover {
+            border-color: var(--fokk-cyan);
+        }
+
+        /* Speed Dial Grid */
+        .speed-dial-grid {
+            width: 100%;
+            max-width: 480px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .dial-item-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .dial-icon-box {
+            position: relative;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: var(--surface-color);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .dial-item-wrapper:hover .dial-icon-box, .dial-item-wrapper:active .dial-icon-box {
+            border-color: var(--fokk-cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 229, 255, 0.2);
+        }
+
+        .dial-icon-box svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        .dial-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            max-width: 65px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dial-delete-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #FF0055;
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(255, 0, 85, 0.5);
+            z-index: 10;
+        }
+
+        body.edit-mode .dial-delete-badge {
+            display: flex;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(0.95); }
+            to { transform: scale(1.1); }
+        }
+
+        .add-dial-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+        }
+
+        .add-dial-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: rgba(0, 229, 255, 0.05);
+            border: 1.5px dashed rgba(0, 229, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fokk-cyan);
+            font-size: 20px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .add-dial-box:hover {
+            background: rgba(0, 229, 255, 0.12);
+            border-color: var(--fokk-cyan);
+            transform: scale(1.05);
+        }
+
         /* Live Defense Matrix Card */
         .defense-card {
             width: 100%;
             max-width: 480px;
-            background: linear-gradient(145deg, #101622 0%, #0B0E16 100%);
+            background: linear-gradient(145deg, var(--surface-color) 0%, var(--bg-color) 100%);
             border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         .defense-card-header {
@@ -193,11 +421,11 @@
         }
 
         .stat-item {
-            background: #141C2B;
+            background: var(--surface-elevated);
             border-radius: 10px;
             padding: 10px 8px;
             text-align: center;
-            border: 1px solid #1E2B3E;
+            border: 1px solid var(--card-border);
         }
 
         .stat-number {
@@ -213,113 +441,161 @@
             font-weight: 500;
         }
 
-        /* Speed Dial Section */
-        .section-header {
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 480px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface-color);
+            border: 1.5px solid var(--card-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .speed-dial-grid {
-            width: 100%;
-            max-width: 480px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .dial-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 7px;
-            text-decoration: none;
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
             cursor: pointer;
         }
 
-        .dial-icon-box {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
-            background: var(--surface-color);
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .theme-pill {
+            background: var(--surface-elevated);
             border: 1px solid var(--card-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .dial-item:hover .dial-icon-box, .dial-item:active .dial-icon-box {
-            border-color: var(--fokk-cyan);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 229, 255, 0.2);
-        }
-
-        .dial-icon-box svg {
-            width: 26px;
-            height: 26px;
-        }
-
-        .dial-title {
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
             font-size: 11px;
             font-weight: 600;
             color: var(--text-primary);
-            text-align: center;
-            max-width: 65px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        /* Privacy Highlights */
-        .privacy-pills {
-            width: 100%;
-            max-width: 480px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
+        .theme-pill:hover, .theme-pill.active {
+            border-color: var(--fokk-cyan);
+            color: var(--fokk-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
         }
 
-        .priv-pill {
+        .logo-options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .logo-option-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: #111724;
-            border: 1px solid #1E283A;
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-weight: 500;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .priv-pill svg {
-            width: 13px;
-            height: 13px;
-            fill: var(--fokk-cyan);
+        .logo-option-card:hover, .logo-option-card.active {
+            border-color: var(--fokk-cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+        }
+
+        .logo-option-card svg, .logo-option-card img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .logo-option-name {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: var(--fokk-cyan);
+        }
+
+        .modal-btn {
+            background: var(--fokk-cyan);
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            color: #090D14;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
+<body id="pageBody">
 
-    <!-- Header / Brand -->
-    <div class="brand-header">
-        <svg class="shield-icon" viewBox="0 0 24 24">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-        </svg>
-        <span class="brand-title">Fokk Privacy Browser</span>
-        <span class="brand-tag">v2.0</span>
+    <!-- Brand Header -->
+    <div class="brand-header" onclick="openThemeModal()">
+        <div class="brand-logo-container">
+            <img id="mainLogoImg" class="brand-logo-img" src="fokk_logo.png" alt="Fokk Sailboat Logo">
+        </div>
+        <div class="brand-title-box">
+            <div class="brand-title-row">
+                <span class="brand-title">Fokk Browser</span>
+                <span class="brand-tag">v2.1</span>
+            </div>
+            <span class="brand-subtitle">Private • Lightweight • Zero Ads</span>
+        </div>
     </div>
 
     <!-- Search Box -->
@@ -344,7 +620,7 @@
     <div class="defense-card">
         <div class="defense-card-header">
             <div class="defense-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="#00E5FF">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--fokk-cyan)">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                 </svg>
                 <span>Live Protection Matrix</span>
@@ -370,109 +646,102 @@
         </div>
     </div>
 
-    <!-- Speed Dial -->
-    <div class="section-header">
-        <span>Speed Dial Shortcuts</span>
-    </div>
-    <div class="speed-dial-grid">
-        <!-- YouTube -->
-        <a class="dial-item" href="https://m.youtube.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FF0000">
-                    <path d="M21.58 7.19a2.506 2.506 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42c-.87.23-1.54.91-1.77 1.77A26.4 26.4 0 0 0 2 12a26.4 26.4 0 0 0 .41 4.81c.23.86.9 1.54 1.77 1.77C5.74 19 12 19 12 19s6.26 0 7.82-.42c.87-.23 1.54-.91 1.77-1.77.28-1.57.41-3.19.41-4.81s-.13-3.24-.42-4.81zM10 15V9l5.2 3-5.2 3z"/>
-                </svg>
-            </div>
-            <span class="dial-title">YouTube</span>
-        </a>
-
-        <!-- Reddit -->
-        <a class="dial-item" href="https://www.reddit.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FF4500">
-                    <path d="M12 2C6.48 2 2 6.48 2 12c0 3.31 1.61 6.24 4.09 8.04l-.84 3.09 3.25-1.12C9.57 22.58 10.76 22.8 12 22.8c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.78 12.82c-.89.89-2.28 1.18-4.78 1.18s-3.89-.29-4.78-1.18a.65.65 0 0 1 .92-.92c.62.62 1.83.85 3.86.85s3.24-.23 3.86-.85a.65.65 0 1 1 .92.92zm-7.03-3.57a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm6.5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/>
-                </svg>
-            </div>
-            <span class="dial-title">Reddit</span>
-        </a>
-
-        <!-- Wikipedia -->
-        <a class="dial-item" href="https://en.m.wikipedia.org">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FFFFFF">
-                    <path d="M12.09 2.91C6.98 2.91 2.84 7.05 2.84 12.16c0 5.11 4.14 9.25 9.25 9.25 5.11 0 9.25-4.14 9.25-9.25 0-5.11-4.14-9.25-9.25-9.25zm5.54 12.88h-1.28l-1.39-4.74-1.39 4.74h-1.28l-2.09-7.22h1.44l1.32 4.96 1.34-4.96h1.36l1.34 4.96 1.32-4.96h1.44l-2.13 7.22z"/>
-                </svg>
-            </div>
-            <span class="dial-title">Wikipedia</span>
-        </a>
-
-        <!-- Twitter / X -->
-        <a class="dial-item" href="https://x.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FFFFFF">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-            </div>
-            <span class="dial-title">X (Twitter)</span>
-        </a>
-
-        <!-- Brave Search -->
-        <a class="dial-item" href="https://search.brave.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FF5000">
-                    <path d="M12 2L3 6v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V6l-9-4z"/>
-                </svg>
-            </div>
-            <span class="dial-title">Brave</span>
-        </a>
-
-        <!-- DuckDuckGo -->
-        <a class="dial-item" href="https://duckduckgo.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#DE5833">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-4c0-.28.22-.5.5-.5s.5.22.5.5v4zm-1-6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
-                </svg>
-            </div>
-            <span class="dial-title">DuckDuckGo</span>
-        </a>
-
-        <!-- LiveScore -->
-        <a class="dial-item" href="https://www.livescore.in">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#00E5FF">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                </svg>
-            </div>
-            <span class="dial-title">LiveScore</span>
-        </a>
-
-        <!-- GitHub -->
-        <a class="dial-item" href="https://github.com">
-            <div class="dial-icon-box">
-                <svg viewBox="0 0 24 24" fill="#FFFFFF">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-                </svg>
-            </div>
-            <span class="dial-title">GitHub</span>
-        </a>
+    <!-- Speed Dial Shortcuts Section -->
+    <div class="section-header-row">
+        <span class="section-title">Speed Dial Shortcuts</span>
+        <div class="header-actions">
+            <button class="header-btn" id="btnToggleEdit" onclick="toggleEditMode()">Edit</button>
+            <button class="header-btn" onclick="openThemeModal()">Theme &amp; Logo</button>
+        </div>
     </div>
 
-    <!-- Privacy Feature Highlights -->
-    <div class="privacy-pills">
-        <div class="priv-pill">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-            <span>100% Local Privacy</span>
+    <!-- Dynamic Speed Dial Grid -->
+    <div class="speed-dial-grid" id="speedDialGrid">
+        <!-- Rendered dynamically by script -->
+    </div>
+
+    <!-- Theme & Logo Customizer Modal -->
+    <div class="modal-overlay" id="themeModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card">
+            <div class="modal-title">
+                <span>⛵ Sea Themes &amp; Sailboat Logos</span>
+                <button class="modal-close" onclick="closeThemeModal()">✕</button>
+            </div>
+
+            <!-- Sailboat Logo Selector -->
+            <div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">CHOOSE SAILBOAT LOGO</div>
+                <div class="logo-options-grid">
+                    <!-- Option 1: Classic Sailboat (App Official) -->
+                    <div class="logo-option-card active" onclick="selectLogo('classic')">
+                        <img src="fokk_logo.png" alt="Classic Sailboat">
+                        <span class="logo-option-name">Sailboat</span>
+                    </div>
+
+                    <!-- Option 2: Cyber Clipper -->
+                    <div class="logo-option-card" onclick="selectLogo('clipper')">
+                        <svg viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>
+                        <span class="logo-option-name">Clipper</span>
+                    </div>
+
+                    <!-- Option 3: Sea Galleon -->
+                    <div class="logo-option-card" onclick="selectLogo('galleon')">
+                        <svg viewBox="0 0 24 24" fill="#00E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>
+                        <span class="logo-option-name">Galleon</span>
+                    </div>
+
+                    <!-- Option 4: Ocean Catamaran -->
+                    <div class="logo-option-card" onclick="selectLogo('catamaran')">
+                        <svg viewBox="0 0 24 24" fill="#FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>
+                        <span class="logo-option-name">Catamaran</span>
+                    </div>
+
+                    <!-- Option 5: Viking Drakkar -->
+                    <div class="logo-option-card" onclick="selectLogo('drakkar')">
+                        <svg viewBox="0 0 24 24" fill="#A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>
+                        <span class="logo-option-name">Drakkar</span>
+                    </div>
+
+                    <!-- Option 6: Custom User Upload -->
+                    <div class="logo-option-card" onclick="triggerLogoUpload()">
+                        <svg viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                        <span class="logo-option-name">Upload</span>
+                        <input type="file" id="logoUploadInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marine Themes Selector -->
+            <div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">CHOOSE SEA THEME</div>
+                <div class="theme-grid">
+                    <div class="theme-pill active" onclick="setTheme('cyan')">Obsidian Cyan</div>
+                    <div class="theme-pill" onclick="setTheme('ocean')">Deep Ocean</div>
+                    <div class="theme-pill" onclick="setTheme('abyss')">Midnight Abyss</div>
+                    <div class="theme-pill" onclick="setTheme('gold')">Sunset Harbor</div>
+                    <div class="theme-pill" onclick="setTheme('emerald')">Emerald Lagoon</div>
+                </div>
+            </div>
+
+            <button class="modal-btn" onclick="closeThemeModal()">Done</button>
         </div>
-        <div class="priv-pill">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span>Zero Tracking</span>
-        </div>
-        <div class="priv-pill">
-            <svg viewBox="0 0 24 24"><path d="M13 3L4 14h7v7l9-11h-7z"/></svg>
-            <span>Hardware Accelerated</span>
+    </div>
+
+    <!-- Add Shortcut Modal -->
+    <div class="modal-overlay" id="addShortcutModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card">
+            <div class="modal-title">
+                <span>Add Custom Shortcut</span>
+                <button class="modal-close" onclick="closeAddShortcutModal()">✕</button>
+            </div>
+            <input type="text" id="inputShortcutTitle" class="modal-input" placeholder="Title (e.g. YouTube)">
+            <input type="text" id="inputShortcutUrl" class="modal-input" placeholder="URL (e.g. https://m.youtube.com)">
+            <button class="modal-btn" onclick="saveNewShortcut()">Add Shortcut</button>
         </div>
     </div>
 
     <script>
+        // 1. Search Engine Logic
         const engines = [
             { name: "Brave", url: "https://search.brave.com/search?q=" },
             { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
@@ -504,7 +773,211 @@
             window.location.href = targetUrl;
         }
 
-        // Live stats update from bridge if available
+        // 2. Customizable Speed Dial Engine
+        const defaultDials = [
+            { id: "yt", title: "YouTube", url: "https://m.youtube.com", color: "#FF0000", icon: "youtube" },
+            { id: "reddit", title: "Reddit", url: "https://www.reddit.com", color: "#FF4500", icon: "reddit" },
+            { id: "wiki", title: "Wikipedia", url: "https://en.m.wikipedia.org", color: "#FFFFFF", icon: "wikipedia" },
+            { id: "x", title: "X", url: "https://x.com", color: "#FFFFFF", icon: "x" },
+            { id: "brave", title: "Brave", url: "https://search.brave.com", color: "#FF5000", icon: "brave" },
+            { id: "ddg", title: "DuckDuckGo", url: "https://duckduckgo.com", color: "#DE5833", icon: "ddg" }
+        ];
+
+        let speedDials = [];
+        let isEditMode = false;
+
+        function loadSpeedDials() {
+            try {
+                const saved = localStorage.getItem('fokk_speed_dials');
+                speedDials = saved ? JSON.parse(saved) : defaultDials;
+            } catch (e) {
+                speedDials = defaultDials;
+            }
+            renderSpeedDials();
+        }
+
+        function saveSpeedDials() {
+            try {
+                localStorage.setItem('fokk_speed_dials', JSON.stringify(speedDials));
+            } catch (e) {}
+        }
+
+        function getIconSvg(type, color) {
+            if (type === "youtube") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M21.58 7.19a2.506 2.506 0 0 0-1.76-1.77C18.26 5 12 5 12 5s-6.26 0-7.82.42c-.87.23-1.54.91-1.77 1.77A26.4 26.4 0 0 0 2 12a26.4 26.4 0 0 0 .41 4.81c.23.86.9 1.54 1.77 1.77C5.74 19 12 19 12 19s6.26 0 7.82-.42c.87-.23 1.54-.91 1.77-1.77.28-1.57.41-3.19.41-4.81s-.13-3.24-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>`;
+            } else if (type === "reddit") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 2C6.48 2 2 6.48 2 12c0 3.31 1.61 6.24 4.09 8.04l-.84 3.09 3.25-1.12C9.57 22.58 10.76 22.8 12 22.8c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.78 12.82c-.89.89-2.28 1.18-4.78 1.18s-3.89-.29-4.78-1.18a.65.65 0 0 1 .92-.92c.62.62 1.83.85 3.86.85s3.24-.23 3.86-.85a.65.65 0 1 1 .92.92zm-7.03-3.57a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm6.5 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>`;
+            } else if (type === "wikipedia") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12.09 2.91C6.98 2.91 2.84 7.05 2.84 12.16c0 5.11 4.14 9.25 9.25 9.25 5.11 0 9.25-4.14 9.25-9.25 0-5.11-4.14-9.25-9.25-9.25zm5.54 12.88h-1.28l-1.39-4.74-1.39 4.74h-1.28l-2.09-7.22h1.44l1.32 4.96 1.34-4.96h1.36l1.34 4.96 1.32-4.96h1.44l-2.13 7.22z"/></svg>`;
+            } else if (type === "x") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+            } else if (type === "brave") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 2L3 6v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V6l-9-4z"/></svg>`;
+            } else if (type === "ddg") {
+                return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-4c0-.28.22-.5.5-.5s.5.22.5.5v4zm-1-6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>`;
+            } else {
+                return `<svg viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`;
+            }
+        }
+
+        function renderSpeedDials() {
+            const grid = document.getElementById('speedDialGrid');
+            grid.innerHTML = '';
+
+            speedDials.forEach((dial, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'dial-item-wrapper';
+                wrapper.innerHTML = `
+                    <div class="dial-delete-badge" onclick="deleteShortcut(event, ${idx})">✕</div>
+                    <div class="dial-icon-box" onclick="handleDialClick('${dial.url}')">
+                        ${getIconSvg(dial.icon, dial.color)}
+                    </div>
+                    <span class="dial-title">${dial.title}</span>
+                `;
+                grid.appendChild(wrapper);
+            });
+
+            // Add shortcut button
+            const addCard = document.createElement('div');
+            addCard.className = 'add-dial-card';
+            addCard.innerHTML = `
+                <div class="add-dial-box" onclick="openAddShortcutModal()">+</div>
+                <span class="dial-title" style="color:var(--text-secondary);">Add</span>
+            `;
+            grid.appendChild(addCard);
+        }
+
+        function handleDialClick(url) {
+            if (!isEditMode) {
+                window.location.href = url;
+            }
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            document.getElementById('pageBody').classList.toggle('edit-mode', isEditMode);
+            document.getElementById('btnToggleEdit').innerText = isEditMode ? 'Done' : 'Edit';
+        }
+
+        function deleteShortcut(e, idx) {
+            e.stopPropagation();
+            speedDials.splice(idx, 1);
+            saveSpeedDials();
+            renderSpeedDials();
+        }
+
+        function openAddShortcutModal() {
+            document.getElementById('addShortcutModal').classList.add('active');
+        }
+
+        function closeAddShortcutModal() {
+            document.getElementById('addShortcutModal').classList.remove('active');
+        }
+
+        function saveNewShortcut() {
+            const title = document.getElementById('inputShortcutTitle').value.trim();
+            let url = document.getElementById('inputShortcutUrl').value.trim();
+            if (!title || !url) return;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            speedDials.push({
+                id: 'custom_' + Date.now(),
+                title: title,
+                url: url,
+                color: 'var(--fokk-cyan)',
+                icon: 'generic'
+            });
+            saveSpeedDials();
+            renderSpeedDials();
+            closeAddShortcutModal();
+            document.getElementById('inputShortcutTitle').value = '';
+            document.getElementById('inputShortcutUrl').value = '';
+        }
+
+        // 3. Theme & Logo Customizer
+        function openThemeModal() {
+            document.getElementById('themeModal').classList.add('active');
+        }
+
+        function closeThemeModal() {
+            document.getElementById('themeModal').classList.remove('active');
+        }
+
+        function closeModalOnBg(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.classList.remove('active');
+            }
+        }
+
+        function setTheme(theme) {
+            const body = document.getElementById('pageBody');
+            body.className = body.className.replace(/\btheme-\S+/g, '');
+            if (theme !== 'cyan') {
+                body.classList.add('theme-' + theme);
+            }
+            try {
+                localStorage.setItem('fokk_theme', theme);
+            } catch (e) {}
+
+            document.querySelectorAll('.theme-pill').forEach(el => el.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+        }
+
+        function selectLogo(type) {
+            const logoImg = document.getElementById('mainLogoImg');
+            if (type === 'classic') {
+                logoImg.src = 'fokk_logo.png';
+            } else if (type === 'clipper') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.47L20 11V3c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v2.54L13.6 4.3c-.38-.19-.82-.19-1.2 0L5 8.01V3c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1v8l-.68.13c-.26.05-.48.23-.6.47s-.14.52-.06.78L3.95 19z"/></svg>';
+            } else if (type === 'galleon') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300E5FF"><path d="M12 2L4 7v3h16V7l-8-5zm-1 9v4H7v-4h4zm2 0h4v4h-4v-4zm-8 6h14l-2 4H7l-2-4z"/></svg>';
+            } else if (type === 'catamaran') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFB703"><path d="M12 3L2 12h5v7h10v-7h5L12 3zm0 3.84L16.16 10H7.84L12 6.84z"/></svg>';
+            } else if (type === 'drakkar') {
+                logoImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23A855F7"><path d="M12 2l-6 9h4v6l2 4 2-4v-6h4l-6-9z"/></svg>';
+            }
+            try {
+                localStorage.setItem('fokk_logo_type', type);
+            } catch (e) {}
+        }
+
+        function triggerLogoUpload() {
+            document.getElementById('logoUploadInput').click();
+        }
+
+        function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result;
+                document.getElementById('mainLogoImg').src = dataUrl;
+                try {
+                    localStorage.setItem('fokk_custom_logo', dataUrl);
+                    localStorage.setItem('fokk_logo_type', 'custom');
+                } catch (err) {}
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Initialize saved preferences
+        try {
+            const savedTheme = localStorage.getItem('fokk_theme');
+            if (savedTheme) setTheme(savedTheme);
+
+            const savedLogoType = localStorage.getItem('fokk_logo_type');
+            if (savedLogoType === 'custom') {
+                const customLogo = localStorage.getItem('fokk_custom_logo');
+                if (customLogo) document.getElementById('mainLogoImg').src = customLogo;
+            } else if (savedLogoType) {
+                selectLogo(savedLogoType);
+            }
+        } catch (e) {}
+
+        loadSpeedDials();
+
+        // 4. Live Stats Sync
         try {
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getStats === 'function') {
                 const stats = JSON.parse(window.FokkShieldBridge.getStats());

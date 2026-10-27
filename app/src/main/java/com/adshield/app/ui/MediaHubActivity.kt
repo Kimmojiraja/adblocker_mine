@@ -1,6 +1,7 @@
 package com.adshield.app.ui
 
 import android.annotation.SuppressLint
+import android.app.DownloadManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
@@ -35,6 +36,7 @@ import com.adshield.app.databinding.ActivityMediaHubBinding
 import com.adshield.app.databinding.ItemTabCardBinding
 import com.adshield.app.databinding.SheetBrowserMenuBinding
 import com.adshield.app.databinding.SheetExtensionsManagerBinding
+import com.adshield.app.databinding.SheetHistoryBinding
 import com.adshield.app.databinding.SheetTabSwitcherBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -43,6 +45,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
@@ -64,6 +67,8 @@ class MediaHubActivity : AppCompatActivity() {
         var title: String = "Fokk Browser",
         var url: String = "file:///android_asset/fokk_start.html",
         var blockedAds: Int = 0,
+        var isDesktop: Boolean = false,
+        val isPrivate: Boolean = false,
         val webView: WebView
     )
 
@@ -76,8 +81,8 @@ class MediaHubActivity : AppCompatActivity() {
     private val tabs = mutableListOf<BrowserTab>()
     private var activeTabIndex = 0
     private var isShieldEnabled = true
-    private var isDesktopMode = false
     private var isDarkMode = false
+    private var showingPrivateTabs = false
 
     private val prefs: SharedPreferences by lazy {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -97,7 +102,7 @@ class MediaHubActivity : AppCompatActivity() {
         defaultUa.replace("; wv", "").replace("Version/4.0 ", "")
     }
 
-    private val desktopUa = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+    private val desktopUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,7 +121,7 @@ class MediaHubActivity : AppCompatActivity() {
         setupControls()
 
         val initialUrl = intent.getStringExtra(EXTRA_URL) ?: "file:///android_asset/fokk_start.html"
-        addNewTab(initialUrl)
+        addNewTab(initialUrl, isPrivate = false)
     }
 
     private fun loadInjectionScript() {
@@ -156,8 +161,45 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun recordHistory(title: String, url: String) {
+        if (activeTab?.isPrivate == true) return
+        if (url.startsWith("file://") || url.isBlank()) return
+
+        try {
+            val historyJson = prefs.getString(PREF_BROWSING_HISTORY, "[]") ?: "[]"
+            val jsonArr = JSONArray(historyJson)
+            val newArr = JSONArray()
+            val newItem = JSONObject().apply {
+                put("title", title.ifEmpty { url })
+                put("url", url)
+                put("time", System.currentTimeMillis())
+            }
+            newArr.put(newItem)
+            for (i in 0 until minOf(jsonArr.length(), 80)) {
+                val prev = jsonArr.getJSONObject(i)
+                if (prev.optString("url") != url) {
+                    newArr.put(prev)
+                }
+            }
+            prefs.edit().putString(PREF_BROWSING_HISTORY, newArr.toString()).apply()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error saving history", e)
+        }
+    }
+
+    private fun applyDesktopMode(webView: WebView, isDesktop: Boolean) {
+        webView.settings.apply {
+            userAgentString = if (isDesktop) desktopUa else cleanMobileUa
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createTab(url: String): BrowserTab {
+    private fun createTab(url: String, isPrivate: Boolean = false): BrowserTab {
         val webView = WebView(this)
         webView.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -167,7 +209,9 @@ class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(webView, true)
+        if (!isPrivate) {
+            cookieManager.setAcceptThirdPartyCookies(webView, true)
+        }
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -177,14 +221,38 @@ class MediaHubActivity : AppCompatActivity() {
             loadsImagesAutomatically = true
             useWideViewPort = true
             loadWithOverviewMode = true
-            cacheMode = WebSettings.LOAD_DEFAULT
+            cacheMode = if (isPrivate) WebSettings.LOAD_NO_CACHE else WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = if (isDesktopMode) desktopUa else cleanMobileUa
+            userAgentString = cleanMobileUa
         }
 
         webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
 
-        // Pre-inject content blocker at document start if supported by Chromium
+        // Intercept downloads cleanly
+        webView.setDownloadListener { downloadUrl, userAgent, contentDisposition, mimetype, _ ->
+            try {
+                val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
+                    setMimeType(mimetype)
+                    addRequestHeader("User-Agent", userAgent)
+                    setDescription("Downloading via Fokk Browser...")
+                    val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimetype)
+                    setTitle(fileName)
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, fileName)
+                }
+                val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                dm.enqueue(request)
+                Toast.makeText(this, "Downloading file to Downloads folder...", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)))
+                } catch (ex: Exception) {
+                    Toast.makeText(this, "Cannot download this file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // Pre-inject content blocker at document start if supported
         if (injectionScript.isNotEmpty() && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             try {
                 WebViewCompat.addDocumentStartJavaScript(webView, injectionScript, setOf("*"))
@@ -223,12 +291,20 @@ class MediaHubActivity : AppCompatActivity() {
                     activeTab?.url = it
                     if (it.contains("fokk_start.html")) {
                         activeTab?.title = "New Tab"
+                    } else {
+                        recordHistory(view?.title ?: it, it)
                     }
                 }
                 view?.title?.let {
                     if (it.isNotEmpty() && activeTab?.url?.contains("fokk_start.html") != true) {
                         activeTab?.title = it
                     }
+                }
+
+                // If tab is in desktop mode, inject desktop viewport meta override
+                if (activeTab?.isDesktop == true) {
+                    val js = "javascript:(function(){let vp=document.querySelector('meta[name=\"viewport\"]');if(vp){vp.setAttribute('content','width=1280, initial-scale=0.85');}})();"
+                    view?.evaluateJavascript(js, null)
                 }
             }
 
@@ -238,7 +314,6 @@ class MediaHubActivity : AppCompatActivity() {
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
                 val urlStr = request.url.toString().lowercase()
 
-                // Never block core streaming CDN video segments or essential services
                 if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
@@ -330,12 +405,10 @@ class MediaHubActivity : AppCompatActivity() {
             webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
                 val dy = scrollY - oldScrollY
                 if (dy > 12 && scrollY > 80) {
-                    // Scrolling down: immersive view
                     binding.topBar.animate().translationY(-binding.topBar.height.toFloat()).alpha(0f).setDuration(180).start()
                     binding.bottomNav.animate().translationY(binding.bottomNav.height.toFloat()).alpha(0f).setDuration(180).start()
                     binding.cardSuggestions.visibility = View.GONE
                 } else if (dy < -12 || scrollY < 20) {
-                    // Scrolling up or at top: restore browser omnibar and toolbar
                     binding.topBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
                     binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
                 }
@@ -343,13 +416,13 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         val initialTitle = if (url.contains("fokk_start.html")) "New Tab" else "Fokk Browser"
-        val tab = BrowserTab(title = initialTitle, url = url, webView = webView)
+        val tab = BrowserTab(title = initialTitle, url = url, isPrivate = isPrivate, webView = webView)
         binding.tabContainer.addView(webView)
         return tab
     }
 
-    private fun addNewTab(url: String = "file:///android_asset/fokk_start.html") {
-        val tab = createTab(url)
+    private fun addNewTab(url: String = "file:///android_asset/fokk_start.html", isPrivate: Boolean = false) {
+        val tab = createTab(url, isPrivate)
         tabs.add(tab)
         switchToTab(tabs.size - 1)
         tab.webView.loadUrl(url)
@@ -369,6 +442,20 @@ class MediaHubActivity : AppCompatActivity() {
         } else {
             binding.urlInput.setText(current.url)
         }
+
+        // Apply Private Tab styling if active
+        if (current.isPrivate) {
+            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#1B1229"))
+            binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#120A1C"))
+            binding.imgEngineIcon.setImageResource(R.drawable.ic_lock)
+            binding.imgEngineIcon.imageTintList = ColorStateList.valueOf(android.graphics.Color.parseColor("#C084FC"))
+        } else {
+            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#F0090D14"))
+            binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#0C101A"))
+            binding.imgEngineIcon.setImageResource(R.drawable.ic_search)
+            binding.imgEngineIcon.imageTintList = ColorStateList.valueOf(getColor(R.color.fokk_cyan))
+        }
+
         pageBlockedCount = current.blockedAds
         if (pageBlockedCount > 0) {
             binding.badgeBlocked.visibility = View.VISIBLE
@@ -386,21 +473,12 @@ class MediaHubActivity : AppCompatActivity() {
         removed.webView.destroy()
 
         if (tabs.isEmpty()) {
-            addNewTab("file:///android_asset/fokk_start.html")
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
         } else {
             val newIndex = if (activeTabIndex >= tabs.size) tabs.size - 1 else activeTabIndex
             switchToTab(newIndex)
         }
         updateTabCounter()
-    }
-
-    private fun closeAllTabs() {
-        for (tab in tabs) {
-            binding.tabContainer.removeView(tab.webView)
-            tab.webView.destroy()
-        }
-        tabs.clear()
-        addNewTab("file:///android_asset/fokk_start.html")
     }
 
     private fun updateTabCounter() {
@@ -413,14 +491,14 @@ class MediaHubActivity : AppCompatActivity() {
             webView.evaluateJavascript(injectionScript, null)
         }
 
-        // 1. Cookie & GDPR Wall Auto-Dismiss (uBlock Annoyances style)
+        // Cookie & GDPR Wall Auto-Dismiss
         val isCookieConsent = prefs.getBoolean(PREF_COOKIE_CONSENT, true)
         if (isCookieConsent) {
             val cookieDismissJs = "javascript:(function(){let d=document.getElementById('__fokk_cookie_killer');if(!d){let s=document.createElement('style');s.id='__fokk_cookie_killer';s.innerHTML='#onetrust-consent-sdk, #onetrust-banner-sdk, .onetrust-pc-dark, .cookie-banner, .cookie-notice, #cookie-notice, .qc-cmp2-container, #cmp-app-container, .fc-consent-root { display: none !important; height: 0 !important; visibility: hidden !important; }';(document.head||document.documentElement).appendChild(s);}})();"
             webView.evaluateJavascript(cookieDismissJs, null)
         }
 
-        // 2. Custom User CSS Injection
+        // Custom User CSS
         val customCss = prefs.getString(PREF_CUSTOM_CSS, "") ?: ""
         if (customCss.isNotEmpty()) {
             val safeCss = customCss.replace("'", "\\'").replace("\n", " ")
@@ -428,7 +506,7 @@ class MediaHubActivity : AppCompatActivity() {
             webView.evaluateJavascript(js, null)
         }
 
-        // 3. Custom Userscript (JS) Injection
+        // Custom Userscript
         val customJs = prefs.getString(PREF_CUSTOM_JS, "") ?: ""
         if (customJs.isNotEmpty()) {
             webView.evaluateJavascript(customJs, null)
@@ -447,7 +525,6 @@ class MediaHubActivity : AppCompatActivity() {
 
     private fun isStreamingHost(host: String): Boolean {
         val lower = host.lowercase()
-        // Explicitly NEVER treat ad/tracker endpoints as streaming hosts
         if (lower.contains("adservice") ||
             lower.contains("doubleclick") ||
             lower.contains("googlesyndication") ||
@@ -466,7 +543,6 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        // Navigation controls
         val handleBack: () -> Unit = {
             if (binding.cardSuggestions.visibility == View.VISIBLE) {
                 binding.cardSuggestions.visibility = View.GONE
@@ -511,7 +587,6 @@ class MediaHubActivity : AppCompatActivity() {
             enterPipMode()
         }
 
-        // Live URL input & suggestions handling
         binding.urlInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -569,12 +644,10 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Tab Switcher Dialog Trigger
         binding.btnNavTabs.setOnClickListener {
             showTabSwitcherDialog()
         }
 
-        // Browser Menu Dialog Trigger
         binding.btnNavMenu.setOnClickListener {
             showBrowserMenuDialog()
         }
@@ -610,7 +683,6 @@ class MediaHubActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                // Silently discard cancellation/network errors
             }
         }
     }
@@ -686,17 +758,11 @@ class MediaHubActivity : AppCompatActivity() {
         val sheetBinding = SheetExtensionsManagerBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
 
-        val isStrictAdblock = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
-        val isCookieConsent = prefs.getBoolean(PREF_COOKIE_CONSENT, true)
-        val isSocialWidgets = prefs.getBoolean(PREF_SOCIAL_WIDGETS, true)
-        val savedCustomJs = prefs.getString(PREF_CUSTOM_JS, "") ?: ""
-        val savedCustomCss = prefs.getString(PREF_CUSTOM_CSS, "") ?: ""
-
-        sheetBinding.switchStrictAdblock.isChecked = isStrictAdblock
-        sheetBinding.switchCookieConsent.isChecked = isCookieConsent
-        sheetBinding.switchSocialWidgets.isChecked = isSocialWidgets
-        sheetBinding.editCustomJs.setText(savedCustomJs)
-        sheetBinding.editCustomCss.setText(savedCustomCss)
+        sheetBinding.switchStrictAdblock.isChecked = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
+        sheetBinding.switchCookieConsent.isChecked = prefs.getBoolean(PREF_COOKIE_CONSENT, true)
+        sheetBinding.switchSocialWidgets.isChecked = prefs.getBoolean(PREF_SOCIAL_WIDGETS, true)
+        sheetBinding.editCustomJs.setText(prefs.getString(PREF_CUSTOM_JS, "") ?: "")
+        sheetBinding.editCustomCss.setText(prefs.getString(PREF_CUSTOM_CSS, "") ?: "")
 
         sheetBinding.btnSaveExtensions.setOnClickListener {
             prefs.edit()
@@ -715,86 +781,288 @@ class MediaHubActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun showHistoryDialog() {
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = SheetHistoryBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+
+        fun loadList(filter: String = "") {
+            sheetBinding.layoutHistoryList.removeAllViews()
+            try {
+                val historyJson = prefs.getString(PREF_BROWSING_HISTORY, "[]") ?: "[]"
+                val jsonArr = JSONArray(historyJson)
+                var count = 0
+                val density = resources.displayMetrics.density
+
+                for (i in 0 until jsonArr.length()) {
+                    val obj = jsonArr.getJSONObject(i)
+                    val title = obj.optString("title", "Website")
+                    val url = obj.optString("url", "")
+
+                    if (filter.isNotEmpty() && !title.contains(filter, true) && !url.contains(filter, true)) {
+                        continue
+                    }
+                    count++
+
+                    val row = LinearLayout(this).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        setPadding((8 * density).toInt(), (10 * density).toInt(), (8 * density).toInt(), (10 * density).toInt())
+                        setBackgroundResource(android.R.drawable.list_selector_background)
+                        isClickable = true
+                    }
+
+                    val icon = ImageView(this).apply {
+                        layoutParams = LinearLayout.LayoutParams((18 * density).toInt(), (18 * density).toInt())
+                        setImageResource(R.drawable.ic_clock)
+                        imageTintList = ColorStateList.valueOf(getColor(R.color.text_secondary))
+                    }
+
+                    val infoCol = LinearLayout(this).apply {
+                        layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                            marginStart = (10 * density).toInt()
+                        }
+                        orientation = LinearLayout.VERTICAL
+                    }
+
+                    val titleTv = TextView(this).apply {
+                        text = title
+                        setTextColor(getColor(R.color.text_primary))
+                        textSize = 13f
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                    }
+
+                    val urlTv = TextView(this).apply {
+                        text = url
+                        setTextColor(getColor(R.color.text_secondary))
+                        textSize = 10.5f
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                    }
+
+                    infoCol.addView(titleTv)
+                    infoCol.addView(urlTv)
+                    row.addView(icon)
+                    row.addView(infoCol)
+
+                    row.setOnClickListener {
+                        activeWebView?.loadUrl(url)
+                        dialog.dismiss()
+                    }
+
+                    sheetBinding.layoutHistoryList.addView(row)
+                }
+
+                sheetBinding.textHistoryEmpty.visibility = if (count == 0) View.VISIBLE else View.GONE
+            } catch (e: Exception) {
+                sheetBinding.textHistoryEmpty.visibility = View.VISIBLE
+            }
+        }
+
+        loadList()
+
+        sheetBinding.editHistorySearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                loadList(s?.toString()?.trim() ?: "")
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        sheetBinding.btnClearHistory.setOnClickListener {
+            prefs.edit().remove(PREF_BROWSING_HISTORY).apply()
+            loadList()
+            Toast.makeText(this, "Browsing history cleared", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun bindTabCard(
+        cardBinding: ItemTabCardBinding,
+        tab: BrowserTab,
+        globalIndex: Int,
+        dialog: BottomSheetDialog,
+        onRefresh: () -> Unit
+    ) {
+        cardBinding.textTabTitle.text = tab.title.ifEmpty { "New Tab" }
+        val lowerUrl = tab.url.lowercase()
+
+        when {
+            lowerUrl.contains("fokk_start.html") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_home)
+                cardBinding.textTabTitle.text = "New Tab"
+                cardBinding.textTabUrl.text = "fokk://home"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_home)
+            }
+            lowerUrl.contains("youtube.com") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_youtube)
+                cardBinding.textTabUrl.text = "m.youtube.com"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_youtube)
+            }
+            lowerUrl.contains("reddit.com") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_reddit)
+                cardBinding.textTabUrl.text = "reddit.com"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_reddit)
+            }
+            lowerUrl.contains("x.com") || lowerUrl.contains("twitter.com") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_twitter)
+                cardBinding.textTabUrl.text = "x.com"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_twitter)
+            }
+            lowerUrl.contains("instagram.com") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_instagram)
+                cardBinding.textTabUrl.text = "instagram.com"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_instagram)
+            }
+            else -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_launch)
+                cardBinding.textTabUrl.text = try { Uri.parse(tab.url).host ?: tab.url } catch (e: Exception) { tab.url }
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_launch)
+            }
+        }
+
+        if (globalIndex == activeTabIndex) {
+            cardBinding.cardTab.strokeColor = getColor(R.color.fokk_cyan)
+            cardBinding.cardTab.strokeWidth = (2 * resources.displayMetrics.density).toInt()
+            cardBinding.badgeActiveTab.visibility = View.VISIBLE
+        } else {
+            cardBinding.cardTab.strokeColor = getColor(R.color.card_border)
+            cardBinding.cardTab.strokeWidth = (1 * resources.displayMetrics.density).toInt()
+            cardBinding.badgeActiveTab.visibility = View.GONE
+        }
+
+        if (tab.isPrivate) {
+            cardBinding.badgePrivateTab.visibility = View.VISIBLE
+            cardBinding.layoutCardHeader.setBackgroundColor(android.graphics.Color.parseColor("#2E1644"))
+        } else {
+            cardBinding.badgePrivateTab.visibility = View.GONE
+            cardBinding.layoutCardHeader.setBackgroundColor(android.graphics.Color.parseColor("#172233"))
+        }
+
+        cardBinding.cardTab.setOnClickListener {
+            switchToTab(globalIndex)
+            dialog.dismiss()
+        }
+
+        cardBinding.btnCloseTab.setOnClickListener {
+            closeTab(globalIndex)
+            onRefresh()
+            if (tabs.isEmpty()) {
+                dialog.dismiss()
+            }
+        }
+    }
+
     private fun showTabSwitcherDialog() {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = SheetTabSwitcherBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
 
-        sheetBinding.textTabHeader.text = "Open Tabs (${tabs.size})"
+        fun updateTabsView() {
+            val normalTabs = tabs.filter { !it.isPrivate }
+            val privateTabs = tabs.filter { it.isPrivate }
 
-        fun populateTabs() {
-            sheetBinding.layoutTabsContainer.removeAllViews()
-            for (i in tabs.indices) {
-                val tab = tabs[i]
-                val cardBinding = ItemTabCardBinding.inflate(layoutInflater, sheetBinding.layoutTabsContainer, false)
-                cardBinding.textTabTitle.text = tab.title.ifEmpty { "New Tab" }
+            sheetBinding.btnFilterNormal.text = "Tabs (${normalTabs.size})"
+            sheetBinding.btnFilterPrivate.text = "🕶️ Private (${privateTabs.size})"
 
-                val lowerUrl = tab.url.lowercase()
-                when {
-                    lowerUrl.contains("fokk_start.html") -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_home)
-                        cardBinding.textTabTitle.text = "New Tab"
-                        cardBinding.textTabUrl.text = "fokk://home"
+            if (showingPrivateTabs) {
+                sheetBinding.btnFilterPrivate.setBackgroundResource(R.drawable.bg_stat_chip)
+                sheetBinding.btnFilterPrivate.setTextColor(getColor(R.color.fokk_cyan))
+                sheetBinding.btnFilterNormal.background = null
+                sheetBinding.btnFilterNormal.setTextColor(getColor(R.color.text_secondary))
+            } else {
+                sheetBinding.btnFilterNormal.setBackgroundResource(R.drawable.bg_stat_chip)
+                sheetBinding.btnFilterNormal.setTextColor(getColor(R.color.fokk_cyan))
+                sheetBinding.btnFilterPrivate.background = null
+                sheetBinding.btnFilterPrivate.setTextColor(getColor(R.color.text_secondary))
+            }
+
+            val currentTabsList = tabs.filter { it.isPrivate == showingPrivateTabs }
+            sheetBinding.layoutTabsGrid.removeAllViews()
+
+            val density = resources.displayMetrics.density
+
+            for (i in currentTabsList.indices step 2) {
+                val row = LinearLayout(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = (6 * density).toInt()
                     }
-                    lowerUrl.contains("youtube.com") -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_youtube)
-                        cardBinding.textTabUrl.text = tab.url
-                    }
-                    lowerUrl.contains("instagram.com") -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_instagram)
-                        cardBinding.textTabUrl.text = tab.url
-                    }
-                    lowerUrl.contains("x.com") || lowerUrl.contains("twitter.com") -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_twitter)
-                        cardBinding.textTabUrl.text = tab.url
-                    }
-                    lowerUrl.contains("reddit.com") -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_reddit)
-                        cardBinding.textTabUrl.text = tab.url
-                    }
-                    else -> {
-                        cardBinding.imgTabIcon.setImageResource(R.drawable.ic_launch)
-                        cardBinding.textTabUrl.text = tab.url
-                    }
+                    orientation = LinearLayout.HORIZONTAL
+                    weightSum = 2f
                 }
 
-                // Active tab glow border
-                if (i == activeTabIndex) {
-                    cardBinding.cardTab.strokeColor = getColor(R.color.fokk_cyan)
-                    cardBinding.cardTab.strokeWidth = (2 * resources.displayMetrics.density).toInt()
+                val tab1 = currentTabsList[i]
+                val globalIdx1 = tabs.indexOf(tab1)
+                val cardBinding1 = ItemTabCardBinding.inflate(layoutInflater, row, false)
+                bindTabCard(cardBinding1, tab1, globalIdx1, dialog) {
+                    updateTabsView()
                 }
+                cardBinding1.root.layoutParams = LinearLayout.LayoutParams(0, (170 * density).toInt(), 1f)
+                row.addView(cardBinding1.root)
 
-                cardBinding.cardTab.setOnClickListener {
-                    switchToTab(i)
-                    dialog.dismiss()
-                }
-
-                cardBinding.btnCloseTab.setOnClickListener {
-                    closeTab(i)
-                    if (tabs.isEmpty()) {
-                        dialog.dismiss()
-                    } else {
-                        sheetBinding.textTabHeader.text = "Open Tabs (${tabs.size})"
-                        populateTabs()
+                if (i + 1 < currentTabsList.size) {
+                    val tab2 = currentTabsList[i + 1]
+                    val globalIdx2 = tabs.indexOf(tab2)
+                    val cardBinding2 = ItemTabCardBinding.inflate(layoutInflater, row, false)
+                    bindTabCard(cardBinding2, tab2, globalIdx2, dialog) {
+                        updateTabsView()
                     }
+                    cardBinding2.root.layoutParams = LinearLayout.LayoutParams(0, (170 * density).toInt(), 1f)
+                    row.addView(cardBinding2.root)
+                } else {
+                    val spacer = View(this).apply {
+                        layoutParams = LinearLayout.LayoutParams(0, (170 * density).toInt(), 1f)
+                    }
+                    row.addView(spacer)
                 }
 
-                sheetBinding.layoutTabsContainer.addView(cardBinding.root)
+                sheetBinding.layoutTabsGrid.addView(row)
             }
         }
 
-        populateTabs()
+        sheetBinding.btnFilterNormal.setOnClickListener {
+            showingPrivateTabs = false
+            updateTabsView()
+        }
+
+        sheetBinding.btnFilterPrivate.setOnClickListener {
+            showingPrivateTabs = true
+            updateTabsView()
+        }
 
         sheetBinding.btnNewTabSheet.setOnClickListener {
-            addNewTab("file:///android_asset/fokk_start.html")
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
+            showingPrivateTabs = false
+            dialog.dismiss()
+        }
+
+        sheetBinding.btnNewPrivateTab.setOnClickListener {
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
+            showingPrivateTabs = true
             dialog.dismiss()
         }
 
         sheetBinding.btnCloseAllTabs.setOnClickListener {
-            closeAllTabs()
+            val toRemove = tabs.filter { it.isPrivate == showingPrivateTabs }
+            for (tab in toRemove) {
+                binding.tabContainer.removeView(tab.webView)
+                tab.webView.destroy()
+                tabs.remove(tab)
+            }
+            if (tabs.isEmpty()) {
+                addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
+            } else {
+                switchToTab(0)
+            }
             dialog.dismiss()
         }
 
+        updateTabsView()
         dialog.show()
     }
 
@@ -805,7 +1073,7 @@ class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
-        sheetBinding.switchDesktop.isChecked = isDesktopMode
+        sheetBinding.switchDesktop.isChecked = activeTab?.isDesktop ?: false
         sheetBinding.switchDarkMode.isChecked = isDarkMode
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
 
@@ -816,15 +1084,57 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.switchDesktop.setOnCheckedChangeListener { _, isChecked ->
-            isDesktopMode = isChecked
-            activeWebView?.settings?.userAgentString = if (isDesktopMode) desktopUa else cleanMobileUa
-            activeWebView?.reload()
+            activeTab?.let { tab ->
+                tab.isDesktop = isChecked
+                applyDesktopMode(tab.webView, tab.isDesktop)
+                var currentUrl = tab.webView.url ?: tab.url
+                if (tab.isDesktop && currentUrl.contains("m.youtube.com")) {
+                    currentUrl = currentUrl.replace("m.youtube.com", "www.youtube.com")
+                    tab.webView.loadUrl(currentUrl)
+                } else if (!tab.isDesktop && currentUrl.contains("www.youtube.com")) {
+                    currentUrl = currentUrl.replace("www.youtube.com", "m.youtube.com")
+                    tab.webView.loadUrl(currentUrl)
+                } else {
+                    tab.webView.reload()
+                }
+            }
             dialog.dismiss()
         }
 
         sheetBinding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
             isDarkMode = isChecked
             injectDarkModeScript(activeWebView, isDarkMode)
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowPrivateTab.setOnClickListener {
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowHistory.setOnClickListener {
+            dialog.dismiss()
+            showHistoryDialog()
+        }
+
+        sheetBinding.rowDownloads.setOnClickListener {
+            try {
+                startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Opening Downloads folder...", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowTranslate.setOnClickListener {
+            val currentUrl = activeTab?.url
+            if (!currentUrl.isNullOrEmpty() && !currentUrl.contains("fokk_start.html")) {
+                val translateUrl = "https://translate.google.com/translate?sl=auto&tl=en&u=" + Uri.encode(currentUrl)
+                activeWebView?.loadUrl(translateUrl)
+                Toast.makeText(this, "Translating page...", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Open a website to translate", Toast.LENGTH_SHORT).show()
+            }
             dialog.dismiss()
         }
 
@@ -844,7 +1154,7 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.rowNewTab.setOnClickListener {
-            addNewTab("file:///android_asset/fokk_start.html")
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
             dialog.dismiss()
         }
 
@@ -881,6 +1191,7 @@ class MediaHubActivity : AppCompatActivity() {
         cookieManager.removeAllCookies(null)
         cookieManager.flush()
         WebStorage.getInstance().deleteAllData()
+        prefs.edit().remove(PREF_BROWSING_HISTORY).apply()
         Toast.makeText(this, "Browsing history, cache & cookies cleared!", Toast.LENGTH_SHORT).show()
     }
 
@@ -973,5 +1284,6 @@ class MediaHubActivity : AppCompatActivity() {
         private const val PREF_SOCIAL_WIDGETS = "filter_social_trackers"
         private const val PREF_CUSTOM_JS = "custom_userscript"
         private const val PREF_CUSTOM_CSS = "custom_usercss"
+        private const val PREF_BROWSING_HISTORY = "key_browsing_history_v2"
     }
 }

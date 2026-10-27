@@ -1195,25 +1195,44 @@
                 actions: `<button class="modal-btn" onclick="closeModal()">Close</button><button class="modal-btn primary" onclick="window.open('https://github.com/Kimmojiraja/adblocker_mine'); closeModal();">GitHub Repo</button>`
             },
             tabSwitcher: {
-                title: "Tabs (2)",
+                title: "Tabs Switcher",
                 isHtml: true,
-                body: `<div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="background:#131B2B; border:1.5px solid var(--fokk-cyan); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:700; font-size:13px; color:#fff;">YouTube</div>
-                            <div style="font-size:11px; color:var(--text-secondary);">https://m.youtube.com</div>
-                        </div>
-                        <span style="font-size:10px; color:var(--fokk-cyan); font-weight:700; background:rgba(0,229,255,0.1); padding:2px 6px; border-radius:6px;">ACTIVE</span>
+                body: `<div style="display:flex; flex-direction:column; gap:10px;">
+                    <!-- Segmented tab toggle -->
+                    <div style="display:flex; background:#131B2B; border-radius:10px; padding:3px; gap:4px;">
+                        <button style="flex:1; background:var(--fokk-cyan); border:none; border-radius:8px; padding:6px; font-size:11.5px; font-weight:700; color:#090D14; cursor:pointer;">Tabs (2)</button>
+                        <button style="flex:1; background:transparent; border:none; border-radius:8px; padding:6px; font-size:11.5px; font-weight:700; color:var(--text-secondary); cursor:pointer;" onclick="showToast('Switched to Private Tabs')">🕶️ Private (1)</button>
                     </div>
-                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:700; font-size:13px; color:#fff;">LiveScore</div>
-                            <div style="font-size:11px; color:var(--text-secondary);">https://www.livescore.in</div>
+
+                    <!-- 2-Column Brave Grid of Tab Cards -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <!-- Tab Card 1 (Active) -->
+                        <div style="background:#131B2B; border:2px solid var(--fokk-cyan); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 0 12px rgba(0,229,255,0.25);">
+                            <div style="background:#172233; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:11px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85px;">YouTube</span>
+                                <span style="font-size:11px; color:var(--text-secondary); cursor:pointer;" onclick="showToast('Closed Tab')">✕</span>
+                            </div>
+                            <div style="height:90px; background:#090D14; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px;">
+                                <span style="font-size:20px;">▶️</span>
+                                <span style="font-size:9.5px; color:var(--text-secondary);">m.youtube.com</span>
+                                <span style="font-size:8px; color:var(--fokk-cyan); font-weight:800; background:rgba(0,229,255,0.15); padding:1px 5px; border-radius:4px;">ACTIVE</span>
+                            </div>
                         </div>
-                        <span style="font-size:11px; color:var(--text-secondary); cursor:pointer;" onclick="showToast('Closed Tab')">✕</span>
+
+                        <!-- Tab Card 2 -->
+                        <div style="background:#131B2B; border:1px solid #24344D; border-radius:12px; overflow:hidden; display:flex; flex-direction:column;">
+                            <div style="background:#172233; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:11px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85px;">Reddit</span>
+                                <span style="font-size:11px; color:var(--text-secondary); cursor:pointer;" onclick="showToast('Closed Tab')">✕</span>
+                            </div>
+                            <div style="height:90px; background:#090D14; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px;">
+                                <span style="font-size:20px;">🤖</span>
+                                <span style="font-size:9.5px; color:var(--text-secondary);">reddit.com</span>
+                            </div>
+                        </div>
                     </div>
                 </div>`,
-                actions: `<button class="modal-btn" onclick="showToast('Closed All Tabs'); closeModal();">Close All</button><button class="modal-btn primary" onclick="showToast('Created New Tab'); closeModal();">+ New Tab</button>`
+                actions: `<button class="modal-btn" onclick="showToast('Closed All Tabs'); closeModal();">Close All</button><button class="modal-btn" style="color:#C084FC;" onclick="showToast('Created Private Tab'); closeModal();">🕶️ Private</button><button class="modal-btn primary" onclick="showToast('Created New Tab'); closeModal();">+ New Tab</button>`
             },
             browserMenu: {
                 title: "Fokk Browser Menu",
@@ -1234,7 +1253,23 @@
                         <span>🧩 Extensions &amp; Filters</span>
                         <span style="color:var(--fokk-cyan); font-weight:600;">Manage ▾</span>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Desktop Mode Toggled'); closeModal();">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; color:#C084FC; font-weight:600; cursor:pointer;" onclick="showToast('Opened New Private Tab'); closeModal();">
+                        <span>🕶️ New Private Tab</span>
+                        <span>＋</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="closeModal(); openModal('history');">
+                        <span>📜 Browsing History</span>
+                        <span style="color:var(--text-secondary);">View ↗</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Opening Downloads...'); closeModal();">
+                        <span>📥 Downloads</span>
+                        <span style="color:var(--text-secondary);">Open ↗</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Translating page...'); closeModal();">
+                        <span>🌐 Translate Page</span>
+                        <span style="color:var(--text-secondary);">Translate</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Desktop Mode: Windows Chrome UA'); closeModal();">
                         <span>🖥️ Desktop Site</span>
                         <span style="color:var(--text-secondary);">Toggle</span>
                     </div>
@@ -1256,6 +1291,40 @@
                     </div>
                 </div>`,
                 actions: `<button class="modal-btn primary" onclick="closeModal()">Close</button>`
+            },
+            history: {
+                title: "Browsing History",
+                isHtml: true,
+                body: `<div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:#090D14; border:1px solid #1E283C; border-radius:8px; padding:6px 10px; display:flex; align-items:center; gap:6px;">
+                        <span>🔍</span>
+                        <input type="text" placeholder="Search visited sites..." style="width:100%; background:none; border:none; color:#fff; font-size:12px; outline:none;">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;">
+                        <div style="background:#131B2B; border:1px solid #24344D; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Opening YouTube...'); closeModal();">
+                            <div>
+                                <div style="font-size:12px; font-weight:700; color:#fff;">YouTube</div>
+                                <div style="font-size:10px; color:var(--text-secondary);">https://m.youtube.com</div>
+                            </div>
+                            <span style="font-size:10px; color:var(--text-secondary);">Just now</span>
+                        </div>
+                        <div style="background:#131B2B; border:1px solid #24344D; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Opening LiveScore...'); closeModal();">
+                            <div>
+                                <div style="font-size:12px; font-weight:700; color:#fff;">LiveScore: Football Scores</div>
+                                <div style="font-size:10px; color:var(--text-secondary);">https://www.livescore.in</div>
+                            </div>
+                            <span style="font-size:10px; color:var(--text-secondary);">10m ago</span>
+                        </div>
+                        <div style="background:#131B2B; border:1px solid #24344D; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('Opening Reddit...'); closeModal();">
+                            <div>
+                                <div style="font-size:12px; font-weight:700; color:#fff;">Reddit - Dive into anything</div>
+                                <div style="font-size:10px; color:var(--text-secondary);">https://www.reddit.com</div>
+                            </div>
+                            <span style="font-size:10px; color:var(--text-secondary);">1h ago</span>
+                        </div>
+                    </div>
+                </div>`,
+                actions: `<button class="modal-btn" style="color:var(--youtube-red);" onclick="showToast('History Cleared'); closeModal();">Clear All</button><button class="modal-btn primary" onclick="closeModal()">Close</button>`
             },
             searchEngine: {
                 title: "Default Search Engine",

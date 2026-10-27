@@ -52,9 +52,9 @@ class AdShieldApp : Application() {
         }
     }
 
-    fun incrementBlockedAds() {
+    fun incrementBlockedAds(count: Int = 1) {
         val current = prefs.getLong(KEY_BLOCKED_ADS, 0L)
-        prefs.edit().putLong(KEY_BLOCKED_ADS, current + 1).apply()
+        prefs.edit().putLong(KEY_BLOCKED_ADS, current + count).apply()
     }
 
     fun incrementSkippedYouTubeAds() {
@@ -70,6 +70,7 @@ class AdShieldApp : Application() {
     fun getBlockedAdsCount(): Long = prefs.getLong(KEY_BLOCKED_ADS, 0L)
     fun getSkippedYouTubeAdsCount(): Long = prefs.getLong(KEY_SKIPPED_YT_ADS, 0L)
     fun getMutedSpotifyAdsCount(): Long = prefs.getLong(KEY_MUTED_SPOTIFY_ADS, 0L)
+    fun getTotalAdsEliminated(): Long = getBlockedAdsCount() + getSkippedYouTubeAdsCount() + getMutedSpotifyAdsCount()
 
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"

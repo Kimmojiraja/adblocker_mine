@@ -19,11 +19,20 @@ object SelectorSyncManager {
         "skip_ad_button",
         "ad_skip_button",
         "skip_ad_button_native",
-        "modern_skip_ad_button"
+        "modern_skip_ad_button",
+        "skip_ad_button_text",
+        "ad_dismiss_button",
+        "close_button",
+        "action_button"
     )
 
     private val defaultSkipTexts = listOf(
         "Skip Ad",
+        "Skip ad",
+        "Skip ads",
+        "Skip ▶",
+        "Skip ▶|",
+        "Skip >",
         "Skip",
         "Saltar",
         "Passer",
@@ -37,6 +46,7 @@ object SelectorSyncManager {
 
     private val defaultProtectedPanelIds = listOf(
         "comments",
+        "comment_composer",
         "playlist_panel",
         "playlist_header",
         "playlist_items",

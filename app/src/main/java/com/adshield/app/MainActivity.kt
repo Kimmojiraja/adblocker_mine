@@ -253,8 +253,12 @@ class MainActivity : AppCompatActivity() {
         val mutedSpotifyCount = AdShieldApp.instance.getMutedSpotifyAdsCount()
         binding.textSpotifyMutedCount.text = mutedSpotifyCount.toString()
 
-        // Calculate Time Reclaimed
-        val totalSeconds = (skippedYtCount * 20) + (mutedSpotifyCount * 30)
+        val totalBlocked = AdShieldApp.instance.getTotalAdsEliminated()
+        binding.textTotalAdsCount.text = totalBlocked.toString()
+
+        val webBlocked = AdShieldApp.instance.getBlockedAdsCount()
+        // Calculate Time Reclaimed (20s per YT ad, 30s per Spotify ad, 5s per web ad interrupted)
+        val totalSeconds = (skippedYtCount * 20) + (mutedSpotifyCount * 30) + (webBlocked * 5)
         binding.textTimeReclaimed.text = if (totalSeconds < 60) {
             "${totalSeconds}s"
         } else {

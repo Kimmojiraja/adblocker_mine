@@ -59,8 +59,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
     // Interactive panels that should NEVER be touched (Comments, Playlists, Queues)
     private val interactivePanelResourceIds = listOf(
         "com.google.android.youtube:id/comments",
-        "com.google.android.youtube:id/engagement_panel",
-        "com.google.android.youtube:id/bottom_sheet_container",
         "com.google.android.youtube:id/comment_composer",
         "com.google.android.youtube:id/playlist",
         "com.google.android.youtube:id/playlist_panel",
@@ -114,14 +112,16 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            // STEP 1: Strict comments & panel check.
-            // If comments, engagement sheet, or descriptions are open, NEVER click anything!
+            // Dismiss sponsored promo cards / bottom sheets (e.g. Hosting.com sponsored sheet)
+            dismissSponsoredCardIfPresent(rootNode)
+
+            // STEP 1: Strict comments & user panel check.
+            // Protect real comments and playlists from being dismissed
             if (isCommentsOrPanelOpen(rootNode)) {
                 return
             }
 
             // STEP 2: Strict Ad Presence Gating.
-            // If NO ad is active on screen, Fokk Shield is 100% passive. ZERO clicks during regular videos!
             val adActive = isAdActive(rootNode)
             if (!adActive) {
                 if (isAdMuted) {
@@ -130,8 +130,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
                 return
             }
 
-            // STEP 3: Find and click ONLY an active, skippable button
-            // (Ignores "Skip in 5s" countdown to eliminate 5-second glitching)
+            // STEP 3: Find and click active Skip button
             val clicked = findAndClickSkipButton(rootNode)
             if (clicked) {
                 lastSkipClickTime = now
@@ -140,13 +139,47 @@ class YouTubeAdSkipperService : AccessibilityService() {
                 }
             } else {
                 // Ad is active but has no skip button yet (unskippable ad or countdown)
-                // Auto-mute sound so user never has to hear unskippable ads!
                 muteVideoAd()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error processing YouTube accessibility event", e)
         } finally {
             rootNode.recycle()
+        }
+    }
+
+    /**
+     * Dismisses sponsored promotional cards / bottom sheets that cover the video.
+     */
+    private fun dismissSponsoredCardIfPresent(rootNode: AccessibilityNodeInfo) {
+        val sponsoredMarkers = listOf("Sponsored", "Visit advertiser")
+        for (marker in sponsoredMarkers) {
+            val sNodes = rootNode.findAccessibilityNodeInfosByText(marker)
+            if (!sNodes.isNullOrEmpty()) {
+                val hasVisible = sNodes.any { it.isVisibleToUser }
+                recycleNodes(sNodes)
+                if (hasVisible) {
+                    val closeIds = listOf(
+                        "com.google.android.youtube:id/close_button",
+                        "com.google.android.youtube:id/dismiss_button",
+                        "com.google.android.youtube:id/cancel_button"
+                    )
+                    for (cid in closeIds) {
+                        val closeNodes = rootNode.findAccessibilityNodeInfosByViewId(cid)
+                        if (!closeNodes.isNullOrEmpty()) {
+                            for (cNode in closeNodes) {
+                                if (cNode.isVisibleToUser && performSafeClick(cNode)) {
+                                    Log.d(TAG, "Dismissed sponsored overlay via $cid")
+                                    recycleNodes(closeNodes)
+                                    return
+                                }
+                            }
+                            recycleNodes(closeNodes)
+                        }
+                    }
+                    break
+                }
+            }
         }
     }
 
@@ -178,13 +211,13 @@ class YouTubeAdSkipperService : AccessibilityService() {
     }
 
     /**
-     * Checks if comments or any engagement bottom sheet is active.
+     * Checks if genuine user comments or user playlist panel is open.
+     * Never falsely flags sponsored promotional ad sheets as comments.
      */
     private fun isCommentsOrPanelOpen(rootNode: AccessibilityNodeInfo): Boolean {
-        val dynamicPanelIds = (interactivePanelResourceIds + SelectorSyncManager.getProtectedPanelIds()).distinct()
-        for (id in dynamicPanelIds) {
-            val fullId = if (id.contains(":id/")) id else "com.google.android.youtube:id/$id"
-            val nodes = rootNode.findAccessibilityNodeInfosByViewId(fullId)
+        // Check genuine comment/playlist text markers
+        for (text in interactiveTextMarkers) {
+            val nodes = rootNode.findAccessibilityNodeInfosByText(text)
             if (!nodes.isNullOrEmpty()) {
                 val hasVisible = nodes.any { it.isVisibleToUser }
                 recycleNodes(nodes)
@@ -192,8 +225,11 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
         }
 
-        for (text in interactiveTextMarkers) {
-            val nodes = rootNode.findAccessibilityNodeInfosByText(text)
+        // Check comment & playlist specific view IDs
+        val dynamicPanelIds = (interactivePanelResourceIds + SelectorSyncManager.getProtectedPanelIds()).distinct()
+        for (id in dynamicPanelIds) {
+            val fullId = if (id.contains(":id/")) id else "com.google.android.youtube:id/$id"
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(fullId)
             if (!nodes.isNullOrEmpty()) {
                 val hasVisible = nodes.any { it.isVisibleToUser }
                 recycleNodes(nodes)
@@ -262,7 +298,10 @@ class YouTubeAdSkipperService : AccessibilityService() {
         val text = ((node.text?.toString() ?: "") + " " + (node.contentDescription?.toString() ?: "")).lowercase().trim()
 
         // Still counting down ("Skip in 5", "Skip in 4", "in 3", etc.) -> DO NOT CLICK
-        if (text.contains("in ") || text.contains("countdown") || text.matches(Regex(".*\\b\\d+s?\\b.*"))) {
+        if (text.contains("in ") && text.matches(Regex(".*\\bin\\s+\\d+.*"))) {
+            return false
+        }
+        if (text.contains("countdown") || text.matches(Regex("^\\d+s?$"))) {
             return false
         }
 

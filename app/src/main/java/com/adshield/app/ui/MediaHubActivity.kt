@@ -29,6 +29,7 @@ class MediaHubActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var injectionScript = ""
     private var isDockExpanded = false
+    private var pageBlockedCount = 0
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +57,22 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    fun onPageAdsBlocked(count: Int) {
+        pageBlockedCount += count
+        AdShieldApp.instance.incrementBlockedAds(count)
+        binding.badgeBlocked.visibility = View.VISIBLE
+        binding.textPageBlockedCount.text = pageBlockedCount.toString()
+    }
+
+    class WebAppInterface(private val activity: MediaHubActivity) {
+        @JavascriptInterface
+        fun onAdsBlocked(count: Int) {
+            activity.runOnUiThread {
+                activity.onPageAdsBlocked(count)
+            }
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         // High-performance hardware acceleration
@@ -66,7 +83,10 @@ class MediaHubActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
 
+        // Modern clean User-Agent without WebView markers to fix x.com / Twitter
         val defaultUa = WebSettings.getDefaultUserAgent(this)
+        val cleanUa = defaultUa.replace("; wv", "").replace("Version/4.0 ", "")
+
         binding.webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -77,13 +97,18 @@ class MediaHubActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = defaultUa
+            userAgentString = cleanUa
         }
+
+        // Bridge for real-time live ad counter
+        binding.webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
 
         binding.webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 binding.progressBar.visibility = View.VISIBLE
+                pageBlockedCount = 0
+                binding.badgeBlocked.visibility = View.GONE
                 if (url != null && !binding.urlInput.hasFocus()) {
                     binding.urlInput.setText(url)
                 }
@@ -105,7 +130,7 @@ class MediaHubActivity : AppCompatActivity() {
                 }
 
                 if (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) {
-                    AdShieldApp.instance.incrementBlockedAds()
+                    runOnUiThread { onPageAdsBlocked(1) }
                     // Return valid 200 OK empty response with CORS headers to avoid network stalls
                     return WebResourceResponse(
                         "text/plain",
@@ -264,7 +289,7 @@ class MediaHubActivity : AppCompatActivity() {
         }
         binding.btnPlatformTwitter.setOnClickListener {
             binding.imgTogglePlatform.setImageResource(R.drawable.ic_twitter)
-            binding.webView.loadUrl("https://mobile.twitter.com")
+            binding.webView.loadUrl("https://x.com")
             collapseDock()
         }
         binding.btnPlatformReddit.setOnClickListener {
@@ -273,16 +298,18 @@ class MediaHubActivity : AppCompatActivity() {
             collapseDock()
         }
 
-        // Auto-hide bottom controls on scroll down so web navigation is 100% accessible
+        // Dual Scroll Auto-Hide: Hides both top browser omnibar and bottom dock on scroll down
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             binding.webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
                 val dy = scrollY - oldScrollY
-                if (dy > 12) {
-                    // Scrolling down: hide both dock and toggle chip
+                if (dy > 12 && scrollY > 80) {
+                    // Scrolling down: immersive full screen view
+                    binding.topBar.animate().translationY(-binding.topBar.height.toFloat()).alpha(0f).setDuration(180).start()
                     binding.bottomNav.animate().translationY(150f).alpha(0f).setDuration(180).start()
                     binding.btnStudioToggle.animate().translationY(150f).alpha(0f).setDuration(180).start()
-                } else if (dy < -12) {
-                    // Scrolling up: reveal active control
+                } else if (dy < -12 || scrollY < 20) {
+                    // Scrolling up or at top: restore browser controls
+                    binding.topBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
                     if (isDockExpanded) {
                         binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
                     } else {
@@ -293,17 +320,42 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        enterPipMode()
+    }
+
     private fun enterPipMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                val params = PictureInPictureParams.Builder()
+                val rect = android.graphics.Rect()
+                if (customView != null) {
+                    customView?.getGlobalVisibleRect(rect)
+                } else {
+                    binding.webView.getGlobalVisibleRect(rect)
+                }
+                val builder = PictureInPictureParams.Builder()
                     .setAspectRatio(Rational(16, 9))
-                    .build()
-                enterPictureInPictureMode(params)
+                if (!rect.isEmpty) {
+                    builder.setSourceRectHint(rect)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    builder.setAutoEnterEnabled(true)
+                    builder.setSeamlessResizeEnabled(true)
+                }
+                enterPictureInPictureMode(builder.build())
             } catch (e: Exception) {
                 Toast.makeText(this, "Picture-in-Picture not supported on this device", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
+            return
+        }
+        CookieManager.getInstance().flush()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {

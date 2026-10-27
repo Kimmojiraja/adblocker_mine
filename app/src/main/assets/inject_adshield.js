@@ -12,7 +12,9 @@
         } catch (e) {}
     }
 
+    // =========================================================================
     // 1. YouTube Player Ad Config Stripper (Fetch & XHR Interceptor)
+    // =========================================================================
     function sanitizePlayerResponse(resp) {
         if (resp && typeof resp === 'object') {
             let foundAds = false;
@@ -102,39 +104,92 @@
 
     interceptYouTubeConfigs();
 
+    // =========================================================================
     // 2. Video Ad Fast-Forward & Skip (Zero-Lag Engine)
+    // =========================================================================
     function checkAndSkipWebAd() {
-        const player = document.querySelector('.html5-video-player') || document.getElementById('movie_player');
-        if (!player) return;
+        const player = document.querySelector('.html5-video-player, #movie_player, #player, ytm-mobile-player');
+        const adIndicators = document.querySelectorAll(
+            '.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .video-ads, ' +
+            'ytm-ad-slot-renderer, .ytp-ad-text, [class*="ytp-ad-"], [class*="ad-showing"]'
+        );
+        const isAdShowing = (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) || (adIndicators.length > 0);
 
-        const isAdShowing = player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting');
         if (isAdShowing) {
             // 1. Instant player API skip if exposed by YouTube
-            if (typeof player.skipAd === 'function') {
+            if (player && typeof player.skipAd === 'function') {
                 try { player.skipAd(); } catch (e) {}
             }
 
-            // 2. Fast-forward video - STRICTLY guarded to ads (duration < 120s) to never affect regular videos!
-            const video = player.querySelector('video') || document.querySelector('video');
+            // 2. Fast-forward video instantly at 16x speed with sound muted
+            const video = (player ? player.querySelector('video') : null) || document.querySelector('video');
             if (video) {
-                video.muted = true;
-                if (video.duration && !isNaN(video.duration) && video.duration < 120) {
-                    video.currentTime = video.duration;
-                }
+                try {
+                    video.muted = true;
+                    video.playbackRate = 16.0;
+                    if (video.duration && !isNaN(video.duration)) {
+                        video.currentTime = video.duration;
+                    }
+                } catch (e) {}
             }
 
-            // 3. Trigger skip button click instantly
-            const skipBtn = document.querySelector(
-                '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .videoAdUiSkipButton, button.ytp-ad-skip-button-text, .ytp-ad-skip-button-slot button, [class*="skip-button"]'
-            );
-            if (skipBtn && typeof skipBtn.click === 'function') {
-                skipBtn.click();
-                reportBlocked(1);
-            }
+            // 3. Trigger all possible skip buttons instantly
+            const skipBtns = document.querySelectorAll(`
+                .ytp-ad-skip-button,
+                .ytp-ad-skip-button-modern,
+                .ytp-skip-ad-button,
+                .videoAdUiSkipButton,
+                button.ytp-ad-skip-button-text,
+                .ytp-ad-skip-button-slot button,
+                .ytm-skip-ad-button,
+                ytm-skip-ad-button,
+                button[class*="skip-button"],
+                button[aria-label*="Skip"],
+                button[aria-label*="skip"],
+                .ytp-ad-overlay-close-button,
+                [class*="ytp-ad-skip"]
+            `);
+            skipBtns.forEach(btn => {
+                try {
+                    btn.click();
+                    reportBlocked(1);
+                } catch (e) {}
+            });
+        }
+
+        // Hide "Visit Advertiser", companion ads & sponsored chips
+        if (window.location.hostname.includes('youtube.com')) {
+            const sponsoredCards = document.querySelectorAll(`
+                ytm-promoted-sparkles-web-renderer,
+                ytm-promoted-sparkles-text-search-renderer,
+                ytm-promoted-video-renderer,
+                ytm-compact-promoted-video-renderer,
+                ytm-companion-ad-renderer,
+                ytm-in-feed-ad-layout-renderer,
+                ytm-ad-slot-renderer,
+                .ytm-companion-ad,
+                .ytm-promoted-sparkles-web-renderer,
+                ytm-mealbar-promo-renderer,
+                ytm-brand-header-renderer,
+                [target-id="engagement-panel-ads"],
+                .sparkles-light-cta,
+                .ytm-ad-badge,
+                div[class*="companion-ad"],
+                div[class*="ad-slot"],
+                div[class*="promoted-sparkles"]
+            `);
+            sponsoredCards.forEach(card => {
+                card.style.setProperty('display', 'none', 'important');
+                card.style.setProperty('height', '0px', 'important');
+                card.style.setProperty('min-height', '0px', 'important');
+                card.style.setProperty('pointer-events', 'none', 'important');
+            });
         }
     }
 
-    // 3. Universal Brave/uBlock Cosmetic CSS (Zero-box collapse & GDPR suppression)
+    // =========================================================================
+    // 3. Universal Brave/uBlock Cosmetic CSS (Zero-box collapse & Annoyance suppression)
+    // =========================================================================
     const cosmeticCss = `
         /* Generic Ad Containers & Empty Box Collapsers */
         ins.adsbygoogle,
@@ -171,6 +226,8 @@
         [id*="advert-"],
         [class*="banner-ad"],
         [id*="banner-ad"],
+        [class*="ad-placeholder"],
+        [id*="ad-placeholder"],
         div[data-ad-unit],
         div[data-ad],
         div[data-ad-slot],
@@ -190,19 +247,29 @@
         .uEierd,
         .pla-unit-container,
         
-        /* YouTube Web Ad Selectors */
+        /* YouTube Mobile Sponsored Ads & Companion Banners */
         ytd-promoted-video-renderer,
         ytd-compact-promoted-video-renderer,
         ytd-promoted-sparkles-web-renderer,
         ytd-display-ad-renderer,
         ytd-ad-slot-renderer,
         ytm-promoted-sparkles-web-renderer,
+        ytm-promoted-sparkles-text-search-renderer,
+        ytm-promoted-video-renderer,
+        ytm-compact-promoted-video-renderer,
         ytm-companion-ad-renderer,
+        ytm-in-feed-ad-layout-renderer,
+        ytm-ad-slot-renderer,
+        ytm-mealbar-promo-renderer,
+        ytm-brand-header-renderer,
+        [target-id="engagement-panel-ads"],
+        .ytm-companion-ad,
         #player-ads,
         #masthead-ad,
         .sparkles-light-cta,
         .ytm-ad-badge,
         .ad-showing .ytp-ad-player-overlay,
+        [class*="companion-ad"],
         
         /* Modern Reddit Web Ad Selectors */
         shreddit-ad-post,
@@ -213,6 +280,31 @@
         shreddit-post[is-promoted="true"],
         .promotedlink,
         .promoted,
+
+        /* Annoyance Overlays, "Read in App" Nags & Interstitials */
+        .read-on-app,
+        .readOnApp,
+        .appCta,
+        .read_app,
+        .et_app_download,
+        [data-plugin="readOnApp"],
+        .stick_banner,
+        .floating-btn,
+        .app-sticky-banner,
+        [class*="smartbanner"],
+        [class*="app-banner"],
+        [class*="app-download"],
+        [class*="open-in-app"],
+        [class*="openInApp"],
+        [id*="app-banner"],
+        [class*="download-app-banner"],
+        .app-download-bar,
+        .modal-backdrop,
+        div[class*="dimmer"],
+        .paywall,
+        [class*="paywall"],
+        [id*="paywall"],
+        [class*="gate-container"],
 
         /* Universal Cookie & GDPR Consent Walls Auto-Dismiss (uBlock Annoyances Grade) */
         #onetrust-consent-sdk,
@@ -284,8 +376,6 @@
             pointer-events: none !important;
             background: transparent !important;
         }
-    `;
-
 
         /* Fullscreen PiP Video Mode (Ensures video fills floating PiP window without blank spaces) */
         html.fokk-pip-active, html.fokk-pip-active body {
@@ -300,6 +390,7 @@
         html.fokk-pip-active #player,
         html.fokk-pip-active .player-container,
         html.fokk-pip-active #movie_player,
+        html.fokk-pip-active ytm-mobile-player,
         html.fokk-pip-active video {
             position: fixed !important;
             top: 0 !important;
@@ -331,17 +422,50 @@
         html.fokk-pip-active ytm-engagement-panel {
             display: none !important;
         }
+    `;
 
-    const styleEl = document.createElement('style');
-    styleEl.type = 'text/css';
-    styleEl.appendChild(document.createTextNode(cosmeticCss));
-    (document.head || document.documentElement).appendChild(styleEl);
+    function injectCosmetics() {
+        if (document.getElementById('__fokk_cosmetic_style')) return;
+        const style = document.createElement('style');
+        style.id = '__fokk_cosmetic_style';
+        style.textContent = cosmeticCss;
+        (document.head || document.documentElement).appendChild(style);
+    }
 
-    // 4. Multi-Level DOM Parent Collapser (Eradicates empty black/dark rectangular boxes)
+    injectCosmetics();
+
+    // =========================================================================
+    // 4. Multi-Level DOM Parent Collapser & "Advertisement" Placeholder Killer
+    // =========================================================================
     function collapseEmptyAdBoxes() {
         let collapsed = 0;
 
-        // A. Process all ad elements and iframes
+        // A. Eradicate containers containing only "Advertisement" or "Sponsored" labels
+        const labels = document.querySelectorAll('span, div, p, label, b, strong, small');
+        for (let i = 0; i < labels.length; i++) {
+            const el = labels[i];
+            const txt = el.textContent ? el.textContent.trim().toLowerCase() : '';
+            if (txt === 'advertisement' || txt === 'advertisements' || txt === 'sponsored' || txt === 'promoted' || txt === 'advertorial') {
+                if (el.tagName === 'P' && el.textContent.length > 25) continue;
+                const parent = el.closest('[class*="ad"], [id*="ad"], [class*="banner"], [id*="banner"], [class*="slot"], [id*="slot"], div, section, aside');
+                if (parent && parent !== document.body && parent !== document.documentElement) {
+                    const parentText = parent.textContent.trim().toLowerCase();
+                    // If parent only contains the label or very little text, collapse completely
+                    if (parentText.length < 80 || parent.querySelector('ins, iframe, [id*="google_ads"], [id*="dfp"]')) {
+                        parent.style.setProperty('display', 'none', 'important');
+                        parent.style.setProperty('height', '0px', 'important');
+                        parent.style.setProperty('min-height', '0px', 'important');
+                        parent.style.setProperty('margin', '0px', 'important');
+                        parent.style.setProperty('padding', '0px', 'important');
+                        parent.style.setProperty('border', 'none', 'important');
+                        parent.style.setProperty('background', 'transparent', 'important');
+                        collapsed++;
+                    }
+                }
+            }
+        }
+
+        // B. Process all ad elements, wrappers, and iframes
         const adElements = document.querySelectorAll(`
             ins.adsbygoogle,
             .adsbygoogle,
@@ -366,6 +490,7 @@
             [id*="adbox"],
             [class*="ad-holder"],
             [class*="ad_holder"],
+            [class*="ad-placeholder"],
             div[data-ad-unit],
             div[data-ad],
             div[data-ad-slot],
@@ -387,7 +512,7 @@
                 el.style.setProperty('background', 'transparent', 'important');
                 collapsed++;
 
-                // Collapse parent container if it's an empty wrapper leaving dark spaces
+                // Collapse parent container if it's an empty wrapper leaving dark/blank spaces
                 let parent = el.parentElement;
                 for (let level = 0; level < 3 && parent && parent !== document.body && parent !== document.documentElement; level++) {
                     const text = (parent.innerText || '').trim();
@@ -396,7 +521,7 @@
                         return style.display !== 'none' && !child.matches('ins, iframe, [id*="ad"], [class*="ad"], style, script');
                     });
 
-                    if (visibleNonAdChildren.length === 0 && text.length < 20) {
+                    if (visibleNonAdChildren.length === 0 && text.length < 35) {
                         parent.style.setProperty('display', 'none', 'important');
                         parent.style.setProperty('height', '0px', 'important');
                         parent.style.setProperty('min-height', '0px', 'important');
@@ -411,7 +536,7 @@
             }
         });
 
-        // B. Collapse remaining empty or ad iframes
+        // C. Collapse empty or ad iframes
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
@@ -438,60 +563,14 @@
             } catch (e) {}
         });
 
-        // C. Reddit in-feed promoted posts
-        const redditAds = document.querySelectorAll('shreddit-ad-post, shreddit-comment-ad, [data-adclicklocation], div[data-testid="ad-post"]');
-        redditAds.forEach(el => {
-            if (el.style.display !== 'none') {
-                el.style.setProperty('display', 'none', 'important');
-                el.style.setProperty('height', '0px', 'important');
-                collapsed++;
-            }
-        });
-
-        // D. Reddit & generic feed posts containing "• Ad" text
-        const badges = document.querySelectorAll('span, div');
-        badges.forEach(badge => {
-            if (badge.textContent && badge.textContent.trim() === 'Ad' && badge.children.length === 0) {
-                const post = badge.closest('article, shreddit-post, div[data-testid="post-container"]');
-                if (post && post.style.display !== 'none') {
-                    post.style.setProperty('display', 'none', 'important');
-                    post.style.setProperty('height', '0px', 'important');
-                    collapsed++;
-                }
-            }
-        });
-
-        // E. Unlock body scroll if blocked by cookie banners
-        const cookieBanners = document.querySelectorAll(`
-            #onetrust-consent-sdk,
-            #onetrust-banner-sdk,
-            .cookie-banner,
-            .cookie-notice,
-            #cookie-notice,
-            .qc-cmp2-container,
-            #cmp-app-container,
-            .fc-consent-root,
-            .cc-window,
-            #CybotCookiebotDialog
-        `);
-        if (cookieBanners.length > 0) {
-            cookieBanners.forEach(banner => {
-                banner.style.setProperty('display', 'none', 'important');
-            });
-            if (document.body && window.getComputedStyle(document.body).overflow === 'hidden') {
-                document.body.style.setProperty('overflow', 'auto', 'important');
-            }
-            if (document.documentElement && window.getComputedStyle(document.documentElement).overflow === 'hidden') {
-                document.documentElement.style.setProperty('overflow', 'auto', 'important');
-            }
-        }
-
         if (collapsed > 0) {
             reportBlocked(collapsed);
         }
     }
 
-    // 5. Flawless Background Playback & PiP Enabler (Never pause on minimize/app switch)
+    // =========================================================================
+    // 5. Anti-Auto-Pause & Background Playback Engine
+    // =========================================================================
     let lastUserTapTime = 0;
     ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'].forEach(evt => {
         window.addEventListener(evt, () => {
@@ -500,47 +579,61 @@
     });
 
     try {
-        // Prevent websites from listening to visibility/blur to pause videos
+        // Blind websites to background / visibility state changes so they cannot pause media
+        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
+
+        // Stop propagation of visibility events in capture phase
+        const stopVisibilityPropagation = (e) => {
+            e.stopImmediatePropagation();
+        };
+        ['visibilitychange', 'webkitvisibilitychange', 'pagehide', 'blur'].forEach(evt => {
+            window.addEventListener(evt, stopVisibilityPropagation, true);
+            document.addEventListener(evt, stopVisibilityPropagation, true);
+        });
+
+        // Prevent YouTube & media players from attaching visibility change listeners to auto-pause
         const origAddEventListener = EventTarget.prototype.addEventListener;
         EventTarget.prototype.addEventListener = function(type, listener, options) {
-            if (type === 'visibilitychange' || type === 'pagehide' || (type === 'blur' && this === window)) {
+            if (type === 'visibilitychange' || type === 'webkitvisibilitychange' || type === 'pagehide') {
+                return;
+            }
+            if (type === 'blur' && (this === window || this === document)) {
                 return;
             }
             return origAddEventListener.call(this, type, listener, options);
         };
 
-        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-
-        // Discard background auto-pause (only pause when user intentionally tapped within 400ms)
-        const origPause = HTMLVideoElement.prototype.pause;
-        HTMLVideoElement.prototype.pause = function(...args) {
-            const isUserTap = (Date.now() - lastUserTapTime) < 400;
-            if (!isUserTap && this.currentTime > 0 && !this.ended) {
+        // Discard unwanted background auto-pauses on HTMLMediaElement
+        const origMediaPause = HTMLMediaElement.prototype.pause;
+        HTMLMediaElement.prototype.pause = function(...args) {
+            const isUserTap = (Date.now() - lastUserTapTime) < 600;
+            const inPip = document.documentElement.classList.contains('fokk-pip-active');
+            if (inPip || (!isUserTap && this.currentTime > 0 && !this.ended)) {
                 // Background auto-pause discarded - keep video & audio playing!
                 return;
             }
-            return origPause.apply(this, args);
+            return origMediaPause.apply(this, args);
         };
     } catch (e) {}
 
+    // =========================================================================
     // 6. Media Playback State Reporter & Universal PiP Controllers
+    // =========================================================================
     window.__fokk_enter_pip_view = function() {
-        const video = document.querySelector('video');
-        if (!video) return;
-
-        // Ensure video is playing
-        if (video.paused && video.currentTime > 0) {
-            video.play().catch(() => {});
-        }
-
-        // Move video directly to body so no parent container transforms can clip or offset it
-        if (!video.__origParent) {
-            video.__origParent = video.parentElement;
-            video.__origNextSibling = video.nextSibling;
-        }
-        document.body.appendChild(video);
         document.documentElement.classList.add('fokk-pip-active');
+        const video = document.querySelector('video');
+        if (video) {
+            video.play().catch(() => {});
+            // Move video directly to body so no parent container transforms can clip or offset it
+            if (!video.__origParent) {
+                video.__origParent = video.parentElement;
+                video.__origNextSibling = video.nextSibling;
+            }
+            document.body.appendChild(video);
+        }
     };
 
     window.__fokk_exit_pip_view = function() {
@@ -565,10 +658,12 @@
                 v.play().catch(() => {});
             }
         }
-    }, 400);
+    }, 300);
 
-    // Universal Cookie Banner Auto-Dismiss & Scroll Unlocker
-    function dismissCookieWalls() {
+    // =========================================================================
+    // 7. Universal Cookie Banner & "Read on App" Nags Suppressor
+    // =========================================================================
+    function dismissCookieWallsAndNags() {
         // A. Auto-click Accept/Reject/Dismiss buttons on banners
         const cookieButtons = document.querySelectorAll(`
             #onetrust-accept-btn-handler,
@@ -594,8 +689,8 @@
             try { btn.click(); } catch(e) {}
         });
 
-        // B. Hide all known cookie elements
-        const cookieEls = document.querySelectorAll(`
+        // B. Hide all known cookie elements and App install sticky nags
+        const suppressEls = document.querySelectorAll(`
             #onetrust-consent-sdk, #onetrust-banner-sdk, .onetrust-pc-dark,
             .cookie-banner, .cookie-notice, #cookie-notice, .cookie-bar, #cookie-bar,
             .qc-cmp2-container, #cmp-app-container, #cmpbox,
@@ -609,9 +704,14 @@
             .eom-v1-container, div[data-dialog-type="CONSENT_DIALOG"],
             [class*="cookie-popup"], [id*="cookie-popup"],
             [class*="cookie-consent"], [id*="cookie-consent"],
-            [class*="gdpr-banner"], [id*="gdpr-banner"]
+            [class*="gdpr-banner"], [id*="gdpr-banner"],
+            .read-on-app, .readOnApp, .appCta, .read_app, .et_app_download,
+            [data-plugin="readOnApp"], .stick_banner, .floating-btn, .app-sticky-banner,
+            [class*="smartbanner"], [class*="app-banner"], [class*="app-download"],
+            [class*="open-in-app"], [class*="openInApp"], [id*="app-banner"],
+            [class*="download-app-banner"], .app-download-bar
         `);
-        cookieEls.forEach(el => {
+        suppressEls.forEach(el => {
             el.style.setProperty('display', 'none', 'important');
             el.style.setProperty('visibility', 'hidden', 'important');
             el.style.setProperty('height', '0px', 'important');
@@ -619,7 +719,7 @@
         });
 
         // C. Clear backdrop overlays & unlock page scroll
-        const overlays = document.querySelectorAll('.modal-backdrop, .fade, .sp_message_panel_container, .fc-dialog-overlay');
+        const overlays = document.querySelectorAll('.modal-backdrop, .fade, .sp_message_panel_container, .fc-dialog-overlay, div[class*="dimmer"], .paywall');
         overlays.forEach(o => o.style.setProperty('display', 'none', 'important'));
 
         if (document.body) {
@@ -631,10 +731,10 @@
         }
     }
 
-    function notifyNativePlayback(isPlaying) {
+    function notifyNativePlayback(isPlaying, hasActiveVideo) {
         try {
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaPlaybackChanged === 'function') {
-                window.FokkShieldBridge.onMediaPlaybackChanged(isPlaying);
+                window.FokkShieldBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
             }
         } catch (e) {}
     }
@@ -642,29 +742,39 @@
     function hookVideoPlayback(video) {
         if (!video || video.__fokk_hooked) return;
         video.__fokk_hooked = true;
-        video.addEventListener('play', () => notifyNativePlayback(true));
-        video.addEventListener('playing', () => notifyNativePlayback(true));
-        video.addEventListener('pause', () => {
-            const anyPlaying = Array.from(document.querySelectorAll('video')).some(v => !v.paused && !v.ended);
-            notifyNativePlayback(anyPlaying);
+
+        const updateState = () => {
+            const videos = Array.from(document.querySelectorAll('video'));
+            const isPlaying = videos.some(v => !v.paused && !v.ended);
+            const hasActiveVideo = videos.some(v => v.currentTime > 0 && !v.ended);
+            notifyNativePlayback(isPlaying, hasActiveVideo);
+        };
+
+        video.addEventListener('play', updateState);
+        video.addEventListener('playing', updateState);
+        video.addEventListener('pause', updateState);
+        video.addEventListener('ended', updateState);
+        video.addEventListener('timeupdate', () => {
+            if (!video.paused && !video.ended) {
+                notifyNativePlayback(true, true);
+            }
         });
-        video.addEventListener('ended', () => {
-            const anyPlaying = Array.from(document.querySelectorAll('video')).some(v => !v.paused && !v.ended);
-            notifyNativePlayback(anyPlaying);
-        });
+
         if (!video.paused && !video.ended) {
-            notifyNativePlayback(true);
+            notifyNativePlayback(true, true);
         }
     }
 
     document.querySelectorAll('video').forEach(hookVideoPlayback);
 
-    // 6. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
+    // =========================================================================
+    // 8. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
+    // =========================================================================
     try {
         const observer = new MutationObserver(() => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
-            dismissCookieWalls();
+            dismissCookieWallsAndNags();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
         observer.observe(document.documentElement, {
@@ -679,20 +789,20 @@
     setInterval(() => {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
-        dismissCookieWalls();
-    }, 400);
+        dismissCookieWallsAndNags();
+    }, 350);
 
     // Initial pass on DOMContentLoaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
-            dismissCookieWalls();
+            dismissCookieWallsAndNags();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
-        dismissCookieWalls();
+        dismissCookieWallsAndNags();
     }
 })();

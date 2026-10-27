@@ -87,6 +87,7 @@ class MediaHubActivity : AppCompatActivity() {
     private var isDarkMode = false
     private var showingPrivateTabs = false
     private var isMediaPlaying = false
+    private var lastMediaPlayingTime = 0L
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
 
@@ -270,8 +271,27 @@ class MediaHubActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun onMediaPlaybackChanged(isPlaying: Boolean) {
+            onMediaPlaybackChanged(isPlaying, isPlaying)
+        }
+
+        @JavascriptInterface
+        fun onMediaPlaybackChanged(isPlaying: Boolean, hasActiveVideo: Boolean) {
             activity.runOnUiThread {
                 activity.isMediaPlaying = isPlaying
+                if (isPlaying || hasActiveVideo) {
+                    activity.lastMediaPlayingTime = System.currentTimeMillis()
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val isStartPage = activity.activeTab?.url?.contains("fokk_start.html") == true
+                    val canAutoPip = (isPlaying || hasActiveVideo) && !isStartPage
+                    try {
+                        val builder = PictureInPictureParams.Builder()
+                            .setAspectRatio(Rational(16, 9))
+                            .setAutoEnterEnabled(canAutoPip)
+                            .setSeamlessResizeEnabled(true)
+                        activity.setPictureInPictureParams(builder.build())
+                    } catch (e: Exception) {}
+                }
             }
         }
 
@@ -1211,7 +1231,16 @@ class MediaHubActivity : AppCompatActivity() {
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
         sheetBinding.switchDesktop.isChecked = activeTab?.isDesktop ?: false
         sheetBinding.switchDarkMode.isChecked = isDarkMode
+        val showShortcuts = prefs.getBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, true)
+        sheetBinding.switchShowShortcuts.isChecked = showShortcuts
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
+
+        sheetBinding.switchShowShortcuts.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, isChecked).apply()
+            activeWebView?.evaluateJavascript("if (typeof toggleHomepageShortcutsVisibility === 'function') toggleHomepageShortcutsVisibility($isChecked);", null)
+            val msg = if (isChecked) "Shortcuts displayed on homepage" else "Shortcuts hidden from homepage"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
 
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
             isShieldEnabled = isChecked
@@ -1343,10 +1372,13 @@ class MediaHubActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // Only enter PiP if video is actively playing or in custom fullscreen view!
-        // Prevents entering PiP on homepage which would show an empty static "Fokk Browser" card!
         val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
-        if (!isStartPage && (isMediaPlaying || customView != null)) {
+        val recentMedia = (System.currentTimeMillis() - lastMediaPlayingTime) < 5000L
+        val isVideoSite = activeTab?.url?.let { url ->
+            url.contains("youtube.com") || url.contains("twitch.tv") || url.contains("vimeo.com")
+        } ?: false
+
+        if (!isStartPage && (isMediaPlaying || recentMedia || (isVideoSite && customView == null) || customView != null)) {
             enterPipMode()
         }
     }
@@ -1383,6 +1415,7 @@ class MediaHubActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
+            activeWebView?.onResume()
             return
         }
         CookieManager.getInstance().flush()
@@ -1395,6 +1428,8 @@ class MediaHubActivity : AppCompatActivity() {
             binding.bottomNav.visibility = View.GONE
             binding.progressBar.visibility = View.GONE
             binding.cardSuggestions.visibility = View.GONE
+            activeWebView?.onResume()
+            activeWebView?.resumeTimers()
             activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
         } else {
             binding.topBar.visibility = View.VISIBLE
@@ -1445,5 +1480,6 @@ class MediaHubActivity : AppCompatActivity() {
         private const val PREF_CUSTOM_JS = "custom_userscript"
         private const val PREF_CUSTOM_CSS = "custom_usercss"
         private const val PREF_BROWSING_HISTORY = "key_browsing_history_v2"
+        private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
     }
 }

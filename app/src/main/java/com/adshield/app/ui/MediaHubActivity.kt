@@ -210,8 +210,9 @@ class MediaHubActivity : AppCompatActivity() {
             if (binding.webView.canGoForward()) binding.webView.goForward()
         }
 
-        binding.btnRefresh.setOnClickListener {
+        binding.imgSecurityLock.setOnClickListener {
             binding.webView.reload()
+            Toast.makeText(this, "Reloading page...", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnPip.setOnClickListener {

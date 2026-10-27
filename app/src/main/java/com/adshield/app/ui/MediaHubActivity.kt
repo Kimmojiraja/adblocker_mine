@@ -29,6 +29,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.biometric.BiometricPrompt
+import androidx.biometric.BiometricManager
+import androidx.core.content.ContextCompat
+import android.os.Environment
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewCompat
@@ -87,6 +92,10 @@ class MediaHubActivity : AppCompatActivity() {
     private var isDarkMode = false
     private var showingPrivateTabs = false
     private var isMediaPlaying = false
+    private var detectedMediaUrl: String? = null
+    private var detectedMediaTitle: String? = null
+    private var isBiometricAuthenticatedForSession = false
+
     private var lastMediaPlayingTime = 0L
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
@@ -296,8 +305,106 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun onMediaSourceFound(url: String, title: String, tag: String) {
+            activity.runOnUiThread {
+                activity.handleMediaSourceFound(url, title, tag)
+            }
+        }
+
+        @JavascriptInterface
         fun getSearchEngine(): String {
             return activity.currentSearchEngine.name
+        }
+    }
+
+    
+    fun handleMediaSourceFound(url: String, title: String, tag: String) {
+        if (url.isBlank() || url.startsWith("blob:") || url == detectedMediaUrl) return
+        detectedMediaUrl = url
+        detectedMediaTitle = title.ifBlank { "Web_Media" }
+        binding.btnDownloadMedia.visibility = View.VISIBLE
+    }
+
+    private fun showDownloadMediaDialog() {
+        val url = detectedMediaUrl
+        if (url.isNullOrBlank()) {
+            Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val rawTitle = detectedMediaTitle ?: "Web_Video"
+        val cleanTitle = rawTitle.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(35) + ".mp4"
+
+        AlertDialog.Builder(this)
+            .setTitle("Download Video")
+            .setMessage("Save \"$cleanTitle\" directly to your device Downloads folder?")
+            .setPositiveButton("Download") { _, _ ->
+                startDirectMediaDownload(url, cleanTitle)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun startDirectMediaDownload(url: String, fileName: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setTitle(fileName)
+                setDescription("Downloading via Fokk Browser...")
+                setMimeType("video/mp4")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                setAllowedOverMetered(true)
+                setAllowedOverRoaming(true)
+            }
+            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(this, "Download started! Saving to Downloads folder...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            } catch (ex: Exception) {
+                Toast.makeText(this, "Cannot start download: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun canUseBiometric(): Boolean {
+        val bm = BiometricManager.from(this)
+        return bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    private fun authenticateForPrivateTabs(onSuccess: () -> Unit) {
+        val isLockEnabled = prefs.getBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false)
+        if (!isLockEnabled || isBiometricAuthenticatedForSession) {
+            onSuccess()
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Unlock Private Browsing")
+            .setSubtitle("Confirm your fingerprint or device PIN")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .build()
+
+        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                isBiometricAuthenticatedForSession = true
+                onSuccess()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                    Toast.makeText(this@MediaHubActivity, "Biometric: $errString", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
+
+        try {
+            biometricPrompt.authenticate(promptInfo)
+        } catch (e: Exception) {
+            onSuccess()
         }
     }
 
@@ -407,6 +514,9 @@ class MediaHubActivity : AppCompatActivity() {
                     binding.progressBar.visibility = View.VISIBLE
                     pageBlockedCount = 0
                     binding.badgeBlocked.visibility = View.GONE
+                    detectedMediaUrl = null
+                    detectedMediaTitle = null
+                    binding.btnDownloadMedia.visibility = View.GONE
                     if (pageUrl != null && !binding.urlInput.hasFocus()) {
                         if (pageUrl.contains("fokk_start.html")) {
                             binding.urlInput.setText("")
@@ -741,6 +851,10 @@ class MediaHubActivity : AppCompatActivity() {
 
         binding.btnPip.setOnClickListener {
             enterPipMode()
+        }
+
+        binding.btnDownloadMedia.setOnClickListener {
+            showDownloadMediaDialog()
         }
 
         binding.urlInput.addTextChangedListener(object : TextWatcher {
@@ -1187,8 +1301,10 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.btnFilterPrivate.setOnClickListener {
-            showingPrivateTabs = true
-            updateTabsView()
+            authenticateForPrivateTabs {
+                showingPrivateTabs = true
+                updateTabsView()
+            }
         }
 
         sheetBinding.btnNewTabSheet.setOnClickListener {
@@ -1198,9 +1314,11 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.btnNewPrivateTab.setOnClickListener {
-            addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
-            showingPrivateTabs = true
-            dialog.dismiss()
+            authenticateForPrivateTabs {
+                addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
+                showingPrivateTabs = true
+                dialog.dismiss()
+            }
         }
 
         sheetBinding.btnCloseAllTabs.setOnClickListener {
@@ -1231,6 +1349,25 @@ class MediaHubActivity : AppCompatActivity() {
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
         sheetBinding.switchDesktop.isChecked = activeTab?.isDesktop ?: false
         sheetBinding.switchDarkMode.isChecked = isDarkMode
+                val isBioEnabled = prefs.getBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false)
+        sheetBinding.switchBiometricLock.isChecked = isBioEnabled
+
+        sheetBinding.switchBiometricLock.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !canUseBiometric()) {
+                sheetBinding.switchBiometricLock.isChecked = false
+                Toast.makeText(this, "Set up a fingerprint or device PIN in Android Settings first", Toast.LENGTH_LONG).show()
+                return@setOnCheckedChangeListener
+            }
+            prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, isChecked).apply()
+            val msg = if (isChecked) "Private tabs protected by fingerprint/PIN" else "Private tab lock disabled"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        sheetBinding.rowDownloadVideo.setOnClickListener {
+            dialog.dismiss()
+            showDownloadMediaDialog()
+        }
+
         val showShortcuts = prefs.getBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, true)
         sheetBinding.switchShowShortcuts.isChecked = showShortcuts
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
@@ -1273,8 +1410,10 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.rowPrivateTab.setOnClickListener {
-            addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
-            dialog.dismiss()
+            authenticateForPrivateTabs {
+                addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
+                dialog.dismiss()
+            }
         }
 
         sheetBinding.rowHistory.setOnClickListener {
@@ -1481,5 +1620,6 @@ class MediaHubActivity : AppCompatActivity() {
         private const val PREF_CUSTOM_CSS = "custom_usercss"
         private const val PREF_BROWSING_HISTORY = "key_browsing_history_v2"
         private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
+        private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
     }
 }

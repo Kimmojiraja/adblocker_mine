@@ -739,6 +739,30 @@
         } catch (e) {}
     }
 
+    // =========================================================================
+    // 8. Universal Media Sniffer: Detects downloadable video & audio streams
+    // =========================================================================
+    function sniffMediaSources() {
+        const mediaEls = document.querySelectorAll('video, audio');
+        mediaEls.forEach(el => {
+            let src = el.currentSrc || el.src;
+            if (!src) {
+                const source = el.querySelector('source');
+                if (source) src = source.src;
+            }
+            if (src && typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+                if (!src.includes('doubleclick') && !src.includes('googleads') && !src.includes('adservice')) {
+                    const title = (document.title || 'Media').replace(/[\\/:*?"<>|]/g, '').trim();
+                    try {
+                        if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaSourceFound === 'function') {
+                            window.FokkShieldBridge.onMediaSourceFound(src, title, el.tagName.toLowerCase());
+                        }
+                    } catch (e) {}
+                }
+            }
+        });
+    }
+
     function hookVideoPlayback(video) {
         if (!video || video.__fokk_hooked) return;
         video.__fokk_hooked = true;
@@ -748,12 +772,14 @@
             const isPlaying = videos.some(v => !v.paused && !v.ended);
             const hasActiveVideo = videos.some(v => v.currentTime > 0 && !v.ended);
             notifyNativePlayback(isPlaying, hasActiveVideo);
+            sniffMediaSources();
         };
 
         video.addEventListener('play', updateState);
         video.addEventListener('playing', updateState);
         video.addEventListener('pause', updateState);
         video.addEventListener('ended', updateState);
+        video.addEventListener('loadeddata', sniffMediaSources);
         video.addEventListener('timeupdate', () => {
             if (!video.paused && !video.ended) {
                 notifyNativePlayback(true, true);
@@ -762,13 +788,15 @@
 
         if (!video.paused && !video.ended) {
             notifyNativePlayback(true, true);
+            sniffMediaSources();
         }
     }
 
     document.querySelectorAll('video').forEach(hookVideoPlayback);
+    sniffMediaSources();
 
     // =========================================================================
-    // 8. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
+    // 9. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
     // =========================================================================
     try {
         const observer = new MutationObserver(() => {
@@ -776,6 +804,7 @@
             collapseEmptyAdBoxes();
             dismissCookieWallsAndNags();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
+            sniffMediaSources();
         });
         observer.observe(document.documentElement, {
             childList: true,
@@ -790,6 +819,7 @@
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
         dismissCookieWallsAndNags();
+        sniffMediaSources();
     }, 350);
 
     // Initial pass on DOMContentLoaded
@@ -799,10 +829,12 @@
             collapseEmptyAdBoxes();
             dismissCookieWallsAndNags();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
+            sniffMediaSources();
         });
     } else {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
         dismissCookieWallsAndNags();
+        sniffMediaSources();
     }
 })();

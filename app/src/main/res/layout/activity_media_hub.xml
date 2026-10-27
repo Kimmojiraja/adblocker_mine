@@ -124,6 +124,17 @@
                 android:src="@drawable/ic_pip"
                 app:tint="@color/fokk_cyan"
                 android:contentDescription="Picture-in-Picture" />
+
+            <ImageButton
+                android:id="@+id/btnDownloadMedia"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_download"
+                app:tint="@color/fokk_cyan"
+                android:visibility="gone"
+                android:contentDescription="Download Media" />
         </LinearLayout>
 
         <ProgressBar

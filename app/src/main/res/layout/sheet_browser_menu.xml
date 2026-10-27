@@ -201,6 +201,42 @@
                 android:layout_centerVertical="true" />
         </RelativeLayout>
 
+        <!-- Biometric Lock for Private Tabs Toggle -->
+        <RelativeLayout
+            android:id="@+id/rowBiometricLock"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="8dp">
+
+            <ImageView
+                android:id="@+id/iconBiometricLock"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_fingerprint"
+                app:tint="@color/fokk_cyan" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="14dp"
+                android:layout_toEndOf="@id/iconBiometricLock"
+                android:text="Lock Private Tabs (Fingerprint)"
+                android:textColor="@color/text_primary"
+                android:textSize="14.5sp" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchBiometricLock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true" />
+        </RelativeLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -339,6 +375,33 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="14dp"
                 android:text="Downloads"
+                android:textColor="@color/text_primary"
+                android:textSize="14.5sp" />
+        </LinearLayout>
+
+        <!-- Download Active Video -->
+        <LinearLayout
+            android:id="@+id/rowDownloadVideo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_download"
+                app:tint="@color/fokk_cyan" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:text="Download Video from Page"
                 android:textColor="@color/text_primary"
                 android:textSize="14.5sp" />
         </LinearLayout>

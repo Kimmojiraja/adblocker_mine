@@ -597,6 +597,18 @@
             color: #fff;
         }
 
+        /* Modern Browser Bottom Toolbar (Firefox/Brave Style) */
+        .studio-bottom-nav {
+            height: 48px;
+            background: #0C101A;
+            border-top: 1px solid #1D2636;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+            z-index: 50;
+        }
+
         /* Modals */
         .modal-overlay {
             display: none;
@@ -762,6 +774,31 @@
                     </div>
                 </div>
 
+                <!-- Primary Hero: Fokk Browser & Media Engine (Brave & Firefox Grade) -->
+                <div class="card elevated" style="border: 1.5px solid #1E3A5F; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="card-title" style="font-size: 17px; margin-bottom: 0;">Fokk Browser</span>
+                                <span style="background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 2px 6px; font-size: 9.5px; font-weight: 700; color: var(--fokk-cyan);">PRO ENGINE</span>
+                            </div>
+                            <div class="card-desc" style="margin-top: 4px;">Brave &amp; Firefox grade engine: multi-tab browsing, cosmetic element collapsing, and ad-free streaming.</div>
+                        </div>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                    </div>
+
+                    <div style="display: flex; gap: 6px; margin-top: 10px; margin-bottom: 12px;">
+                        <span style="background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); border-radius: 6px; padding: 2px 7px; font-size: 10px; font-weight: 700; color: var(--fokk-cyan);">🛡️ Zero Ads</span>
+                        <span style="background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); border-radius: 6px; padding: 2px 7px; font-size: 10px; font-weight: 700; color: var(--fokk-cyan);">📑 Multi-Tab</span>
+                        <span style="background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); border-radius: 6px; padding: 2px 7px; font-size: 10px; font-weight: 700; color: var(--fokk-cyan);">⚡ Auto PiP</span>
+                    </div>
+
+                    <button class="btn-primary" onclick="switchScreen('studio')" style="height: 46px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                        Launch Fokk Browser
+                    </button>
+                </div>
+
                 <!-- Feature 1: YouTube Ad Assistant -->
                 <div class="card">
                     <div class="card-header-row">
@@ -801,16 +838,6 @@
                     <button class="btn-link spotify" onclick="openModal('spotifyGuide')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                         Spotify Integration Guide
-                    </button>
-                </div>
-
-                <!-- Feature 3: Media Studio Banner -->
-                <div class="card elevated">
-                    <div class="card-title" style="margin-bottom: 2px;">Ad-Free Media Studio</div>
-                    <div class="card-desc">Stream YouTube, Instagram, X &amp; Reddit without video ads, with background audio and floating PiP.</div>
-                    <button class="btn-primary" onclick="switchScreen('studio')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                        Launch Media Studio
                     </button>
                 </div>
 
@@ -868,15 +895,15 @@
 
             </div>
 
-            <!-- SCREEN 2: MEDIA STUDIO -->
+            <!-- SCREEN 2: MEDIA STUDIO (FOKK BROWSER) -->
             <div id="screen-studio" class="media-studio-screen">
-                <!-- Top Navigation Bar -->
+                <!-- Firefox/Brave Style Slim Browser Omnibar Top Bar -->
                 <div class="studio-top-bar">
                     <button class="icon-btn" onclick="switchScreen('dashboard')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                     </button>
-                    <button class="icon-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                    <button class="icon-btn" onclick="showToast('Forward')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
                     </button>
                     <div class="search-chip-bar" style="height: 32px; border-radius: 16px;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
@@ -889,8 +916,8 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                         </button>
                     </div>
-                    <button class="icon-btn" onclick="toggleDock()" title="Platform Switcher">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-blue)"><path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/></svg>
+                    <button class="icon-btn" onclick="showToast('Encrypted SSL Connection Active')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--text-secondary)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                     </button>
                     <button class="icon-btn" onclick="showToast('Picture-in-Picture active')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>
@@ -898,7 +925,7 @@
                 </div>
 
                 <!-- Studio Stream Viewport -->
-                <div class="studio-viewport" style="position: relative;">
+                <div class="studio-viewport" style="position: relative; flex: 1;">
                     <div class="mock-video-area">
                         <div class="mock-video-watermark">AD-FREE STREAM ACTIVE</div>
                         <div class="play-ring" onclick="showToast('Playing stream ad-free...')">
@@ -908,39 +935,44 @@
                     <div class="stream-meta">
                         <div class="stream-title">Official Stream Player (Zero Mid-roll &amp; Pre-roll Ads)</div>
                         <div class="stream-sub">Direct hardware accelerated viewport • uBlock engine active</div>
-                    </div>
 
-                    <!-- Mini Studio Floating Chip (Elevated above native bottom bars) -->
-                    <div id="preview-studio-toggle" style="position: absolute; bottom: 64px; right: 16px; height: 36px; background: rgba(13,20,36,0.92); backdrop-filter: blur(12px); border: 1px solid #283A5A; border-radius: 20px; display: none; align-items: center; padding: 0 12px; gap: 6px; cursor: pointer; z-index: 40; box-shadow: 0 4px 16px rgba(0,0,0,0.6);" onclick="toggleDock()">
-                        <span style="font-size: 11px; font-weight: 700; color: #fff;">Studio Hub ▾</span>
+                        <!-- Quick Platform Launch Chips -->
+                        <div style="display: flex; gap: 8px; margin-top: 14px;">
+                            <div class="dock-item active" style="flex: 1; background: #131B2B; border: 1px solid #24344D;" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
+                                <span>YouTube</span>
+                            </div>
+                            <div class="dock-item" style="flex: 1; background: #131B2B; border: 1px solid #24344D;" onclick="switchDockPlatform('Instagram', 'https://www.instagram.com', this)">
+                                <span>Instagram</span>
+                            </div>
+                            <div class="dock-item" style="flex: 1; background: #131B2B; border: 1px solid #24344D;" onclick="switchDockPlatform('Twitter / X', 'https://x.com', this)">
+                                <span>X / Twitter</span>
+                            </div>
+                            <div class="dock-item" style="flex: 1; background: #131B2B; border: 1px solid #24344D;" onclick="switchDockPlatform('Reddit', 'https://www.reddit.com', this)">
+                                <span>Reddit</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Floating Island Dock (Collapsible) -->
-                    <div id="preview-floating-dock" class="floating-island-dock" style="bottom: 60px;">
-                        <div class="dock-item active" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/></svg>
-                            <span>YouTube</span>
+                <!-- Modern Browser Bottom Navigation Toolbar (Firefox/Brave Style) -->
+                <div class="studio-bottom-nav">
+                    <button class="icon-btn" onclick="showToast('Navigated Back')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="showToast('Navigated Forward')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="switchDockPlatform('YouTube', 'https://m.youtube.com', this)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--fokk-cyan)"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    </button>
+                    <button class="icon-btn" onclick="openModal('tabSwitcher')">
+                        <div style="border: 1.8px solid var(--fokk-cyan); border-radius: 5px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--fokk-cyan); background: rgba(0,229,255,0.1);">
+                            <span id="preview-tab-count">1</span>
                         </div>
-                        <div class="dock-item" onclick="switchDockPlatform('Instagram', 'https://www.instagram.com', this)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2.5"></line>
-                            </svg>
-                            <span>Instagram</span>
-                        </div>
-                        <div class="dock-item" onclick="switchDockPlatform('Twitter / X', 'https://x.com', this)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                            <span>Twitter / X</span>
-                        </div>
-                        <div class="dock-item" onclick="switchDockPlatform('Reddit', 'https://www.reddit.com', this)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF4500"><path d="M12 0C5.373 0 0 5.373 0 12c0 6.627 5.373 12 12 12s12-5.373 12-12c0-6.627-5.373-12-12-12zm6.066 13.31c.054.245.084.5.084.763 0 2.69-3.197 4.87-7.15 4.87s-7.15-2.18-7.15-4.87c0-.263.03-.518.084-.763-.638-.37-1.066-1.07-1.066-1.87 0-1.2.97-2.17 2.17-2.17.63 0 1.2.27 1.59.7 1.25-.85 2.94-1.4 4.8-1.46l.82-3.87 2.68.57c.07-.6.58-1.07 1.2-1.07.67 0 1.22.55 1.22 1.22 0 .67-.55 1.22-1.22 1.22-.57 0-1.05-.39-1.18-.92l-2.38-.5-.73 3.46c1.84.06 3.51.61 4.75 1.45.39-.42.95-.68 1.57-.68 1.2 0 2.17.97 2.17 2.17 0 .8-.43 1.5-1.06 1.87zM9.25 12.25c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm5.5 0c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm-5.75 4.35c.23.23.6.23.83 0 .67-.67 1.48-.92 2.17-.92s1.5.25 2.17.92c.23.23.6.23.83 0 .23-.23.23-.6 0-.83-.89-.89-2.01-1.27-3-1.27s-2.11.38-3 1.27c-.23.23-.23.6 0 .83z"/></svg>
-                            <span>Reddit</span>
-                        </div>
-                        <button style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; display:flex; align-items:center;" onclick="collapseDockPreview()" title="Minimize Dock">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                        </button>
-                    </div>
+                    </button>
+                    <button class="icon-btn" onclick="openModal('browserMenu')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </button>
                 </div>
             </div>
 
@@ -1161,6 +1193,61 @@
                 title: "Fokk Shield Support",
                 body: "Version: 1.1.0\nArchitecture: 100% No-VPN Native Assistant\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.",
                 actions: `<button class="modal-btn" onclick="closeModal()">Close</button><button class="modal-btn primary" onclick="window.open('https://github.com/Kimmojiraja/adblocker_mine'); closeModal();">GitHub Repo</button>`
+            },
+            tabSwitcher: {
+                title: "Tabs (2)",
+                isHtml: true,
+                body: `<div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="background:#131B2B; border:1.5px solid var(--fokk-cyan); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">YouTube</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">https://m.youtube.com</div>
+                        </div>
+                        <span style="font-size:10px; color:var(--fokk-cyan); font-weight:700; background:rgba(0,229,255,0.1); padding:2px 6px; border-radius:6px;">ACTIVE</span>
+                    </div>
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">LiveScore</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">https://www.livescore.in</div>
+                        </div>
+                        <span style="font-size:11px; color:var(--text-secondary); cursor:pointer;" onclick="showToast('Closed Tab')">✕</span>
+                    </div>
+                </div>`,
+                actions: `<button class="modal-btn" onclick="showToast('Closed All Tabs'); closeModal();">Close All</button><button class="modal-btn primary" onclick="showToast('Created New Tab'); closeModal();">+ New Tab</button>`
+            },
+            browserMenu: {
+                title: "Fokk Browser Menu",
+                isHtml: true,
+                body: `<div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="background:#131B2B; border:1px solid #24344D; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:var(--fokk-cyan);">🛡️ Fokk Shield Active</div>
+                            <div style="font-size:11px; color:var(--text-secondary);">6 ads &amp; trackers blocked on page</div>
+                        </div>
+                        <span style="color:#00E676; font-size:11px; font-weight:700; background:rgba(0,230,118,0.12); padding:2px 8px; border-radius:6px;">ON</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Desktop Mode Toggled'); closeModal();">
+                        <span>🖥️ Desktop Site</span>
+                        <span style="color:var(--text-secondary);">Toggle</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Night Reader Toggled'); closeModal();">
+                        <span>🌙 Dark Mode / Night Reader</span>
+                        <span style="color:var(--text-secondary);">Toggle</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Reloading page...'); closeModal();">
+                        <span>🔄 Reload Page</span>
+                        <span>↻</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; cursor:pointer;" onclick="showToast('Shared Page Link'); closeModal();">
+                        <span>📤 Share Link</span>
+                        <span>↗</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1E283C; font-size:13px; color:var(--youtube-red); cursor:pointer;" onclick="showToast('History &amp; Cache Cleared!'); closeModal();">
+                        <span>🧹 Clear Browsing Data</span>
+                        <span>Clear</span>
+                    </div>
+                </div>`,
+                actions: `<button class="modal-btn primary" onclick="closeModal()">Close</button>`
             }
         };
 
@@ -1168,7 +1255,11 @@
             const data = modalData[type];
             if (!data) return;
             document.getElementById('modalTitle').innerText = data.title;
-            document.getElementById('modalBody').innerText = data.body;
+            if (data.isHtml) {
+                document.getElementById('modalBody').innerHTML = data.body;
+            } else {
+                document.getElementById('modalBody').innerText = data.body;
+            }
             document.getElementById('modalActions').innerHTML = data.actions;
             document.getElementById('modalOverlay').classList.add('active');
         }

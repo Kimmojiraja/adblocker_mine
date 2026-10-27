@@ -1,12 +1,24 @@
 # AdShield Core Mobile Ad & Tracking Blocklist
 # Covers: Mobile In-App Ads, Video Networks, OEM Telemetry, Analytics, and Trackers
 
-# Google / DoubleClick / AdMob
+# Google / DoubleClick / AdMob / Google Tag Services
 doubleclick.net
 googlesyndication.com
 adservice.google.com
+adservice.google.de
+adservice.google.co.in
+adservice.google.co.uk
 admob.com
+googleadservices.com
+www.googleadservices.com
+partner.googleadservices.com
+googletagservices.com
+www.googletagservices.com
+googletagmanager.com
+www.googletagmanager.com
 pagead2.googlesyndication.com
+safeframe.googlesyndication.com
+tpc.googlesyndication.com
 pagead.l.doubleclick.net
 securepubads.g.doubleclick.net
 googleads.g.doubleclick.net
@@ -16,13 +28,14 @@ cm.g.doubleclick.net
 static.doubleclick.net
 ad.doubleclick.net
 ads.google.com
-adservice.google.de
 partnerad.l.google.com
 survey.g.doubleclick.net
+fundingchoicesmessages.google.com
 google-analytics.com
 ssl.google-analytics.com
 app-measurement.com
 firebase-settings.crashlytics.com
+
 
 # Facebook / Meta Audience Network
 an.facebook.com
@@ -314,4 +327,37 @@ mux.com
 bitmovin.com
 peer5.com
 streamroot.io
-telemetry verification
+
+# Modern Web Header Bidding, Native & Display Networks
+ads.pubmatic.com
+gads.pubmatic.com
+image2.pubmatic.com
+fastlane.rubiconproject.com
+bidder.criteo.com
+static.criteo.net
+mediavine.com
+scripts.mediavine.com
+adthrive.com
+ads.adthrive.com
+confiant-integrations.global.ssl.fastly.net
+adlightning.com
+btloader.com
+seedtag.com
+richaudience.com
+connatix.com
+primis.tech
+kargo.com
+nativo.com
+gumgum.com
+adroll.com
+d.adroll.com
+adnxs-simple.com
+ib.adnxs.com
+secure.adnxs.com
+aax-us-east.amazon-adsystem.com
+as-sec.casalemedia.com
+dsum-sec.casalemedia.com
+quantcount.com
+geo.privacymanager.io
+cmp.uniconsent.com
+

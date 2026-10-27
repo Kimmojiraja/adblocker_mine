@@ -64,7 +64,6 @@ class BlocklistEngine(private val context: Context) {
         "ggpht.com",
         "gstatic.com",
         "googleapis.com",
-        "google.com",
         "accounts.google.com",
         "play.google.com",
         "gvt1.com",
@@ -79,22 +78,22 @@ class BlocklistEngine(private val context: Context) {
         val domain = rawDomain.lowercase().trimEnd('.')
         if (domain.isEmpty()) return false
 
-        // Never block essential video streaming or core infrastructure
-        if (isWhitelisted(domain)) return false
-
-        // 1. Whitelist always takes precedence
+        // 1. User custom whitelist takes absolute priority
         if (whitelistDomains.contains(domain)) return false
 
-        // 2. Direct exact match
+        // 2. Direct exact block match
         if (blockedDomains.contains(domain)) return true
 
-        // 3. Hierarchical subdomain match (e.g. "video-ads.doubleclick.net" -> "doubleclick.net")
+        // 3. Essential streaming/infrastructure whitelist
+        if (isWhitelisted(domain)) return false
+
+        // 4. Hierarchical subdomain match (e.g. "video-ads.doubleclick.net" -> "doubleclick.net")
         var dotIndex = domain.indexOf('.')
         while (dotIndex != -1 && dotIndex < domain.length - 1) {
             val parentDomain = domain.substring(dotIndex + 1)
-            if (isWhitelisted(parentDomain)) return false
             if (whitelistDomains.contains(parentDomain)) return false
             if (blockedDomains.contains(parentDomain)) return true
+            if (isWhitelisted(parentDomain)) return false
             dotIndex = domain.indexOf('.', dotIndex + 1)
         }
 

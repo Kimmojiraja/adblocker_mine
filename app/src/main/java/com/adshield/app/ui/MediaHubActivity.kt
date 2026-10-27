@@ -2,11 +2,13 @@ package com.adshield.app.ui
 
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
@@ -15,21 +17,54 @@ import android.webkit.*
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.adshield.app.AdShieldApp
 import com.adshield.app.R
 import com.adshield.app.databinding.ActivityMediaHubBinding
+import com.adshield.app.databinding.ItemTabCardBinding
+import com.adshield.app.databinding.SheetBrowserMenuBinding
+import com.adshield.app.databinding.SheetTabSwitcherBinding
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
+import java.util.UUID
 
 class MediaHubActivity : AppCompatActivity() {
+
+    data class BrowserTab(
+        val id: String = UUID.randomUUID().toString(),
+        var title: String = "Fokk Browser",
+        var url: String = "https://m.youtube.com",
+        var blockedAds: Int = 0,
+        val webView: WebView
+    )
 
     private lateinit var binding: ActivityMediaHubBinding
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var injectionScript = ""
-    private var isDockExpanded = false
     private var pageBlockedCount = 0
+
+    private val tabs = mutableListOf<BrowserTab>()
+    private var activeTabIndex = 0
+    private var isShieldEnabled = true
+    private var isDesktopMode = false
+    private var isDarkMode = false
+
+    private val activeTab: BrowserTab?
+        get() = tabs.getOrNull(activeTabIndex)
+
+    private val activeWebView: WebView?
+        get() = activeTab?.webView
+
+    private val cleanMobileUa: String by lazy {
+        val defaultUa = WebSettings.getDefaultUserAgent(this)
+        defaultUa.replace("; wv", "").replace("Version/4.0 ", "")
+    }
+
+    private val desktopUa = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,11 +73,10 @@ class MediaHubActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         loadInjectionScript()
-        setupWebView()
         setupControls()
 
         val initialUrl = intent.getStringExtra(EXTRA_URL) ?: "https://m.youtube.com"
-        binding.webView.loadUrl(initialUrl)
+        addNewTab(initialUrl)
     }
 
     private fun loadInjectionScript() {
@@ -53,12 +87,13 @@ class MediaHubActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to load injection script", e)
         }
     }
 
     fun onPageAdsBlocked(count: Int) {
         pageBlockedCount += count
+        activeTab?.let { it.blockedAds += count }
         AdShieldApp.instance.incrementBlockedAds(count)
         binding.badgeBlocked.visibility = View.VISIBLE
         binding.textPageBlockedCount.text = pageBlockedCount.toString()
@@ -74,20 +109,19 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWebView() {
-        // High-performance hardware acceleration
-        binding.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+    private fun createTab(url: String): BrowserTab {
+        val webView = WebView(this)
+        webView.layoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
-        // Enable third-party cookies for seamless media streaming
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
+        cookieManager.setAcceptThirdPartyCookies(webView, true)
 
-        // Modern clean User-Agent without WebView markers to fix x.com / Twitter
-        val defaultUa = WebSettings.getDefaultUserAgent(this)
-        val cleanUa = defaultUa.replace("; wv", "").replace("Version/4.0 ", "")
-
-        binding.webView.settings.apply {
+        webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
@@ -97,43 +131,69 @@ class MediaHubActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = cleanUa
+            userAgentString = if (isDesktopMode) desktopUa else cleanMobileUa
         }
 
-        // Bridge for real-time live ad counter
-        binding.webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
+        webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
 
-        binding.webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                super.onPageStarted(view, url, favicon)
-                binding.progressBar.visibility = View.VISIBLE
-                pageBlockedCount = 0
-                binding.badgeBlocked.visibility = View.GONE
-                if (url != null && !binding.urlInput.hasFocus()) {
-                    binding.urlInput.setText(url)
+        // Pre-inject content blocker at document start if supported by Chromium
+        if (injectionScript.isNotEmpty() && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            try {
+                WebViewCompat.addDocumentStartJavaScript(webView, injectionScript, setOf("*"))
+            } catch (e: Exception) {
+                Log.w(TAG, "Document start script error", e)
+            }
+        }
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, pageUrl, favicon)
+                if (view == activeWebView) {
+                    binding.progressBar.visibility = View.VISIBLE
+                    pageBlockedCount = 0
+                    binding.badgeBlocked.visibility = View.GONE
+                    if (pageUrl != null && !binding.urlInput.hasFocus()) {
+                        binding.urlInput.setText(pageUrl)
+                    }
                 }
                 injectAdblockScript(view)
+                if (isDarkMode) injectDarkModeScript(view, true)
             }
 
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                binding.progressBar.visibility = View.GONE
+            override fun onPageFinished(view: WebView?, pageUrl: String?) {
+                super.onPageFinished(view, pageUrl)
+                if (view == activeWebView) {
+                    binding.progressBar.visibility = View.GONE
+                }
                 injectAdblockScript(view)
+                pageUrl?.let { activeTab?.url = it }
+                view?.title?.let { if (it.isNotEmpty()) activeTab?.title = it }
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                if (!isShieldEnabled) return super.shouldInterceptRequest(view, request)
+
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
-                
-                // Never block core video streaming, thumbnail, or Google video infrastructure
+                val urlStr = request.url.toString().lowercase()
+
+                // Never block core streaming CDN video segments or essential services
                 if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                if (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) {
+                val isAdScript = urlStr.contains("/pagead/") ||
+                        urlStr.contains("adsbygoogle.js") ||
+                        urlStr.contains("googletagservices.com") ||
+                        urlStr.contains("googleadservices.com") ||
+                        urlStr.contains("/gpt.js") ||
+                        urlStr.contains("adservice.google.")
+
+                if (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) {
                     runOnUiThread { onPageAdsBlocked(1) }
-                    // Return valid 200 OK empty response with CORS headers to avoid network stalls
+                    val mimeType = if (urlStr.endsWith(".js") || urlStr.contains(".js?")) "application/javascript" else "text/plain"
+                    val emptyPayload = if (mimeType == "application/javascript") "/* blocked by fokk shield */" else ""
                     return WebResourceResponse(
-                        "text/plain",
+                        mimeType,
                         "UTF-8",
                         200,
                         "OK",
@@ -142,16 +202,26 @@ class MediaHubActivity : AppCompatActivity() {
                             "Access-Control-Allow-Methods" to "GET, POST, OPTIONS",
                             "Access-Control-Allow-Headers" to "*"
                         ),
-                        ByteArrayInputStream(ByteArray(0))
+                        ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
                     )
                 }
+
                 return super.shouldInterceptRequest(view, request)
             }
         }
 
-        binding.webView.webChromeClient = object : WebChromeClient() {
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                binding.progressBar.progress = newProgress
+                if (view == activeWebView) {
+                    binding.progressBar.progress = newProgress
+                }
+            }
+
+            override fun onReceivedTitle(view: WebView?, title: String?) {
+                super.onReceivedTitle(view, title)
+                if (!title.isNullOrEmpty()) {
+                    tabs.find { it.webView == view }?.title = title
+                }
             }
 
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
@@ -182,6 +252,80 @@ class MediaHubActivity : AppCompatActivity() {
                 customViewCallback = null
             }
         }
+
+        // Dual Scroll Auto-Hide Toolbar mechanics
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                val dy = scrollY - oldScrollY
+                if (dy > 12 && scrollY > 80) {
+                    // Scrolling down: immersive view
+                    binding.topBar.animate().translationY(-binding.topBar.height.toFloat()).alpha(0f).setDuration(180).start()
+                    binding.bottomNav.animate().translationY(binding.bottomNav.height.toFloat()).alpha(0f).setDuration(180).start()
+                } else if (dy < -12 || scrollY < 20) {
+                    // Scrolling up or at top: restore browser omnibar and toolbar
+                    binding.topBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                    binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                }
+            }
+        }
+
+        val tab = BrowserTab(url = url, webView = webView)
+        binding.tabContainer.addView(webView)
+        return tab
+    }
+
+    private fun addNewTab(url: String) {
+        val tab = createTab(url)
+        tabs.add(tab)
+        switchToTab(tabs.size - 1)
+        tab.webView.loadUrl(url)
+        updateTabCounter()
+    }
+
+    private fun switchToTab(index: Int) {
+        if (index !in tabs.indices) return
+        activeTabIndex = index
+        for (i in tabs.indices) {
+            tabs[i].webView.visibility = if (i == index) View.VISIBLE else View.GONE
+        }
+        val current = tabs[index]
+        binding.urlInput.setText(current.url)
+        pageBlockedCount = current.blockedAds
+        if (pageBlockedCount > 0) {
+            binding.badgeBlocked.visibility = View.VISIBLE
+            binding.textPageBlockedCount.text = pageBlockedCount.toString()
+        } else {
+            binding.badgeBlocked.visibility = View.GONE
+        }
+        updateTabCounter()
+    }
+
+    private fun closeTab(index: Int) {
+        if (index !in tabs.indices) return
+        val removed = tabs.removeAt(index)
+        binding.tabContainer.removeView(removed.webView)
+        removed.webView.destroy()
+
+        if (tabs.isEmpty()) {
+            addNewTab("https://m.youtube.com")
+        } else {
+            val newIndex = if (activeTabIndex >= tabs.size) tabs.size - 1 else activeTabIndex
+            switchToTab(newIndex)
+        }
+        updateTabCounter()
+    }
+
+    private fun closeAllTabs() {
+        for (tab in tabs) {
+            binding.tabContainer.removeView(tab.webView)
+            tab.webView.destroy()
+        }
+        tabs.clear()
+        addNewTab("https://m.youtube.com")
+    }
+
+    private fun updateTabCounter() {
+        binding.textTabCount.text = tabs.size.toString()
     }
 
     private fun injectAdblockScript(webView: WebView?) {
@@ -190,29 +334,75 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun injectDarkModeScript(webView: WebView?, enable: Boolean) {
+        if (webView == null) return
+        val js = if (enable) {
+            "javascript:(function(){let d=document.getElementById('__fokk_dark');if(!d){let s=document.createElement('style');s.id='__fokk_dark';s.innerHTML='html { filter: invert(90%) hue-rotate(180deg) !important; background: #111 !important; } img, video, iframe, canvas { filter: invert(100%) hue-rotate(180deg) !important; }';document.head.appendChild(s);}})();"
+        } else {
+            "javascript:(function(){let d=document.getElementById('__fokk_dark');if(d)d.remove();})();"
+        }
+        webView.evaluateJavascript(js, null)
+    }
+
     private fun isStreamingHost(host: String): Boolean {
         val lower = host.lowercase()
-        return lower.contains("googlevideo.com") ||
-                lower.contains("youtube.com") ||
-                lower.contains("ytimg.com") ||
-                lower.contains("ggpht.com") ||
-                lower.contains("googleapis.com") ||
-                lower.contains("gstatic.com") ||
-                lower.contains("google.com")
+        // Explicitly NEVER treat ad/tracker endpoints as streaming hosts
+        if (lower.contains("adservice") ||
+            lower.contains("doubleclick") ||
+            lower.contains("googlesyndication") ||
+            lower.contains("googleadservices") ||
+            lower.contains("googletag") ||
+            lower.contains("admob") ||
+            lower.contains("analytics")) {
+            return false
+        }
+        return lower.endsWith("googlevideo.com") ||
+                lower.endsWith("ytimg.com") ||
+                lower.endsWith("ggpht.com") ||
+                lower == "youtube.com" ||
+                lower.endsWith(".youtube.com") ||
+                lower == "youtu.be"
     }
 
     private fun setupControls() {
-        binding.btnBack.setOnClickListener {
-            if (binding.webView.canGoBack()) binding.webView.goBack() else finish()
+        // Navigation controls
+        val handleBack: () -> Unit = {
+            if (customView != null) {
+                binding.fullscreenContainer.removeView(customView)
+                binding.fullscreenContainer.visibility = View.GONE
+                binding.mainContentLayout.visibility = View.VISIBLE
+                customViewCallback?.onCustomViewHidden()
+                customView = null
+                customViewCallback = null
+            } else if (activeWebView?.canGoBack() == true) {
+                activeWebView?.goBack()
+            } else {
+                finish()
+            }
         }
 
+        binding.btnBack.setOnClickListener { handleBack() }
+        binding.btnNavBack.setOnClickListener { handleBack() }
+
         binding.btnForward.setOnClickListener {
-            if (binding.webView.canGoForward()) binding.webView.goForward()
+            if (activeWebView?.canGoForward() == true) activeWebView?.goForward()
+        }
+        binding.btnNavForward.setOnClickListener {
+            if (activeWebView?.canGoForward() == true) activeWebView?.goForward()
+        }
+
+        binding.btnNavHome.setOnClickListener {
+            activeWebView?.loadUrl("https://m.youtube.com")
+        }
+
+        binding.btnRefresh.setOnClickListener {
+            activeWebView?.reload()
+            Toast.makeText(this, "Reloading page...", Toast.LENGTH_SHORT).show()
         }
 
         binding.imgSecurityLock.setOnClickListener {
-            binding.webView.reload()
-            Toast.makeText(this, "Reloading page...", Toast.LENGTH_SHORT).show()
+            activeWebView?.reload()
+            Toast.makeText(this, "Encrypted SSL Connection Active", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnPip.setOnClickListener {
@@ -227,7 +417,7 @@ class MediaHubActivity : AppCompatActivity() {
                     query.contains(".") && !query.contains(" ") -> "https://$query"
                     else -> "https://m.youtube.com/results?search_query=${Uri.encode(query)}"
                 }
-                binding.webView.loadUrl(targetUrl)
+                activeWebView?.loadUrl(targetUrl)
                 binding.urlInput.clearFocus()
             }
         }
@@ -245,80 +435,155 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Collapsible Dock Mechanics
-        fun expandDock() {
-            isDockExpanded = true
-            binding.btnStudioToggle.visibility = View.GONE
-            binding.bottomNav.visibility = View.VISIBLE
-            binding.bottomNav.alpha = 0f
-            binding.bottomNav.translationY = 50f
-            binding.bottomNav.animate().alpha(1f).translationY(0f).setDuration(220).start()
+        // Tab Switcher Dialog Trigger
+        binding.btnNavTabs.setOnClickListener {
+            showTabSwitcherDialog()
         }
 
-        fun collapseDock() {
-            isDockExpanded = false
-            binding.bottomNav.animate().alpha(0f).translationY(50f).setDuration(200).withEndAction {
-                binding.bottomNav.visibility = View.GONE
-                binding.btnStudioToggle.visibility = View.VISIBLE
-                binding.btnStudioToggle.alpha = 0f
-                binding.btnStudioToggle.animate().alpha(1f).setDuration(200).start()
-            }.start()
+        // Browser Menu Dialog Trigger
+        binding.btnNavMenu.setOnClickListener {
+            showBrowserMenuDialog()
         }
+    }
 
-        binding.btnMinimizeDock.setOnClickListener {
-            collapseDock()
-        }
+    private fun showTabSwitcherDialog() {
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = SheetTabSwitcherBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
 
-        binding.btnStudioToggle.setOnClickListener {
-            expandDock()
-        }
+        sheetBinding.textTabHeader.text = "Open Tabs (${tabs.size})"
 
-        binding.btnPlatformMenu.setOnClickListener {
-            if (isDockExpanded) collapseDock() else expandDock()
-        }
+        fun populateTabs() {
+            sheetBinding.layoutTabsContainer.removeAllViews()
+            for (i in tabs.indices) {
+                val tab = tabs[i]
+                val cardBinding = ItemTabCardBinding.inflate(layoutInflater, sheetBinding.layoutTabsContainer, false)
+                cardBinding.textTabTitle.text = tab.title.ifEmpty { "New Tab" }
+                cardBinding.textTabUrl.text = tab.url
 
-        // Quick platform shortcuts in the Floating Island Dock
-        binding.btnPlatformYoutube.setOnClickListener {
-            binding.imgTogglePlatform.setImageResource(R.drawable.ic_youtube)
-            binding.webView.loadUrl("https://m.youtube.com")
-            collapseDock()
-        }
-        binding.btnPlatformInstagram.setOnClickListener {
-            binding.imgTogglePlatform.setImageResource(R.drawable.ic_instagram)
-            binding.webView.loadUrl("https://www.instagram.com")
-            collapseDock()
-        }
-        binding.btnPlatformTwitter.setOnClickListener {
-            binding.imgTogglePlatform.setImageResource(R.drawable.ic_twitter)
-            binding.webView.loadUrl("https://x.com")
-            collapseDock()
-        }
-        binding.btnPlatformReddit.setOnClickListener {
-            binding.imgTogglePlatform.setImageResource(R.drawable.ic_reddit)
-            binding.webView.loadUrl("https://www.reddit.com")
-            collapseDock()
-        }
+                // Platform icon styling
+                val lowerUrl = tab.url.lowercase()
+                when {
+                    lowerUrl.contains("youtube.com") -> cardBinding.imgTabIcon.setImageResource(R.drawable.ic_youtube)
+                    lowerUrl.contains("instagram.com") -> cardBinding.imgTabIcon.setImageResource(R.drawable.ic_instagram)
+                    lowerUrl.contains("x.com") || lowerUrl.contains("twitter.com") -> cardBinding.imgTabIcon.setImageResource(R.drawable.ic_twitter)
+                    lowerUrl.contains("reddit.com") -> cardBinding.imgTabIcon.setImageResource(R.drawable.ic_reddit)
+                    else -> cardBinding.imgTabIcon.setImageResource(R.drawable.ic_launch)
+                }
 
-        // Dual Scroll Auto-Hide: Hides both top browser omnibar and bottom dock on scroll down
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            binding.webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
-                val dy = scrollY - oldScrollY
-                if (dy > 12 && scrollY > 80) {
-                    // Scrolling down: immersive full screen view
-                    binding.topBar.animate().translationY(-binding.topBar.height.toFloat()).alpha(0f).setDuration(180).start()
-                    binding.bottomNav.animate().translationY(150f).alpha(0f).setDuration(180).start()
-                    binding.btnStudioToggle.animate().translationY(150f).alpha(0f).setDuration(180).start()
-                } else if (dy < -12 || scrollY < 20) {
-                    // Scrolling up or at top: restore browser controls
-                    binding.topBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
-                    if (isDockExpanded) {
-                        binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                // Active tab glow border
+                if (i == activeTabIndex) {
+                    cardBinding.cardTab.strokeColor = getColor(R.color.fokk_cyan)
+                    cardBinding.cardTab.strokeWidth = (2 * resources.displayMetrics.density).toInt()
+                }
+
+                cardBinding.cardTab.setOnClickListener {
+                    switchToTab(i)
+                    dialog.dismiss()
+                }
+
+                cardBinding.btnCloseTab.setOnClickListener {
+                    closeTab(i)
+                    if (tabs.isEmpty()) {
+                        dialog.dismiss()
                     } else {
-                        binding.btnStudioToggle.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                        sheetBinding.textTabHeader.text = "Open Tabs (${tabs.size})"
+                        populateTabs()
                     }
                 }
+
+                sheetBinding.layoutTabsContainer.addView(cardBinding.root)
             }
         }
+
+        populateTabs()
+
+        sheetBinding.btnNewTabSheet.setOnClickListener {
+            addNewTab("https://m.youtube.com")
+            dialog.dismiss()
+        }
+
+        sheetBinding.btnCloseAllTabs.setOnClickListener {
+            closeAllTabs()
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showBrowserMenuDialog() {
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = SheetBrowserMenuBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+
+        sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
+        sheetBinding.switchMenuShield.isChecked = isShieldEnabled
+        sheetBinding.switchDesktop.isChecked = isDesktopMode
+        sheetBinding.switchDarkMode.isChecked = isDarkMode
+
+        sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
+            isShieldEnabled = isChecked
+            val msg = if (isChecked) "Fokk Shield Protection Enabled" else "Fokk Shield Paused"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        sheetBinding.switchDesktop.setOnCheckedChangeListener { _, isChecked ->
+            isDesktopMode = isChecked
+            activeWebView?.settings?.userAgentString = if (isDesktopMode) desktopUa else cleanMobileUa
+            activeWebView?.reload()
+            dialog.dismiss()
+        }
+
+        sheetBinding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
+            isDarkMode = isChecked
+            injectDarkModeScript(activeWebView, isDarkMode)
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowReload.setOnClickListener {
+            activeWebView?.reload()
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowNewTab.setOnClickListener {
+            addNewTab("https://m.youtube.com")
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowShare.setOnClickListener {
+            val url = activeTab?.url ?: "https://m.youtube.com"
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, url)
+            }
+            startActivity(Intent.createChooser(shareIntent, "Share Page Link"))
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowClearData.setOnClickListener {
+            clearBrowsingData()
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun clearBrowsingData() {
+        for (tab in tabs) {
+            tab.webView.clearCache(true)
+            tab.webView.clearHistory()
+            tab.webView.clearFormData()
+        }
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.removeAllCookies(null)
+        cookieManager.flush()
+        WebStorage.getInstance().deleteAllData()
+        Toast.makeText(this, "Browsing history, cache & cookies cleared!", Toast.LENGTH_SHORT).show()
     }
 
     override fun onUserLeaveHint() {
@@ -333,7 +598,7 @@ class MediaHubActivity : AppCompatActivity() {
                 if (customView != null) {
                     customView?.getGlobalVisibleRect(rect)
                 } else {
-                    binding.webView.getGlobalVisibleRect(rect)
+                    activeWebView?.getGlobalVisibleRect(rect)
                 }
                 val builder = PictureInPictureParams.Builder()
                     .setAspectRatio(Rational(16, 9))
@@ -364,36 +629,39 @@ class MediaHubActivity : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             binding.topBar.visibility = View.GONE
             binding.bottomNav.visibility = View.GONE
-            binding.btnStudioToggle.visibility = View.GONE
         } else {
             binding.topBar.visibility = View.VISIBLE
-            if (isDockExpanded) {
-                binding.bottomNav.visibility = View.VISIBLE
-            } else {
-                binding.btnStudioToggle.visibility = View.VISIBLE
-            }
+            binding.bottomNav.visibility = View.VISIBLE
         }
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (customView != null) {
-            binding.webView.webChromeClient?.onHideCustomView()
-        } else if (isDockExpanded) {
-            binding.btnMinimizeDock.performClick()
-        } else if (binding.webView.canGoBack()) {
-            binding.webView.goBack()
+            binding.fullscreenContainer.removeView(customView)
+            binding.fullscreenContainer.visibility = View.GONE
+            binding.mainContentLayout.visibility = View.VISIBLE
+            customViewCallback?.onCustomViewHidden()
+            customView = null
+            customViewCallback = null
+        } else if (activeWebView?.canGoBack() == true) {
+            activeWebView?.goBack()
         } else {
             super.onBackPressed()
         }
     }
 
     override fun onDestroy() {
-        binding.webView.destroy()
+        for (tab in tabs) {
+            binding.tabContainer.removeView(tab.webView)
+            tab.webView.destroy()
+        }
+        tabs.clear()
         super.onDestroy()
     }
 
     companion object {
         const val EXTRA_URL = "extra_url"
+        private const val TAG = "FokkBrowser"
     }
 }

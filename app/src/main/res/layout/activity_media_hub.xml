@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Ultra-Modern Slim Browser Top Bar -->
+        <!-- Firefox/Brave Style Slim Browser Omnibar Top Bar -->
         <LinearLayout
             android:id="@+id/topBar"
             android:layout_width="match_parent"
@@ -102,6 +102,16 @@
                 </LinearLayout>
 
                 <ImageButton
+                    android:id="@+id/btnRefresh"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_refresh"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Refresh" />
+
+                <ImageButton
                     android:id="@+id/btnGo"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
@@ -110,15 +120,6 @@
                     app:tint="@color/fokk_cyan"
                     android:contentDescription="Navigate" />
             </LinearLayout>
-
-            <ImageButton
-                android:id="@+id/btnPlatformMenu"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_layers"
-                app:tint="@color/fokk_blue"
-                android:contentDescription="Platform Switcher" />
 
             <ImageButton
                 android:id="@+id/btnPip"
@@ -139,184 +140,93 @@
             android:progressTint="@color/fokk_cyan"
             android:visibility="gone" />
 
-        <!-- WebView Stream Viewport -->
+        <!-- Dynamic Multi-Tab Viewport Frame Container -->
         <FrameLayout
+            android:id="@+id/tabContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_weight="1" />
 
-            <WebView
-                android:id="@+id/webView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+        <!-- Firefox/Brave Style Bottom Browser Navigation Toolbar -->
+        <LinearLayout
+            android:id="@+id/bottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#0C101A"
+            android:elevation="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp">
 
-            <!-- Compact Floating Studio Badge (Safe above YouTube bottom bar: marginBottom=64dp) -->
-            <LinearLayout
-                android:id="@+id/btnStudioToggle"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_gravity="bottom|end"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="64dp"
-                android:background="@drawable/bg_floating_dock"
-                android:elevation="6dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp"
-                android:visibility="gone"
+            <ImageButton
+                android:id="@+id/btnNavBack"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="@color/text_primary"
+                android:contentDescription="Back" />
+
+            <ImageButton
+                android:id="@+id/btnNavForward"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_forward"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Forward" />
+
+            <ImageButton
+                android:id="@+id/btnNavHome"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_home"
+                app:tint="@color/fokk_cyan"
+                android:contentDescription="Home" />
+
+            <!-- Tab Switcher Button (e.g. [ 1 ]) -->
+            <FrameLayout
+                android:id="@+id/btnNavTabs"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true">
 
-                <ImageView
-                    android:id="@+id/imgTogglePlatform"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_youtube" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="Studio Hub"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Floating Island Bottom Studio Dock (Collapsible) -->
-            <LinearLayout
-                android:id="@+id/bottomNav"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_gravity="bottom"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="60dp"
-                android:background="@drawable/bg_floating_dock"
-                android:elevation="8dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingHorizontal="6dp">
-
-                <!-- YouTube Dock Item -->
-                <LinearLayout
-                    android:id="@+id/btnPlatformYoutube"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_youtube" />
+                <FrameLayout
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_tab_counter">
 
                     <TextView
+                        android:id="@+id/textTabCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="YouTube"
-                        android:textColor="@color/text_primary"
-                        android:textSize="10sp"
+                        android:layout_gravity="center"
+                        android:text="1"
+                        android:textColor="@color/fokk_cyan"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
-                </LinearLayout>
+                </FrameLayout>
+            </FrameLayout>
 
-                <!-- Instagram Dock Item -->
-                <LinearLayout
-                    android:id="@+id/btnPlatformInstagram"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_instagram" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Instagram"
-                        android:textColor="@color/text_primary"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Twitter / X Dock Item -->
-                <LinearLayout
-                    android:id="@+id/btnPlatformTwitter"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_twitter" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Twitter / X"
-                        android:textColor="@color/text_primary"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Reddit Dock Item -->
-                <LinearLayout
-                    android:id="@+id/btnPlatformReddit"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_reddit" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Reddit"
-                        android:textColor="@color/text_primary"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Close / Minimize Dock Button -->
-                <ImageButton
-                    android:id="@+id/btnMinimizeDock"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_close"
-                    app:tint="@color/text_secondary"
-                    android:contentDescription="Minimize dock" />
-            </LinearLayout>
-        </FrameLayout>
+            <!-- Browser Menu Button (⋮) -->
+            <ImageButton
+                android:id="@+id/btnNavMenu"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_more_vert"
+                app:tint="@color/text_primary"
+                android:contentDescription="Browser Menu" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Fullscreen Video Container -->

@@ -102,27 +102,38 @@
 
     interceptYouTubeConfigs();
 
-    // 2. Video Ad Fast-Forward & Skip
+    // 2. Video Ad Fast-Forward & Skip (Zero-Lag Engine)
     function checkAndSkipWebAd() {
-        const player = document.querySelector('.html5-video-player');
-        if (!player) return;
+        const moviePlayer = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+        if (!moviePlayer) return;
 
-        const isAdShowing = player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting');
-        if (isAdShowing) {
-            const video = player.querySelector('video');
-            if (video) {
-                video.muted = true;
-                if (video.duration && !isNaN(video.duration) && video.duration < 120) {
-                    video.currentTime = video.duration;
-                }
+        const isAd = moviePlayer.classList.contains('ad-showing') || 
+                     moviePlayer.classList.contains('ad-interrupting') ||
+                     document.querySelector('.ytp-ad-player-overlay, .ytm-ad-badge, .ytp-ad-module');
+
+        if (isAd) {
+            // 1. YouTube native player API instant ad dismissal
+            if (typeof moviePlayer.skipAd === 'function') {
+                try { moviePlayer.skipAd(); } catch (e) {}
             }
 
+            // 2. Trigger skip button click instantly
             const skipBtn = document.querySelector(
-                '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .videoAdUiSkipButton, button.ytp-ad-skip-button-text'
+                '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .videoAdUiSkipButton, button.ytp-ad-skip-button-text, .ytp-ad-skip-button-slot button, [class*="skip-button"]'
             );
             if (skipBtn && typeof skipBtn.click === 'function') {
                 skipBtn.click();
                 reportBlocked(1);
+            }
+
+            // 3. Fast-forward video without decoder stall (no blank screen!)
+            const video = moviePlayer.querySelector('video') || document.querySelector('video');
+            if (video) {
+                video.muted = true;
+                video.playbackRate = 16.0;
+                if (video.duration && !isNaN(video.duration) && video.duration > 0.1) {
+                    video.currentTime = Math.max(0, video.duration - 0.05);
+                }
             }
         }
     }
@@ -131,12 +142,23 @@
     const cosmeticCss = `
         /* Generic Ad Containers & Empty Box Collapsers */
         ins.adsbygoogle,
+        .adsbygoogle,
         [id*="google_ads"],
         [class*="google_ads"],
         iframe[id*="google_ads"],
+        iframe[id*="aswift"],
         iframe[src*="doubleclick"],
         iframe[src*="adservice"],
         iframe[src*="googlesyndication"],
+        iframe[src*="googleadservices"],
+        div[id^="div-gpt-ad"],
+        div[id*="gpt-ad"],
+        div[data-ad-type],
+        #banner_top,
+        #banner_bottom,
+        .banner_wrapper,
+        [id*="banner"],
+        [class*="banner-container"],
         [class*="ad-banner"],
         [class*="ad-wrapper"],
         [class*="ad-container"],
@@ -174,6 +196,9 @@
         #masthead-ad,
         .sparkles-light-cta,
         .ytm-ad-badge,
+        .ytp-ad-player-overlay,
+        .ytp-ad-module,
+        .ytp-ad-overlay-container,
         .ad-showing .ytp-ad-player-overlay,
         
         /* Modern Reddit Web Ad Selectors */
@@ -214,8 +239,9 @@
                 const src = (iframe.getAttribute('src') || '').toLowerCase();
                 const id = (iframe.id || '').toLowerCase();
                 const isAdFrame = src.includes('doubleclick') || src.includes('adservice') || 
-                                  src.includes('googlesyndication') || src.includes('ad') || 
-                                  id.includes('google_ads') || id.includes('ad_');
+                                  src.includes('googlesyndication') || src.includes('googleadservices') ||
+                                  src.includes('ad') || id.includes('google_ads') || id.includes('aswift') ||
+                                  id.includes('ad_') || id.includes('gpt');
                 
                 if (isAdFrame || !iframe.src || iframe.src === 'about:blank') {
                     const parent = iframe.parentElement;
@@ -277,16 +303,34 @@
         };
     } catch (e) {}
 
-    // Run dynamic cleaners periodically
+    // 6. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
+    try {
+        const observer = new MutationObserver(() => {
+            checkAndSkipWebAd();
+            collapseEmptyAdBoxes();
+        });
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'src', 'id']
+        });
+    } catch (e) {}
+
+    // Periodic safety sweep
     setInterval(() => {
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
-    }, 600);
+    }, 400);
 
     // Initial pass on DOMContentLoaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', collapseEmptyAdBoxes);
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAndSkipWebAd();
+            collapseEmptyAdBoxes();
+        });
     } else {
+        checkAndSkipWebAd();
         collapseEmptyAdBoxes();
     }
 })();

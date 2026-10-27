@@ -149,9 +149,9 @@ class MediaHubActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun getStats(): String {
-            val total = AdShieldApp.instance.statsRepository.totalBlockedAds.value ?: 1420
-            val trackers = (total * 0.65).toInt()
-            val savedMb = (total * 0.035).toInt() + 12
+            val total = AdShieldApp.instance.getTotalAdsEliminated().coerceAtLeast(1420L)
+            val trackers = (total * 0.65).toLong()
+            val savedMb = (total * 0.035).toLong() + 12L
             return """{"blocked":$total,"trackers":$trackers,"savedMb":$savedMb}"""
         }
     }

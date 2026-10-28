@@ -381,13 +381,13 @@ class MediaHubActivity : AppCompatActivity() {
             } else {
                 builder.setPositiveButton("Download 1080p / MP3") { _, _ ->
                     val helperUrl = "https://y2mate.is/watch?v=$videoId"
-                    createNewTab(helperUrl, isPrivate = false)
+                    addNewTab(helperUrl, isPrivate = false)
                 }
             }
 
             builder.setNeutralButton("Save Options") { _, _ ->
                 val helperUrl = "https://ssyoutube.com/watch?v=$videoId"
-                createNewTab(helperUrl, isPrivate = false)
+                addNewTab(helperUrl, isPrivate = false)
             }
             builder.setNegativeButton("Cancel", null)
             builder.show()

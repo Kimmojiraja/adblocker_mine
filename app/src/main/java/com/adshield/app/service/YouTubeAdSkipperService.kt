@@ -26,6 +26,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private var lastSkipClickTime = 0L
     private var lastSocialSkipTime = 0L
+    private var lastShortsSkipTime = 0L
     private val spotifyReceiver = SpotifyAdMuterReceiver()
     private var isAdMuted = false
     private var originalVolume = -1
@@ -91,9 +92,14 @@ class YouTubeAdSkipperService : AccessibilityService() {
             info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
                          AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
                          AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
-            info.packageNames = null
+            info.packageNames = arrayOf(
+                "com.google.android.youtube",
+                "com.google.android.youtube.tv",
+                "com.google.android.apps.youtube.music",
+                "com.instagram.android"
+            )
             serviceInfo = info
-            Log.i(TAG, "Dynamic AccessibilityServiceInfo applied: TYPES_ALL_MASK, packageNames=null")
+            Log.i(TAG, "Dynamic AccessibilityServiceInfo applied: TYPES_ALL_MASK, target packages applied")
         } catch (e: Exception) {
             Log.w(TAG, "Error configuring service info dynamically", e)
         }
@@ -132,22 +138,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
             return
         }
 
-        if (pkg.contains("twitter") || pkg == "com.twitter.android") {
-            val xEnabled = prefs.getBoolean(AdShieldApp.KEY_X_SKIPPER_ENABLED, true)
-            if (xEnabled) {
-                handleTwitterEvent()
-            }
-            return
-        }
-
-        if (pkg.contains("reddit") || pkg == "com.reddit.frontpage") {
-            val redditEnabled = prefs.getBoolean(AdShieldApp.KEY_REDDIT_SKIPPER_ENABLED, true)
-            if (redditEnabled) {
-                handleRedditEvent()
-            }
-            return
-        }
-
         if (pkg.contains("instagram") || pkg == "com.instagram.android") {
             val instaEnabled = prefs.getBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, true)
             if (instaEnabled) {
@@ -158,11 +148,16 @@ class YouTubeAdSkipperService : AccessibilityService() {
     }
 
     private fun handleYouTubeEvent() {
-        val now = System.currentTimeMillis()
-        if (now - lastSkipClickTime < 1000) return
-
         val rootNode = rootInActiveWindow ?: return
         try {
+            // First check if user is watching YouTube Shorts and a sponsored short is displayed
+            if (handleYouTubeShortsAd(rootNode)) {
+                return
+            }
+
+            val now = System.currentTimeMillis()
+            if (now - lastSkipClickTime < 1000) return
+
             dismissSponsoredCardIfPresent(rootNode)
 
             if (isCommentsOrPanelOpen(rootNode)) {
@@ -193,67 +188,44 @@ class YouTubeAdSkipperService : AccessibilityService() {
         }
     }
 
-    private fun handleTwitterEvent() {
-        val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1200L) return
+    private fun handleYouTubeShortsAd(rootNode: AccessibilityNodeInfo): Boolean {
+        if (!isYouTubeShortsActive(rootNode)) return false
 
-        val rootNode = rootInActiveWindow ?: return
-        try {
-            if (isSponsoredPostPresent(rootNode)) {
-                lastSocialSkipTime = now
-                dispatchSwipeUpGesture()
-                AdShieldApp.instance.incrementSkippedSocialAds()
-                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                Log.i(TAG, "Auto-scrolled past Promoted Tweet on X")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling X event", e)
-        } finally {
-            rootNode.recycle()
+        val now = System.currentTimeMillis()
+        if (now - lastShortsSkipTime < 400L) return true // Throttle to prevent multi-swipe
+
+        if (isYouTubeShortsAdPresent(rootNode)) {
+            lastShortsSkipTime = now
+            dispatchFastSwipeUpGesture()
+            AdShieldApp.instance.incrementSkippedYouTubeAds()
+            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+            Log.i(TAG, "Fast-swiped past Sponsored YouTube Short")
+            return true
         }
+        return false
     }
 
-    private fun handleRedditEvent() {
-        val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1200L) return
-
-        val rootNode = rootInActiveWindow ?: return
-        try {
-            if (isSponsoredPostPresent(rootNode)) {
-                lastSocialSkipTime = now
-                dispatchSwipeUpGesture()
-                AdShieldApp.instance.incrementSkippedSocialAds()
-                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                Log.i(TAG, "Auto-scrolled past Promoted Post on Reddit")
+    private fun isYouTubeShortsActive(rootNode: AccessibilityNodeInfo): Boolean {
+        val shortsIndicators = listOf(
+            "reel_recycler",
+            "reel_player_page_holder",
+            "reel_watch_fragment",
+            "reel_root",
+            "shorts_container",
+            "reel_pager"
+        )
+        for (id in shortsIndicators) {
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/$id")
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling Reddit event", e)
-        } finally {
-            rootNode.recycle()
         }
+        return false
     }
 
-    private fun handleInstagramEvent() {
-        val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1200L) return
-
-        val rootNode = rootInActiveWindow ?: return
-        try {
-            if (isSponsoredPostPresent(rootNode)) {
-                lastSocialSkipTime = now
-                dispatchSwipeUpGesture()
-                AdShieldApp.instance.incrementSkippedSocialAds()
-                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                Log.i(TAG, "Auto-scrolled past Sponsored content on Instagram")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling Instagram event", e)
-        } finally {
-            rootNode.recycle()
-        }
-    }
-
-    private fun isSponsoredPostPresent(node: AccessibilityNodeInfo?): Boolean {
+    private fun isYouTubeShortsAdPresent(node: AccessibilityNodeInfo?): Boolean {
         if (node == null) return false
         try {
             val text = node.text?.toString()?.lowercase()?.trim() ?: ""
@@ -261,12 +233,13 @@ class YouTubeAdSkipperService : AccessibilityService() {
             val resId = node.viewIdResourceName?.lowercase() ?: ""
 
             val isAd = (
-                text == "sponsored" || text == "promoted" || text == "ad" || text == "ad ·" ||
-                text.startsWith("sponsored ·") || text.startsWith("promoted by") || text.contains("paid partnership") ||
-                desc == "sponsored" || desc == "promoted" || desc == "ad" || desc.startsWith("sponsored") ||
-                desc.contains("promoted tweet") || desc.contains("promoted post") || desc.contains("paid partnership") ||
-                resId.contains("promoted_badge") || resId.contains("sponsored_badge") ||
-                resId.contains("ad_badge") || resId.contains("tweet_promoted_badge")
+                text == "sponsored" || text == "ad ·" || text == "ad" ||
+                text.startsWith("sponsored ·") || text == "install now" || text == "shop now" ||
+                desc == "sponsored" || desc == "ad ·" || desc == "ad" ||
+                desc.startsWith("sponsored") ||
+                resId.contains("reel_player_ad_badge") || resId.contains("reel_ad_call_to_action") ||
+                resId.contains("reel_player_ad_view") || resId.contains("ad_badge") ||
+                resId.contains("modern_ad_badge")
             )
 
             if (isAd && node.isVisibleToUser) {
@@ -276,7 +249,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
             val childCount = node.childCount
             for (i in 0 until childCount) {
                 val child = node.getChild(i) ?: continue
-                val found = isSponsoredPostPresent(child)
+                val found = isYouTubeShortsAdPresent(child)
                 child.recycle()
                 if (found) return true
             }
@@ -286,7 +259,120 @@ class YouTubeAdSkipperService : AccessibilityService() {
         return false
     }
 
-    private fun dispatchSwipeUpGesture() {
+    private fun handleInstagramEvent() {
+        val rootNode = rootInActiveWindow ?: return
+        try {
+            // Strictly require active Reels screen (do NOT auto-scroll home screen feed)
+            if (!isInstagramReelsActive(rootNode)) {
+                return
+            }
+
+            val now = System.currentTimeMillis()
+            if (now - lastSocialSkipTime < 350L) return
+
+            if (isInstagramReelAdPresent(rootNode)) {
+                lastSocialSkipTime = now
+                dispatchFastSwipeUpGesture()
+                AdShieldApp.instance.incrementSkippedSocialAds()
+                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                Log.i(TAG, "Fast-swiped past Sponsored Instagram Reel")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling Instagram event", e)
+        } finally {
+            rootNode.recycle()
+        }
+    }
+
+    private fun isInstagramReelsActive(rootNode: AccessibilityNodeInfo): Boolean {
+        // If home feed header or main feed recycler is visible, user is on home screen feed -> do not scroll
+        val homeHeaderIds = listOf(
+            "com.instagram.android:id/action_bar_title",
+            "com.instagram.android:id/action_bar_logo",
+            "com.instagram.android:id/feed_recycler_view",
+            "com.instagram.android:id/row_feed_profile_header"
+        )
+        for (id in homeHeaderIds) {
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return false
+            }
+        }
+
+        // Check for Reels containers
+        val reelsIds = listOf(
+            "com.instagram.android:id/clips_viewer",
+            "com.instagram.android:id/clips_video_container",
+            "com.instagram.android:id/clips_viewer_view_pager",
+            "com.instagram.android:id/reel_viewer",
+            "com.instagram.android:id/clips_overlay_container",
+            "com.instagram.android:id/clips_author_container",
+            "com.instagram.android:id/reel_viewer_tall_container",
+            "com.instagram.android:id/clips_swipe_refresh_layout"
+        )
+        for (id in reelsIds) {
+            val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
+            if (!nodes.isNullOrEmpty()) {
+                val hasVisible = nodes.any { it.isVisibleToUser }
+                recycleNodes(nodes)
+                if (hasVisible) return true
+            }
+        }
+
+        // Fallback: search tree for clips / reel_viewer IDs
+        return hasClipsOrReelsNode(rootNode)
+    }
+
+    private fun hasClipsOrReelsNode(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        val resId = node.viewIdResourceName?.lowercase() ?: ""
+        if ((resId.contains("clips_") || resId.contains("reel_viewer")) && node.isVisibleToUser) {
+            return true
+        }
+        val childCount = node.childCount
+        for (i in 0 until childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = hasClipsOrReelsNode(child)
+            child.recycle()
+            if (found) return true
+        }
+        return false
+    }
+
+    private fun isInstagramReelAdPresent(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        try {
+            val text = node.text?.toString()?.lowercase()?.trim() ?: ""
+            val desc = node.contentDescription?.toString()?.lowercase()?.trim() ?: ""
+            val resId = node.viewIdResourceName?.lowercase() ?: ""
+
+            val isAd = (
+                text == "sponsored" || text.startsWith("sponsored ·") || text.contains("paid partnership") ||
+                desc == "sponsored" || desc.startsWith("sponsored") || desc.contains("paid partnership") ||
+                resId.contains("sponsored_badge") || resId.contains("promoted_badge") ||
+                resId.contains("reel_ad") || resId.contains("clips_sponsored")
+            )
+
+            if (isAd && node.isVisibleToUser) {
+                return true
+            }
+
+            val childCount = node.childCount
+            for (i in 0 until childCount) {
+                val child = node.getChild(i) ?: continue
+                val found = isInstagramReelAdPresent(child)
+                child.recycle()
+                if (found) return true
+            }
+        } catch (e: Exception) {
+            return false
+        }
+        return false
+    }
+
+    private fun dispatchFastSwipeUpGesture() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
                 val displayMetrics = resources.displayMetrics
@@ -296,17 +382,18 @@ class YouTubeAdSkipperService : AccessibilityService() {
                 val path = Path().apply {
                     val startX = width / 2f
                     val startY = height * 0.75f
-                    val endY = height * 0.20f
+                    val endY = height * 0.18f
                     moveTo(startX, startY)
                     lineTo(startX, endY)
                 }
 
-                val stroke = GestureDescription.StrokeDescription(path, 0L, 200L)
+                // 90ms duration produces an immediate, high-velocity flick gesture
+                val stroke = GestureDescription.StrokeDescription(path, 0L, 90L)
                 val gesture = GestureDescription.Builder().addStroke(stroke).build()
                 dispatchGesture(gesture, null, null)
-                Log.d(TAG, "Dispatched smooth scroll-past gesture")
+                Log.d(TAG, "Dispatched fast swipe-up gesture")
             } catch (e: Exception) {
-                Log.w(TAG, "dispatchSwipeUpGesture error", e)
+                Log.w(TAG, "dispatchFastSwipeUpGesture error", e)
             }
         }
     }

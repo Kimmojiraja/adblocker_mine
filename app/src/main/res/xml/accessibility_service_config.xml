@@ -7,4 +7,4 @@
     android:canPerformGestures="true"
     android:description="@string/accessibility_service_desc"
     android:notificationTimeout="50"
-    android:packageNames="com.google.android.youtube,com.google.android.youtube.tv,com.google.android.apps.youtube.music,com.twitter.android,com.reddit.frontpage,com.instagram.android" />
+    android:packageNames="com.google.android.youtube,com.google.android.youtube.tv,com.google.android.apps.youtube.music,com.instagram.android" />

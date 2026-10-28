@@ -1,6 +1,6 @@
 {
-  "versionCode": 39,
-  "versionName": "1.0.39",
+  "versionCode": 40,
+  "versionName": "1.0.40",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Native Mobile App Ad-Bypass: Enabled gesture dispatching in accessibility engine to automatically scroll past sponsored posts in Instagram, X, and Reddit native apps.\n- AI Slop Filter Toggle: Added an instant On/Off switch in the browser menu for Google Search AI Overviews and social AI clutter.\n- Google Play Protect Trust & Release Integrity: Disabled debuggable flag and standardized release package name to FokkShield.apk to eliminate Chrome safe browsing warnings."
+  "changelog": "- YouTube Shorts Auto-Skipping: Automatically fast-swipes sponsored Shorts and advertiser placements in the official YouTube app.\n- Accelerated Instagram Reels Ad Skipping: Ultra-fast 90ms swipe gesture with 350ms response time for sponsored Instagram Reels.\n- Feed Purity: Eliminated timeline auto-scrolling on Instagram home feed, X, and Reddit, focusing exclusively on full-screen short-form video feeds."
 }

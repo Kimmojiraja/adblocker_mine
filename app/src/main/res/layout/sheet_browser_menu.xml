@@ -156,6 +156,33 @@
                         android:layout_centerVertical="true"
                         android:checked="true" />
                 </RelativeLayout>
+
+                <!-- Active Shields Badges (Social Shield & AI Slop Filter) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/badgeSocialShield"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_status_badge"
+                        android:text="Social Shield Active"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/badgeAiFilter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_status_badge"
+                        android:text="AI Slop Filter Active"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -201,7 +228,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Return to home dashboard, Spotify &amp; YouTube muter"
+                        android:text="Social Shield, AI Filter, Spotify &amp; YouTube muter"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>

@@ -361,3 +361,24 @@ quantcount.com
 geo.privacymanager.io
 cmp.uniconsent.com
 
+# Social Media Ad Telemetry & Trackers
+ads-twitter.com
+analytics.twitter.com
+scribe.twitter.com
+ads.x.com
+analytics.x.com
+events.reddit.com
+alb.reddit.com
+pixel.redditmedia.com
+ads-api.tiktok.com
+analytics.tiktok.com
+
+# AI Content Mills & Scraper Networks
+spamenator.ai
+contentbot.ai
+rytr.me
+writecream.com
+articleforge.com
+spinbot.com
+wordai.com
+ai-content-generator.com

@@ -1,6 +1,6 @@
 {
-  "versionCode": 36,
-  "versionName": "1.0.36",
+  "versionCode": 37,
+  "versionName": "1.0.37",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
-  "changelog": "- Authentic Search Engine Vectors: Redesigned official brand logos for Brave (faceted lion head), DuckDuckGo (Dax with bow tie), and Startpage (royal blue disc with search lenses).\n- Standard Downloads Manager: Quick-action downloads button in 3-dots menu now launches the system Downloads manager.\n- Neutral Professional Menu Theme: Replaced legacy neon blue/cyan tints across menu rows with clean, standard neutral icons and typography.\n- Polished Homepage Speed Dials: Removed pinned badge from Wikipedia with high-contrast icon; refreshed Instagram tile with authentic gradient camera emblem."
+  "changelog": "- Social Media Ad Shield: Advanced multi-layer defense for Instagram, X (Twitter), and Reddit. Intercepts API timeline feeds at document_start to prune promoted tweets and sponsored posts; real-time DOM scrubber eliminates sponsored feed elements with zero layout shift.\n- AI Overviews & Slop Filter: Eliminates Google Search AI Overviews, Meta AI prompts on Instagram, Grok drawer and trend cards on X, and Reddit AI summaries.\n- Extended Tracking Blocklist: Added social ad telemetry endpoints and mass-generated AI content mill domains.\n- Menu Defense Indicators: Real-time Social Shield and AI Filter active status badges in browser menu."
 }

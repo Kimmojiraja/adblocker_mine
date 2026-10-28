@@ -1792,6 +1792,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
+        sheetBinding.badgeSocialShield.alpha = if (isShieldEnabled) 1.0f else 0.4f
+        sheetBinding.badgeAiFilter.alpha = if (isShieldEnabled) 1.0f else 0.4f
 
         sheetBinding.rowShieldHub.setOnClickListener {
             dialog.dismiss()
@@ -1854,6 +1856,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
             isShieldEnabled = isChecked
+            sheetBinding.badgeSocialShield.alpha = if (isChecked) 1.0f else 0.4f
+            sheetBinding.badgeAiFilter.alpha = if (isChecked) 1.0f else 0.4f
             val msg = if (isChecked) "Fokk Shield Protection Enabled" else "Fokk Shield Paused"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }

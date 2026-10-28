@@ -206,6 +206,32 @@
         .ad-showing .ytp-ad-player-overlay,
         [class*="companion-ad"],
         
+        /* Instagram Sponsored & Meta AI Clutter */
+        [data-blade="ad"],
+        [aria-label="Sponsored"],
+        a[href*="/ads/"],
+        a[href*="/about/ads/"],
+        [aria-label*="Meta AI"],
+        svg[aria-label*="Meta AI"],
+        a[href*="meta_ai"],
+
+        /* X / Twitter Promoted Tweets, Trends & Grok AI */
+        [data-testid="placementTracking"],
+        [data-testid="promotedIndicator"],
+        [aria-label="Grok"],
+        [data-testid="GrokDrawer"],
+        a[href="/i/grok"],
+        div[data-testid="inlineGrokSummary"],
+
+        /* Google AI Overviews & Bing Copilot Search Clutter */
+        #O26Dg,
+        div[data-attrid*="ai_overview"],
+        div[data-attrid="wa:/description"],
+        div[aria-label="AI Overview"],
+        div[data-md*="ai_overview"],
+        cib-serp,
+        #b_copilot,
+
         /* Modern Reddit Web Ad Selectors */
         shreddit-ad-post,
         shreddit-comment-ad,
@@ -660,6 +686,272 @@
     }
 
     // =========================================================================
+    // 7. Advanced Social Media Shield (Instagram, X, Reddit) & AI Slop Filter
+    // =========================================================================
+
+    function isXPromotedItem(entry) {
+        if (!entry || typeof entry !== 'object') return false;
+        if (typeof entry.entryId === 'string' && (
+            entry.entryId.startsWith('promoted-tweet-') ||
+            entry.entryId.startsWith('promotedTweet-') ||
+            entry.entryId.startsWith('promoted-')
+        )) {
+            return true;
+        }
+        const itemContent = entry.content && (
+            entry.content.itemContent ||
+            (entry.content.items && entry.content.items[0] && entry.content.items[0].item && entry.content.items[0].item.itemContent)
+        );
+        if (itemContent && (itemContent.promotedMetadata || itemContent.isPromoted)) {
+            return true;
+        }
+        if (entry.promotedMetadata) return true;
+        return false;
+    }
+
+    function scrubXGraphQLTimeline(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+        let modified = false;
+
+        function walk(node) {
+            if (!node || typeof node !== 'object') return;
+            if (Array.isArray(node)) {
+                for (let i = node.length - 1; i >= 0; i--) {
+                    const item = node[i];
+                    if (isXPromotedItem(item)) {
+                        node.splice(i, 1);
+                        modified = true;
+                    } else {
+                        walk(item);
+                    }
+                }
+            } else {
+                for (const key of Object.keys(node)) {
+                    if (key === 'promotedMetadata' && node[key]) {
+                        delete node[key];
+                        modified = true;
+                    } else if (key === 'entries' && Array.isArray(node[key])) {
+                        for (let i = node[key].length - 1; i >= 0; i--) {
+                            if (isXPromotedItem(node[key][i])) {
+                                node[key].splice(i, 1);
+                                modified = true;
+                            } else {
+                                walk(node[key][i]);
+                            }
+                        }
+                    } else {
+                        walk(node[key]);
+                    }
+                }
+            }
+        }
+
+        walk(obj);
+        return modified;
+    }
+
+    function scrubRedditJsonFeed(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+        let modified = false;
+
+        function walk(node) {
+            if (!node || typeof node !== 'object') return;
+            if (Array.isArray(node)) {
+                for (let i = node.length - 1; i >= 0; i--) {
+                    const item = node[i];
+                    if (item && typeof item === 'object' && (item.isPromoted || item.is_promoted || item.promoted || item.advertisement)) {
+                        node.splice(i, 1);
+                        modified = true;
+                    } else {
+                        walk(item);
+                    }
+                }
+            } else {
+                for (const key of Object.keys(node)) {
+                    if (key === 'posts' && Array.isArray(node[key])) {
+                        for (let i = node[key].length - 1; i >= 0; i--) {
+                            const p = node[key][i];
+                            if (p && (p.isPromoted || p.is_promoted || p.promoted)) {
+                                node[key].splice(i, 1);
+                                modified = true;
+                            } else {
+                                walk(p);
+                            }
+                        }
+                    } else {
+                        walk(node[key]);
+                    }
+                }
+            }
+        }
+
+        walk(obj);
+        return modified;
+    }
+
+    function scrubInstagramFeed() {
+        if (!window.location.hostname.includes('instagram.com')) return;
+        const articles = document.querySelectorAll('article, div[role="presentation"] article, main article');
+        for (let i = 0; i < articles.length; i++) {
+            const article = articles[i];
+            if (article.__fokk_sponsored) continue;
+
+            let isSponsored = false;
+            const labels = article.querySelectorAll('span, a, header span, header a, div');
+            for (let j = 0; j < labels.length; j++) {
+                const txt = labels[j].textContent ? labels[j].textContent.trim().toLowerCase() : '';
+                if (txt === 'sponsored' || txt === 'sponsrad' || txt === 'gesponsert' || txt === 'sponsorisé' || txt === 'publicidad' || txt === 'patrocinado') {
+                    isSponsored = true;
+                    break;
+                }
+            }
+
+            if (!isSponsored && article.querySelector('a[href*="/ads/"], [data-blade="ad"], [aria-label="Sponsored"]')) {
+                isSponsored = true;
+            }
+
+            if (isSponsored) {
+                article.__fokk_sponsored = true;
+                article.style.setProperty('display', 'none', 'important');
+                article.style.setProperty('height', '0px', 'important');
+                article.style.setProperty('min-height', '0px', 'important');
+                article.style.setProperty('margin', '0px', 'important');
+                article.style.setProperty('padding', '0px', 'important');
+                article.style.setProperty('overflow', 'hidden', 'important');
+                article.style.setProperty('pointer-events', 'none', 'important');
+                reportBlocked(1);
+            }
+        }
+
+        const metaAi = document.querySelectorAll(`
+            [aria-label*="Meta AI"],
+            svg[aria-label*="Meta AI"],
+            a[href*="meta_ai"],
+            div[role="button"][aria-label*="Meta AI"]
+        `);
+        metaAi.forEach(el => {
+            const container = el.closest('div[role="button"], a, div') || el;
+            container.style.setProperty('display', 'none', 'important');
+        });
+    }
+
+    function scrubXFeedAndGrok() {
+        if (!window.location.hostname.includes('twitter.com') && !window.location.hostname.includes('x.com')) return;
+        const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+        for (let i = 0; i < tweets.length; i++) {
+            const tweet = tweets[i];
+            if (tweet.__fokk_promoted) continue;
+
+            let isPromoted = false;
+            if (tweet.querySelector('[data-testid="placementTracking"], [data-testid="promotedIndicator"]')) {
+                isPromoted = true;
+            } else {
+                const spans = tweet.querySelectorAll('span, div');
+                for (let j = 0; j < spans.length; j++) {
+                    const txt = spans[j].textContent ? spans[j].textContent.trim() : '';
+                    if (txt === 'Ad' || txt === 'Promoted' || txt.startsWith('Promoted by') || txt === 'Sponsorisé' || txt === 'Gesponsert') {
+                        isPromoted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isPromoted) {
+                tweet.__fokk_promoted = true;
+                const cell = tweet.closest('div[data-testid="cellInnerDiv"]') || tweet;
+                cell.style.setProperty('display', 'none', 'important');
+                cell.style.setProperty('height', '0px', 'important');
+                cell.style.setProperty('min-height', '0px', 'important');
+                cell.style.setProperty('margin', '0px', 'important');
+                cell.style.setProperty('padding', '0px', 'important');
+                cell.style.setProperty('overflow', 'hidden', 'important');
+                cell.style.setProperty('pointer-events', 'none', 'important');
+                reportBlocked(1);
+            }
+        }
+
+        const grokEls = document.querySelectorAll(`
+            [aria-label="Grok"],
+            [data-testid="GrokDrawer"],
+            a[href="/i/grok"],
+            div[data-testid="inlineGrokSummary"]
+        `);
+        grokEls.forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+        });
+    }
+
+    function scrubRedditFeedAndAi() {
+        if (!window.location.hostname.includes('reddit.com')) return;
+        const promotedReddit = document.querySelectorAll(`
+            shreddit-ad-post,
+            shreddit-comment-ad,
+            [data-adclicklocation],
+            div[data-testid="ad-post"],
+            div[adcontent],
+            shreddit-post[is-promoted="true"],
+            shreddit-post[is-promoted],
+            .promotedlink,
+            .promoted,
+            div[id*="ad-element"],
+            shreddit-summary-card,
+            div[data-testid="ai-summary"],
+            div[class*="ai-answer"]
+        `);
+        promotedReddit.forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('height', '0px', 'important');
+            el.style.setProperty('min-height', '0px', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+            if (!el.__fokk_counted) {
+                el.__fokk_counted = true;
+                reportBlocked(1);
+            }
+        });
+    }
+
+    function scrubAiOverviewsAndWidgets() {
+        const host = window.location.hostname;
+        if (host.includes('google.')) {
+            const aiBlocks = document.querySelectorAll(`
+                #O26Dg,
+                div[data-attrid*="ai_overview"],
+                div[data-attrid="wa:/description"],
+                div[aria-label="AI Overview"],
+                div[data-md*="ai_overview"],
+                .g-blk[data-hveid]
+            `);
+            aiBlocks.forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('height', '0px', 'important');
+                el.style.setProperty('margin', '0px', 'important');
+                el.style.setProperty('padding', '0px', 'important');
+                el.style.setProperty('visibility', 'hidden', 'important');
+                if (!el.__fokk_counted) {
+                    el.__fokk_counted = true;
+                    reportBlocked(1);
+                }
+            });
+        }
+
+        if (host.includes('bing.com')) {
+            const bingAi = document.querySelectorAll('cib-serp, #b_copilot, div.b_ans:has([aria-label*="Copilot"])');
+            bingAi.forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+        }
+    }
+
+    function scrubSocialAndAi() {
+        try {
+            scrubInstagramFeed();
+            scrubXFeedAndGrok();
+            scrubRedditFeedAndAi();
+            scrubAiOverviewsAndWidgets();
+        } catch (e) {}
+    }
+
+    // =========================================================================
     // 8. Universal Media Sniffer: Detects downloadable video & audio streams
     // =========================================================================
     let lastSniffedUrl = '';
@@ -691,7 +983,52 @@
                     }
                 }
             } catch (e) {}
-            return _origFetch.apply(this, args);
+            const promise = _origFetch.apply(this, args);
+            try {
+                const reqUrl = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
+                const host = window.location.hostname;
+                if (reqUrl && typeof reqUrl === 'string') {
+                    if ((host.includes('x.com') || host.includes('twitter.com')) && (reqUrl.includes('/graphql/') || reqUrl.includes('Timeline'))) {
+                        return promise.then(async response => {
+                            try {
+                                const clone = response.clone();
+                                const text = await clone.text();
+                                let data = JSON.parse(text);
+                                let cleaned = scrubXGraphQLTimeline(data);
+                                if (cleaned) {
+                                    reportBlocked(1);
+                                    return new Response(JSON.stringify(data), {
+                                        status: response.status,
+                                        statusText: response.statusText,
+                                        headers: response.headers
+                                    });
+                                }
+                            } catch (err) {}
+                            return response;
+                        }).catch(() => promise);
+                    }
+                    if (host.includes('reddit.com') && (reqUrl.includes('/svc/shreddit/') || reqUrl.includes('/graphql') || reqUrl.includes('feed'))) {
+                        return promise.then(async response => {
+                            try {
+                                const clone = response.clone();
+                                const text = await clone.text();
+                                let data = JSON.parse(text);
+                                let cleaned = scrubRedditJsonFeed(data);
+                                if (cleaned) {
+                                    reportBlocked(1);
+                                    return new Response(JSON.stringify(data), {
+                                        status: response.status,
+                                        statusText: response.statusText,
+                                        headers: response.headers
+                                    });
+                                }
+                            } catch (err) {}
+                            return response;
+                        }).catch(() => promise);
+                    }
+                }
+            } catch (e) {}
+            return promise;
         };
 
         const _origXhrOpen = XMLHttpRequest.prototype.open;
@@ -760,6 +1097,7 @@
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
             dismissCookieWallsAndNags();
+            scrubSocialAndAi();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
             sniffMediaSources();
         });
@@ -776,6 +1114,7 @@
         checkAndSkipWebAd();
         collapseEmptyAdBoxes();
         dismissCookieWallsAndNags();
+        scrubSocialAndAi();
         sniffMediaSources();
     }, 350);
 
@@ -785,6 +1124,7 @@
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
             dismissCookieWallsAndNags();
+            scrubSocialAndAi();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
             sniffMediaSources();
         });

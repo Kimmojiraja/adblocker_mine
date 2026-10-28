@@ -24,6 +24,10 @@ Traditional ad blockers force a permanent VPN loopback, which causes:
 
 ## 📱 How to Use on Your Phone
 
+## 📦 Publishing an in-app update
+
+Pushing source code does not update phones already using the app. For the **Check for updates** button to offer an update, publish a newer, signed APK and then update `version.json` with a `versionCode` higher than the APK users have installed, its version name, and the HTTPS URL of that release asset. The uploaded APK must be signed with the same signing key as the installed app; Android will reject a different signature.
+
 ### 1. Enable YouTube Ad Assistant
 - Open **AdShield** ➡️ toggle **YouTube Ad Assistant** to **ON**.
 - On OnePlus / Oppo / Xiaomi / Vivo:

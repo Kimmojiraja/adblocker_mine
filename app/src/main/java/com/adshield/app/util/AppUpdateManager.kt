@@ -31,6 +31,7 @@ object AppUpdateManager {
             var latestName = currentName
             var downloadUrl = ""
             var changelog = "General performance improvements and bug fixes."
+            var metadataLoaded = false
 
             // Try version.json first
             try {
@@ -40,14 +41,16 @@ object AppUpdateManager {
                 conn.readTimeout = 5000
                 conn.useCaches = false
                 conn.setRequestProperty("User-Agent", "FokkShield-App")
-                if (conn.responseCode == 200) {
-                    val text = conn.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(text)
-                    latestCode = json.optInt("versionCode", currentCode)
-                    latestName = json.optString("versionName", currentName)
-                    downloadUrl = json.optString("downloadUrl", "")
-                    changelog = json.optString("changelog", changelog)
+                if (conn.responseCode != HttpURLConnection.HTTP_OK) {
+                    throw IllegalStateException("Version metadata returned HTTP ${conn.responseCode}")
                 }
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(text)
+                latestCode = json.optInt("versionCode", currentCode)
+                latestName = json.optString("versionName", currentName)
+                downloadUrl = json.optString("downloadUrl", "")
+                changelog = json.optString("changelog", changelog)
+                metadataLoaded = true
             } catch (e: Exception) {
                 // Fallback to GitHub Release API
                 try {
@@ -68,6 +71,7 @@ object AppUpdateManager {
                                     downloadUrl = asset.optString("browser_download_url", "")
                                     latestCode = currentCode + 1
                                     latestName = json.optString("tag_name", "Latest")
+                                    metadataLoaded = true
                                     break
                                 }
                             }
@@ -80,7 +84,12 @@ object AppUpdateManager {
                 if (latestCode > currentCode && downloadUrl.isNotBlank()) {
                     showUpdateDialog(activity, latestName, changelog, downloadUrl)
                 } else if (manualCheck) {
-                    Toast.makeText(activity, "FokkShield is up to date (v$currentName)!", Toast.LENGTH_SHORT).show()
+                    val message = when {
+                        !metadataLoaded -> "Could not check for updates. Check your connection and try again."
+                        latestCode > currentCode -> "A newer version is listed, but its APK has not been published yet."
+                        else -> "No newer APK has been published yet (installed: v$currentName)."
+                    }
+                    Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -123,6 +132,11 @@ object AppUpdateManager {
 
     @Suppress("DEPRECATION")
     private fun startApkDownload(activity: Activity, downloadUrl: String, newVersion: String) {
+        val uri = Uri.parse(downloadUrl)
+        if (uri.scheme != "https") {
+            Toast.makeText(activity, "Update download must use HTTPS", Toast.LENGTH_LONG).show()
+            return
+        }
         val progressDialog = ProgressDialog(activity).apply {
             setTitle("Downloading FokkShield v$newVersion")
             setMessage("Downloading update package...")
@@ -158,6 +172,14 @@ object AppUpdateManager {
                     break
                 }
 
+                if (conn.responseCode !in 200..299) {
+                    throw IllegalStateException("Update server returned HTTP ${conn.responseCode}")
+                }
+                val contentType = conn.contentType.orEmpty().lowercase()
+                if (contentType.contains("text/html") || contentType.contains("application/json")) {
+                    throw IllegalStateException("Update server did not return an APK")
+                }
+
                 val fileLength = conn.contentLength
                 val apkFile = File(activity.cacheDir, "FokkShield_update.apk")
                 if (apkFile.exists()) apkFile.delete()
@@ -181,6 +203,11 @@ object AppUpdateManager {
                 output.flush()
                 output.close()
                 input.close()
+
+                if (apkFile.length() < 32 * 1024) {
+                    apkFile.delete()
+                    throw IllegalStateException("Downloaded update is invalid or incomplete")
+                }
 
                 activity.runOnUiThread {
                     progressDialog.dismiss()

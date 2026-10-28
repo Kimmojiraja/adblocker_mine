@@ -503,8 +503,8 @@
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_privacy_shield"
-                    app:tint="@color/private_purple" />
+                    android:src="@drawable/ic_lock"
+                    app:tint="#C084FC" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -530,7 +530,7 @@
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_history"
+                    android:src="@drawable/ic_clock"
                     app:tint="@color/text_secondary" />
 
                 <TextView

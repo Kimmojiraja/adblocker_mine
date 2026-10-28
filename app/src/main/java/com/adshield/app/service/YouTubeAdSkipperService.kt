@@ -1,7 +1,11 @@
 package com.adshield.app.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.accessibilityservice.GestureDescription
 import android.content.Context
+import android.graphics.Path
+import android.os.Build
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Rect
@@ -80,10 +84,23 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        try {
+            val info = serviceInfo ?: AccessibilityServiceInfo()
+            info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK
+            info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                         AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                         AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+            info.packageNames = null
+            serviceInfo = info
+            Log.i(TAG, "Dynamic AccessibilityServiceInfo applied: TYPES_ALL_MASK, packageNames=null")
+        } catch (e: Exception) {
+            Log.w(TAG, "Error configuring service info dynamically", e)
+        }
+
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, true).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", true))
 
-        // Trigger remote dynamic selector cloud sync to handle YouTube UI updates
         SelectorSyncManager.syncSelectorsAsync()
 
         // Dynamically register Spotify Ad Muter to ensure persistent 24/7 background operation
@@ -178,29 +195,16 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private fun handleTwitterEvent() {
         val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1500L) return
+        if (now - lastSocialSkipTime < 1200L) return
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            val promotedMarkers = listOf("Promoted", "Ad ·", "Sponsored")
-            for (marker in promotedMarkers) {
-                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
-                if (!nodes.isNullOrEmpty()) {
-                    val visible = nodes.firstOrNull { it.isVisibleToUser }
-                    if (visible != null) {
-                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
-                        if (scrollable != null) {
-                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                            lastSocialSkipTime = now
-                            AdShieldApp.instance.incrementSkippedSocialAds()
-                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                            Log.i(TAG, "Auto-skipped Promoted content in X / Twitter")
-                            recycleNodes(nodes)
-                            return
-                        }
-                    }
-                    recycleNodes(nodes)
-                }
+            if (isSponsoredPostPresent(rootNode)) {
+                lastSocialSkipTime = now
+                dispatchSwipeUpGesture()
+                AdShieldApp.instance.incrementSkippedSocialAds()
+                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                Log.i(TAG, "Auto-scrolled past Promoted Tweet on X")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling X event", e)
@@ -211,29 +215,16 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private fun handleRedditEvent() {
         val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1500L) return
+        if (now - lastSocialSkipTime < 1200L) return
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            val redditMarkers = listOf("Promoted", "promoted", "Sponsored")
-            for (marker in redditMarkers) {
-                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
-                if (!nodes.isNullOrEmpty()) {
-                    val visible = nodes.firstOrNull { it.isVisibleToUser }
-                    if (visible != null) {
-                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
-                        if (scrollable != null) {
-                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                            lastSocialSkipTime = now
-                            AdShieldApp.instance.incrementSkippedSocialAds()
-                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                            Log.i(TAG, "Auto-skipped Promoted post in Reddit")
-                            recycleNodes(nodes)
-                            return
-                        }
-                    }
-                    recycleNodes(nodes)
-                }
+            if (isSponsoredPostPresent(rootNode)) {
+                lastSocialSkipTime = now
+                dispatchSwipeUpGesture()
+                AdShieldApp.instance.incrementSkippedSocialAds()
+                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                Log.i(TAG, "Auto-scrolled past Promoted Post on Reddit")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling Reddit event", e)
@@ -244,29 +235,16 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private fun handleInstagramEvent() {
         val now = System.currentTimeMillis()
-        if (now - lastSocialSkipTime < 1500L) return
+        if (now - lastSocialSkipTime < 1200L) return
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            val instaMarkers = listOf("Sponsored", "Paid partnership")
-            for (marker in instaMarkers) {
-                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
-                if (!nodes.isNullOrEmpty()) {
-                    val visible = nodes.firstOrNull { it.isVisibleToUser }
-                    if (visible != null) {
-                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
-                        if (scrollable != null) {
-                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                            lastSocialSkipTime = now
-                            AdShieldApp.instance.incrementSkippedSocialAds()
-                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                            Log.i(TAG, "Auto-skipped Sponsored item in Instagram")
-                            recycleNodes(nodes)
-                            return
-                        }
-                    }
-                    recycleNodes(nodes)
-                }
+            if (isSponsoredPostPresent(rootNode)) {
+                lastSocialSkipTime = now
+                dispatchSwipeUpGesture()
+                AdShieldApp.instance.incrementSkippedSocialAds()
+                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                Log.i(TAG, "Auto-scrolled past Sponsored content on Instagram")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling Instagram event", e)
@@ -275,24 +253,62 @@ class YouTubeAdSkipperService : AccessibilityService() {
         }
     }
 
-    private fun findScrollableContainer(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
-        var current = node
-        while (current != null) {
-            if (current.isScrollable) return current
-            current = current.parent
+    private fun isSponsoredPostPresent(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        try {
+            val text = node.text?.toString()?.lowercase()?.trim() ?: ""
+            val desc = node.contentDescription?.toString()?.lowercase()?.trim() ?: ""
+            val resId = node.viewIdResourceName?.lowercase() ?: ""
+
+            val isAd = (
+                text == "sponsored" || text == "promoted" || text == "ad" || text == "ad ·" ||
+                text.startsWith("sponsored ·") || text.startsWith("promoted by") || text.contains("paid partnership") ||
+                desc == "sponsored" || desc == "promoted" || desc == "ad" || desc.startsWith("sponsored") ||
+                desc.contains("promoted tweet") || desc.contains("promoted post") || desc.contains("paid partnership") ||
+                resId.contains("promoted_badge") || resId.contains("sponsored_badge") ||
+                resId.contains("ad_badge") || resId.contains("tweet_promoted_badge")
+            )
+
+            if (isAd && node.isVisibleToUser) {
+                return true
+            }
+
+            val childCount = node.childCount
+            for (i in 0 until childCount) {
+                val child = node.getChild(i) ?: continue
+                val found = isSponsoredPostPresent(child)
+                child.recycle()
+                if (found) return true
+            }
+        } catch (e: Exception) {
+            return false
         }
-        return null
+        return false
     }
 
-    private fun findFirstScrollableDescendant(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
-        if (node == null) return null
-        if (node.isScrollable) return node
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val found = findFirstScrollableDescendant(child)
-            if (found != null) return found
+    private fun dispatchSwipeUpGesture() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                val displayMetrics = resources.displayMetrics
+                val width = displayMetrics.widthPixels.toFloat()
+                val height = displayMetrics.heightPixels.toFloat()
+
+                val path = Path().apply {
+                    val startX = width / 2f
+                    val startY = height * 0.75f
+                    val endY = height * 0.20f
+                    moveTo(startX, startY)
+                    lineTo(startX, endY)
+                }
+
+                val stroke = GestureDescription.StrokeDescription(path, 0L, 200L)
+                val gesture = GestureDescription.Builder().addStroke(stroke).build()
+                dispatchGesture(gesture, null, null)
+                Log.d(TAG, "Dispatched smooth scroll-past gesture")
+            } catch (e: Exception) {
+                Log.w(TAG, "dispatchSwipeUpGesture error", e)
+            }
         }
-        return null
     }
 
     /**

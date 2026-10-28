@@ -1,6 +1,6 @@
 {
-  "versionCode": 32,
-  "versionName": "1.0.32",
+  "versionCode": 33,
+  "versionName": "1.0.33",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
-  "changelog": "• Fixed YouTube video playback freeze and distorted oval controls on minimize & reopen\n• Eliminated black screen flash before videos via reactive in-memory player sanitization\n• Fixed Video Downloader: in-flight stream detection for YouTube, Twitter/X, Reddit, Instagram, and web videos\n• Added Native App Ad Blockers outside of app for Instagram, X (Twitter), and Reddit\n• Added Universal URL tracking parameter cleaner (strips utm_*, fbclid, gclid)"
+  "changelog": "• Firefox Mobile UI Overhaul: Clean speed-dial grid with large circular brand tiles (Google, YouTube, Amazon, Wikipedia, Instagram, Reddit, X, Spotify, and Add Shortcut), floating pill search bar, and centered You're Protected status chip.\n• YouTube Zero-Delay Engine: Completely eliminated black screen stall before videos start by blocking ad endpoints at network level and removing decoder buffer seeks.\n• Minimize & PiP Freeze Fix: Resolved video stall/layout locking when minimizing or returning to the browser.\n• Multi-Platform Video Downloader: Fixed video stream detection with DOM-level fallback and instant download helpers across Instagram, X, Reddit, and YouTube.\n• Outside-of-App Social Ad Blockers: Upgraded accessibility engine with dynamic package binding, ALL_MASK events, and smooth gestures to auto-scroll promoted content on Instagram, X, and Reddit."
 }

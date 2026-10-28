@@ -53,15 +53,12 @@
                 try { player.skipAd(); } catch (e) {}
             }
 
-            // 2. Fast-forward video instantly at 16x speed with sound muted
+            // 2. Fast-forward video instantly at 16x speed with sound muted (no seek to duration to prevent media decoder stall/black screen)
             const video = (player ? player.querySelector('video') : null) || document.querySelector('.ad-showing video, .ad-interrupting video');
             if (video) {
                 try {
                     video.muted = true;
                     video.playbackRate = 16.0;
-                    if (video.duration && !isNaN(video.duration) && isFinite(video.duration)) {
-                        video.currentTime = video.duration;
-                    }
                 } catch (e) {}
             }
 
@@ -315,33 +312,10 @@
             background: transparent !important;
         }
 
-        /* Fullscreen PiP Video Mode (Ensures video fills floating PiP window without blank spaces) */
-        html.fokk-pip-active, html.fokk-pip-active body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            background: #000 !important;
-            overflow: hidden !important;
-        }
-        html.fokk-pip-active .html5-video-player,
-        html.fokk-pip-active #player,
-        html.fokk-pip-active .player-container,
-        html.fokk-pip-active #movie_player,
-        html.fokk-pip-active ytm-mobile-player,
+        /* Fullscreen PiP Video Mode (Smooth native scaling without locking DOM layout) */
         html.fokk-pip-active video {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            max-width: 100vw !important;
-            max-height: 100vh !important;
-            z-index: 2147483647 !important;
-            transform: none !important;
-            background: #000 !important;
-        }
-        html.fokk-pip-active video {
+            width: 100% !important;
+            height: 100% !important;
             object-fit: contain !important;
         }
         html.fokk-pip-active .ytp-chrome-bottom,
@@ -584,6 +558,11 @@
             window.__fokk_exit_pip_view();
             window.dispatchEvent(new Event('resize'));
         }
+    });
+
+    window.addEventListener('focus', () => {
+        window.__fokk_exit_pip_view();
+        window.dispatchEvent(new Event('resize'));
     });
 
     window.addEventListener('pageshow', () => {

@@ -358,10 +358,29 @@ class MediaHubActivity : AppCompatActivity() {
     private fun showDownloadMediaDialog() {
         val currentUrl = activeWebView?.url ?: activeTab?.url ?: ""
         val url = detectedMediaUrl
-        val isYouTube = currentUrl.contains("youtube.com/watch") || currentUrl.contains("youtube.com/shorts/") || currentUrl.contains("youtu.be/")
+        val isYouTube = currentUrl.contains("youtube.com") || currentUrl.contains("youtu.be")
+        val isInstagram = currentUrl.contains("instagram.com")
+        val isTwitter = currentUrl.contains("twitter.com") || currentUrl.contains("x.com")
+        val isReddit = currentUrl.contains("reddit.com")
 
-        if (url.isNullOrBlank() && !isYouTube) {
-            Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
+        if (url.isNullOrBlank()) {
+            activeWebView?.evaluateJavascript(
+                """(function() {
+                    var v = document.querySelector('video');
+                    if (v) return v.currentSrc || v.src || (v.querySelector('source') ? v.querySelector('source').src : '');
+                    return '';
+                })();""".trimIndent()
+            ) { directSrc ->
+                val cleanDirect = directSrc?.trim('"', ''') ?: ""
+                if (cleanDirect.isNotBlank() && cleanDirect != "null" && !cleanDirect.startsWith("blob:")) {
+                    detectedMediaUrl = cleanDirect
+                    showDownloadMediaDialog()
+                } else if (isYouTube || isInstagram || isTwitter || isReddit) {
+                    showPlatformDownloadDialog(currentUrl, isYouTube, isInstagram, isTwitter, isReddit)
+                } else {
+                    Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
+                }
+            }
             return
         }
 
@@ -374,19 +393,11 @@ class MediaHubActivity : AppCompatActivity() {
                 .setTitle("Download Video")
                 .setMessage("Save \"${activeTab?.title ?: "YouTube Video"}\"?")
 
-            if (!url.isNullOrBlank()) {
-                builder.setPositiveButton("Download MP4 Stream") { _, _ ->
-                    startDirectMediaDownload(url, cleanTitle)
-                }
-            } else {
-                builder.setPositiveButton("Download 1080p / MP3") { _, _ ->
-                    val helperUrl = "https://y2mate.is/watch?v=$videoId"
-                    addNewTab(helperUrl, isPrivate = false)
-                }
+            builder.setPositiveButton("Download MP4 Stream") { _, _ ->
+                startDirectMediaDownload(url, cleanTitle)
             }
-
-            builder.setNeutralButton("Save Options") { _, _ ->
-                val helperUrl = "https://ssyoutube.com/watch?v=$videoId"
+            builder.setNeutralButton("1080p / Audio") { _, _ ->
+                val helperUrl = if (videoId.isNotBlank()) "https://ssyoutube.com/watch?v=$videoId" else "https://ssyoutube.com/"
                 addNewTab(helperUrl, isPrivate = false)
             }
             builder.setNegativeButton("Cancel", null)
@@ -398,12 +409,57 @@ class MediaHubActivity : AppCompatActivity() {
             .setTitle("Download Video")
             .setMessage("Save \"$cleanTitle\" directly to your device Downloads folder?")
             .setPositiveButton("Download") { _, _ ->
-                if (url != null) {
-                    startDirectMediaDownload(url, cleanTitle)
-                }
+                startDirectMediaDownload(url, cleanTitle)
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showPlatformDownloadDialog(currentUrl: String, isYouTube: Boolean, isInstagram: Boolean, isTwitter: Boolean, isReddit: Boolean) {
+        val platformName = when {
+            isYouTube -> "YouTube"
+            isInstagram -> "Instagram"
+            isTwitter -> "X / Twitter"
+            isReddit -> "Reddit"
+            else -> "Web"
+        }
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle("Download $platformName Video")
+            .setMessage("Save video from current page?")
+
+        when {
+            isYouTube -> {
+                val videoId = extractYouTubeVideoId(currentUrl)
+                builder.setPositiveButton("Download Video / Audio") { _, _ ->
+                    val helperUrl = if (videoId.isNotBlank()) "https://y2mate.is/watch?v=$videoId" else "https://y2mate.is/"
+                    addNewTab(helperUrl, isPrivate = false)
+                }
+            }
+            isInstagram -> {
+                builder.setPositiveButton("Download Instagram Media") { _, _ ->
+                    val helperUrl = "https://snapinsta.app/"
+                    addNewTab(helperUrl, isPrivate = false)
+                }
+            }
+            isTwitter -> {
+                builder.setPositiveButton("Download X Video") { _, _ ->
+                    val helperUrl = "https://twdown.net/"
+                    addNewTab(helperUrl, isPrivate = false)
+                }
+            }
+            isReddit -> {
+                builder.setPositiveButton("Download Reddit Video") { _, _ ->
+                    val helperUrl = "https://reddsave.com/"
+                    addNewTab(helperUrl, isPrivate = false)
+                }
+            }
+            else -> {
+                builder.setPositiveButton("Download", null)
+            }
+        }
+        builder.setNegativeButton("Cancel", null)
+        builder.show()
     }
 
     private fun extractYouTubeVideoId(url: String): String {
@@ -676,6 +732,28 @@ class MediaHubActivity : AppCompatActivity() {
                     runOnUiThread {
                         handleMediaSourceFound(rawUrl, activeTab?.title ?: "Web Video", "video")
                     }
+                }
+
+                // Block YouTube prerolls, ad telemetry, and ad video streams before streaming host pass-through
+                val isYouTubeAd = (
+                    urlStr.contains("/api/stats/ads") ||
+                    urlStr.contains("/youtubei/v1/player/ad_break") ||
+                    urlStr.contains("/ptracking?") ||
+                    urlStr.contains("/pagead/") ||
+                    urlStr.contains("googleads") ||
+                    urlStr.contains("doubleclick.net") ||
+                    (urlStr.contains("googlevideo.com") && (urlStr.contains("&adformat=") || urlStr.contains("?adformat=")))
+                )
+                if (isYouTubeAd) {
+                    runOnUiThread { onPageAdsBlocked(1) }
+                    return WebResourceResponse(
+                        "text/plain",
+                        "UTF-8",
+                        200,
+                        "OK",
+                        mapOf("Access-Control-Allow-Origin" to "*"),
+                        ByteArrayInputStream("".toByteArray(Charsets.UTF_8))
+                    )
                 }
 
                 if (isStreamingHost(host)) {
@@ -1649,7 +1727,14 @@ class MediaHubActivity : AppCompatActivity() {
         if (!inPip) {
             binding.topBar.visibility = View.VISIBLE
             binding.bottomNav.visibility = View.VISIBLE
-            activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
+            activeWebView?.evaluateJavascript(
+                """(function() {
+                    document.documentElement.classList.remove('fokk-pip-active');
+                    if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();
+                    window.dispatchEvent(new Event('resize'));
+                })();""".trimIndent(),
+                null
+            )
             activeWebView?.requestLayout()
         }
     }

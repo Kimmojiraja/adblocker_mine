@@ -34,10 +34,12 @@ object AppUpdateManager {
 
             // Try version.json first
             try {
-                val conn = URL(VERSION_JSON_URL).openConnection() as HttpURLConnection
+                val urlWithCache = "$VERSION_JSON_URL?t=${System.currentTimeMillis()}"
+                val conn = URL(urlWithCache).openConnection() as HttpURLConnection
                 conn.connectTimeout = 5000
                 conn.readTimeout = 5000
                 conn.useCaches = false
+                conn.setRequestProperty("User-Agent", "FokkShield-App")
                 if (conn.responseCode == 200) {
                     val text = conn.inputStream.bufferedReader().use { it.readText() }
                     val json = JSONObject(text)
@@ -133,12 +135,28 @@ object AppUpdateManager {
 
         thread {
             try {
-                val url = URL(downloadUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 15000
-                conn.readTimeout = 30000
-                conn.instanceFollowRedirects = true
-                conn.connect()
+                var currentUrl = downloadUrl
+                var conn: HttpURLConnection
+                var redirectCount = 0
+                while (true) {
+                    val url = URL(currentUrl)
+                    conn = url.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 15000
+                    conn.readTimeout = 30000
+                    conn.instanceFollowRedirects = true
+                    conn.setRequestProperty("User-Agent", "FokkShield-App")
+                    conn.connect()
+                    val code = conn.responseCode
+                    if ((code == HttpURLConnection.HTTP_MOVED_TEMP || code == HttpURLConnection.HTTP_MOVED_PERM || code == 307 || code == 308) && redirectCount < 5) {
+                        val newLocation = conn.getHeaderField("Location")
+                        if (!newLocation.isNullOrBlank()) {
+                            currentUrl = newLocation
+                            redirectCount++
+                            continue
+                        }
+                    }
+                    break
+                }
 
                 val fileLength = conn.contentLength
                 val apkFile = File(activity.cacheDir, "FokkShield_update.apk")

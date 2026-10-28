@@ -1,6 +1,6 @@
 {
   "versionCode": 32,
   "versionName": "1.0.32",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/latest/app-debug.apk",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
   "changelog": "• Fixed YouTube video playback freeze and distorted oval controls on minimize & reopen\n• Eliminated black screen flash before videos via reactive in-memory player sanitization\n• Fixed Video Downloader: in-flight stream detection for YouTube, Twitter/X, Reddit, Instagram, and web videos\n• Added Native App Ad Blockers outside of app for Instagram, X (Twitter), and Reddit\n• Added Universal URL tracking parameter cleaner (strips utm_*, fbclid, gclid)"
 }

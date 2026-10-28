@@ -11,8 +11,8 @@ android {
         applicationId = "com.adshield.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 38
-        versionName = "1.0.38"
+        versionCode = 39
+        versionName = "1.0.39"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +41,7 @@ android {
         debug {
             signingConfig = signingConfigs.getByName("customRelease")
             isMinifyEnabled = false
+            isDebuggable = false
         }
     }
 

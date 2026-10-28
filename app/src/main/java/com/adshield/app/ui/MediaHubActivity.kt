@@ -1040,6 +1040,10 @@ class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         if (injectionScript.isNotEmpty()) {
             webView.evaluateJavascript(injectionScript, null)
+            val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
+            if (!isAiFilter) {
+                webView.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled(false);", null)
+            }
         }
 
         // Cookie & GDPR Wall Auto-Dismiss
@@ -1854,10 +1858,29 @@ class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
+        val isAiFilterOn = prefs.getBoolean(PREF_AI_FILTER, true)
+        sheetBinding.switchAiFilter.isChecked = isAiFilterOn
+        sheetBinding.badgeAiFilter.text = if (isAiFilterOn) "AI Filter Active" else "AI Filter Off"
+        sheetBinding.badgeAiFilter.alpha = if (isShieldEnabled && isAiFilterOn) 1.0f else 0.4f
+
+        sheetBinding.switchAiFilter.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(PREF_AI_FILTER, isChecked).apply()
+            sheetBinding.badgeAiFilter.text = if (isChecked) "AI Filter Active" else "AI Filter Off"
+            sheetBinding.badgeAiFilter.alpha = if (isShieldEnabled && isChecked) 1.0f else 0.4f
+            activeWebView?.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled($isChecked);", null)
+            val msg = if (isChecked) "AI Overviews & Slop Filter Enabled" else "AI Overviews & Slop Filter Disabled"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        sheetBinding.badgeAiFilter.setOnClickListener {
+            sheetBinding.switchAiFilter.isChecked = !sheetBinding.switchAiFilter.isChecked
+        }
+
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
             isShieldEnabled = isChecked
             sheetBinding.badgeSocialShield.alpha = if (isChecked) 1.0f else 0.4f
-            sheetBinding.badgeAiFilter.alpha = if (isChecked) 1.0f else 0.4f
+            val isAiOn = prefs.getBoolean(PREF_AI_FILTER, true)
+            sheetBinding.badgeAiFilter.alpha = if (isChecked && isAiOn) 1.0f else 0.4f
             val msg = if (isChecked) "Fokk Shield Protection Enabled" else "Fokk Shield Paused"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
@@ -2124,5 +2147,6 @@ class MediaHubActivity : AppCompatActivity() {
         private const val PREF_BROWSING_HISTORY = "key_browsing_history_v2"
         private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
         private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
+        private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
     }
 }

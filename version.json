@@ -1,6 +1,6 @@
 {
-  "versionCode": 38,
-  "versionName": "1.0.38",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
-  "changelog": "- Google Mobile AI Overview Fix: Deep heading-tree card detector eliminates mobile Google Search AI Overviews (including sparkle badges and AI Mode chips) directly from search results.\n- Social Media Ad Shield: Real-time stream and DOM scrubbing for Instagram, X (Twitter), and Reddit.\n- Core Blocklist: Added social ad telemetry and automated AI spam content mill domains."
+  "versionCode": 39,
+  "versionName": "1.0.39",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
+  "changelog": "- Native Mobile App Ad-Bypass: Enabled gesture dispatching in accessibility engine to automatically scroll past sponsored posts in Instagram, X, and Reddit native apps.\n- AI Slop Filter Toggle: Added an instant On/Off switch in the browser menu for Google Search AI Overviews and social AI clutter.\n- Google Play Protect Trust & Release Integrity: Disabled debuggable flag and standardized release package name to FokkShield.apk to eliminate Chrome safe browsing warnings."
 }

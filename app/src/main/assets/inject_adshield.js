@@ -910,7 +910,29 @@
         });
     }
 
+    let isAiFilterEnabled = true;
+    window.setAiFilterEnabled = function(enabled) {
+        isAiFilterEnabled = !!enabled;
+        if (!isAiFilterEnabled) {
+            document.querySelectorAll('[data-fokk-ai-hidden]').forEach(el => {
+                el.style.setProperty('display', '', '');
+                el.style.setProperty('height', '', '');
+                el.style.setProperty('min-height', '', '');
+                el.style.setProperty('margin', '', '');
+                el.style.setProperty('padding', '', '');
+                el.style.setProperty('visibility', '', '');
+                el.style.setProperty('pointer-events', '', '');
+            });
+            document.querySelectorAll('[data-fokk-aimode-hidden]').forEach(el => {
+                el.style.setProperty('display', '', '');
+            });
+        } else {
+            scrubAiOverviewsAndWidgets();
+        }
+    };
+
     function scrubAiOverviewsAndWidgets() {
+        if (!isAiFilterEnabled) return;
         const host = window.location.hostname;
         if (host.includes('google.')) {
             // 1. Text-based card detector for Google Mobile AI Overview (matches "✦ AI Overview" & "AI Overview")
@@ -923,6 +945,7 @@
                     const container = el.closest('[data-hveid], .MjjYud, [data-sokoban-container], .g, [jscontroller], div[data-attrid], div.wDYxhc');
                     if (container && container !== document.body && container !== document.documentElement &&
                         !container.id?.includes('rcnt') && !container.id?.includes('center_col') && !container.id?.includes('rso')) {
+                        container.setAttribute('data-fokk-ai-hidden', 'true');
                         container.style.setProperty('display', 'none', 'important');
                         container.style.setProperty('height', '0px', 'important');
                         container.style.setProperty('min-height', '0px', 'important');
@@ -944,6 +967,7 @@
                 const t = tabs[i];
                 const txt = t.textContent ? t.textContent.trim() : '';
                 if (txt === 'AI Mode' || txt.includes('AI Mode')) {
+                    t.setAttribute('data-fokk-aimode-hidden', 'true');
                     t.style.setProperty('display', 'none', 'important');
                 }
             }

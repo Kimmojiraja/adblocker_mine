@@ -11,6 +11,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.adshield.app.AdShieldApp
 import com.adshield.app.databinding.ActivitySettingsBinding
+import com.adshield.app.util.AppUpdateManager
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -36,6 +37,7 @@ class SettingsActivity : AppCompatActivity() {
         setupCustomRuleButtons()
         setupPrivateDnsGuide()
         setupPersonalizationButtons()
+        setupUpdateChecker()
     }
 
     private fun setupToolbar() {
@@ -112,6 +114,14 @@ class SettingsActivity : AppCompatActivity() {
             }
             startActivity(intent)
             finish()
+        }
+    }
+
+    private fun setupUpdateChecker() {
+        val vName = AppUpdateManager.getCurrentVersionName(this)
+        binding.textSettingsVersionInfo.text = "Installed Version: $vName"
+        binding.btnCheckForUpdates.setOnClickListener {
+            AppUpdateManager.checkForUpdates(this, manualCheck = true)
         }
     }
 }

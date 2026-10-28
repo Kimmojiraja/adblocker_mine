@@ -13,107 +13,32 @@
     }
 
     // =========================================================================
-    // 1. YouTube Player Ad Config Stripper (Fetch & XHR Interceptor)
+    // 1. YouTube Player Ad Config Stripper (Safe In-Memory Initialization)
     // =========================================================================
     function sanitizePlayerResponse(resp) {
-        if (resp && typeof resp === 'object') {
-            let foundAds = false;
-            if (resp.adPlacements && resp.adPlacements.length > 0) {
-                resp.adPlacements = [];
-                foundAds = true;
-            }
-            if (resp.playerAds && resp.playerAds.length > 0) {
-                resp.playerAds = [];
-                foundAds = true;
-            }
-            if (resp.adSlots && resp.adSlots.length > 0) {
-                resp.adSlots = [];
-                foundAds = true;
-            }
-            if (resp.playbackTracking) {
-                delete resp.playbackTracking.videostatsPlaybackUrl;
-                delete resp.playbackTracking.videostatsDelayplayUrl;
-            }
-            if (foundAds) reportBlocked(1);
-        }
+        if (!resp || typeof resp !== 'object') return;
+        try {
+            if (resp.adPlacements && resp.adPlacements.length > 0) resp.adPlacements = [];
+            if (resp.playerAds && resp.playerAds.length > 0) resp.playerAds = [];
+            if (resp.adSlots && resp.adSlots.length > 0) resp.adSlots = [];
+        } catch (e) {}
     }
 
-    function interceptYouTubeConfigs() {
-        if (!window.location.hostname.includes('youtube.com')) return;
-
+    try {
         if (window.ytInitialPlayerResponse) {
             sanitizePlayerResponse(window.ytInitialPlayerResponse);
         }
-
-        try {
-            let playerResponseVal = window.ytInitialPlayerResponse;
-            Object.defineProperty(window, 'ytInitialPlayerResponse', {
-                get() { return playerResponseVal; },
-                set(val) {
-                    sanitizePlayerResponse(val);
-                    playerResponseVal = val;
-                },
-                configurable: true
-            });
-        } catch (e) {}
-
-        const origFetch = window.fetch;
-        if (typeof origFetch === 'function') {
-            window.fetch = async function(...args) {
-                const url = args[0] ? (typeof args[0] === 'string' ? args[0] : (args[0].url || '')) : '';
-                const response = await origFetch.apply(this, args);
-                if (url && typeof url === 'string' && url.includes('/youtubei/v1/player')) {
-                    try {
-                        const cloned = response.clone();
-                        const json = await cloned.json();
-                        sanitizePlayerResponse(json);
-                        return new Response(JSON.stringify(json), {
-                            status: response.status,
-                            statusText: response.statusText,
-                            headers: response.headers
-                        });
-                    } catch (e) {}
-                }
-                return response;
-            };
-        }
-
-        const origXhrOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-            this._reqUrl = url;
-            return origXhrOpen.apply(this, [method, url, ...rest]);
-        };
-
-        const origResponseTextDesc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
-        if (origResponseTextDesc) {
-            Object.defineProperty(XMLHttpRequest.prototype, 'responseText', {
-                get() {
-                    let text = origResponseTextDesc.get.call(this);
-                    if (this._reqUrl && typeof this._reqUrl === 'string' && this._reqUrl.includes('/youtubei/v1/player')) {
-                        try {
-                            const json = JSON.parse(text);
-                            sanitizePlayerResponse(json);
-                            return JSON.stringify(json);
-                        } catch (e) {}
-                    }
-                    return text;
-                }
-            });
-        }
-    }
-
-    interceptYouTubeConfigs();
+    } catch (e) {}
 
     // =========================================================================
     // 2. Video Ad Fast-Forward & Skip (Zero-Lag Engine)
     // =========================================================================
     function checkAndSkipWebAd() {
-        const player = document.querySelector('.html5-video-player, #movie_player, #player, ytm-mobile-player');
-        const adIndicators = document.querySelectorAll(
-            '.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .video-ads, ' +
-            'ytm-ad-slot-renderer, .ytp-ad-text, [class*="ytp-ad-"], [class*="ad-showing"]'
-        );
-        const isAdShowing = (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) || (adIndicators.length > 0);
+        const player = document.querySelector('.html5-video-player, #movie_player, ytm-mobile-player');
+        // Strictly check if YouTube is actively playing an ad via its native state classes
+        const isYtAd = !!(player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting')));
+        const genericAdVideo = !isYtAd && !!document.querySelector('.ad-showing video, .ad-interrupting video');
+        const isAdShowing = isYtAd || genericAdVideo;
 
         if (isAdShowing) {
             // 1. Instant player API skip if exposed by YouTube
@@ -122,12 +47,12 @@
             }
 
             // 2. Fast-forward video instantly at 16x speed with sound muted
-            const video = (player ? player.querySelector('video') : null) || document.querySelector('video');
+            const video = (player ? player.querySelector('video') : null) || document.querySelector('.ad-showing video, .ad-interrupting video');
             if (video) {
                 try {
                     video.muted = true;
                     video.playbackRate = 16.0;
-                    if (video.duration && !isNaN(video.duration)) {
+                    if (video.duration && !isNaN(video.duration) && isFinite(video.duration)) {
                         video.currentTime = video.duration;
                     }
                 } catch (e) {}
@@ -145,9 +70,7 @@
                 ytm-skip-ad-button,
                 button[class*="skip-button"],
                 button[aria-label*="Skip"],
-                button[aria-label*="skip"],
-                .ytp-ad-overlay-close-button,
-                [class*="ytp-ad-skip"]
+                button[aria-label*="skip"]
             `);
             skipBtns.forEach(btn => {
                 try {
@@ -155,6 +78,14 @@
                     reportBlocked(1);
                 } catch (e) {}
             });
+        } else {
+            // Ensure normal video playback speed is preserved and not stuck at 16x
+            if (player) {
+                const mainVideo = player.querySelector('video');
+                if (mainVideo && mainVideo.playbackRate > 2.0) {
+                    mainVideo.playbackRate = 1.0;
+                }
+            }
         }
 
         // Hide "Visit Advertiser", companion ads & sponsored chips
@@ -742,6 +673,7 @@
     // =========================================================================
     // 8. Universal Media Sniffer: Detects downloadable video & audio streams
     // =========================================================================
+    let lastSniffedUrl = '';
     function sniffMediaSources() {
         const mediaEls = document.querySelectorAll('video, audio');
         mediaEls.forEach(el => {
@@ -750,8 +682,9 @@
                 const source = el.querySelector('source');
                 if (source) src = source.src;
             }
-            if (src && typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+            if (src && typeof src === 'string' && src !== lastSniffedUrl && (src.startsWith('http://') || src.startsWith('https://'))) {
                 if (!src.includes('doubleclick') && !src.includes('googleads') && !src.includes('adservice')) {
+                    lastSniffedUrl = src;
                     const title = (document.title || 'Media').replace(/[\\/:*?"<>|]/g, '').trim();
                     try {
                         if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaSourceFound === 'function') {
@@ -779,12 +712,8 @@
         video.addEventListener('playing', updateState);
         video.addEventListener('pause', updateState);
         video.addEventListener('ended', updateState);
+        video.addEventListener('emptied', updateState);
         video.addEventListener('loadeddata', sniffMediaSources);
-        video.addEventListener('timeupdate', () => {
-            if (!video.paused && !video.ended) {
-                notifyNativePlayback(true, true);
-            }
-        });
 
         if (!video.paused && !video.ended) {
             notifyNativePlayback(true, true);

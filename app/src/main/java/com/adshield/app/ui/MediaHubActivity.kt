@@ -39,7 +39,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.adshield.app.AdShieldApp
+import com.adshield.app.MainActivity
 import com.adshield.app.R
+import com.adshield.app.util.AppUpdateManager
 import com.adshield.app.databinding.ActivityMediaHubBinding
 import com.adshield.app.databinding.ItemTabCardBinding
 import com.adshield.app.databinding.SheetBrowserMenuBinding
@@ -206,6 +208,8 @@ class MediaHubActivity : AppCompatActivity() {
         val initialUrl = intent.getStringExtra(EXTRA_URL) ?: "file:///android_asset/fokk_start.html"
         addNewTab(initialUrl, isPrivate = false)
         handleOpenAction(intent)
+
+        AppUpdateManager.checkForUpdates(this, manualCheck = false)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -849,6 +853,10 @@ class MediaHubActivity : AppCompatActivity() {
             showSearchEngineDialog()
         }
 
+        binding.btnShieldHub.setOnClickListener {
+            openShieldDashboard()
+        }
+
         binding.btnPip.setOnClickListener {
             enterPipMode()
         }
@@ -1347,6 +1355,17 @@ class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
+
+        sheetBinding.rowShieldHub.setOnClickListener {
+            dialog.dismiss()
+            openShieldDashboard()
+        }
+
+        sheetBinding.textAppVersionInfo.text = "v${AppUpdateManager.getCurrentVersionName(this)} • Tap to check for updates"
+        sheetBinding.rowAppUpdates.setOnClickListener {
+            dialog.dismiss()
+            AppUpdateManager.checkForUpdates(this, manualCheck = true)
+        }
         sheetBinding.switchDesktop.isChecked = activeTab?.isDesktop ?: false
         sheetBinding.switchDarkMode.isChecked = isDarkMode
                 val isBioEnabled = prefs.getBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false)
@@ -1577,6 +1596,13 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    fun openShieldDashboard() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (binding.cardSuggestions.visibility == View.VISIBLE) {
@@ -1593,7 +1619,7 @@ class MediaHubActivity : AppCompatActivity() {
         } else if (activeWebView?.canGoBack() == true) {
             activeWebView?.goBack()
         } else {
-            super.onBackPressed()
+            openShieldDashboard()
         }
     }
 

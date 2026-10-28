@@ -117,9 +117,20 @@
             </LinearLayout>
 
             <ImageButton
+                android:id="@+id/btnShieldHub"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_shield_check"
+                app:tint="@color/fokk_cyan"
+                android:contentDescription="Fokk Shield Defense Hub" />
+
+            <ImageButton
                 android:id="@+id/btnPip"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:layout_marginStart="2dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_pip"
                 app:tint="@color/fokk_cyan"

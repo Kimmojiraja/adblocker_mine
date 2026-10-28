@@ -21,6 +21,7 @@ import com.adshield.app.receiver.SpotifyAdMuterReceiver
 class YouTubeAdSkipperService : AccessibilityService() {
 
     private var lastSkipClickTime = 0L
+    private var lastSocialSkipTime = 0L
     private val spotifyReceiver = SpotifyAdMuterReceiver()
     private var isAdMuted = false
     private var originalVolume = -1
@@ -104,24 +105,53 @@ class YouTubeAdSkipperService : AccessibilityService() {
         if (event == null) return
 
         val pkg = event.packageName?.toString() ?: ""
-        if (!pkg.contains("youtube")) return
+        val prefs = AdShieldApp.instance.prefs
 
+        if (pkg.contains("youtube")) {
+            val ytEnabled = prefs.getBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, true)
+            if (ytEnabled) {
+                handleYouTubeEvent()
+            }
+            return
+        }
+
+        if (pkg.contains("twitter") || pkg == "com.twitter.android") {
+            val xEnabled = prefs.getBoolean(AdShieldApp.KEY_X_SKIPPER_ENABLED, true)
+            if (xEnabled) {
+                handleTwitterEvent()
+            }
+            return
+        }
+
+        if (pkg.contains("reddit") || pkg == "com.reddit.frontpage") {
+            val redditEnabled = prefs.getBoolean(AdShieldApp.KEY_REDDIT_SKIPPER_ENABLED, true)
+            if (redditEnabled) {
+                handleRedditEvent()
+            }
+            return
+        }
+
+        if (pkg.contains("instagram") || pkg == "com.instagram.android") {
+            val instaEnabled = prefs.getBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, true)
+            if (instaEnabled) {
+                handleInstagramEvent()
+            }
+            return
+        }
+    }
+
+    private fun handleYouTubeEvent() {
         val now = System.currentTimeMillis()
-        // Debounce: prevent rapid repeated clicks
         if (now - lastSkipClickTime < 1000) return
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            // Dismiss sponsored promo cards / bottom sheets (e.g. Hosting.com sponsored sheet)
             dismissSponsoredCardIfPresent(rootNode)
 
-            // STEP 1: Strict comments & user panel check.
-            // Protect real comments and playlists from being dismissed
             if (isCommentsOrPanelOpen(rootNode)) {
                 return
             }
 
-            // STEP 2: Strict Ad Presence Gating.
             val adActive = isAdActive(rootNode)
             if (!adActive) {
                 if (isAdMuted) {
@@ -130,7 +160,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
                 return
             }
 
-            // STEP 3: Find and click active Skip button
             val clicked = findAndClickSkipButton(rootNode)
             if (clicked) {
                 lastSkipClickTime = now
@@ -138,7 +167,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
                     restoreVideoVolume()
                 }
             } else {
-                // Ad is active but has no skip button yet (unskippable ad or countdown)
                 muteVideoAd()
             }
         } catch (e: Exception) {
@@ -146,6 +174,125 @@ class YouTubeAdSkipperService : AccessibilityService() {
         } finally {
             rootNode.recycle()
         }
+    }
+
+    private fun handleTwitterEvent() {
+        val now = System.currentTimeMillis()
+        if (now - lastSocialSkipTime < 1500L) return
+
+        val rootNode = rootInActiveWindow ?: return
+        try {
+            val promotedMarkers = listOf("Promoted", "Ad ·", "Sponsored")
+            for (marker in promotedMarkers) {
+                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
+                if (!nodes.isNullOrEmpty()) {
+                    val visible = nodes.firstOrNull { it.isVisibleToUser }
+                    if (visible != null) {
+                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
+                        if (scrollable != null) {
+                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                            lastSocialSkipTime = now
+                            AdShieldApp.instance.incrementSkippedSocialAds()
+                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                            Log.i(TAG, "Auto-skipped Promoted content in X / Twitter")
+                            recycleNodes(nodes)
+                            return
+                        }
+                    }
+                    recycleNodes(nodes)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling X event", e)
+        } finally {
+            rootNode.recycle()
+        }
+    }
+
+    private fun handleRedditEvent() {
+        val now = System.currentTimeMillis()
+        if (now - lastSocialSkipTime < 1500L) return
+
+        val rootNode = rootInActiveWindow ?: return
+        try {
+            val redditMarkers = listOf("Promoted", "promoted", "Sponsored")
+            for (marker in redditMarkers) {
+                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
+                if (!nodes.isNullOrEmpty()) {
+                    val visible = nodes.firstOrNull { it.isVisibleToUser }
+                    if (visible != null) {
+                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
+                        if (scrollable != null) {
+                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                            lastSocialSkipTime = now
+                            AdShieldApp.instance.incrementSkippedSocialAds()
+                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                            Log.i(TAG, "Auto-skipped Promoted post in Reddit")
+                            recycleNodes(nodes)
+                            return
+                        }
+                    }
+                    recycleNodes(nodes)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling Reddit event", e)
+        } finally {
+            rootNode.recycle()
+        }
+    }
+
+    private fun handleInstagramEvent() {
+        val now = System.currentTimeMillis()
+        if (now - lastSocialSkipTime < 1500L) return
+
+        val rootNode = rootInActiveWindow ?: return
+        try {
+            val instaMarkers = listOf("Sponsored", "Paid partnership")
+            for (marker in instaMarkers) {
+                val nodes = rootNode.findAccessibilityNodeInfosByText(marker)
+                if (!nodes.isNullOrEmpty()) {
+                    val visible = nodes.firstOrNull { it.isVisibleToUser }
+                    if (visible != null) {
+                        val scrollable = findScrollableContainer(visible) ?: findFirstScrollableDescendant(rootNode)
+                        if (scrollable != null) {
+                            scrollable.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                            lastSocialSkipTime = now
+                            AdShieldApp.instance.incrementSkippedSocialAds()
+                            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+                            Log.i(TAG, "Auto-skipped Sponsored item in Instagram")
+                            recycleNodes(nodes)
+                            return
+                        }
+                    }
+                    recycleNodes(nodes)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling Instagram event", e)
+        } finally {
+            rootNode.recycle()
+        }
+    }
+
+    private fun findScrollableContainer(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        var current = node
+        while (current != null) {
+            if (current.isScrollable) return current
+            current = current.parent
+        }
+        return null
+    }
+
+    private fun findFirstScrollableDescendant(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (node == null) return null
+        if (node.isScrollable) return node
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findFirstScrollableDescendant(child)
+            if (found != null) return found
+        }
+        return null
     }
 
     /**

@@ -25,9 +25,16 @@
     }
 
     try {
-        if (window.ytInitialPlayerResponse) {
-            sanitizePlayerResponse(window.ytInitialPlayerResponse);
-        }
+        let _ytPlayerResp = window.ytInitialPlayerResponse;
+        if (_ytPlayerResp) sanitizePlayerResponse(_ytPlayerResp);
+        Object.defineProperty(window, 'ytInitialPlayerResponse', {
+            get() { return _ytPlayerResp; },
+            set(val) {
+                sanitizePlayerResponse(val);
+                _ytPlayerResp = val;
+            },
+            configurable: true
+        });
     } catch (e) {}
 
     // =========================================================================
@@ -558,28 +565,31 @@
         const video = document.querySelector('video');
         if (video) {
             video.play().catch(() => {});
-            // Move video directly to body so no parent container transforms can clip or offset it
-            if (!video.__origParent) {
-                video.__origParent = video.parentElement;
-                video.__origNextSibling = video.nextSibling;
-            }
-            document.body.appendChild(video);
         }
     };
 
     window.__fokk_exit_pip_view = function() {
-        const video = document.querySelector('video');
-        if (video && video.__origParent) {
-            if (video.__origNextSibling) {
-                video.__origParent.insertBefore(video, video.__origNextSibling);
-            } else {
-                video.__origParent.appendChild(video);
-            }
-            delete video.__origParent;
-            delete video.__origNextSibling;
-        }
         document.documentElement.classList.remove('fokk-pip-active');
+        const video = document.querySelector('video');
+        if (video) {
+            window.dispatchEvent(new Event('resize'));
+            if (video.paused && !video.ended && video.currentTime > 0) {
+                video.play().catch(() => {});
+            }
+        }
     };
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            window.__fokk_exit_pip_view();
+            window.dispatchEvent(new Event('resize'));
+        }
+    });
+
+    window.addEventListener('pageshow', () => {
+        window.__fokk_exit_pip_view();
+        window.dispatchEvent(new Event('resize'));
+    });
 
     // Continuous PiP Playback Watchdog
     setInterval(() => {
@@ -674,6 +684,53 @@
     // 8. Universal Media Sniffer: Detects downloadable video & audio streams
     // =========================================================================
     let lastSniffedUrl = '';
+    function reportMediaFound(src, title, tag = 'video') {
+        if (!src || typeof src !== 'string' || src === lastSniffedUrl) return;
+        const low = src.toLowerCase();
+        if (low.includes('doubleclick') || low.includes('googleads') || low.includes('adservice') || low.includes('/pagead/')) return;
+        lastSniffedUrl = src;
+        const cleanTitle = (title || document.title || 'Media').replace(/[\\/:*?"<>|]/g, '').trim();
+        try {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaSourceFound === 'function') {
+                window.FokkShieldBridge.onMediaSourceFound(src, cleanTitle, tag);
+            }
+        } catch (e) {}
+    }
+
+    // Network request hook for MSE and streaming videos (YouTube, X, Reddit, Instagram)
+    try {
+        const _origFetch = window.fetch;
+        window.fetch = function(...args) {
+            try {
+                const reqUrl = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url);
+                if (reqUrl && typeof reqUrl === 'string') {
+                    const low = reqUrl.toLowerCase();
+                    if (low.includes('.mp4') || low.includes('.webm') || low.includes('.m3u8') ||
+                        low.includes('googlevideo.com/videoplayback') || low.includes('video.twimg.com') ||
+                        low.includes('v.redd.it') || low.includes('fbcdn.net')) {
+                        reportMediaFound(reqUrl, document.title, 'video');
+                    }
+                }
+            } catch (e) {}
+            return _origFetch.apply(this, args);
+        };
+
+        const _origXhrOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            try {
+                if (url && typeof url === 'string') {
+                    const low = url.toLowerCase();
+                    if (low.includes('.mp4') || low.includes('.webm') || low.includes('.m3u8') ||
+                        low.includes('googlevideo.com/videoplayback') || low.includes('video.twimg.com') ||
+                        low.includes('v.redd.it') || low.includes('fbcdn.net')) {
+                        reportMediaFound(url, document.title, 'video');
+                    }
+                }
+            } catch (e) {}
+            return _origXhrOpen.call(this, method, url, ...rest);
+        };
+    } catch (e) {}
+
     function sniffMediaSources() {
         const mediaEls = document.querySelectorAll('video, audio');
         mediaEls.forEach(el => {
@@ -682,16 +739,8 @@
                 const source = el.querySelector('source');
                 if (source) src = source.src;
             }
-            if (src && typeof src === 'string' && src !== lastSniffedUrl && (src.startsWith('http://') || src.startsWith('https://'))) {
-                if (!src.includes('doubleclick') && !src.includes('googleads') && !src.includes('adservice')) {
-                    lastSniffedUrl = src;
-                    const title = (document.title || 'Media').replace(/[\\/:*?"<>|]/g, '').trim();
-                    try {
-                        if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaSourceFound === 'function') {
-                            window.FokkShieldBridge.onMediaSourceFound(src, title, el.tagName.toLowerCase());
-                        }
-                    } catch (e) {}
-                }
+            if (src && typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+                reportMediaFound(src, document.title, el.tagName.toLowerCase());
             }
         });
     }

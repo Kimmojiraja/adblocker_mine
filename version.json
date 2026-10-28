@@ -1,6 +1,6 @@
 {
-  "versionCode": 30,
-  "versionName": "1.0.30",
+  "versionCode": 32,
+  "versionName": "1.0.32",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/latest/app-debug.apk",
-  "changelog": "\u2022 Fixed YouTube in-browser video playback blank screen and glitches\n\u2022 Added Wallpapers & Themes and Customize Speed Dials in 3-dots menu\n\u2022 Added 1-Tap Return to Fokk Shield Defense Hub\n\u2022 Added 1-Tap Direct In-App Updater"
+  "changelog": "• Fixed YouTube video playback freeze and distorted oval controls on minimize & reopen\n• Eliminated black screen flash before videos via reactive in-memory player sanitization\n• Fixed Video Downloader: in-flight stream detection for YouTube, Twitter/X, Reddit, Instagram, and web videos\n• Added Native App Ad Blockers outside of app for Instagram, X (Twitter), and Reddit\n• Added Universal URL tracking parameter cleaner (strips utm_*, fbclid, gclid)"
 }

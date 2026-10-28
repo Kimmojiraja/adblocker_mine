@@ -87,6 +87,48 @@ class MainActivity : AppCompatActivity() {
             showSpotifyGuide()
         }
 
+        // Instagram Skipper Switch
+        val isInstaEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, true)
+        binding.switchInstagramSkipper.isChecked = isInstaEnabled
+        binding.switchInstagramSkipper.setOnCheckedChangeListener { _, isChecked ->
+            AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, isChecked).apply()
+            val isServiceActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
+            if (isChecked && !isServiceActive) {
+                promptEnableAccessibility()
+            } else {
+                val msg = if (isChecked) "Instagram Sponsored Skipper active" else "Instagram Sponsored Skipper paused"
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // X (Twitter) Skipper Switch
+        val isXEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_X_SKIPPER_ENABLED, true)
+        binding.switchXSkipper.isChecked = isXEnabled
+        binding.switchXSkipper.setOnCheckedChangeListener { _, isChecked ->
+            AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_X_SKIPPER_ENABLED, isChecked).apply()
+            val isServiceActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
+            if (isChecked && !isServiceActive) {
+                promptEnableAccessibility()
+            } else {
+                val msg = if (isChecked) "X Promoted Skipper active" else "X Promoted Skipper paused"
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Reddit Skipper Switch
+        val isRedditEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_REDDIT_SKIPPER_ENABLED, true)
+        binding.switchRedditSkipper.isChecked = isRedditEnabled
+        binding.switchRedditSkipper.setOnCheckedChangeListener { _, isChecked ->
+            AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_REDDIT_SKIPPER_ENABLED, isChecked).apply()
+            val isServiceActive = isAccessibilityServiceEnabled(this, YouTubeAdSkipperService::class.java)
+            if (isChecked && !isServiceActive) {
+                promptEnableAccessibility()
+            } else {
+                val msg = if (isChecked) "Reddit Sponsored Skipper active" else "Reddit Sponsored Skipper paused"
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // Feature 3: Ad-Free Media Hub Launcher
         binding.btnOpenMediaHub.setOnClickListener {
             startActivity(Intent(this, MediaHubActivity::class.java))
@@ -257,8 +299,9 @@ class MainActivity : AppCompatActivity() {
         binding.textTotalAdsCount.text = totalBlocked.toString()
 
         val webBlocked = AdShieldApp.instance.getBlockedAdsCount()
-        // Calculate Time Reclaimed (20s per YT ad, 30s per Spotify ad, 5s per web ad interrupted)
-        val totalSeconds = (skippedYtCount * 20) + (mutedSpotifyCount * 30) + (webBlocked * 5)
+        val socialBlocked = AdShieldApp.instance.getSkippedSocialAdsCount()
+        // Calculate Time Reclaimed (20s per YT ad, 30s per Spotify ad, 5s per web ad, 10s per social ad)
+        val totalSeconds = (skippedYtCount * 20) + (mutedSpotifyCount * 30) + (webBlocked * 5) + (socialBlocked * 10)
         binding.textTimeReclaimed.text = if (totalSeconds < 60) {
             "${totalSeconds}s"
         } else {
@@ -268,6 +311,15 @@ class MainActivity : AppCompatActivity() {
 
         val isSpotifyEnabled = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_SPOTIFY_MUTER_ENABLED, true)
         binding.switchSpotifyMuter.isChecked = isSpotifyEnabled
+
+        val isInstaOn = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, true)
+        binding.switchInstagramSkipper.isChecked = isInstaOn
+
+        val isXOn = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_X_SKIPPER_ENABLED, true)
+        binding.switchXSkipper.isChecked = isXOn
+
+        val isRedditOn = AdShieldApp.instance.prefs.getBoolean(AdShieldApp.KEY_REDDIT_SKIPPER_ENABLED, true)
+        binding.switchRedditSkipper.isChecked = isRedditOn
 
         // Brand Card details
         val brandName = BrandOptimizationHelper.getBrandName()

@@ -322,30 +322,103 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     
+    private val TRACKING_PARAMS = setOf(
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+        "fbclid", "gclid", "twclid", "igshid", "msclkid", "mc_eid", "_ga", "_gl"
+    )
+
+    fun cleanTrackingParameters(url: String): String {
+        try {
+            val uri = Uri.parse(url)
+            if (uri.isOpaque || uri.queryParameterNames.isEmpty()) return url
+            val hasTracker = uri.queryParameterNames.any { it.lowercase() in TRACKING_PARAMS }
+            if (!hasTracker) return url
+
+            val builder = uri.buildUpon().clearQuery()
+            for (param in uri.queryParameterNames) {
+                if (param.lowercase() !in TRACKING_PARAMS) {
+                    for (value in uri.getQueryParameters(param)) {
+                        builder.appendQueryParameter(param, value)
+                    }
+                }
+            }
+            return builder.build().toString()
+        } catch (e: Exception) {
+            return url
+        }
+    }
+
     fun handleMediaSourceFound(url: String, title: String, tag: String) {
         if (url.isBlank() || url.startsWith("blob:") || url == detectedMediaUrl) return
         detectedMediaUrl = url
-        detectedMediaTitle = title.ifBlank { "Web_Media" }
+        detectedMediaTitle = title.ifBlank { activeTab?.title ?: "Web_Media" }
         binding.btnDownloadMedia.visibility = View.VISIBLE
     }
 
     private fun showDownloadMediaDialog() {
+        val currentUrl = activeWebView?.url ?: activeTab?.url ?: ""
         val url = detectedMediaUrl
-        if (url.isNullOrBlank()) {
+        val isYouTube = currentUrl.contains("youtube.com/watch") || currentUrl.contains("youtube.com/shorts/") || currentUrl.contains("youtu.be/")
+
+        if (url.isNullOrBlank() && !isYouTube) {
             Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
             return
         }
-        val rawTitle = detectedMediaTitle ?: "Web_Video"
+
+        val rawTitle = detectedMediaTitle ?: activeTab?.title ?: "Web_Video"
         val cleanTitle = rawTitle.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(35) + ".mp4"
+
+        if (isYouTube) {
+            val videoId = extractYouTubeVideoId(currentUrl)
+            val builder = AlertDialog.Builder(this)
+                .setTitle("Download Video")
+                .setMessage("Save \"${activeTab?.title ?: "YouTube Video"}\"?")
+
+            if (!url.isNullOrBlank()) {
+                builder.setPositiveButton("Download MP4 Stream") { _, _ ->
+                    startDirectMediaDownload(url, cleanTitle)
+                }
+            } else {
+                builder.setPositiveButton("Download 1080p / MP3") { _, _ ->
+                    val helperUrl = "https://y2mate.is/watch?v=$videoId"
+                    createNewTab(helperUrl, isPrivate = false)
+                }
+            }
+
+            builder.setNeutralButton("Save Options") { _, _ ->
+                val helperUrl = "https://ssyoutube.com/watch?v=$videoId"
+                createNewTab(helperUrl, isPrivate = false)
+            }
+            builder.setNegativeButton("Cancel", null)
+            builder.show()
+            return
+        }
 
         AlertDialog.Builder(this)
             .setTitle("Download Video")
             .setMessage("Save \"$cleanTitle\" directly to your device Downloads folder?")
             .setPositiveButton("Download") { _, _ ->
-                startDirectMediaDownload(url, cleanTitle)
+                if (url != null) {
+                    startDirectMediaDownload(url, cleanTitle)
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun extractYouTubeVideoId(url: String): String {
+        return try {
+            val uri = Uri.parse(url)
+            if (url.contains("/shorts/")) {
+                uri.lastPathSegment ?: ""
+            } else if (url.contains("youtu.be/")) {
+                uri.lastPathSegment ?: ""
+            } else {
+                uri.getQueryParameter("v") ?: ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     private fun startDirectMediaDownload(url: String, fileName: String) {
@@ -512,6 +585,25 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val reqUrl = request?.url?.toString() ?: return false
+                if (reqUrl.startsWith("http://") || reqUrl.startsWith("https://")) {
+                    val cleanUrl = cleanTrackingParameters(reqUrl)
+                    if (cleanUrl != reqUrl) {
+                        view?.loadUrl(cleanUrl)
+                        return true
+                    }
+                    return false
+                }
+                return try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reqUrl))
+                    startActivity(intent)
+                    true
+                } catch (e: Exception) {
+                    true
+                }
+            }
+
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, pageUrl, favicon)
                 if (view == activeWebView) {
@@ -520,7 +612,8 @@ class MediaHubActivity : AppCompatActivity() {
                     binding.badgeBlocked.visibility = View.GONE
                     detectedMediaUrl = null
                     detectedMediaTitle = null
-                    binding.btnDownloadMedia.visibility = View.GONE
+                    val isYtVideo = pageUrl?.let { it.contains("youtube.com/watch") || it.contains("youtube.com/shorts/") || it.contains("youtu.be/") } == true
+                    binding.btnDownloadMedia.visibility = if (isYtVideo) View.VISIBLE else View.GONE
                     if (pageUrl != null && !binding.urlInput.hasFocus()) {
                         if (pageUrl.contains("fokk_start.html")) {
                             binding.urlInput.setText("")
@@ -566,6 +659,24 @@ class MediaHubActivity : AppCompatActivity() {
 
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
                 val urlStr = request.url.toString().lowercase()
+
+                // Universal Media Stream Sniffer: detect video URLs across YouTube, social platforms, and media sites
+                val isMediaStream = (
+                    urlStr.contains(".mp4") ||
+                    urlStr.contains(".webm") ||
+                    urlStr.contains(".m4v") ||
+                    urlStr.contains("googlevideo.com/videoplayback") ||
+                    urlStr.contains("video.twimg.com") ||
+                    urlStr.contains("v.redd.it") ||
+                    urlStr.contains("fbcdn.net")
+                ) && !urlStr.contains("doubleclick") && !urlStr.contains("googleads") && !urlStr.contains("/pagead/")
+
+                if (isMediaStream) {
+                    val rawUrl = request.url.toString()
+                    runOnUiThread {
+                        handleMediaSourceFound(rawUrl, activeTab?.title ?: "Web Video", "video")
+                    }
+                }
 
                 if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
@@ -899,11 +1010,12 @@ class MediaHubActivity : AppCompatActivity() {
             val query = binding.urlInput.text.toString().trim()
             binding.cardSuggestions.visibility = View.GONE
             if (query.isNotEmpty()) {
-                val targetUrl = when {
+                val rawTarget = when {
                     query.startsWith("http://") || query.startsWith("https://") || query.startsWith("file://") -> query
                     query.contains(".") && !query.contains(" ") -> "https://$query"
                     else -> currentSearchEngine.searchUrl + Uri.encode(query)
                 }
+                val targetUrl = cleanTrackingParameters(rawTarget)
                 activeWebView?.loadUrl(targetUrl)
                 binding.urlInput.clearFocus()
             }
@@ -1528,6 +1640,20 @@ class MediaHubActivity : AppCompatActivity() {
         Toast.makeText(this, "Browsing history, cache & cookies cleared!", Toast.LENGTH_SHORT).show()
     }
 
+    override fun onResume() {
+        super.onResume()
+        activeWebView?.onResume()
+        activeWebView?.resumeTimers()
+
+        val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
+        if (!inPip) {
+            binding.topBar.visibility = View.VISIBLE
+            binding.bottomNav.visibility = View.VISIBLE
+            activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
+            activeWebView?.requestLayout()
+        }
+    }
+
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
@@ -1544,9 +1670,6 @@ class MediaHubActivity : AppCompatActivity() {
     private fun enterPipMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                // Maximize HTML5 video element so it fills 100% of the PiP viewport cleanly
-                activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
-
                 val builder = PictureInPictureParams.Builder()
                     .setAspectRatio(Rational(16, 9))
 
@@ -1593,6 +1716,7 @@ class MediaHubActivity : AppCompatActivity() {
             binding.topBar.visibility = View.VISIBLE
             binding.bottomNav.visibility = View.VISIBLE
             activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
+            activeWebView?.requestLayout()
         }
     }
 

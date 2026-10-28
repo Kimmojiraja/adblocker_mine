@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.util.Base64
 import androidx.activity.result.contract.ActivityResultContracts
+import android.speech.RecognizerIntent
 import android.app.DownloadManager
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -120,6 +121,61 @@ class MediaHubActivity : AppCompatActivity() {
         }
         fileUploadCallback?.onReceiveValue(results)
         fileUploadCallback = null
+    }
+
+    private val speechRecognitionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val spokenMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = spokenMatches?.firstOrNull()?.trim()
+            if (!spokenText.isNullOrEmpty()) {
+                binding.urlInput.setText(spokenText)
+                binding.cardSuggestions.visibility = View.GONE
+                val rawTarget = if (spokenText.contains(".") && !spokenText.contains(" ")) {
+                    "https://$spokenText"
+                } else {
+                    currentSearchEngine.searchUrl + Uri.encode(spokenText)
+                }
+                val targetUrl = cleanTrackingParameters(rawTarget)
+                activeWebView?.loadUrl(targetUrl)
+                recordHistory(spokenText, targetUrl)
+            }
+        }
+    }
+
+    private fun startVoiceSearch() {
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to search...")
+            }
+            speechRecognitionLauncher.launch(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Voice search is not supported on this device", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    data class HistorySuggestion(val title: String, val url: String, val isHistory: Boolean = true)
+
+    private fun getRecentHistory(): List<HistorySuggestion> {
+        val list = mutableListOf<HistorySuggestion>()
+        try {
+            val historyJson = prefs.getString(PREF_BROWSING_HISTORY, "[]") ?: "[]"
+            val jsonArr = JSONArray(historyJson)
+            for (i in 0 until minOf(jsonArr.length(), 10)) {
+                val item = jsonArr.getJSONObject(i)
+                val title = item.optString("title")
+                val url = item.optString("url")
+                if (url.isNotBlank()) {
+                    list.add(HistorySuggestion(title = title.ifBlank { url }, url = url, isHistory = true))
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "getRecentHistory error", e)
+        }
+        return list
     }
 
     private val wallpaperPickerLauncher = registerForActivityResult(
@@ -241,8 +297,7 @@ class MediaHubActivity : AppCompatActivity() {
         pageBlockedCount += count
         activeTab?.let { it.blockedAds += count }
         AdShieldApp.instance.incrementBlockedAds(count)
-        binding.badgeBlocked.visibility = View.VISIBLE
-        binding.textPageBlockedCount.text = pageBlockedCount.toString()
+// blocked count updated in memory
     }
 
     class WebAppInterface(private val activity: MediaHubActivity) {
@@ -665,18 +720,13 @@ class MediaHubActivity : AppCompatActivity() {
                 if (view == activeWebView) {
                     binding.progressBar.visibility = View.VISIBLE
                     pageBlockedCount = 0
-                    binding.badgeBlocked.visibility = View.GONE
+                    // page reset
                     detectedMediaUrl = null
                     detectedMediaTitle = null
                     val isYtVideo = pageUrl?.let { it.contains("youtube.com/watch") || it.contains("youtube.com/shorts/") || it.contains("youtu.be/") } == true
                     binding.btnDownloadMedia.visibility = if (isYtVideo) View.VISIBLE else View.GONE
                     if (pageUrl != null && !binding.urlInput.hasFocus()) {
-                        if (pageUrl.contains("fokk_start.html")) {
-                            binding.urlInput.setText("")
-                            binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter URL..."
-                        } else {
-                            binding.urlInput.setText(pageUrl)
-                        }
+                        updateUrlBar(pageUrl, null)
                     }
                 }
                 injectAdblockScript(view)
@@ -696,6 +746,7 @@ class MediaHubActivity : AppCompatActivity() {
                     } else {
                         recordHistory(view?.title ?: it, it)
                     }
+                    updateUrlBar(it, view?.title)
                 }
                 view?.title?.let {
                     if (it.isNotEmpty() && activeTab?.url?.contains("fokk_start.html") != true) {
@@ -899,12 +950,7 @@ class MediaHubActivity : AppCompatActivity() {
             tabs[i].webView.visibility = if (i == index) View.VISIBLE else View.GONE
         }
         val current = tabs[index]
-        if (current.url.contains("fokk_start.html")) {
-            binding.urlInput.setText("")
-            binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter URL..."
-        } else {
-            binding.urlInput.setText(current.url)
-        }
+        updateUrlBar(current.url, current.title)
 
         // Apply Private Tab styling if active
         if (current.isPrivate) {
@@ -920,12 +966,6 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         pageBlockedCount = current.blockedAds
-        if (pageBlockedCount > 0) {
-            binding.badgeBlocked.visibility = View.VISIBLE
-            binding.textPageBlockedCount.text = pageBlockedCount.toString()
-        } else {
-            binding.badgeBlocked.visibility = View.GONE
-        }
         updateTabCounter()
     }
 
@@ -1006,52 +1046,24 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        val handleBack: () -> Unit = {
-            if (binding.cardSuggestions.visibility == View.VISIBLE) {
-                binding.cardSuggestions.visibility = View.GONE
-            } else if (customView != null) {
-                binding.fullscreenContainer.removeView(customView)
-                binding.fullscreenContainer.visibility = View.GONE
-                binding.mainContentLayout.visibility = View.VISIBLE
-                customViewCallback?.onCustomViewHidden()
-                customView = null
-                customViewCallback = null
-            } else if (activeWebView?.canGoBack() == true) {
-                activeWebView?.goBack()
-            } else {
-                finish()
-            }
-        }
-
-        binding.btnNavBack.setOnClickListener { handleBack() }
-
-        binding.btnNavForward.setOnClickListener {
-            if (activeWebView?.canGoForward() == true) activeWebView?.goForward()
-        }
-
-        binding.btnNavHome.setOnClickListener {
-            activeWebView?.loadUrl("file:///android_asset/fokk_start.html")
-        }
-
-        binding.btnRefresh.setOnClickListener {
-            activeWebView?.reload()
-            Toast.makeText(this, "Reloading page...", Toast.LENGTH_SHORT).show()
-        }
-
         binding.imgEngineIcon.setOnClickListener {
             showSearchEngineDialog()
         }
 
-        binding.btnShieldHub.setOnClickListener {
-            openShieldDashboard()
-        }
-
-        binding.btnPip.setOnClickListener {
-            enterPipMode()
+        binding.btnVoiceSearch.setOnClickListener {
+            startVoiceSearch()
         }
 
         binding.btnDownloadMedia.setOnClickListener {
             showDownloadMediaDialog()
+        }
+
+        binding.btnNavTabs.setOnClickListener {
+            showTabSwitcherDialog()
+        }
+
+        binding.btnNavMenu.setOnClickListener {
+            showBrowserMenuDialog()
         }
 
         binding.urlInput.addTextChangedListener(object : TextWatcher {
@@ -1060,28 +1072,31 @@ class MediaHubActivity : AppCompatActivity() {
                 val text = s?.toString()?.trim() ?: ""
                 binding.btnClearUrl.visibility = if (text.isNotEmpty() && binding.urlInput.hasFocus()) View.VISIBLE else View.GONE
                 if (binding.urlInput.hasFocus()) {
-                    fetchSuggestions(text)
+                    showRecentHistoryOrSuggestions(text)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
         binding.urlInput.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
+            if (hasFocus) {
+                val currentUrl = activeWebView?.url ?: ""
+                if (!currentUrl.contains("fokk_start.html") && currentUrl.isNotBlank()) {
+                    binding.urlInput.setText(currentUrl)
+                    binding.urlInput.selectAll()
+                }
+                binding.btnClearUrl.visibility = if (binding.urlInput.text.isNotEmpty()) View.VISIBLE else View.GONE
+                showRecentHistoryOrSuggestions(binding.urlInput.text.toString().trim())
+            } else {
                 binding.cardSuggestions.visibility = View.GONE
                 binding.btnClearUrl.visibility = View.GONE
-            } else {
-                val text = binding.urlInput.text.toString().trim()
-                if (text.isNotEmpty()) {
-                    binding.btnClearUrl.visibility = View.VISIBLE
-                    fetchSuggestions(text)
-                }
+                updateUrlBar(activeWebView?.url, activeWebView?.title)
             }
         }
 
         binding.btnClearUrl.setOnClickListener {
             binding.urlInput.setText("")
-            binding.cardSuggestions.visibility = View.GONE
+            showRecentHistoryOrSuggestions("")
         }
 
         val navigateOrSearch: () -> Unit = {
@@ -1095,11 +1110,10 @@ class MediaHubActivity : AppCompatActivity() {
                 }
                 val targetUrl = cleanTrackingParameters(rawTarget)
                 activeWebView?.loadUrl(targetUrl)
+                recordHistory(query, targetUrl)
                 binding.urlInput.clearFocus()
             }
         }
-
-        binding.btnGo.setOnClickListener { navigateOrSearch() }
 
         binding.urlInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO ||
@@ -1111,24 +1125,27 @@ class MediaHubActivity : AppCompatActivity() {
                 false
             }
         }
-
-        binding.btnNavTabs.setOnClickListener {
-            showTabSwitcherDialog()
-        }
-
-        binding.btnNavMenu.setOnClickListener {
-            showBrowserMenuDialog()
-        }
     }
 
-    private fun fetchSuggestions(query: String) {
+    private fun showRecentHistoryOrSuggestions(query: String) {
+        if (query.isEmpty()) {
+            val historyList = getRecentHistory()
+            displaySuggestions(historyList)
+            return
+        }
+
         suggestionJob?.cancel()
-        if (query.length < 2 || query.startsWith("http://") || query.startsWith("https://") || query.startsWith("file://")) {
-            binding.cardSuggestions.visibility = View.GONE
+        val historyList = getRecentHistory().filter {
+            it.title.contains(query, ignoreCase = true) || it.url.contains(query, ignoreCase = true)
+        }
+
+        if (query.startsWith("http://") || query.startsWith("https://") || query.startsWith("file://")) {
+            displaySuggestions(historyList)
             return
         }
 
         suggestionJob = lifecycleScope.launch(Dispatchers.IO) {
+            val mergedList = historyList.toMutableList()
             try {
                 val endpoint = "https://duckduckgo.com/ac/?q=${Uri.encode(query)}&type=list"
                 val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -1141,21 +1158,24 @@ class MediaHubActivity : AppCompatActivity() {
                     val jsonArr = JSONArray(text)
                     if (jsonArr.length() >= 2) {
                         val suggestionsArr = jsonArr.getJSONArray(1)
-                        val list = mutableListOf<String>()
-                        for (i in 0 until minOf(suggestionsArr.length(), 5)) {
-                            list.add(suggestionsArr.getString(i))
-                        }
-                        withContext(Dispatchers.Main) {
-                            displaySuggestions(list)
+                        for (i in 0 until suggestionsArr.length()) {
+                            if (mergedList.size >= 10) break
+                            val s = suggestionsArr.getString(i)
+                            if (mergedList.none { it.title.equals(s, ignoreCase = true) }) {
+                                mergedList.add(HistorySuggestion(title = s, url = currentSearchEngine.searchUrl + Uri.encode(s), isHistory = false))
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
             }
+            withContext(Dispatchers.Main) {
+                displaySuggestions(mergedList)
+            }
         }
     }
 
-    private fun displaySuggestions(list: List<String>) {
+    private fun displaySuggestions(list: List<HistorySuggestion>) {
         if (list.isEmpty() || !binding.urlInput.hasFocus()) {
             binding.cardSuggestions.visibility = View.GONE
             return
@@ -1168,39 +1188,82 @@ class MediaHubActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+                setPadding((12 * density).toInt(), (9 * density).toInt(), (12 * density).toInt(), (9 * density).toInt())
                 setBackgroundResource(android.R.drawable.list_selector_background)
                 isClickable = true
                 isFocusable = true
             }
 
             val icon = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams((15 * density).toInt(), (15 * density).toInt())
-                setImageResource(R.drawable.ic_search)
-                imageTintList = ColorStateList.valueOf(getColor(R.color.fokk_cyan))
+                layoutParams = LinearLayout.LayoutParams((16 * density).toInt(), (16 * density).toInt())
+                val iconRes = if (item.isHistory) R.drawable.ic_history else R.drawable.ic_search
+                setImageResource(iconRes)
+                imageTintList = ColorStateList.valueOf(
+                    if (item.isHistory) getColor(R.color.secondary) else getColor(R.color.fokk_cyan)
+                )
             }
 
-            val tv = TextView(this).apply {
+            val textLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
                     marginStart = (10 * density).toInt()
                 }
-                text = item
+            }
+
+            val titleTv = TextView(this).apply {
+                text = item.title
                 setTextColor(getColor(R.color.text_primary))
                 textSize = 13f
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+            }
+
+            val urlTv = TextView(this).apply {
+                text = item.url
+                setTextColor(getColor(R.color.text_secondary))
+                textSize = 10.5f
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+            }
+
+            textLayout.addView(titleTv)
+            if (item.isHistory && !item.url.startsWith("fokk://")) {
+                textLayout.addView(urlTv)
             }
 
             row.addView(icon)
-            row.addView(tv)
+            row.addView(textLayout)
+
             row.setOnClickListener {
-                binding.urlInput.setText(item)
                 binding.cardSuggestions.visibility = View.GONE
                 binding.urlInput.clearFocus()
-                val targetUrl = currentSearchEngine.searchUrl + Uri.encode(item)
-                activeWebView?.loadUrl(targetUrl)
+                val target = if (item.url.startsWith("http://") || item.url.startsWith("https://") || item.url.startsWith("file://")) {
+                    item.url
+                } else {
+                    currentSearchEngine.searchUrl + Uri.encode(item.title)
+                }
+                activeWebView?.loadUrl(target)
+                recordHistory(item.title, target)
             }
             binding.layoutSuggestionsList.addView(row)
         }
+
         binding.cardSuggestions.visibility = View.VISIBLE
+    }
+
+    private fun updateUrlBar(url: String?, title: String?) {
+        if (binding.urlInput.hasFocus()) return
+        if (url == null || url.contains("fokk_start.html")) {
+            binding.urlInput.setText("")
+            binding.urlInput.hint = "Search or enter address"
+        } else {
+            try {
+                val host = Uri.parse(url).host ?: url
+                binding.urlInput.setText(host.removePrefix("www."))
+            } catch (e: Exception) {
+                binding.urlInput.setText(url)
+            }
+        }
     }
 
     private fun showSearchEngineDialog() {
@@ -1392,8 +1455,8 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         if (globalIndex == activeTabIndex) {
-            cardBinding.cardTab.strokeColor = getColor(R.color.fokk_cyan)
-            cardBinding.cardTab.strokeWidth = (2 * resources.displayMetrics.density).toInt()
+            cardBinding.cardTab.strokeColor = android.graphics.Color.parseColor("#7C6CF6")
+            cardBinding.cardTab.strokeWidth = (2.5f * resources.displayMetrics.density).toInt()
             cardBinding.badgeActiveTab.visibility = View.VISIBLE
         } else {
             cardBinding.cardTab.strokeColor = getColor(R.color.card_border)

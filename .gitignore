@@ -1,11 +1,19 @@
+# Signing material must be held outside source control and injected by CI.
+*.jks
+*.keystore
+*.p12
+signing.properties
+
+# Android/Gradle generated files
 *.iml
-.gradle
-/local.properties
+.gradle/
+build/
+app/build/
+local.properties
 /.idea/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+/captures/
+.externalNativeBuild/
+.cxx/
 *.apk
 *.aab

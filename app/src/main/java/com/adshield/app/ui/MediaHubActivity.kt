@@ -8,6 +8,8 @@ import android.speech.RecognizerIntent
 import android.app.DownloadManager
 import android.app.PictureInPictureParams
 import android.content.Context
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
@@ -274,8 +276,8 @@ class MediaHubActivity : AppCompatActivity() {
         loadInjectionScript()
         setupControls()
 
-        val initialUrl = intent.getStringExtra(EXTRA_URL) ?: "file:///android_asset/fokk_start.html"
-        addNewTab(initialUrl, isPrivate = false)
+        val initialUrl = intent.getStringExtra(EXTRA_URL)
+        if (initialUrl.isNullOrBlank()) restoreLastSession() else addNewTab(initialUrl, isPrivate = false)
         handleOpenAction(intent)
 
         AppUpdateManager.checkForUpdates(this, manualCheck = false)
@@ -389,6 +391,19 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    /** Minimal, read-only playback bridge exposed to pages so native PiP starts only for media. */
+    class MediaPlaybackBridge(private val activity: MediaHubActivity) {
+        @JavascriptInterface
+        fun onMediaPlaybackChanged(isPlaying: Boolean, hasActiveVideo: Boolean) {
+            activity.runOnUiThread {
+                activity.isMediaPlaying = isPlaying
+                if (isPlaying || hasActiveVideo) {
+                    activity.lastMediaPlayingTime = System.currentTimeMillis()
+                }
+            }
+        }
+    }
+
     
     private val TRACKING_PARAMS = setOf(
         "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
@@ -444,7 +459,7 @@ class MediaHubActivity : AppCompatActivity() {
                     detectedMediaUrl = cleanDirect
                     showDownloadMediaDialog()
                 } else if (isYouTube || isInstagram || isTwitter || isReddit) {
-                    showPlatformDownloadDialog(currentUrl, isYouTube, isInstagram, isTwitter, isReddit)
+                    Toast.makeText(this, "No direct downloadable media stream was found on this page", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
                 }
@@ -456,17 +471,12 @@ class MediaHubActivity : AppCompatActivity() {
         val cleanTitle = rawTitle.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(35) + ".mp4"
 
         if (isYouTube) {
-            val videoId = extractYouTubeVideoId(currentUrl)
             val builder = AlertDialog.Builder(this)
                 .setTitle("Download Video")
-                .setMessage("Save \"${activeTab?.title ?: "YouTube Video"}\"?")
+                .setMessage("Save the media stream detected by this page? Protected or adaptive streams may not be downloadable as one playable file.")
 
             builder.setPositiveButton("Download MP4 Stream") { _, _ ->
                 startDirectMediaDownload(url, cleanTitle)
-            }
-            builder.setNeutralButton("1080p / Audio") { _, _ ->
-                val helperUrl = if (videoId.isNotBlank()) "https://ssyoutube.com/watch?v=$videoId" else "https://ssyoutube.com/"
-                addNewTab(helperUrl, isPrivate = false)
             }
             builder.setNegativeButton("Cancel", null)
             builder.show()
@@ -483,70 +493,13 @@ class MediaHubActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun showPlatformDownloadDialog(currentUrl: String, isYouTube: Boolean, isInstagram: Boolean, isTwitter: Boolean, isReddit: Boolean) {
-        val platformName = when {
-            isYouTube -> "YouTube"
-            isInstagram -> "Instagram"
-            isTwitter -> "X / Twitter"
-            isReddit -> "Reddit"
-            else -> "Web"
-        }
-
-        val builder = AlertDialog.Builder(this)
-            .setTitle("Download $platformName Video")
-            .setMessage("Save video from current page?")
-
-        when {
-            isYouTube -> {
-                val videoId = extractYouTubeVideoId(currentUrl)
-                builder.setPositiveButton("Download Video / Audio") { _, _ ->
-                    val helperUrl = if (videoId.isNotBlank()) "https://y2mate.is/watch?v=$videoId" else "https://y2mate.is/"
-                    addNewTab(helperUrl, isPrivate = false)
-                }
-            }
-            isInstagram -> {
-                builder.setPositiveButton("Download Instagram Media") { _, _ ->
-                    val helperUrl = "https://snapinsta.app/"
-                    addNewTab(helperUrl, isPrivate = false)
-                }
-            }
-            isTwitter -> {
-                builder.setPositiveButton("Download X Video") { _, _ ->
-                    val helperUrl = "https://twdown.net/"
-                    addNewTab(helperUrl, isPrivate = false)
-                }
-            }
-            isReddit -> {
-                builder.setPositiveButton("Download Reddit Video") { _, _ ->
-                    val helperUrl = "https://reddsave.com/"
-                    addNewTab(helperUrl, isPrivate = false)
-                }
-            }
-            else -> {
-                builder.setPositiveButton("Download", null)
-            }
-        }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
-    }
-
-    private fun extractYouTubeVideoId(url: String): String {
-        return try {
-            val uri = Uri.parse(url)
-            if (url.contains("/shorts/")) {
-                uri.lastPathSegment ?: ""
-            } else if (url.contains("youtu.be/")) {
-                uri.lastPathSegment ?: ""
-            } else {
-                uri.getQueryParameter("v") ?: ""
-            }
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
     private fun startDirectMediaDownload(url: String, fileName: String) {
         try {
+            val uri = Uri.parse(url)
+            if (uri.scheme != "https" && uri.scheme != "http") {
+                Toast.makeText(this, "Only direct HTTP(S) media links can be downloaded", Toast.LENGTH_SHORT).show()
+                return
+            }
             val request = DownloadManager.Request(Uri.parse(url)).apply {
                 setTitle(fileName)
                 setDescription("Downloading via Fokk Browser...")
@@ -704,15 +657,22 @@ class MediaHubActivity : AppCompatActivity() {
             useWideViewPort = true
             loadWithOverviewMode = true
             cacheMode = if (isPrivate) WebSettings.LOAD_NO_CACHE else WebSettings.LOAD_DEFAULT
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            // Never broadly allow active HTTP content inside HTTPS pages.
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            allowFileAccess = false
+            allowContentAccess = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = cleanMobileUa
         }
-
-        webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
 
         // Intercept downloads cleanly
         webView.setDownloadListener { downloadUrl, userAgent, contentDisposition, mimetype, _ ->
             try {
+                val downloadUri = Uri.parse(downloadUrl)
+                if (downloadUri.scheme != "https" && downloadUri.scheme != "http") {
+                    Toast.makeText(this, "This download link is not supported", Toast.LENGTH_SHORT).show()
+                    return@setDownloadListener
+                }
                 val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
                     setMimeType(mimetype)
                     addRequestHeader("User-Agent", userAgent)
@@ -747,6 +707,7 @@ class MediaHubActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val reqUrl = request?.url?.toString() ?: return false
                 if (reqUrl.startsWith("http://") || reqUrl.startsWith("https://")) {
+                    setBridgeEnabled(view, reqUrl)
                     val cleanUrl = cleanTrackingParameters(reqUrl)
                     if (cleanUrl != reqUrl) {
                         view?.loadUrl(cleanUrl)
@@ -765,6 +726,8 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, pageUrl, favicon)
+                setBridgeEnabled(view, pageUrl)
+                isShieldEnabled = isShieldEnabledFor(pageUrl)
                 if (view == activeWebView) {
                     binding.progressBar.visibility = View.VISIBLE
                     pageBlockedCount = 0
@@ -810,7 +773,7 @@ class MediaHubActivity : AppCompatActivity() {
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                if (!isShieldEnabled) return super.shouldInterceptRequest(view, request)
+                if (!isShieldEnabledFor(request?.url?.toString())) return super.shouldInterceptRequest(view, request)
 
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
                 val urlStr = request.url.toString().lowercase()
@@ -987,8 +950,10 @@ class MediaHubActivity : AppCompatActivity() {
         val tab = createTab(url, isPrivate)
         tabs.add(tab)
         switchToTab(tabs.size - 1)
+        setBridgeEnabled(tab.webView, url)
         tab.webView.loadUrl(url)
         updateTabCounter()
+        persistSession()
     }
 
     private fun switchToTab(index: Int) {
@@ -1015,6 +980,7 @@ class MediaHubActivity : AppCompatActivity() {
 
         pageBlockedCount = current.blockedAds
         updateTabCounter()
+        persistSession()
     }
 
     private fun closeTab(index: Int) {
@@ -1034,6 +1000,49 @@ class MediaHubActivity : AppCompatActivity() {
 
     private fun updateTabCounter() {
         binding.textTabCount.text = tabs.size.toString()
+    }
+
+    private fun isShieldEnabledFor(url: String?): Boolean {
+        val host = try { Uri.parse(url).host?.lowercase() } catch (_: Exception) { null } ?: return true
+        return host !in prefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty()
+    }
+
+    private fun setShieldEnabledForCurrentSite(enabled: Boolean) {
+        val currentUrl = activeWebView?.url ?: activeTab?.url
+        val host = try { currentUrl?.let { Uri.parse(it).host?.lowercase() } } catch (_: Exception) { null }
+        if (host == null) {
+            Toast.makeText(this, "Open a website to change its shield setting", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val disabled = prefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty().toMutableSet()
+        if (enabled) disabled.remove(host) else disabled.add(host)
+        prefs.edit().putStringSet(PREF_SHIELD_DISABLED_SITES, disabled).apply()
+        isShieldEnabled = enabled
+    }
+
+    private fun persistSession() {
+        val state = JSONArray()
+        tabs.filter { !it.isPrivate }.take(12).forEach { tab ->
+            state.put(JSONObject().put("url", tab.webView.url ?: tab.url).put("desktop", tab.isDesktop))
+        }
+        prefs.edit().putString(PREF_SESSION_TABS, state.toString()).apply()
+    }
+
+    private fun restoreLastSession() {
+        val saved = prefs.getString(PREF_SESSION_TABS, null)
+        try {
+            val items = JSONArray(saved)
+            for (i in 0 until items.length()) {
+                val item = items.getJSONObject(i)
+                val url = item.optString("url")
+                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("file:///android_asset/")) {
+                    addNewTab(url, isPrivate = false)
+                    activeTab?.isDesktop = item.optBoolean("desktop", false)
+                    activeTab?.let { applyDesktopMode(it.webView, it.isDesktop) }
+                }
+            }
+        } catch (_: Exception) { }
+        if (tabs.isEmpty()) addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
     }
 
     private fun injectAdblockScript(webView: WebView?) {
@@ -1065,6 +1074,17 @@ class MediaHubActivity : AppCompatActivity() {
         val customJs = prefs.getString(PREF_CUSTOM_JS, "") ?: ""
         if (customJs.isNotEmpty()) {
             webView.evaluateJavascript(customJs, null)
+        }
+    }
+
+    /** The native bridge is required only by our bundled start page, never by remote content. */
+    private fun setBridgeEnabled(webView: WebView?, url: String?) {
+        if (webView == null) return
+        webView.removeJavascriptInterface("FokkShieldBridge")
+        webView.removeJavascriptInterface("FokkMediaBridge")
+        webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
+        if (url?.startsWith("file:///android_asset/") == true) {
+            webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
         }
     }
 
@@ -1877,7 +1897,7 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
-            isShieldEnabled = isChecked
+            setShieldEnabledForCurrentSite(isChecked)
             sheetBinding.badgeSocialShield.alpha = if (isChecked) 1.0f else 0.4f
             val isAiOn = prefs.getBoolean(PREF_AI_FILTER, true)
             sheetBinding.badgeAiFilter.alpha = if (isChecked && isAiOn) 1.0f else 0.4f
@@ -1922,12 +1942,8 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.rowDownloads.setOnClickListener {
-            try {
-                startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS))
-            } catch (e: Exception) {
-                Toast.makeText(this, "Opening Downloads folder...", Toast.LENGTH_SHORT).show()
-            }
             dialog.dismiss()
+            showDownloadsDialog()
         }
 
         sheetBinding.rowTranslate.setOnClickListener {
@@ -1987,6 +2003,16 @@ class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
+        sheetBinding.rowSitePrivacy.setOnClickListener {
+            dialog.dismiss()
+            showSitePrivacyDialog()
+        }
+
+        sheetBinding.rowReportSite.setOnClickListener {
+            dialog.dismiss()
+            reportBrokenSite()
+        }
+
         sheetBinding.rowSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
             dialog.dismiss()
@@ -2007,6 +2033,78 @@ class MediaHubActivity : AppCompatActivity() {
         WebStorage.getInstance().deleteAllData()
         prefs.edit().remove(PREF_BROWSING_HISTORY).apply()
         Toast.makeText(this, "Browsing history, cache & cookies cleared!", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showDownloadsDialog() {
+        val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val cursor = manager.query(DownloadManager.Query())
+        data class DownloadEntry(val id: Long, val url: String, val title: String, val status: Int, val label: String)
+        val entries = mutableListOf<DownloadEntry>()
+        cursor?.use {
+            val titleCol = it.getColumnIndex(DownloadManager.COLUMN_TITLE)
+            val statusCol = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
+            val idCol = it.getColumnIndex(DownloadManager.COLUMN_ID)
+            val uriCol = it.getColumnIndex(DownloadManager.COLUMN_URI)
+            while (it.moveToNext() && entries.size < 20) {
+                val title = it.getString(titleCol) ?: "Download"
+                val rawStatus = it.getInt(statusCol)
+                val status = when (rawStatus) {
+                    DownloadManager.STATUS_RUNNING -> "Downloading"
+                    DownloadManager.STATUS_PENDING -> "Queued"
+                    DownloadManager.STATUS_SUCCESSFUL -> "Complete"
+                    DownloadManager.STATUS_FAILED -> "Failed"
+                    else -> "Paused"
+                }
+                entries.add(DownloadEntry(it.getLong(idCol), it.getString(uriCol) ?: "", title, rawStatus, "$title — $status"))
+            }
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Downloads")
+            .setItems(if (entries.isEmpty()) arrayOf("No downloads yet") else entries.map { it.label }.toTypedArray()) { _, which ->
+                val entry = entries.getOrNull(which) ?: return@setItems
+                when (entry.status) {
+                    DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING, DownloadManager.STATUS_PAUSED -> {
+                        manager.remove(entry.id)
+                        Toast.makeText(this, "Download cancelled", Toast.LENGTH_SHORT).show()
+                    }
+                    DownloadManager.STATUS_FAILED -> {
+                        if (entry.url.startsWith("https://") || entry.url.startsWith("http://")) {
+                            startDirectMediaDownload(entry.url, entry.title)
+                        }
+                    }
+                }
+            }
+            .setPositiveButton("Open system Downloads") { _, _ -> openSystemDownloads() }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showSitePrivacyDialog() {
+        val url = activeWebView?.url ?: activeTab?.url ?: return
+        val host = Uri.parse(url).host ?: return
+        val shield = if (isShieldEnabledFor(url)) "On" else "Off"
+        AlertDialog.Builder(this)
+            .setTitle("Privacy: $host")
+            .setMessage("Shield: $shield\nThird-party cookies: blocked\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
+            .setPositiveButton("Clear site storage") { _, _ ->
+                WebStorage.getInstance().deleteOrigin("https://$host")
+                WebStorage.getInstance().deleteOrigin("http://$host")
+                activeWebView?.clearFormData()
+                Toast.makeText(this, "Site storage cleared for $host", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun reportBrokenSite() {
+        val url = activeWebView?.url ?: activeTab?.url ?: return
+        val details = "Fokk Browser broken-site report\nURL: $url\nShield: ${if (isShieldEnabledFor(url)) "on" else "off"}\nAndroid: ${Build.VERSION.RELEASE}\nApp: ${AppUpdateManager.getCurrentVersionName(this)}\n\nDescribe what did not work:"
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+            .setPrimaryClip(ClipData.newPlainText("Broken site report", details))
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, details)
+        }, "Send broken-site report"))
     }
 
     override fun onResume() {
@@ -2034,11 +2132,7 @@ class MediaHubActivity : AppCompatActivity() {
         super.onUserLeaveHint()
         val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
         val recentMedia = (System.currentTimeMillis() - lastMediaPlayingTime) < 5000L
-        val isVideoSite = activeTab?.url?.let { url ->
-            url.contains("youtube.com") || url.contains("twitch.tv") || url.contains("vimeo.com")
-        } ?: false
-
-        if (!isStartPage && (isMediaPlaying || recentMedia || (isVideoSite && customView == null) || customView != null)) {
+        if (!isStartPage && (isMediaPlaying || recentMedia || customView != null)) {
             enterPipMode()
         }
     }
@@ -2075,6 +2169,8 @@ class MediaHubActivity : AppCompatActivity() {
             activeWebView?.onResume()
             return
         }
+        // Do not pause the WebView here: Android can call onPause before it reports the
+        // Picture-in-Picture transition, which would leave an audio-only PiP window.
         CookieManager.getInstance().flush()
     }
 
@@ -2145,6 +2241,8 @@ class MediaHubActivity : AppCompatActivity() {
         private const val PREF_CUSTOM_JS = "custom_userscript"
         private const val PREF_CUSTOM_CSS = "custom_usercss"
         private const val PREF_BROWSING_HISTORY = "key_browsing_history_v2"
+        private const val PREF_SESSION_TABS = "key_session_tabs_v1"
+        private const val PREF_SHIELD_DISABLED_SITES = "key_shield_disabled_sites"
         private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
         private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
         private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"

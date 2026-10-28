@@ -7,7 +7,6 @@ import android.content.Context
 import android.graphics.Path
 import android.os.Build
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Rect
 import android.media.AudioManager
 import android.util.Log
@@ -15,7 +14,6 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.adshield.app.AdShieldApp
 import com.adshield.app.model.SelectorSyncManager
-import com.adshield.app.receiver.SpotifyAdMuterReceiver
 
 /**
  * High-performance, 100% glitch-free YouTube Ad Assistant.
@@ -27,7 +25,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
     private var lastSkipClickTime = 0L
     private var lastSocialSkipTime = 0L
     private var lastShortsSkipTime = 0L
-    private val spotifyReceiver = SpotifyAdMuterReceiver()
     private var isAdMuted = false
     private var originalVolume = -1
 
@@ -122,7 +119,11 @@ class YouTubeAdSkipperService : AccessibilityService() {
         super.onServiceConnected()
         try {
             val info = serviceInfo ?: AccessibilityServiceInfo()
-            info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK
+            // Keep this aligned with the XML declaration.  TYPES_ALL_MASK causes needless
+            // wake-ups and made the service inspect unrelated UI changes.
+            info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                AccessibilityEvent.TYPE_VIEW_SCROLLED
             info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
                          AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
@@ -142,18 +143,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", true))
 
         SelectorSyncManager.syncSelectorsAsync()
-
-        // Dynamically register Spotify Ad Muter to ensure persistent 24/7 background operation
-        try {
-            val spotifyFilter = IntentFilter().apply {
-                addAction(SpotifyAdMuterReceiver.ACTION_METADATA_CHANGED)
-                addAction(SpotifyAdMuterReceiver.ACTION_PLAYBACK_STATE_CHANGED)
-            }
-            registerReceiver(spotifyReceiver, spotifyFilter)
-            Log.i(TAG, "Spotify Ad Muter dynamic receiver registered")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to register Spotify receiver dynamically", e)
-        }
 
         Log.i(TAG, "YouTube Ad Skipper connected successfully")
     }
@@ -180,7 +169,9 @@ class YouTubeAdSkipperService : AccessibilityService() {
         val pkg = event.packageName?.toString() ?: ""
         val prefs = AdShieldApp.instance.prefs
 
-        if (pkg.contains("youtube")) {
+        if (pkg == "com.google.android.youtube" ||
+            pkg == "com.google.android.youtube.tv" ||
+            pkg == "com.google.android.apps.youtube.music") {
             val ytEnabled = prefs.getBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, true)
             if (ytEnabled) {
                 handleYouTubeEvent()
@@ -188,7 +179,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
             return
         }
 
-        if (pkg.contains("instagram") || pkg == "com.instagram.android") {
+        if (pkg == "com.instagram.android") {
             val instaEnabled = prefs.getBoolean(AdShieldApp.KEY_INSTAGRAM_SKIPPER_ENABLED, true)
             if (instaEnabled) {
                 handleInstagramEvent()
@@ -405,23 +396,8 @@ class YouTubeAdSkipperService : AccessibilityService() {
             }
         }
 
-        // Fallback: search tree for clips / reel_viewer IDs
-        return hasClipsOrReelsNode(rootNode)
-    }
-
-    private fun hasClipsOrReelsNode(node: AccessibilityNodeInfo?): Boolean {
-        if (node == null) return false
-        val resId = node.viewIdResourceName?.lowercase() ?: ""
-        if ((resId.contains("clips_") || resId.contains("reel_viewer")) && node.isVisibleToUser) {
-            return true
-        }
-        val childCount = node.childCount
-        for (i in 0 until childCount) {
-            val child = node.getChild(i) ?: continue
-            val found = hasClipsOrReelsNode(child)
-            child.recycle()
-            if (found) return true
-        }
+        // Do not use a generic "clips" tree search here. Instagram reuses clips nodes in
+        // feed/navigation layouts, which could otherwise trigger a swipe on Home.
         return false
     }
 
@@ -780,10 +756,6 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
         AdShieldApp.instance.prefs.edit().putBoolean(AdShieldApp.KEY_YT_SKIPPER_ENABLED, false).apply()
         sendBroadcast(Intent(ACTION_YT_STATE_CHANGED).putExtra("enabled", false))
-
-        try {
-            unregisterReceiver(spotifyReceiver)
-        } catch (ignored: Exception) {}
 
         super.onDestroy()
     }

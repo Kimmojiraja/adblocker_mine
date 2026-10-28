@@ -13,32 +13,8 @@
     }
 
     // =========================================================================
-    // 1. YouTube Player Ad Config Stripper (Safe In-Memory Initialization)
+    // 1. YouTube ad controls and sponsored-card suppression
     // =========================================================================
-    function sanitizePlayerResponse(resp) {
-        if (!resp || typeof resp !== 'object') return;
-        try {
-            if (resp.adPlacements && resp.adPlacements.length > 0) resp.adPlacements = [];
-            if (resp.playerAds && resp.playerAds.length > 0) resp.playerAds = [];
-            if (resp.adSlots && resp.adSlots.length > 0) resp.adSlots = [];
-        } catch (e) {}
-    }
-
-    try {
-        let _ytPlayerResp = window.ytInitialPlayerResponse;
-        if (_ytPlayerResp) sanitizePlayerResponse(_ytPlayerResp);
-        Object.defineProperty(window, 'ytInitialPlayerResponse', {
-            get() { return _ytPlayerResp; },
-            set(val) {
-                sanitizePlayerResponse(val);
-                _ytPlayerResp = val;
-            },
-            configurable: true
-        });
-    } catch (e) {}
-
-    // =========================================================================
-    // 2. Video Ad Fast-Forward & Skip (Zero-Lag Engine)
     // =========================================================================
     function checkAndSkipWebAd() {
         const player = document.querySelector('.html5-video-player, #movie_player, ytm-mobile-player');
@@ -48,21 +24,8 @@
         const isAdShowing = isYtAd || genericAdVideo;
 
         if (isAdShowing) {
-            // 1. Instant player API skip if exposed by YouTube
-            if (player && typeof player.skipAd === 'function') {
-                try { player.skipAd(); } catch (e) {}
-            }
-
-            // 2. Fast-forward video instantly at 16x speed with sound muted (no seek to duration to prevent media decoder stall/black screen)
-            const video = (player ? player.querySelector('video') : null) || document.querySelector('.ad-showing video, .ad-interrupting video');
-            if (video) {
-                try {
-                    video.muted = true;
-                    video.playbackRate = 16.0;
-                } catch (e) {}
-            }
-
-            // 3. Trigger all possible skip buttons instantly
+            // Use YouTube's visible skip controls only. Mutating player responses, playback
+            // rate, or media state creates blank frames and breaks legitimate videos.
             const skipBtns = document.querySelectorAll(`
                 .ytp-ad-skip-button,
                 .ytp-ad-skip-button-modern,
@@ -77,19 +40,12 @@
                 button[aria-label*="skip"]
             `);
             skipBtns.forEach(btn => {
-                try {
+                try { if (!btn.dataset.fokkSkipClicked) {
+                    btn.dataset.fokkSkipClicked = '1';
                     btn.click();
                     reportBlocked(1);
-                } catch (e) {}
+                }} catch (e) {}
             });
-        } else {
-            // Ensure normal video playback speed is preserved and not stuck at 16x
-            if (player) {
-                const mainVideo = player.querySelector('video');
-                if (mainVideo && mainVideo.playbackRate > 2.0) {
-                    mainVideo.playbackRate = 1.0;
-                }
-            }
         }
 
         // Hide "Visit Advertiser", companion ads & sponsored chips
@@ -106,6 +62,11 @@
                 .ytm-promoted-sparkles-web-renderer,
                 ytm-mealbar-promo-renderer,
                 ytm-brand-header-renderer,
+                ytd-ad-slot-renderer,
+                ytd-promoted-video-renderer,
+                ytd-compact-promoted-video-renderer,
+                ytd-promoted-sparkles-web-renderer,
+                ytd-display-ad-renderer,
                 [target-id="engagement-panel-ads"],
                 .sparkles-light-cta,
                 .ytm-ad-badge,
@@ -482,7 +443,7 @@
                 const id = (iframe.id || '').toLowerCase();
                 const isAdFrame = src.includes('doubleclick') || src.includes('adservice') || 
                                   src.includes('googlesyndication') || src.includes('googleadservices') ||
-                                  src.includes('ad') || id.includes('google_ads') || id.includes('aswift') ||
+                                  src.includes('/ads/') || src.includes('adserver') || id.includes('google_ads') || id.includes('aswift') ||
                                   id.includes('ad_') || id.includes('gpt');
                 
                 if (isAdFrame || !iframe.src || iframe.src === 'about:blank') {
@@ -507,104 +468,16 @@
     }
 
     // =========================================================================
-    // 5. Anti-Auto-Pause & Background Playback Engine
-    // =========================================================================
-    let lastUserTapTime = 0;
-    ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'].forEach(evt => {
-        window.addEventListener(evt, () => {
-            lastUserTapTime = Date.now();
-        }, { capture: true, passive: true });
-    });
-
-    try {
-        // Blind websites to background / visibility state changes so they cannot pause media
-        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
-        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
-
-        // Stop propagation of visibility events in capture phase
-        const stopVisibilityPropagation = (e) => {
-            e.stopImmediatePropagation();
-        };
-        ['visibilitychange', 'webkitvisibilitychange', 'pagehide', 'blur'].forEach(evt => {
-            window.addEventListener(evt, stopVisibilityPropagation, true);
-            document.addEventListener(evt, stopVisibilityPropagation, true);
-        });
-
-        // Prevent YouTube & media players from attaching visibility change listeners to auto-pause
-        const origAddEventListener = EventTarget.prototype.addEventListener;
-        EventTarget.prototype.addEventListener = function(type, listener, options) {
-            if (type === 'visibilitychange' || type === 'webkitvisibilitychange' || type === 'pagehide') {
-                return;
-            }
-            if (type === 'blur' && (this === window || this === document)) {
-                return;
-            }
-            return origAddEventListener.call(this, type, listener, options);
-        };
-
-        // Discard unwanted background auto-pauses on HTMLMediaElement
-        const origMediaPause = HTMLMediaElement.prototype.pause;
-        HTMLMediaElement.prototype.pause = function(...args) {
-            const isUserTap = (Date.now() - lastUserTapTime) < 600;
-            const inPip = document.documentElement.classList.contains('fokk-pip-active');
-            if (inPip || (!isUserTap && this.currentTime > 0 && !this.ended)) {
-                // Background auto-pause discarded - keep video & audio playing!
-                return;
-            }
-            return origMediaPause.apply(this, args);
-        };
-    } catch (e) {}
-
-    // =========================================================================
-    // 6. Media Playback State Reporter & Universal PiP Controllers
+    // 5. Media Playback State Reporter & native PiP coordination
     // =========================================================================
     window.__fokk_enter_pip_view = function() {
         document.documentElement.classList.add('fokk-pip-active');
-        const video = document.querySelector('video');
-        if (video) {
-            video.play().catch(() => {});
-        }
     };
 
     window.__fokk_exit_pip_view = function() {
         document.documentElement.classList.remove('fokk-pip-active');
-        const video = document.querySelector('video');
-        if (video) {
-            window.dispatchEvent(new Event('resize'));
-            if (video.paused && !video.ended && video.currentTime > 0) {
-                video.play().catch(() => {});
-            }
-        }
+        window.dispatchEvent(new Event('resize'));
     };
-
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            window.__fokk_exit_pip_view();
-            window.dispatchEvent(new Event('resize'));
-        }
-    });
-
-    window.addEventListener('focus', () => {
-        window.__fokk_exit_pip_view();
-        window.dispatchEvent(new Event('resize'));
-    });
-
-    window.addEventListener('pageshow', () => {
-        window.__fokk_exit_pip_view();
-        window.dispatchEvent(new Event('resize'));
-    });
-
-    // Continuous PiP Playback Watchdog
-    setInterval(() => {
-        if (document.documentElement.classList.contains('fokk-pip-active')) {
-            const v = document.querySelector('video');
-            if (v && v.paused && v.currentTime > 0 && !v.ended) {
-                v.play().catch(() => {});
-            }
-        }
-    }, 300);
 
     // =========================================================================
     // 7. Universal Cookie Banner & "Read on App" Nags Suppressor
@@ -679,8 +552,8 @@
 
     function notifyNativePlayback(isPlaying, hasActiveVideo) {
         try {
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onMediaPlaybackChanged === 'function') {
-                window.FokkShieldBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
+            if (window.FokkMediaBridge && typeof window.FokkMediaBridge.onMediaPlaybackChanged === 'function') {
+                window.FokkMediaBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
             }
         } catch (e) {}
     }
@@ -1155,13 +1028,18 @@
     // 9. Sub-millisecond MutationObserver for instant ad skip & cosmetic collapse
     // =========================================================================
     try {
+        let pendingSweep = false;
         const observer = new MutationObserver(() => {
+            if (pendingSweep) return;
+            pendingSweep = true;
+            setTimeout(() => { pendingSweep = false;
             checkAndSkipWebAd();
             collapseEmptyAdBoxes();
             dismissCookieWallsAndNags();
             scrubSocialAndAi();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
             sniffMediaSources();
+            }, 120);
         });
         observer.observe(document.documentElement, {
             childList: true,
@@ -1178,7 +1056,7 @@
         dismissCookieWallsAndNags();
         scrubSocialAndAi();
         sniffMediaSources();
-    }, 350);
+    }, 2000);
 
     // Initial pass on DOMContentLoaded
     if (document.readyState === 'loading') {

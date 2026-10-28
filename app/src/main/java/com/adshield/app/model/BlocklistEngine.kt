@@ -10,7 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 class BlocklistEngine(private val context: Context) {
 
     private val blockedDomains = ConcurrentHashMap.newKeySet<String>()
+    private val coreBlockedDomains = ConcurrentHashMap.newKeySet<String>()
     private val whitelistDomains = ConcurrentHashMap.newKeySet<String>()
+    private val customBlockedDomains = ConcurrentHashMap.newKeySet<String>()
+    private val customWhitelistDomains = ConcurrentHashMap.newKeySet<String>()
     private val isReady = AtomicBoolean(false)
 
     fun initialize() {
@@ -28,6 +31,7 @@ class BlocklistEngine(private val context: Context) {
                         val trimmed = line.trim().lowercase()
                         if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
                             blockedDomains.add(trimmed)
+                            coreBlockedDomains.add(trimmed)
                             count++
                         }
                         line = reader.readLine()
@@ -51,8 +55,10 @@ class BlocklistEngine(private val context: Context) {
         val customBlacklist = prefs.getStringSet("custom_blacklist", emptySet()) ?: emptySet()
         val customWhitelist = prefs.getStringSet("custom_whitelist", emptySet()) ?: emptySet()
 
-        blockedDomains.addAll(customBlacklist.map { it.lowercase() })
-        whitelistDomains.addAll(customWhitelist.map { it.lowercase() })
+        customBlockedDomains.addAll(customBlacklist.map(::normalizeDomain).filter { it.isNotEmpty() })
+        customWhitelistDomains.addAll(customWhitelist.map(::normalizeDomain).filter { it.isNotEmpty() })
+        blockedDomains.addAll(customBlockedDomains)
+        whitelistDomains.addAll(customWhitelistDomains)
     }
 
     private val essentialWhitelist = setOf(
@@ -75,7 +81,7 @@ class BlocklistEngine(private val context: Context) {
     fun isDomainBlocked(rawDomain: String): Boolean {
         if (!isReady.get()) return false
 
-        val domain = rawDomain.lowercase().trimEnd('.')
+        val domain = normalizeDomain(rawDomain)
         if (domain.isEmpty()) return false
 
         // 1. User custom whitelist takes absolute priority
@@ -109,37 +115,56 @@ class BlocklistEngine(private val context: Context) {
     }
 
     fun addCustomBlockedDomain(domain: String) {
-        val normalized = domain.trim().lowercase()
+        val normalized = normalizeDomain(domain)
         if (normalized.isNotEmpty()) {
             blockedDomains.add(normalized)
             whitelistDomains.remove(normalized)
+            customBlockedDomains.add(normalized)
+            customWhitelistDomains.remove(normalized)
             saveCustomRules()
         }
     }
 
     fun addCustomWhitelistedDomain(domain: String) {
-        val normalized = domain.trim().lowercase()
+        val normalized = normalizeDomain(domain)
         if (normalized.isNotEmpty()) {
             whitelistDomains.add(normalized)
-            blockedDomains.remove(normalized)
+            // Keep the core rule in memory. The whitelist takes precedence while it is
+            // enabled and removing it must reliably restore the bundled protection.
+            if (!coreBlockedDomains.contains(normalized)) blockedDomains.remove(normalized)
+            customWhitelistDomains.add(normalized)
+            customBlockedDomains.remove(normalized)
             saveCustomRules()
         }
     }
 
     fun removeCustomRule(domain: String) {
-        val normalized = domain.trim().lowercase()
-        blockedDomains.remove(normalized)
+        val normalized = normalizeDomain(domain)
+        if (coreBlockedDomains.contains(normalized)) {
+            blockedDomains.add(normalized)
+        } else {
+            blockedDomains.remove(normalized)
+        }
         whitelistDomains.remove(normalized)
+        customBlockedDomains.remove(normalized)
+        customWhitelistDomains.remove(normalized)
         saveCustomRules()
     }
 
     private fun saveCustomRules() {
         val prefs = context.getSharedPreferences("adshield_custom_rules", Context.MODE_PRIVATE)
         prefs.edit()
-            .putStringSet("custom_blacklist", blockedDomains)
-            .putStringSet("custom_whitelist", whitelistDomains)
+            .putStringSet("custom_blacklist", customBlockedDomains)
+            .putStringSet("custom_whitelist", customWhitelistDomains)
             .apply()
     }
+
+    private fun normalizeDomain(value: String): String = value.trim().lowercase()
+        .removePrefix("https://")
+        .removePrefix("http://")
+        .substringBefore('/')
+        .substringBefore(':')
+        .trimEnd('.')
 
     fun getLoadedCount(): Int = blockedDomains.size
 

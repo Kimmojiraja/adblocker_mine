@@ -31,6 +31,17 @@ class YouTubeAdSkipperService : AccessibilityService() {
     private var isAdMuted = false
     private var originalVolume = -1
 
+    // LRU Cache of recently skipped ad signatures: key is ad signature, value is timestamp
+    // Allows users to return to any previously skipped ad, stay on it indefinitely, or scroll back past it
+    private val skippedAdSignatures = object : LinkedHashMap<String, Long>(200, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>?): Boolean {
+            return size > 200
+        }
+    }
+
+    private var lastScrollTime = 0L
+    private var isNavigatingBackwards = false
+
     // Verified view IDs for the official Skip Ad button in YouTube
     private val skipButtonResourceIds = listOf(
         "com.google.android.youtube:id/skip_ad_button",
@@ -60,6 +71,30 @@ class YouTubeAdSkipperService : AccessibilityService() {
         "Skip Ad",
         "Skip ad",
         "Skip ads"
+    )
+
+    // Commercial CTA button texts that distinguish sponsored reels/shorts ads from organic content
+    private val adCtaTexts = listOf(
+        "shop now",
+        "book now",
+        "apply now",
+        "install now",
+        "install",
+        "learn more",
+        "sign up",
+        "get offer",
+        "claim offer",
+        "order now",
+        "download",
+        "download now",
+        "contact us",
+        "get quote",
+        "listen now",
+        "play game",
+        "watch more",
+        "open link",
+        "visit website",
+        "visit instagram profile"
     )
 
     // Interactive panels that should NEVER be touched (Comments, Playlists, Queues)
@@ -127,6 +162,22 @@ class YouTubeAdSkipperService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
+        // Detect user scroll direction to prevent auto-skipping when scrolling backwards
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val deltaY = event.scrollDeltaY
+                if (deltaY < 0) {
+                    // Swiping down to scroll back up
+                    isNavigatingBackwards = true
+                    lastScrollTime = System.currentTimeMillis()
+                } else if (deltaY > 0) {
+                    // Swiping up to scroll forward
+                    isNavigatingBackwards = false
+                    lastScrollTime = System.currentTimeMillis()
+                }
+            }
+        }
+
         val pkg = event.packageName?.toString() ?: ""
         val prefs = AdShieldApp.instance.prefs
 
@@ -190,19 +241,33 @@ class YouTubeAdSkipperService : AccessibilityService() {
 
     private fun handleYouTubeShortsAd(rootNode: AccessibilityNodeInfo): Boolean {
         if (!isYouTubeShortsActive(rootNode)) return false
+        if (!isYouTubeShortsAdPresent(rootNode)) return false
+
+        val adSignature = extractYouTubeShortsSignature(rootNode)
+
+        // Check if this Short ad was already skipped previously
+        // If user scrolled back to it, allow them to view and spend any amount of time
+        if (isAlreadySkipped(adSignature)) {
+            Log.d(TAG, "Shorts ad was already skipped ($adSignature). User returned to it. Permitting user to stay and navigate freely.")
+            return false
+        }
 
         val now = System.currentTimeMillis()
+        if (isNavigatingBackwards && now - lastScrollTime < 1500L) {
+            Log.d(TAG, "User navigated backwards into Shorts ad ($adSignature). Permitting view.")
+            markAdSkipped(adSignature)
+            return false
+        }
+
         if (now - lastShortsSkipTime < 400L) return true // Throttle to prevent multi-swipe
 
-        if (isYouTubeShortsAdPresent(rootNode)) {
-            lastShortsSkipTime = now
-            dispatchFastSwipeUpGesture()
-            AdShieldApp.instance.incrementSkippedYouTubeAds()
-            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-            Log.i(TAG, "Fast-swiped past Sponsored YouTube Short")
-            return true
-        }
-        return false
+        markAdSkipped(adSignature)
+        lastShortsSkipTime = now
+        dispatchFastSwipeUpGesture()
+        AdShieldApp.instance.incrementSkippedYouTubeAds()
+        sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+        Log.i(TAG, "Fast-swiped past Sponsored YouTube Short ($adSignature)")
+        return true
     }
 
     private fun isYouTubeShortsActive(rootNode: AccessibilityNodeInfo): Boolean {
@@ -232,17 +297,20 @@ class YouTubeAdSkipperService : AccessibilityService() {
             val desc = node.contentDescription?.toString()?.lowercase()?.trim() ?: ""
             val resId = node.viewIdResourceName?.lowercase() ?: ""
 
-            val isAd = (
-                text == "sponsored" || text == "ad ·" || text == "ad" ||
-                text.startsWith("sponsored ·") || text == "install now" || text == "shop now" ||
-                desc == "sponsored" || desc == "ad ·" || desc == "ad" ||
-                desc.startsWith("sponsored") ||
-                resId.contains("reel_player_ad_badge") || resId.contains("reel_ad_call_to_action") ||
-                resId.contains("reel_player_ad_view") || resId.contains("ad_badge") ||
-                resId.contains("modern_ad_badge")
+            val hasAdText = (
+                text == "ad" || text == "ad ·" || text == "sponsored" || text.startsWith("sponsored ·") ||
+                desc == "ad" || desc == "ad ·" || desc == "sponsored" || desc.startsWith("sponsored")
             )
 
-            if (isAd && node.isVisibleToUser) {
+            val hasCta = adCtaTexts.any { cta -> text == cta || desc == cta }
+
+            val hasAdId = (
+                resId.contains("reel_player_ad_badge") || resId.contains("reel_ad_call_to_action") ||
+                resId.contains("reel_player_ad_view") || resId.contains("ad_badge") ||
+                resId.contains("modern_ad_badge") || resId.contains("ad_attribution")
+            )
+
+            if ((hasAdText || hasCta || hasAdId) && node.isVisibleToUser) {
                 return true
             }
 
@@ -267,16 +335,37 @@ class YouTubeAdSkipperService : AccessibilityService() {
                 return
             }
 
+            if (!isInstagramReelAdPresent(rootNode)) {
+                return
+            }
+
+            // Extract unique signature for this ad (advertiser handle + CTA + caption)
+            val adSignature = extractInstagramAdSignature(rootNode)
+
+            // Check if this ad was already auto-skipped
+            // If the user navigated backwards to view it, DO NOT SKIP! Allow user to view and spend any time.
+            if (isAlreadySkipped(adSignature)) {
+                Log.d(TAG, "Ad was already skipped ($adSignature). User returned to it. Permitting user to stay and navigate freely.")
+                return
+            }
+
+            // If user just scrolled backwards, do not auto-skip forward
             val now = System.currentTimeMillis()
+            if (isNavigatingBackwards && now - lastScrollTime < 1500L) {
+                Log.d(TAG, "User navigated backwards into ad ($adSignature). Permitting user to view and navigate.")
+                markAdSkipped(adSignature)
+                return
+            }
+
             if (now - lastSocialSkipTime < 350L) return
 
-            if (isInstagramReelAdPresent(rootNode)) {
-                lastSocialSkipTime = now
-                dispatchFastSwipeUpGesture()
-                AdShieldApp.instance.incrementSkippedSocialAds()
-                sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
-                Log.i(TAG, "Fast-swiped past Sponsored Instagram Reel")
-            }
+            // Record this ad as skipped so user can return to it anytime without being forced forward
+            markAdSkipped(adSignature)
+            lastSocialSkipTime = now
+            dispatchFastSwipeUpGesture()
+            AdShieldApp.instance.incrementSkippedSocialAds()
+            sendBroadcast(Intent(ACTION_YT_AD_SKIPPED))
+            Log.i(TAG, "Fast-swiped past Sponsored Instagram Reel ($adSignature)")
         } catch (e: Exception) {
             Log.e(TAG, "Error handling Instagram event", e)
         } finally {
@@ -285,20 +374,15 @@ class YouTubeAdSkipperService : AccessibilityService() {
     }
 
     private fun isInstagramReelsActive(rootNode: AccessibilityNodeInfo): Boolean {
-        // If home feed header or main feed recycler is visible, user is on home screen feed -> do not scroll
-        val homeHeaderIds = listOf(
-            "com.instagram.android:id/action_bar_title",
-            "com.instagram.android:id/action_bar_logo",
-            "com.instagram.android:id/feed_recycler_view",
-            "com.instagram.android:id/row_feed_profile_header"
-        )
-        for (id in homeHeaderIds) {
-            val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
-            if (!nodes.isNullOrEmpty()) {
-                val hasVisible = nodes.any { it.isVisibleToUser }
-                recycleNodes(nodes)
-                if (hasVisible) return false
+        // If top Instagram action bar title/wordmark is visible, user is on home screen feed -> do not scroll
+        val homeTopBar = rootNode.findAccessibilityNodeInfosByViewId("com.instagram.android:id/action_bar_title")
+        if (!homeTopBar.isNullOrEmpty()) {
+            val hasVisible = homeTopBar.any {
+                it.isVisibleToUser && (it.text?.toString()?.equals("Instagram", ignoreCase = true) == true ||
+                                       it.contentDescription?.toString()?.contains("Instagram", ignoreCase = true) == true)
             }
+            recycleNodes(homeTopBar)
+            if (hasVisible) return false
         }
 
         // Check for Reels containers
@@ -310,7 +394,8 @@ class YouTubeAdSkipperService : AccessibilityService() {
             "com.instagram.android:id/clips_overlay_container",
             "com.instagram.android:id/clips_author_container",
             "com.instagram.android:id/reel_viewer_tall_container",
-            "com.instagram.android:id/clips_swipe_refresh_layout"
+            "com.instagram.android:id/clips_swipe_refresh_layout",
+            "com.instagram.android:id/root_clips_layout"
         )
         for (id in reelsIds) {
             val nodes = rootNode.findAccessibilityNodeInfosByViewId(id)
@@ -348,14 +433,27 @@ class YouTubeAdSkipperService : AccessibilityService() {
             val desc = node.contentDescription?.toString()?.lowercase()?.trim() ?: ""
             val resId = node.viewIdResourceName?.lowercase() ?: ""
 
-            val isAd = (
-                text == "sponsored" || text.startsWith("sponsored ·") || text.contains("paid partnership") ||
-                desc == "sponsored" || desc.startsWith("sponsored") || desc.contains("paid partnership") ||
-                resId.contains("sponsored_badge") || resId.contains("promoted_badge") ||
-                resId.contains("reel_ad") || resId.contains("clips_sponsored")
+            // Checks for explicit "Ad" badge, "Sponsored", or "Paid partnership"
+            val hasAdText = (
+                text == "ad" || text == "sponsored" || text.startsWith("sponsored ·") ||
+                text.startsWith("ad ·") || text.contains("paid partnership") ||
+                desc == "ad" || desc == "sponsored" || desc.startsWith("sponsored") ||
+                desc.startsWith("ad ·") || desc.contains("paid partnership")
             )
 
-            if (isAd && node.isVisibleToUser) {
+            // Checks for commercial Call-To-Action buttons that never appear on organic reels
+            val hasCta = adCtaTexts.any { cta -> text == cta || desc == cta }
+
+            // Checks for ad-specific view IDs
+            val hasAdId = (
+                resId.contains("sponsored_badge") || resId.contains("promoted_badge") ||
+                resId.contains("reel_ad") || resId.contains("clips_sponsored") ||
+                resId.contains("action_bar_ad_label") || resId.contains("ad_action_badge") ||
+                resId.contains("sponsored_label") || resId.contains("ad_cta_button") ||
+                resId.contains("reel_viewer_cta_button")
+            )
+
+            if ((hasAdText || hasCta || hasAdId) && node.isVisibleToUser) {
                 return true
             }
 
@@ -370,6 +468,64 @@ class YouTubeAdSkipperService : AccessibilityService() {
             return false
         }
         return false
+    }
+
+    private fun isAlreadySkipped(signature: String): Boolean {
+        synchronized(skippedAdSignatures) {
+            val timestamp = skippedAdSignatures[signature] ?: return false
+            val now = System.currentTimeMillis()
+            if (now - timestamp > 15 * 60 * 1000L) { // Expire after 15 minutes
+                skippedAdSignatures.remove(signature)
+                return false
+            }
+            return true
+        }
+    }
+
+    private fun markAdSkipped(signature: String) {
+        synchronized(skippedAdSignatures) {
+            skippedAdSignatures[signature] = System.currentTimeMillis()
+        }
+    }
+
+    private fun extractInstagramAdSignature(rootNode: AccessibilityNodeInfo): String {
+        val texts = mutableListOf<String>()
+        collectSignificantTexts(rootNode, texts)
+        return if (texts.isNotEmpty()) {
+            texts.take(4).joinToString("|")
+        } else {
+            "ig_ad_${System.currentTimeMillis() / 10000}"
+        }
+    }
+
+    private fun extractYouTubeShortsSignature(rootNode: AccessibilityNodeInfo): String {
+        val texts = mutableListOf<String>()
+        collectSignificantTexts(rootNode, texts)
+        return if (texts.isNotEmpty()) {
+            texts.take(4).joinToString("|")
+        } else {
+            "yt_shorts_ad_${System.currentTimeMillis() / 10000}"
+        }
+    }
+
+    private fun collectSignificantTexts(node: AccessibilityNodeInfo?, out: MutableList<String>) {
+        if (node == null || out.size >= 8) return
+        try {
+            val text = node.text?.toString()?.trim()
+            if (!text.isNullOrEmpty() && text.length >= 2) {
+                val lower = text.lowercase()
+                val ignoredWords = setOf("follow", "following", "reels", "audio", "original audio", "like", "comment", "share")
+                if (!ignoredWords.contains(lower)) {
+                    out.add(lower.take(40))
+                }
+            }
+            val count = node.childCount
+            for (i in 0 until count) {
+                val child = node.getChild(i) ?: continue
+                collectSignificantTexts(child, out)
+                child.recycle()
+            }
+        } catch (ignored: Exception) {}
     }
 
     private fun dispatchFastSwipeUpGesture() {

@@ -1,6 +1,6 @@
 {
-  "versionCode": 40,
-  "versionName": "1.0.40",
+  "versionCode": 41,
+  "versionName": "1.0.41",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- YouTube Shorts Auto-Skipping: Automatically fast-swipes sponsored Shorts and advertiser placements in the official YouTube app.\n- Accelerated Instagram Reels Ad Skipping: Ultra-fast 90ms swipe gesture with 350ms response time for sponsored Instagram Reels.\n- Feed Purity: Eliminated timeline auto-scrolling on Instagram home feed, X, and Reddit, focusing exclusively on full-screen short-form video feeds."
+  "changelog": "- Static & Carousel Ad Detection: Added detection for 'Ad' badges and commercial CTA buttons (Shop Now, Book Now, Apply Now, Install Now) across Instagram Reels and YouTube Shorts.\n- Free Back Navigation: Previously skipped ads are recorded in an LRU memory cache, allowing users to scroll back freely through any number of reels/shorts.\n- Zero-Interference Re-visits: When navigating back into an ad, users can stay and view the ad indefinitely without forced forward skipping."
 }

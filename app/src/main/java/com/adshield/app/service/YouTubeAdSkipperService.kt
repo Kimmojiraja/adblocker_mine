@@ -125,8 +125,7 @@ class YouTubeAdSkipperService : AccessibilityService() {
             info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK
             info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
-                         AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
-                         AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+                         AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
             info.packageNames = arrayOf(
                 "com.google.android.youtube",
                 "com.google.android.youtube.tv",

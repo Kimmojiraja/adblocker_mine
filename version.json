@@ -1,6 +1,6 @@
 {
-  "versionCode": 41,
-  "versionName": "1.0.41",
+  "versionCode": 42,
+  "versionName": "1.0.42",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Static & Carousel Ad Detection: Added detection for 'Ad' badges and commercial CTA buttons (Shop Now, Book Now, Apply Now, Install Now) across Instagram Reels and YouTube Shorts.\n- Free Back Navigation: Previously skipped ads are recorded in an LRU memory cache, allowing users to scroll back freely through any number of reels/shorts.\n- Zero-Interference Re-visits: When navigating back into an ad, users can stay and view the ad indefinitely without forced forward skipping."
+  "changelog": "- Security Hardening & Play Protect Compatibility: Removed REQUEST_INSTALL_PACKAGES and deprecated biometric permissions; purged invasive accessibility flags to eliminate false-positive fraud flags."
 }

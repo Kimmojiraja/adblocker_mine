@@ -63,6 +63,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 import java.util.UUID
 
 class MediaHubActivity : AppCompatActivity() {

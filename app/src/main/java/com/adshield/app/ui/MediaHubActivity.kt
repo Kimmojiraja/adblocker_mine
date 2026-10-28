@@ -1314,6 +1314,25 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun openSystemDownloads() {
+        try {
+            startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    val uri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path)
+                    setDataAndType(uri, "*/*")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Toast.makeText(this, "Downloads folder: Download/", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun showSearchEngineDialog() {
         val engines = SearchEngine.values()
         val items = engines.map { it.displayName }.toTypedArray()
@@ -1759,10 +1778,10 @@ class MediaHubActivity : AppCompatActivity() {
             saveCurrentPage()
         }
 
-        // 5. Downloads button
+        // 5. Downloads button (opens standard downloads manager)
         sheetBinding.btnMenuDownloads.setOnClickListener {
             dialog.dismiss()
-            showDownloadMediaDialog()
+            openSystemDownloads()
         }
 
         // Saved Pages row

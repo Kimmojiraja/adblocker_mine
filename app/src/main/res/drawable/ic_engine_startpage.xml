@@ -3,10 +3,20 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- Blue Rounded Background Disc -->
     <path
-        android:fillColor="#5364FF"
-        android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z M12,5 C15.87,5 19,8.13 19,12 C19,15.87 15.87,19 12,19 C8.13,19 5,15.87 5,12 C5,8.13 8.13,5 12,5 Z M12,7.5 C9.51,7.5 7.5,9.51 7.5,12 C7.5,14.49 9.51,16.5 12,16.5 C14.49,16.5 16.5,14.49 16.5,12 C16.5,9.51 14.49,7.5 12,7.5 Z" />
+        android:fillColor="#0033CC"
+        android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z" />
+    <!-- Inner Lens Left -->
+    <path
+        android:fillColor="#4353FF"
+        android:pathData="M10,7 C7.79,7 6,8.79 6,11 C6,13.21 7.79,15 10,15 C12.21,15 14,13.21 14,11 C14,8.79 12.21,7 10,7 Z" />
+    <!-- Inner Lens Right / Overlap in White -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M11,9.5 L14,12 L11,14.5 Z" />
+        android:pathData="M14,9 C12.9,9 12,9.9 12,11 C12,12.1 12.9,13 14,13 C15.1,13 16,12.1 16,11 C16,9.9 15.1,9 14,9 Z" />
+    <!-- Search Magnifying Handle in White -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15.5,14.5 L18.5,17.5 L17.5,18.5 L14.5,15.5 Z" />
 </vector>

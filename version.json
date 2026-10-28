@@ -1,6 +1,6 @@
 {
-  "versionCode": 35,
-  "versionName": "1.0.35",
+  "versionCode": 36,
+  "versionName": "1.0.36",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
-  "changelog": "• Dynamic Engine Brand Logos & Hints: Dedicated vector brand logos for Google, Brave, DuckDuckGo, and Startpage. Automatically displays active engine in top input card and hint, with permanent persistence across app restarts.\n• Three-Dots Quick Navigation Bar: Integrated Back, Forward, Home, Save Page, and Downloads buttons in a single toolbar above the protection card with smart page-state dimming.\n• Biometric Lock Security Fix: Mandatory fingerprint or PIN verification before allowing private tab lock to be disabled.\n• Save Page & Offline Reading: Added 1-tap web page archiving (.mhtml) and bookmarks list.\n• Modernized 3-Dots Menu: Upgraded all accents from legacy cyan to modern Firefox mobile purple (#7C6CF6)."
+  "changelog": "- Authentic Search Engine Vectors: Redesigned official brand logos for Brave (faceted lion head), DuckDuckGo (Dax with bow tie), and Startpage (royal blue disc with search lenses).\n- Standard Downloads Manager: Quick-action downloads button in 3-dots menu now launches the system Downloads manager.\n- Neutral Professional Menu Theme: Replaced legacy neon blue/cyan tints across menu rows with clean, standard neutral icons and typography.\n- Polished Homepage Speed Dials: Removed pinned badge from Wikipedia with high-contrast icon; refreshed Instagram tile with authentic gradient camera emblem."
 }

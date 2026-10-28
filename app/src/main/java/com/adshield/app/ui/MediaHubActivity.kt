@@ -371,7 +371,7 @@ class MediaHubActivity : AppCompatActivity() {
                     return '';
                 })();""".trimIndent()
             ) { directSrc ->
-                val cleanDirect = directSrc?.trim('"', ''') ?: ""
+                val cleanDirect = directSrc?.replace("\"", "")?.replace("'", "")?.trim() ?: ""
                 if (cleanDirect.isNotBlank() && cleanDirect != "null" && !cleanDirect.startsWith("blob:")) {
                     detectedMediaUrl = cleanDirect
                     showDownloadMediaDialog()

@@ -913,12 +913,49 @@
     function scrubAiOverviewsAndWidgets() {
         const host = window.location.hostname;
         if (host.includes('google.')) {
+            // 1. Text-based card detector for Google Mobile AI Overview (matches "✦ AI Overview" & "AI Overview")
+            const headings = document.querySelectorAll('h1, h2, h3, span, div, button, [role="heading"]');
+            for (let i = 0; i < headings.length; i++) {
+                const el = headings[i];
+                const text = el.textContent ? el.textContent.trim() : '';
+                if (text === 'AI Overview' || text === '✦ AI Overview' || text.startsWith('AI Overview') || text.startsWith('✦ AI Overview') || (text.includes('AI Overview') && text.length < 30)) {
+                    // Find outer search result card container
+                    const container = el.closest('[data-hveid], .MjjYud, [data-sokoban-container], .g, [jscontroller], div[data-attrid], div.wDYxhc');
+                    if (container && container !== document.body && container !== document.documentElement &&
+                        !container.id?.includes('rcnt') && !container.id?.includes('center_col') && !container.id?.includes('rso')) {
+                        container.style.setProperty('display', 'none', 'important');
+                        container.style.setProperty('height', '0px', 'important');
+                        container.style.setProperty('min-height', '0px', 'important');
+                        container.style.setProperty('margin', '0px', 'important');
+                        container.style.setProperty('padding', '0px', 'important');
+                        container.style.setProperty('visibility', 'hidden', 'important');
+                        container.style.setProperty('pointer-events', 'none', 'important');
+                        if (!container.__fokk_counted) {
+                            container.__fokk_counted = true;
+                            reportBlocked(1);
+                        }
+                    }
+                }
+            }
+
+            // 2. Hide "AI Mode" tab from mobile search header chips
+            const tabs = document.querySelectorAll('div[role="tab"], a[role="tab"], div[role="listitem"]');
+            for (let i = 0; i < tabs.length; i++) {
+                const t = tabs[i];
+                const txt = t.textContent ? t.textContent.trim() : '';
+                if (txt === 'AI Mode' || txt.includes('AI Mode')) {
+                    t.style.setProperty('display', 'none', 'important');
+                }
+            }
+
+            // 3. Known Google AI Overview selector fallbacks
             const aiBlocks = document.querySelectorAll(`
                 #O26Dg,
                 div[data-attrid*="ai_overview"],
                 div[data-attrid="wa:/description"],
-                div[aria-label="AI Overview"],
+                div[aria-label*="AI Overview"],
                 div[data-md*="ai_overview"],
+                div[data-attrid="SGE_Search"],
                 .g-blk[data-hveid]
             `);
             aiBlocks.forEach(el => {
@@ -927,6 +964,7 @@
                 el.style.setProperty('margin', '0px', 'important');
                 el.style.setProperty('padding', '0px', 'important');
                 el.style.setProperty('visibility', 'hidden', 'important');
+                el.style.setProperty('pointer-events', 'none', 'important');
                 if (!el.__fokk_counted) {
                     el.__fokk_counted = true;
                     reportBlocked(1);

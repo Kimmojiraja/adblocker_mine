@@ -1,6 +1,6 @@
 {
-  "versionCode": 37,
-  "versionName": "1.0.37",
+  "versionCode": 38,
+  "versionName": "1.0.38",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/app-debug.apk",
-  "changelog": "- Social Media Ad Shield: Advanced multi-layer defense for Instagram, X (Twitter), and Reddit. Intercepts API timeline feeds at document_start to prune promoted tweets and sponsored posts; real-time DOM scrubber eliminates sponsored feed elements with zero layout shift.\n- AI Overviews & Slop Filter: Eliminates Google Search AI Overviews, Meta AI prompts on Instagram, Grok drawer and trend cards on X, and Reddit AI summaries.\n- Extended Tracking Blocklist: Added social ad telemetry endpoints and mass-generated AI content mill domains.\n- Menu Defense Indicators: Real-time Social Shield and AI Filter active status badges in browser menu."
+  "changelog": "- Google Mobile AI Overview Fix: Deep heading-tree card detector eliminates mobile Google Search AI Overviews (including sparkle badges and AI Mode chips) directly from search results.\n- Social Media Ad Shield: Real-time stream and DOM scrubbing for Instagram, X (Twitter), and Reddit.\n- Core Blocklist: Added social ad telemetry and automated AI spam content mill domains."
 }

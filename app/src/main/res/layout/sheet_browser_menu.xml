@@ -20,13 +20,80 @@
             android:layout_marginBottom="14dp"
             android:background="#2B3648" />
 
+        <!-- Quick Action Navigation Toolbar Row (Back, Forward, Home, Save, Downloads) -->
+        <LinearLayout
+            android:id="@+id/layoutMenuQuickNav"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_search_pill"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="6dp">
+
+            <!-- 1. Back Arrow -->
+            <ImageButton
+                android:id="@+id/btnMenuBack"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="@color/text_primary"
+                android:contentDescription="Go Back" />
+
+            <!-- 2. Forward Arrow -->
+            <ImageButton
+                android:id="@+id/btnMenuForward"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_forward"
+                app:tint="@color/text_primary"
+                android:contentDescription="Go Forward" />
+
+            <!-- 3. Home Button -->
+            <ImageButton
+                android:id="@+id/btnMenuHome"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_home"
+                app:tint="#7C6CF6"
+                android:contentDescription="Go Home" />
+
+            <!-- 4. Save Page Button -->
+            <ImageButton
+                android:id="@+id/btnMenuSave"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_bookmark"
+                app:tint="@color/text_primary"
+                android:contentDescription="Save Page" />
+
+            <!-- 5. Downloads Button -->
+            <ImageButton
+                android:id="@+id/btnMenuDownloads"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_download"
+                app:tint="@color/text_primary"
+                android:contentDescription="Downloads" />
+        </LinearLayout>
+
         <!-- Fokk Shield Real-Time Defense Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardBackgroundColor="#131B2B"
-            app:cardCornerRadius="16dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
             app:strokeColor="#24344D"
             app:strokeWidth="1dp">
@@ -54,7 +121,7 @@
                             android:layout_width="26dp"
                             android:layout_height="26dp"
                             android:src="@drawable/ic_shield_check"
-                            app:tint="@color/fokk_cyan" />
+                            app:tint="#7C6CF6" />
 
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -76,7 +143,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:text="0 ads &amp; trackers blocked on this page"
-                                android:textColor="@color/fokk_cyan"
+                                android:textColor="#7C6CF6"
                                 android:textSize="11.5sp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -114,7 +181,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_shield_check"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -127,7 +194,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Fokk Shield Defense Hub"
-                        android:textColor="@color/fokk_cyan"
+                        android:textColor="#7C6CF6"
                         android:textStyle="bold"
                         android:textSize="14.5sp" />
 
@@ -156,7 +223,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_layers"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -197,7 +264,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_home"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -238,7 +305,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_refresh"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -365,7 +432,7 @@
                     android:layout_height="22dp"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_home"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -401,7 +468,7 @@
                     android:layout_height="22dp"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_fingerprint"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -477,7 +544,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_add"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -542,6 +609,33 @@
                     android:textSize="14.5sp" />
             </LinearLayout>
 
+            <!-- Saved Pages & Bookmarks -->
+            <LinearLayout
+                android:id="@+id/rowSavedPages"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_bookmark"
+                    app:tint="#7C6CF6" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:text="Saved Pages &amp; Offline Reading"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14.5sp" />
+            </LinearLayout>
+
             <!-- Download Active Video -->
             <LinearLayout
                 android:id="@+id/rowDownloadVideo"
@@ -558,7 +652,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_download"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -666,7 +760,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_search"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -708,7 +802,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_layers"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#7C6CF6" />
 
                 <LinearLayout
                     android:layout_width="0dp"

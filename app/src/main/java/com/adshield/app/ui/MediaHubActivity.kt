@@ -58,6 +58,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
@@ -68,11 +69,11 @@ import java.util.UUID
 
 class MediaHubActivity : AppCompatActivity() {
 
-    enum class SearchEngine(val displayName: String, val searchUrl: String) {
-        BRAVE("Brave Search", "https://search.brave.com/search?q="),
-        DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q="),
-        STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query="),
-        GOOGLE("Google Clean", "https://www.google.com/search?q=")
+    enum class SearchEngine(val displayName: String, val searchUrl: String, val iconRes: Int) {
+        GOOGLE("Google", "https://www.google.com/search?q=", R.drawable.ic_engine_google),
+        BRAVE("Brave", "https://search.brave.com/search?q=", R.drawable.ic_engine_brave),
+        DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=", R.drawable.ic_engine_duckduckgo),
+        STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query=", R.drawable.ic_engine_startpage)
     }
 
     data class BrowserTab(
@@ -231,7 +232,16 @@ class MediaHubActivity : AppCompatActivity() {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    private var currentSearchEngine: SearchEngine = SearchEngine.BRAVE
+    private var currentSearchEngine: SearchEngine = SearchEngine.GOOGLE
+
+    private fun applySearchEngine(engine: SearchEngine) {
+        currentSearchEngine = engine
+        prefs.edit().putString(PREF_SEARCH_ENGINE, engine.name).apply()
+        binding.imgEngineIcon.setImageResource(engine.iconRes)
+        if (binding.urlInput.text.isEmpty() || activeWebView?.url?.contains("fokk_start.html") == true) {
+            binding.urlInput.hint = "Search with ${engine.displayName} or enter address"
+        }
+    }
     private var suggestionJob: Job? = null
 
     private val activeTab: BrowserTab?
@@ -253,12 +263,13 @@ class MediaHubActivity : AppCompatActivity() {
         binding = ActivityMediaHubBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.BRAVE.name)
+        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.GOOGLE.name)
         currentSearchEngine = try {
-            SearchEngine.valueOf(savedEngineName ?: SearchEngine.BRAVE.name)
+            SearchEngine.valueOf(savedEngineName ?: SearchEngine.GOOGLE.name)
         } catch (e: Exception) {
-            SearchEngine.BRAVE
+            SearchEngine.GOOGLE
         }
+        applySearchEngine(currentSearchEngine)
 
         loadInjectionScript()
         setupControls()
@@ -560,6 +571,41 @@ class MediaHubActivity : AppCompatActivity() {
     private fun canUseBiometric(): Boolean {
         val bm = BiometricManager.from(this)
         return bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    private fun authenticateUser(title: String, subtitle: String, onSuccess: () -> Unit, onFail: (() -> Unit)? = null) {
+        val executor = ContextCompat.getMainExecutor(this)
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(subtitle)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .build()
+
+        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                onFail?.invoke()
+                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED && errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                    Toast.makeText(this@MediaHubActivity, "Biometric: $errString", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                onFail?.invoke()
+            }
+        })
+
+        try {
+            biometricPrompt.authenticate(promptInfo)
+        } catch (e: Exception) {
+            onSuccess()
+        }
     }
 
     private fun authenticateForPrivateTabs(onSuccess: () -> Unit) {
@@ -963,8 +1009,8 @@ class MediaHubActivity : AppCompatActivity() {
         } else {
             binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#F0090D14"))
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#0C101A"))
-            binding.imgEngineIcon.setImageResource(R.drawable.ic_search)
-            binding.imgEngineIcon.imageTintList = ColorStateList.valueOf(getColor(R.color.fokk_cyan))
+            binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
+            binding.imgEngineIcon.imageTintList = null
         }
 
         pageBlockedCount = current.blockedAds
@@ -1257,7 +1303,7 @@ class MediaHubActivity : AppCompatActivity() {
         if (binding.urlInput.hasFocus()) return
         if (url == null || url.contains("fokk_start.html")) {
             binding.urlInput.setText("")
-            binding.urlInput.hint = "Search or enter address"
+            binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter address"
         } else {
             try {
                 val host = Uri.parse(url).host ?: url
@@ -1274,12 +1320,11 @@ class MediaHubActivity : AppCompatActivity() {
         val selectedIdx = engines.indexOf(currentSearchEngine).coerceAtLeast(0)
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Default Privacy Search Engine")
+            .setTitle("Default Search Engine")
             .setSingleChoiceItems(items, selectedIdx) { dialog, which ->
-                currentSearchEngine = engines[which]
-                prefs.edit().putString(PREF_SEARCH_ENGINE, currentSearchEngine.name).apply()
-                binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter URL..."
-                Toast.makeText(this, "Search Engine: ${currentSearchEngine.displayName}", Toast.LENGTH_SHORT).show()
+                val chosen = engines[which]
+                applySearchEngine(chosen)
+                Toast.makeText(this, "${chosen.displayName} set as default search engine", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
@@ -1603,10 +1648,128 @@ class MediaHubActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun saveCurrentPage() {
+        val currentUrl = activeWebView?.url ?: return
+        if (currentUrl.contains("fokk_start.html")) {
+            Toast.makeText(this, "Start page cannot be saved", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val currentTitle = activeWebView?.title?.ifBlank { currentUrl } ?: currentUrl
+        try {
+            val savedJson = prefs.getString("key_saved_offline_pages_v35", "[]") ?: "[]"
+            val jsonArr = org.json.JSONArray(savedJson)
+            val newArr = org.json.JSONArray()
+            newArr.put(org.json.JSONObject().apply {
+                put("title", currentTitle)
+                put("url", currentUrl)
+                put("time", System.currentTimeMillis())
+            })
+            for (i in 0 until minOf(jsonArr.length(), 40)) {
+                val item = jsonArr.getJSONObject(i)
+                if (item.optString("url") != currentUrl) {
+                    newArr.put(item)
+                }
+            }
+            prefs.edit().putString("key_saved_offline_pages_v35", newArr.toString()).apply()
+
+            val dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
+            val filename = "page_${System.currentTimeMillis()}.mhtml"
+            val archiveFile = File(dir, filename)
+            activeWebView?.saveWebArchive(archiveFile.absolutePath, false) { path ->
+                if (path != null) {
+                    Toast.makeText(this, "Page saved for offline reading!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Page saved to Bookmarks!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Saved to Bookmarks!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showSavedPagesDialog() {
+        try {
+            val savedJson = prefs.getString("key_saved_offline_pages_v35", "[]") ?: "[]"
+            val jsonArr = org.json.JSONArray(savedJson)
+            if (jsonArr.length() == 0) {
+                Toast.makeText(this, "No saved pages yet. Tap Save Page on any website!", Toast.LENGTH_LONG).show()
+                return
+            }
+            val titles = Array(jsonArr.length()) { i ->
+                val item = jsonArr.getJSONObject(i)
+                item.optString("title")
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Saved Pages & Offline Reading")
+                .setItems(titles) { _, which ->
+                    val item = jsonArr.getJSONObject(which)
+                    val url = item.optString("url")
+                    if (url.isNotBlank()) {
+                        activeWebView?.loadUrl(url)
+                    }
+                }
+                .setNegativeButton("Close", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Unable to load saved pages", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun showBrowserMenuDialog() {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = SheetBrowserMenuBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
+
+        val isStartPage = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+
+        // 1. Back button
+        val canGoBack = activeWebView?.canGoBack() == true
+        sheetBinding.btnMenuBack.alpha = if (canGoBack) 1.0f else 0.35f
+        sheetBinding.btnMenuBack.isEnabled = canGoBack
+        sheetBinding.btnMenuBack.setOnClickListener {
+            if (activeWebView?.canGoBack() == true) {
+                activeWebView?.goBack()
+                dialog.dismiss()
+            }
+        }
+
+        // 2. Forward button
+        val canGoForward = activeWebView?.canGoForward() == true
+        sheetBinding.btnMenuForward.alpha = if (canGoForward) 1.0f else 0.35f
+        sheetBinding.btnMenuForward.isEnabled = canGoForward
+        sheetBinding.btnMenuForward.setOnClickListener {
+            if (activeWebView?.canGoForward() == true) {
+                activeWebView?.goForward()
+                dialog.dismiss()
+            }
+        }
+
+        // 3. Home button
+        sheetBinding.btnMenuHome.alpha = if (isStartPage) 0.45f else 1.0f
+        sheetBinding.btnMenuHome.setOnClickListener {
+            activeWebView?.loadUrl("file:///android_asset/fokk_start.html")
+            dialog.dismiss()
+        }
+
+        // 4. Save Page button
+        sheetBinding.btnMenuSave.alpha = if (isStartPage) 0.35f else 1.0f
+        sheetBinding.btnMenuSave.isEnabled = !isStartPage
+        sheetBinding.btnMenuSave.setOnClickListener {
+            dialog.dismiss()
+            saveCurrentPage()
+        }
+
+        // 5. Downloads button
+        sheetBinding.btnMenuDownloads.setOnClickListener {
+            dialog.dismiss()
+            showDownloadMediaDialog()
+        }
+
+        // Saved Pages row
+        sheetBinding.rowSavedPages.setOnClickListener {
+            dialog.dismiss()
+            showSavedPagesDialog()
+        }
 
         sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
@@ -1626,15 +1789,32 @@ class MediaHubActivity : AppCompatActivity() {
                 val isBioEnabled = prefs.getBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false)
         sheetBinding.switchBiometricLock.isChecked = isBioEnabled
 
-        sheetBinding.switchBiometricLock.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked && !canUseBiometric()) {
-                sheetBinding.switchBiometricLock.isChecked = false
-                Toast.makeText(this, "Set up a fingerprint or device PIN in Android Settings first", Toast.LENGTH_LONG).show()
-                return@setOnCheckedChangeListener
+        sheetBinding.switchBiometricLock.setOnClickListener {
+            val targetState = sheetBinding.switchBiometricLock.isChecked
+            if (targetState) {
+                if (!canUseBiometric()) {
+                    sheetBinding.switchBiometricLock.isChecked = false
+                    Toast.makeText(this, "Set up a fingerprint or device PIN in Android Settings first", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+                prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, true).apply()
+                Toast.makeText(this, "Private tabs protected by fingerprint/PIN", Toast.LENGTH_SHORT).show()
+            } else {
+                sheetBinding.switchBiometricLock.isChecked = true
+                authenticateUser(
+                    title = "Disable Private Tab Lock",
+                    subtitle = "Verify fingerprint or device PIN to turn off lock",
+                    onSuccess = {
+                        prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false).apply()
+                        sheetBinding.switchBiometricLock.isChecked = false
+                        Toast.makeText(this, "Private tab lock disabled", Toast.LENGTH_SHORT).show()
+                    },
+                    onFail = {
+                        sheetBinding.switchBiometricLock.isChecked = true
+                        Toast.makeText(this, "Authentication required to disable lock", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
-            prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, isChecked).apply()
-            val msg = if (isChecked) "Private tabs protected by fingerprint/PIN" else "Private tab lock disabled"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
         sheetBinding.rowDownloadVideo.setOnClickListener {

@@ -34,10 +34,9 @@
                 <!-- Search Engine / Security Lock Indicator -->
                 <ImageView
                     android:id="@+id/imgEngineIcon"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/fokk_cyan"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_engine_google"
                     android:contentDescription="Search Engine" />
 
                 <EditText

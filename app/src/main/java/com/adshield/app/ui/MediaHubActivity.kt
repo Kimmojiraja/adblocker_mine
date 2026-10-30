@@ -589,7 +589,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun setupRefreshControl() {
         binding.swipeRefreshLayout.setColorSchemeResources(R.color.fokk_cyan)
         binding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
-            activeWebView?.canScrollVertically(-1) == true
+            activeWebView?.let { it.scrollY > 0 || it.canScrollVertically(-1) } ?: false
         }
         binding.swipeRefreshLayout.setOnRefreshListener {
             val webView = activeWebView
@@ -892,6 +892,21 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun handleBrowserNavigation(webView: WebView?, rawUrl: String, userGesture: Boolean): Boolean {
         val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return true
+        val currentHost = webView?.url?.let { runCatching { Uri.parse(it).host?.lowercase(Locale.ROOT) }.getOrNull() }.orEmpty()
+        val isSelfAppPromotion = (currentHost.contains("spotify.com") && (rawUrl.startsWith("spotify:") || rawUrl.contains("package=com.spotify.music"))) ||
+            (currentHost.contains("youtube.com") && (rawUrl.startsWith("vnd.youtube:") || rawUrl.contains("package=com.google.android.youtube"))) ||
+            (currentHost.contains("reddit.com") && (rawUrl.contains("package=com.reddit.frontpage") || rawUrl.contains("reddit.app.link"))) ||
+            (currentHost.contains("instagram.com") && (rawUrl.startsWith("instagram:") || rawUrl.contains("package=com.instagram.android")))
+
+        if (isSelfAppPromotion) {
+            val parsedIntent = runCatching { Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME) }.getOrNull()
+            val fallbackUrl = parsedIntent?.getStringExtra("browser_fallback_url")
+            if (fallbackUrl != null && isWebUrl(fallbackUrl) && webView != null) {
+                loadUrlInWebView(webView, fallbackUrl)
+            }
+            return true
+        }
+
         when (uri.scheme?.lowercase(Locale.ROOT)) {
             "http", "https" -> {
                 val cleanedUrl = stripTrackingParameters(rawUrl)
@@ -1185,19 +1200,15 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun setBrowserChromeVisible(visible: Boolean) {
         if (visible) {
-            val wasHidden = browserChromeHidden
+            if (!browserChromeHidden) return
             browserChromeHidden = false
             binding.topBar.animate().cancel()
-            if (wasHidden) {
-                binding.topBar.visibility = View.VISIBLE
-                binding.topBar.alpha = 0f
-                binding.topBar.translationY = binding.topBar.height.toFloat()
-                binding.topBar.animate().alpha(1f).translationY(0f).setDuration(160).start()
-            } else {
-                binding.topBar.visibility = View.VISIBLE
-                binding.topBar.alpha = 1f
-                binding.topBar.translationY = 0f
-            }
+            binding.topBar.visibility = View.VISIBLE
+            binding.topBar.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(160)
+                .start()
         } else {
             if (browserChromeHidden) return
             browserChromeHidden = true
@@ -1207,7 +1218,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 .translationY(binding.topBar.height.toFloat())
                 .setDuration(160)
                 .withEndAction {
-                    if (browserChromeHidden) binding.topBar.visibility = View.GONE
+                    // Use INVISIBLE rather than GONE so LinearLayout does not resize or remeasure the WebView
+                    if (browserChromeHidden) binding.topBar.visibility = View.INVISIBLE
                 }
                 .start()
         }
@@ -1432,8 +1444,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 val isCrossSiteRequest = pageHost != null && !isSameSite(pageHost, host)
                 if (isCrossSiteRequest) recordThirdPartyRequest(view, host)
 
-                if (isThirdPartyMediaService(pageUrl) || isThirdPartyMediaService(requestUrl) ||
-                    !isShieldEnabledFor(pageUrl ?: requestUrl)) {
+                if (!isShieldEnabledFor(pageUrl ?: requestUrl)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -1597,10 +1608,10 @@ open class MediaHubActivity : AppCompatActivity() {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 val dy = scrollY - oldScrollY
-                if (dy > 12 && scrollY > 80) {
+                if (dy > 20 && scrollY > 120) {
                     setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
-                } else if (dy < -12 || scrollY < 20) {
+                } else if (dy < -20 || scrollY < 20) {
                     setBrowserChromeVisible(true)
                 }
             }
@@ -1861,7 +1872,6 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun isShieldEnabledFor(url: String?): Boolean {
         val host = try { Uri.parse(url).host?.lowercase() } catch (_: Exception) { null } ?: return true
-        if (isThirdPartyMediaServiceHost(host)) return false
         val disabledSites = localPrefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty()
         return host !in disabledSites && registrableDomain(host) !in disabledSites
     }
@@ -1996,7 +2006,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun injectAdblockScript(webView: WebView?, pageUrl: String? = webView?.url) {
         if (webView == null) return
-        if (isThirdPartyMediaService(pageUrl) || !isShieldEnabledFor(pageUrl)) return
+        if (!isShieldEnabledFor(pageUrl)) return
         if (injectionScript.isNotEmpty()) {
             webView.evaluateJavascript(injectionScript, null)
             val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
@@ -2025,7 +2035,7 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         webView.removeJavascriptInterface("FokkShieldBridge")
         webView.removeJavascriptInterface("FokkMediaBridge")
-        if (!isThirdPartyMediaService(url) && url?.startsWith(OFFLINE_PAGE_BASE_URL) != true) {
+        if (url?.startsWith(OFFLINE_PAGE_BASE_URL) != true) {
             webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
         }
         if (url?.startsWith("file:///android_asset/") == true) {
@@ -3514,7 +3524,8 @@ open class MediaHubActivity : AppCompatActivity() {
         )
         private val STREAMING_MEDIA_DOMAINS = setOf(
             "googlevideo.com", "ytimg.com", "ggpht.com", "mux.com", "bitmovin.com",
-            "peer5.com", "streamroot.io", "conviva.com", "nicepeopleatwork.com"
+            "peer5.com", "streamroot.io", "conviva.com", "nicepeopleatwork.com",
+            "scdn.co", "spotifycdn.com", "audio-ak-spotify-com.akamaized.net"
         )
         private val IPV4_ADDRESS_REGEX = Regex("\\d{1,3}(\\.\\d{1,3}){3}")
         // Includes India suffixes from the Mozilla Public Suffix List snapshot dated 2026-10-28

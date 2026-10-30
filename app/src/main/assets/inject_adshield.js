@@ -5,6 +5,7 @@
     window.__fokkshield_loaded = true;
 
     const cosmeticCss = `
+        /* Generic ad slots & banners */
         ins.adsbygoogle,
         .adsbygoogle,
         iframe[src*="doubleclick"],
@@ -19,7 +20,50 @@
         .ad-banner,
         .advertisement,
         #tads,
-        #tadsb {
+        #tadsb,
+
+        /* YouTube Web Ads & Sponsored Cards */
+        ytm-promoted-sparkles-web-renderer,
+        ytm-promoted-sparkles-text-search-web-renderer,
+        ytm-companion-ad-renderer,
+        ytm-ad-slot-renderer,
+        ytd-promoted-sparkles-web-renderer,
+        ytd-promoted-video-renderer,
+        ytd-display-ad-renderer,
+        ytd-banner-promo-renderer,
+        ytd-ad-slot-renderer,
+        ytd-in-feed-ad-layout-renderer,
+        #player-ads,
+        .ytp-ad-module,
+        .ytp-ad-overlay-container,
+        .video-ads,
+        ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+
+        /* Anti-App-Nag: Open in App / Get App Banners & Prompts */
+        .smartbanner,
+        .app-banner,
+        .smart-app-banner,
+        [class*="smartbanner"],
+        [class*="SmartBanner"],
+        [id*="smartbanner"],
+        [class*="open-in-app"],
+        [class*="openInApp"],
+        [class*="OpenInApp"],
+        [id*="open-in-app"],
+        [id*="openInApp"],
+        ytm-mealbar-promo-renderer,
+        div[data-testid="upsell-banner"],
+        div[data-testid="banner-mobile-app"],
+        div[class*="MobileAppBanner"],
+        div[class*="mobile-app-banner"],
+        div[class*="OpenAppBanner"],
+        a[href*="spotify.com/download"],
+        xpromo-app-selector,
+        shreddit-async-loader[bundlename="bottom_sheet"],
+        .XPromoPopup,
+        reddit-bottom-sheet,
+        div[class*="xpromo"],
+        .w9hPv {
             display: none !important;
         }
 
@@ -41,7 +85,69 @@
     injectCosmetics();
 
     // =========================================================================
-    // 5. Media Playback State Reporter & native PiP coordination
+    // YouTube Web Video Ad Auto-Skipper
+    // =========================================================================
+    function runYouTubeAdSkipper() {
+        if (!window.location.hostname.includes('youtube.com')) return;
+
+        // 1. Auto-click any skip ad button
+        const skipButtons = [
+            '.ytp-ad-skip-button',
+            '.ytp-ad-skip-button-modern',
+            '.ytp-skip-ad-button',
+            '.videoAdUiSkipButton',
+            'button.ytp-ad-skip-button'
+        ];
+        for (let i = 0; i < skipButtons.length; i++) {
+            const btn = document.querySelector(skipButtons[i]);
+            if (btn && typeof btn.click === 'function') {
+                btn.click();
+                break;
+            }
+        }
+
+        // 2. Fast-forward preroll or midroll video ad
+        const adContainer = document.querySelector('.ad-showing, .ad-interrupting');
+        if (adContainer) {
+            const video = document.querySelector('video');
+            if (video && !isNaN(video.duration) && video.duration > 0 && !video.ended) {
+                video.muted = true;
+                video.playbackRate = 16.0;
+                video.currentTime = video.duration;
+            }
+        }
+    }
+
+    if (window.location.hostname.includes('youtube.com')) {
+        setInterval(runYouTubeAdSkipper, 350);
+    }
+
+    // =========================================================================
+    // Anti-App-Nag: In-page app upsell scrubber
+    // =========================================================================
+    function scrubAppPromos() {
+        const host = window.location.hostname;
+        if (host.includes('spotify.com')) {
+            document.querySelectorAll('div[data-testid="upsell-banner"], div[class*="MobileAppBanner"], a[href*="spotify.com/download"]').forEach(el => {
+                try { el.remove(); } catch (e) {}
+            });
+        }
+        if (host.includes('reddit.com')) {
+            document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"]').forEach(el => {
+                try { el.remove(); } catch (e) {}
+            });
+            if (document.documentElement) document.documentElement.style.overflow = 'auto';
+            if (document.body) document.body.style.overflow = 'auto';
+        }
+        if (host.includes('youtube.com')) {
+            document.querySelectorAll('ytm-mealbar-promo-renderer').forEach(el => {
+                try { el.remove(); } catch (e) {}
+            });
+        }
+    }
+
+    // =========================================================================
+    // Media Playback State Reporter & native PiP coordination
     // =========================================================================
     window.__fokk_enter_pip_view = function() {
         document.documentElement.classList.add('fokk-pip-active');
@@ -132,7 +238,7 @@
     document.querySelectorAll('video').forEach(hookVideoPlayback);
 
     // =========================================================================
-    // MutationObserver for cosmetic cleanup
+    // MutationObserver for cosmetic cleanup & active checks
     // =========================================================================
     try {
         let pendingSweep = false;
@@ -144,13 +250,15 @@
             setTimeout(() => {
                 pendingSweep = false;
                 scrubAiContent();
+                scrubAppPromos();
+                runYouTubeAdSkipper();
                 while (addedNodes.length) {
                     const node = addedNodes.pop();
                     if (!(node instanceof Element)) continue;
                     if (node.matches('video')) hookVideoPlayback(node);
                     node.querySelectorAll('video').forEach(hookVideoPlayback);
                 }
-            }, 350);
+            }, 300);
         });
         observer.observe(document.documentElement, {
             childList: true,
@@ -162,10 +270,14 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             scrubAiContent();
+            scrubAppPromos();
+            runYouTubeAdSkipper();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
         scrubAiContent();
+        scrubAppPromos();
+        runYouTubeAdSkipper();
         document.querySelectorAll('video').forEach(hookVideoPlayback);
-        }
+    }
 })();

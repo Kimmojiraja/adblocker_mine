@@ -1,6 +1,6 @@
 {
-  "versionCode": 42,
-  "versionName": "1.0.42",
+  "versionCode": 44,
+  "versionName": "1.0.44",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Security Hardening & Play Protect Compatibility: Removed REQUEST_INSTALL_PACKAGES and deprecated biometric permissions; purged invasive accessibility flags to eliminate false-positive fraud flags."
+  "changelog": "- Smooth scrolling fix: eliminated bottom bar layout re-measurement jitter and pull-refresh conflicts.\n- YouTube web ad blocking & auto-skip: eliminated sponsored ad slots and added video ad fast-skipping.\n- Anti-App-Nag: suppressed intrusive 'Open in App' prompts and banners across Spotify, Reddit, YouTube, and Instagram."
 }

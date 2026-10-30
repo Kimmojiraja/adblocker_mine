@@ -39,7 +39,18 @@
         .video-ads,
         ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
 
-        /* Anti-App-Nag: Open in App / Get App Banners & Prompts */
+        /* YouTube Mobile Topbar Open App Button & Promos */
+        ytm-open-app-button,
+        .mobile-topbar-header-endpoint,
+        c3-material-button[aria-label*="Open App"],
+        a.c3-material-button[href*="redirect_app"],
+        [aria-label*="Open App"],
+        [aria-label*="open app"],
+        [aria-label*="Get App"],
+        [aria-label*="get app"],
+        ytm-mealbar-promo-renderer,
+
+        /* Anti-App-Nag: Open in App / Get App Banners & Prompts across sites */
         .smartbanner,
         .app-banner,
         .smart-app-banner,
@@ -51,7 +62,6 @@
         [class*="OpenInApp"],
         [id*="open-in-app"],
         [id*="openInApp"],
-        ytm-mealbar-promo-renderer,
         div[data-testid="upsell-banner"],
         div[data-testid="banner-mobile-app"],
         div[class*="MobileAppBanner"],
@@ -85,18 +95,27 @@
     injectCosmetics();
 
     // =========================================================================
-    // YouTube Web Video Ad Auto-Skipper
+    // YouTube Web Video Ad Auto-Skipper (Zero-Stall)
     // =========================================================================
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        // 1. Auto-click any skip ad button
+        // 1. Trigger YouTube player API skip if available
+        try {
+            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+            if (player && typeof player.skipAd === 'function') {
+                player.skipAd();
+            }
+        } catch (e) {}
+
+        // 2. Click any visible skip button
         const skipButtons = [
             '.ytp-ad-skip-button',
             '.ytp-ad-skip-button-modern',
             '.ytp-skip-ad-button',
             '.videoAdUiSkipButton',
-            'button.ytp-ad-skip-button'
+            'button.ytp-ad-skip-button',
+            '.ytp-ad-overlay-close-button'
         ];
         for (let i = 0; i < skipButtons.length; i++) {
             const btn = document.querySelector(skipButtons[i]);
@@ -106,41 +125,57 @@
             }
         }
 
-        // 2. Fast-forward preroll or midroll video ad
-        const adContainer = document.querySelector('.ad-showing, .ad-interrupting');
-        if (adContainer) {
+        // 3. Fast-forward video ad without black-screen pause stall
+        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting') || (player && player.classList.contains('ad-showing'));
+        if (isAdShowing) {
             const video = document.querySelector('video');
-            if (video && !isNaN(video.duration) && video.duration > 0 && !video.ended) {
+            if (video) {
                 video.muted = true;
-                video.playbackRate = 16.0;
-                video.currentTime = video.duration;
+                if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
+                    video.currentTime = Math.max(0, video.duration - 0.1);
+                    video.playbackRate = 16.0;
+                }
+                if (video.paused) {
+                    video.play().catch(function() {});
+                }
             }
         }
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(runYouTubeAdSkipper, 350);
+        setInterval(runYouTubeAdSkipper, 300);
     }
 
     // =========================================================================
-    // Anti-App-Nag: In-page app upsell scrubber
+    // Anti-App-Nag: In-page app upsell & "Open App" header scrubber
     // =========================================================================
     function scrubAppPromos() {
         const host = window.location.hostname;
+
+        // Strip any header or floating button explicitly prompting "Open App"
+        document.querySelectorAll('ytm-open-app-button, a, button, div[role="button"]').forEach(function(el) {
+            const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+            if (text === 'open app' || text === 'get app' || text === 'install app' || text === 'use app' || text === 'open in app') {
+                const target = el.closest('ytm-open-app-button, .mobile-topbar-header-endpoint') || el;
+                target.style.setProperty('display', 'none', 'important');
+            }
+        });
+
         if (host.includes('spotify.com')) {
-            document.querySelectorAll('div[data-testid="upsell-banner"], div[class*="MobileAppBanner"], a[href*="spotify.com/download"]').forEach(el => {
+            document.querySelectorAll('div[data-testid="upsell-banner"], div[class*="MobileAppBanner"], a[href*="spotify.com/download"]').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
         }
         if (host.includes('reddit.com')) {
-            document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"]').forEach(el => {
+            document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"]').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
             if (document.documentElement) document.documentElement.style.overflow = 'auto';
             if (document.body) document.body.style.overflow = 'auto';
         }
         if (host.includes('youtube.com')) {
-            document.querySelectorAll('ytm-mealbar-promo-renderer').forEach(el => {
+            document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-open-app-button').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
         }
@@ -174,7 +209,7 @@
     window.setAiFilterEnabled = function(enabled) {
         isAiFilterEnabled = !!enabled;
         if (!isAiFilterEnabled) {
-            document.querySelectorAll('[data-fokk-ai-hidden]').forEach(el => {
+            document.querySelectorAll('[data-fokk-ai-hidden]').forEach(function(el) {
                 el.style.setProperty('display', '', '');
                 el.style.setProperty('height', '', '');
                 el.style.setProperty('min-height', '', '');
@@ -183,7 +218,7 @@
                 el.style.setProperty('visibility', '', '');
                 el.style.setProperty('pointer-events', '', '');
             });
-            document.querySelectorAll('[data-fokk-aimode-hidden]').forEach(el => {
+            document.querySelectorAll('[data-fokk-aimode-hidden]').forEach(function(el) {
                 el.style.setProperty('display', '', '');
             });
         } else {
@@ -202,7 +237,7 @@
         }
         if (!selector) return;
 
-        document.querySelectorAll(selector).forEach(el => {
+        document.querySelectorAll(selector).forEach(function(el) {
             if (el.getAttribute('data-fokk-ai-hidden') === 'true') return;
             el.setAttribute('data-fokk-ai-hidden', 'true');
             el.style.setProperty('display', 'none', 'important');
@@ -217,10 +252,10 @@
         if (!video || video.__fokk_hooked) return;
         video.__fokk_hooked = true;
 
-        const updateState = () => {
+        const updateState = function() {
             const videos = Array.from(document.querySelectorAll('video'));
-            const isPlaying = videos.some(v => !v.paused && !v.ended);
-            const hasActiveVideo = videos.some(v => v.currentTime > 0 && !v.ended);
+            const isPlaying = videos.some(function(v) { return !v.paused && !v.ended; });
+            const hasActiveVideo = videos.some(function(v) { return v.currentTime > 0 && !v.ended; });
             notifyNativePlayback(isPlaying, hasActiveVideo);
         };
 
@@ -243,11 +278,13 @@
     try {
         let pendingSweep = false;
         const addedNodes = [];
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => mutation.addedNodes.forEach(node => addedNodes.push(node)));
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) { addedNodes.push(node); });
+            });
             if (pendingSweep) return;
             pendingSweep = true;
-            setTimeout(() => {
+            setTimeout(function() {
                 pendingSweep = false;
                 scrubAiContent();
                 scrubAppPromos();
@@ -268,7 +305,7 @@
 
     // Initial pass on DOMContentLoaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             scrubAiContent();
             scrubAppPromos();
             runYouTubeAdSkipper();

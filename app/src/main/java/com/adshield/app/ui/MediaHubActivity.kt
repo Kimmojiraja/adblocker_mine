@@ -150,6 +150,8 @@ open class MediaHubActivity : AppCompatActivity() {
     private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
     private var injectionScript = ""
+    private var fokkoScript = ""
+    private var fokkoCss = ""
     private val tabs = mutableListOf<BrowserTab>()
     private val pageUrlsByWebView = Collections.synchronizedMap(WeakHashMap<WebView, String>())
     private val pendingFilteredCounts = WeakHashMap<WebView, Int>()
@@ -413,12 +415,28 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private var currentSearchEngine: SearchEngine = SearchEngine.GOOGLE
 
+    private fun extractSearchQuery(url: String?): String? {
+        if (url == null) return null
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return null
+        val host = uri.host?.lowercase(Locale.ROOT) ?: return null
+        val isSearchHost = host.contains("google.") || host.contains("duckduckgo.com") ||
+            host.contains("brave.com") || host.contains("startpage.com") || host.contains("bing.com")
+        if (!isSearchHost) return null
+        return uri.getQueryParameter("q") ?: uri.getQueryParameter("query")
+    }
+
     private fun applySearchEngine(engine: SearchEngine) {
         currentSearchEngine = engine
         prefs.edit().putString(PREF_SEARCH_ENGINE, engine.name).apply()
         binding.imgEngineIcon.setImageResource(engine.iconRes)
         if (binding.urlInput.text.isEmpty() || activeWebView?.url?.contains("fokk_start.html") == true) {
             binding.urlInput.hint = "Search with ${engine.displayName} or enter address"
+        }
+        val currentUrl = activeWebView?.url.orEmpty()
+        val query = extractSearchQuery(currentUrl)
+        if (!query.isNullOrBlank() && activeWebView != null) {
+            val newSearchUrl = engine.searchUrl + Uri.encode(query)
+            loadUrlInWebView(activeWebView, newSearchUrl)
         }
     }
     private var suggestionJob: Job? = null
@@ -610,6 +628,20 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load injection script", e)
+        }
+        try {
+            assets.open("fokko_content.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    fokkoScript = reader.readText()
+                }
+            }
+            assets.open("fokko_content.css").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    fokkoCss = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load Fokko AI assets", e)
         }
     }
 
@@ -1109,12 +1141,20 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun loadUrlInWebView(webView: WebView?, url: String) {
         if (webView == null) return
         val targetUrl = stripTrackingParameters(url)
-        tabs.firstOrNull { it.webView === webView }?.isOfflineReader = false
-        val tabIsPrivate = tabs.firstOrNull { it.webView === webView }?.isPrivate == true
+        val tab = tabs.firstOrNull { it.webView === webView }
+        tab?.isOfflineReader = false
+        val tabIsPrivate = tab?.isPrivate == true
         CookieManager.getInstance().setAcceptThirdPartyCookies(
             webView,
             !tabIsPrivate && isThirdPartyMediaService(targetUrl)
         )
+        // Automatically apply desktop mode for Spotify so it loads the real Web Player
+        // rather than the restricted 30-second mobile teaser
+        if (targetUrl.contains("open.spotify.com")) {
+            webView.settings.userAgentString = desktopUa
+        } else if (tab?.isDesktop != true) {
+            webView.settings.userAgentString = cleanMobileUa
+        }
         pageUrlsByWebView[webView] = targetUrl
         setBridgeEnabled(webView, targetUrl)
         webView.loadUrl(targetUrl)
@@ -1476,13 +1516,23 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 if (isSocialTracker || (isStrictAdblock && (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)))) {
                     recordFilteredRequest(view, host)
-                    val mimeType = if (urlStr.endsWith(".js") || urlStr.contains(".js?")) "application/javascript" else "text/plain"
-                    val emptyPayload = if (mimeType == "application/javascript") "/* blocked by fokk shield */" else ""
+                    val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
+                    val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")
+                    val mimeType = when {
+                        isJson -> "application/json"
+                        isJs -> "application/javascript"
+                        else -> "text/plain"
+                    }
+                    val emptyPayload = when {
+                        isJson -> "{}"
+                        isJs -> "/* blocked by fokk shield */"
+                        else -> ""
+                    }
                     return WebResourceResponse(
                         mimeType,
                         "UTF-8",
-                        403,
-                        "Blocked by Fokk Shield",
+                        200,
+                        "OK",
                         mapOf("Cache-Control" to "no-store"),
                         ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
                     )
@@ -2028,6 +2078,20 @@ open class MediaHubActivity : AppCompatActivity() {
         if (customJs.isNotEmpty()) {
             webView.evaluateJavascript(customJs, null)
         }
+
+        // Fokko AI Fact Checker (X/Twitter, Reddit, Threads, Bluesky, LinkedIn, Web)
+        if (prefs.getBoolean(PREF_FOKKO_AI, true) && fokkoScript.isNotEmpty()) {
+            val host = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull() ?: ""
+            val isExcluded = host.contains("spotify.com") || host.contains("netflix.com")
+            if (!isExcluded && (pageUrl?.startsWith("http://") == true || pageUrl?.startsWith("https://") == true)) {
+                if (fokkoCss.isNotEmpty()) {
+                    val safeCss = fokkoCss.replace("'", "\\'").replace("\n", " ")
+                    val cssJs = "javascript:(function(){let s=document.getElementById('__fokk_ai_css');if(!s){s=document.createElement('style');s.id='__fokk_ai_css';(document.head||document.documentElement).appendChild(s);}s.innerHTML='$safeCss';})();"
+                    webView.evaluateJavascript(cssJs, null)
+                }
+                webView.evaluateJavascript(fokkoScript, null)
+            }
+        }
     }
 
     /** The native bridge is required only by our bundled start page, never by remote content. */
@@ -2353,6 +2417,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.switchStrictAdblock.isChecked = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
         sheetBinding.switchSocialWidgets.isChecked = prefs.getBoolean(PREF_SOCIAL_WIDGETS, false)
+        sheetBinding.switchFokkoAi.isChecked = prefs.getBoolean(PREF_FOKKO_AI, true)
         sheetBinding.editCustomJs.setText(prefs.getString(PREF_CUSTOM_JS, "") ?: "")
         sheetBinding.editCustomCss.setText(prefs.getString(PREF_CUSTOM_CSS, "") ?: "")
 
@@ -2360,6 +2425,7 @@ open class MediaHubActivity : AppCompatActivity() {
             prefs.edit()
                 .putBoolean(PREF_STRICT_ADBLOCK, sheetBinding.switchStrictAdblock.isChecked)
                 .putBoolean(PREF_SOCIAL_WIDGETS, sheetBinding.switchSocialWidgets.isChecked)
+                .putBoolean(PREF_FOKKO_AI, sheetBinding.switchFokkoAi.isChecked)
                 .putString(PREF_CUSTOM_JS, sheetBinding.editCustomJs.text.toString().trim())
                 .putString(PREF_CUSTOM_CSS, sheetBinding.editCustomCss.text.toString().trim())
                 .apply()
@@ -3583,6 +3649,7 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
         private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
         private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
+        private const val PREF_FOKKO_AI = "fokk_fokko_ai_enabled"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,

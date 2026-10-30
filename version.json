@@ -1,6 +1,6 @@
 {
-  "versionCode": 44,
-  "versionName": "1.0.44",
+  "versionCode": 45,
+  "versionName": "1.0.45",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Smooth scrolling fix: eliminated bottom bar layout re-measurement jitter and pull-refresh conflicts.\n- YouTube web ad blocking & auto-skip: eliminated sponsored ad slots and added video ad fast-skipping.\n- Anti-App-Nag: suppressed intrusive 'Open in App' prompts and banners across Spotify, Reddit, YouTube, and Instagram."
+  "changelog": "- YouTube Zero-Stall ad blocking: 200 OK empty response for ad endpoints prevents black-screen pauses; auto-removes top 'Open App' button.\n- Spotify Web Player desktop mode: bypasses 30-second mobile preview limit for full web streaming.\n- Instant Search Engine Switch: changing search engines now immediately reloads the active search query on the selected engine.\n- Integrated Fokk AI Reality Inspector: ambient verification for claims on X (Twitter), Reddit, and web articles."
 }

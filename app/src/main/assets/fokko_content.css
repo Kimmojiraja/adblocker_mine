@@ -1,0 +1,648 @@
+/* Fokkoo Ambient Reality Inspector - Verdict Share Card Styling */
+/* Clean, decent, unboxed Twitter/X forensic card aesthetic with zero multicolor noise */
+
+/* ═══════════════════════════════════════════════════════════════
+   INLINE INJECTION TRIGGERS (X / Twitter & Reddit)
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-inline-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  border-radius: 9999px !important;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #71767b !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease !important;
+  user-select: none !important;
+  margin-left: 2px !important;
+  vertical-align: middle !important;
+}
+
+.tmb-inline-trigger .tmb-trigger-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.tmb-inline-trigger:hover .tmb-trigger-icon-wrap {
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: scale(1.06);
+}
+
+.tmb-inline-trigger .tmb-trigger-logo {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  opacity: 0.82;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+  display: block;
+}
+
+.tmb-inline-trigger:hover .tmb-trigger-logo {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+}
+
+.tmb-inline-trigger .tmb-trigger-label {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #71767b;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+
+.tmb-inline-trigger:hover .tmb-trigger-label {
+  color: #eff3f4;
+}
+
+/* Light Mode auto-detection for X */
+body[style*="background-color: rgb(255, 255, 255)"] .tmb-inline-trigger .tmb-trigger-logo,
+body[style*="background-color: rgb(247, 249, 249)"] .tmb-inline-trigger .tmb-trigger-logo,
+html[style*="color-scheme: light"] .tmb-inline-trigger .tmb-trigger-logo {
+  filter: invert(1);
+}
+
+body[style*="background-color: rgb(255, 255, 255)"] .tmb-inline-trigger:hover .tmb-trigger-icon-wrap,
+body[style*="background-color: rgb(247, 249, 249)"] .tmb-inline-trigger:hover .tmb-trigger-icon-wrap {
+  background-color: rgba(15, 20, 25, 0.1);
+}
+
+/* Floating Highlight Pill for Web Selection */
+.tmb-floating-bubble {
+  position: absolute;
+  z-index: 2147483640;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #000000;
+  border: 1px solid #38444d;
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #eff3f4;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  transform: translate(-50%, -100%) scale(0.96);
+  opacity: 0;
+  transition: all 0.15s ease-out;
+  pointer-events: none;
+}
+
+.tmb-floating-bubble.tmb-visible {
+  opacity: 1;
+  transform: translate(-50%, -135%) scale(1);
+  pointer-events: auto;
+}
+
+.tmb-floating-bubble:hover {
+  background: #16181c;
+  border-color: #71767b;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM MODAL BACKDROP
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483645;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tmb-modal-backdrop.tmb-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VERDICT SHARING TYPE CARD CONTAINER
+   Obsidian dark, single crisp border, no fancy colored cards
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-forensic-card {
+  width: 100%;
+  max-width: 540px;
+  background: #000000;
+  border: 1.5px solid #2f3336;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  padding: 24px 24px 20px 24px;
+  color: #e7e9ea;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.tmb-modal-backdrop.tmb-open .tmb-forensic-card {
+  transform: translateY(0) scale(1);
+}
+
+/* Subtle laser highlight at the top border (matches share-card.ts) */
+.tmb-forensic-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER: APP LOGO, TITLE, SUBTITLE & DOMAIN WATERMARK
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tmb-brand-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tmb-brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #000000;
+  display: block;
+  flex-shrink: 0;
+}
+
+.tmb-brand-fallback-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #16181c;
+  border: 1px solid #2f3336;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.tmb-brand-fallback-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: #ffffff;
+}
+
+.tmb-brand-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.tmb-brand-title {
+  font-family: "JetBrains Mono", "SF Mono", monospace, -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.tmb-brand-sub {
+  font-family: "JetBrains Mono", "SF Mono", monospace, -apple-system, sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #71767b;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.tmb-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tmb-header-domain {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71767b;
+  letter-spacing: 0.02em;
+}
+
+.tmb-close-btn {
+  background: transparent;
+  border: none;
+  color: #71767b;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tmb-close-btn:hover {
+  color: #ffffff;
+  background: rgba(239, 243, 244, 0.1);
+}
+
+/* Hairline divider (compact) */
+.tmb-hairline {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0 10px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UNBOXED VERDICT LINE & CONFIDENCE
+   Compact, sleek status line taking minimal vertical space
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-verdict-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tmb-verdict-status {
+  font-family: "JetBrains Mono", "SF Mono", monospace, TwitterChirp, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+/* Clean subtle verdict accents */
+.tmb-verdict-debunked {
+  color: #f4212e;
+}
+
+.tmb-verdict-verified {
+  color: #00ba7c;
+}
+
+.tmb-verdict-contested {
+  color: #e7e9ea;
+}
+
+.tmb-confidence-badge {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #71767b;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TARGET CLAIM SECTION (Unboxed with left laser bar)
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-section-label {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #71767b;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.tmb-claim-box {
+  background: transparent;
+  border-left: none;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.tmb-claim-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d4d4d8;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORENSIC REALITY & EVIDENCE (AI GENERATION EFFECT)
+   Answer streams dynamically with typing cursor just like AI platforms
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-analysis-section {
+  margin-bottom: 16px;
+}
+
+.tmb-analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.tmb-ai-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #a1a1aa;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tmb-ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: inline-block;
+  animation: tmb-pulse 1.4s infinite ease-in-out;
+}
+
+.tmb-ai-dot.done {
+  background: #00ba7c;
+  animation: none;
+}
+
+@keyframes tmb-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.tmb-forensic-summary {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #f4f4f5;
+  font-weight: 400;
+  margin: 0;
+  min-height: 48px;
+  word-break: break-word;
+}
+
+/* AI Typing Cursor */
+.tmb-cursor {
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-left: 2px;
+  animation: tmb-blink 0.8s infinite;
+  vertical-align: baseline;
+}
+
+@keyframes tmb-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DOCUMENTED WIRE RECEIPT & PRIMARY SOURCE
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-receipt-quote-box {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: none;
+  padding: 6px 0;
+  margin-bottom: 12px;
+}
+
+.tmb-receipt-quote-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #d4d4d8;
+  font-family: "JetBrains Mono", monospace;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SOURCE ATTRIBUTION PILL (Official Logo + Domain + Open Link)
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-source-bar {
+  margin-bottom: 12px;
+}
+
+.tmb-source-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 10px;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.tmb-source-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.tmb-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.tmb-source-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.tmb-source-fallback-globe {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #71767b;
+  flex-shrink: 0;
+}
+
+.tmb-source-name {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e7e9ea;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tmb-source-cta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1d9bf0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tmb-source-link:hover .tmb-source-cta {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+.tmb-source-link-disabled {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER (Docket watermark & Twitter-style action buttons)
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-footer-watermark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  color: #52525b;
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+
+.tmb-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tmb-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #536471;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-family: TwitterChirp, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #eff3f4;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  user-select: none;
+}
+
+.tmb-btn-secondary:hover {
+  background: rgba(239, 243, 244, 0.1);
+  border-color: #71767b;
+  color: #ffffff;
+}
+
+.tmb-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff3f4;
+  border: 1px solid #eff3f4;
+  border-radius: 9999px;
+  padding: 6px 16px;
+  font-family: TwitterChirp, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f1419;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  user-select: none;
+}
+
+.tmb-btn-primary:hover {
+  background: #d7dbdc;
+  border-color: #d7dbdc;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING CIRCLE & PROGRESSIVE AI STATUS STEPS
+   ═══════════════════════════════════════════════════════════════ */
+.tmb-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 38px 16px;
+  gap: 16px;
+  text-align: center;
+}
+
+.tmb-spinner-circle {
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: tmb-spin 0.7s linear infinite;
+}
+
+@keyframes tmb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tmb-loading-ticker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a1a1aa;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-height: 16px;
+  transition: opacity 0.2s ease;
+}

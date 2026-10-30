@@ -454,7 +454,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private val desktopUa: String by lazy {
         cleanMobileUa
-            .replace(Regex("\\(Linux; Android [^)]*\\)"), "(Windows NT 10.0; Win64; x64)")
+            .replace(Regex("\\(Linux; Android [^)]*\\)"), "(X11; Linux x86_64)")
             .replace("Mobile Safari/", "Safari/")
     }
 
@@ -1014,6 +1014,16 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun handleWebPermissionRequest(webView: WebView, request: PermissionRequest) {
         val requested = request.resources.distinct().toTypedArray()
+
+        // Auto-grant protected media identifier (DRM / Widevine EME) for streaming services (e.g. Spotify, Netflix)
+        if (requested.contains(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
+            val nonDrm = requested.filter { it != PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID }
+            if (nonDrm.isEmpty()) {
+                request.grant(arrayOf(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID))
+                return
+            }
+        }
+
         val permissions = buildList {
             if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested) add(android.Manifest.permission.CAMERA)
             if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested) add(android.Manifest.permission.RECORD_AUDIO)
@@ -1545,6 +1555,11 @@ open class MediaHubActivity : AppCompatActivity() {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 if (request == null) return
+                val requested = request.resources ?: emptyArray()
+                if (requested.isNotEmpty() && requested.all { it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID }) {
+                    request.grant(requested)
+                    return
+                }
                 runOnUiThread { handleWebPermissionRequest(webView, request) }
             }
 

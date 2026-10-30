@@ -163,6 +163,12 @@
         });
 
         if (host.includes('spotify.com')) {
+            try {
+                Object.defineProperty(navigator, 'platform', {
+                    get: function() { return 'Linux x86_64'; },
+                    configurable: true
+                });
+            } catch (e) {}
             document.querySelectorAll('div[data-testid="upsell-banner"], div[class*="MobileAppBanner"], a[href*="spotify.com/download"]').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });

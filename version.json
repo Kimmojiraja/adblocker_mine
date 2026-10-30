@@ -1,6 +1,6 @@
 {
-  "versionCode": 45,
-  "versionName": "1.0.45",
+  "versionCode": 46,
+  "versionName": "1.0.46",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- YouTube Zero-Stall ad blocking: 200 OK empty response for ad endpoints prevents black-screen pauses; auto-removes top 'Open App' button.\n- Spotify Web Player desktop mode: bypasses 30-second mobile preview limit for full web streaming.\n- Instant Search Engine Switch: changing search engines now immediately reloads the active search query on the selected engine.\n- Integrated Fokk AI Reality Inspector: ambient verification for claims on X (Twitter), Reddit, and web articles."
+  "changelog": "- Spotify Web Player DRM fix: auto-granted RESOURCE_PROTECTED_MEDIA_ID (Widevine Modular DRM) in WebChromeClient and adjusted desktop Linux User-Agent to enable seamless protected audio playback without 'Playback disabled' errors.\n- Platform compatibility: spoofed desktop Linux x86_64 platform signature for web streaming media engines."
 }

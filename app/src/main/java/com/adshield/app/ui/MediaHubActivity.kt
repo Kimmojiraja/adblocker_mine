@@ -2,6 +2,7 @@ package com.adshield.app.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.util.Base64
 import androidx.activity.result.contract.ActivityResultContracts
 import android.speech.RecognizerIntent
@@ -93,6 +94,10 @@ class MediaHubActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMediaHubBinding
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    private var previousSystemUiVisibility: Int? = null
+    private var previousRequestedOrientation: Int? = null
+    private var previousWindowWasFullscreen: Boolean? = null
+    private var browserChromeHidden = false
     private var injectionScript = ""
     private var pageBlockedCount = 0
 
@@ -143,7 +148,7 @@ class MediaHubActivity : AppCompatActivity() {
                 } else {
                     currentSearchEngine.searchUrl + Uri.encode(spokenText)
                 }
-                activeWebView?.loadUrl(rawTarget)
+                loadUrlInActiveWebView(rawTarget)
                 recordHistory(spokenText, rawTarget)
             }
         }
@@ -279,6 +284,7 @@ class MediaHubActivity : AppCompatActivity() {
 
         loadInjectionScript()
         setupControls()
+        setupRefreshControl()
 
         val initialUrl = intent.getStringExtra(EXTRA_URL)
         if (initialUrl.isNullOrBlank()) restoreLastSession() else addNewTab(initialUrl, isPrivate = false)
@@ -297,6 +303,21 @@ class MediaHubActivity : AppCompatActivity() {
         when (intent?.getStringExtra(EXTRA_OPEN_ACTION)) {
             "wallpapers" -> openWallpapersCustomizer()
             "shortcuts" -> openShortcutsCustomizer()
+        }
+    }
+
+    private fun setupRefreshControl() {
+        binding.swipeRefreshLayout.setColorSchemeResources(R.color.fokk_cyan)
+        binding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
+            activeWebView?.canScrollVertically(-1) == true
+        }
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            val webView = activeWebView
+            if (webView == null) {
+                binding.swipeRefreshLayout.isRefreshing = false
+            } else {
+                webView.reload()
+            }
         }
     }
 
@@ -522,6 +543,139 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleBrowserNavigation(webView: WebView?, rawUrl: String, userGesture: Boolean): Boolean {
+        val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return true
+        when (uri.scheme?.lowercase(Locale.ROOT)) {
+            "http", "https" -> {
+                webView?.let {
+                    pageUrlsByWebView[it] = rawUrl
+                    setBridgeEnabled(it, rawUrl)
+                }
+                return false
+            }
+            "intent" -> {
+                val parsedIntent = runCatching { Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME) }.getOrNull()
+                if (parsedIntent == null) {
+                    Toast.makeText(this, "Blocked an invalid app link", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+                val fallbackUrl = parsedIntent.getStringExtra("browser_fallback_url")
+                if (fallbackUrl != null && isWebUrl(fallbackUrl)) {
+                    loadUrlInWebView(webView, fallbackUrl)
+                    return true
+                }
+                if (!userGesture) {
+                    Toast.makeText(this, "Blocked a page that tried to open another app automatically", Toast.LENGTH_LONG).show()
+                    return true
+                }
+                confirmExternalAppLaunch(uri, parsedIntent)
+                return true
+            }
+            else -> {
+                if (!userGesture) {
+                    Toast.makeText(this, "Blocked a page that tried to open another app automatically", Toast.LENGTH_LONG).show()
+                    return true
+                }
+                confirmExternalAppLaunch(uri, null)
+                return true
+            }
+        }
+    }
+
+    private fun loadUrlInWebView(webView: WebView?, url: String) {
+        if (webView == null) return
+        val tabIsPrivate = tabs.firstOrNull { it.webView === webView }?.isPrivate == true
+        CookieManager.getInstance().setAcceptThirdPartyCookies(
+            webView,
+            !tabIsPrivate && isThirdPartyMediaService(url)
+        )
+        pageUrlsByWebView[webView] = url
+        setBridgeEnabled(webView, url)
+        webView.loadUrl(url)
+    }
+
+    private fun loadUrlInActiveWebView(url: String) = loadUrlInWebView(activeWebView, url)
+
+    private fun isWebUrl(rawUrl: String): Boolean = runCatching {
+        val scheme = Uri.parse(rawUrl).scheme?.lowercase(Locale.ROOT)
+        scheme == "http" || scheme == "https"
+    }.getOrDefault(false)
+
+    private fun confirmExternalAppLaunch(uri: Uri, parsedIntent: Intent?) {
+        val destination = uri.host ?: uri.scheme ?: "another app"
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Open another app?")
+            .setMessage("This page wants to open $destination outside Fokk Browser. Continue only if you expected this.")
+            .setNegativeButton("Stay in browser", null)
+            .setPositiveButton("Open") { _, _ ->
+                try {
+                    val externalIntent = parsedIntent ?: Intent(Intent.ACTION_VIEW, uri)
+                    externalIntent.component = null
+                    externalIntent.selector = null
+                    externalIntent.setPackage(null)
+                    externalIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    externalIntent.addCategory(Intent.CATEGORY_BROWSABLE)
+                    startActivity(Intent.createChooser(externalIntent, "Open with"))
+                } catch (_: Exception) {
+                    Toast.makeText(this, "No app can open this link", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
+    }
+
+    private fun hideCustomView() {
+        val activeCustomView = customView ?: return
+        binding.fullscreenContainer.removeView(activeCustomView)
+        binding.fullscreenContainer.visibility = View.GONE
+        binding.mainContentLayout.visibility = View.VISIBLE
+        setBrowserChromeVisible(true)
+
+        val decor = window.decorView
+        previousSystemUiVisibility?.let { decor.systemUiVisibility = it }
+        if (previousWindowWasFullscreen == false) {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        }
+        previousRequestedOrientation?.let { requestedOrientation = it }
+
+        val callback = customViewCallback
+        customView = null
+        customViewCallback = null
+        previousSystemUiVisibility = null
+        previousRequestedOrientation = null
+        previousWindowWasFullscreen = null
+        callback?.onCustomViewHidden()
+    }
+
+    private fun setBrowserChromeVisible(visible: Boolean) {
+        if (visible) {
+            val wasHidden = browserChromeHidden
+            browserChromeHidden = false
+            binding.topBar.animate().cancel()
+            if (wasHidden) {
+                binding.topBar.visibility = View.VISIBLE
+                binding.topBar.alpha = 0f
+                binding.topBar.translationY = -binding.topBar.height.toFloat()
+                binding.topBar.animate().alpha(1f).translationY(0f).setDuration(160).start()
+            } else {
+                binding.topBar.visibility = View.VISIBLE
+                binding.topBar.alpha = 1f
+                binding.topBar.translationY = 0f
+            }
+        } else {
+            if (browserChromeHidden) return
+            browserChromeHidden = true
+            binding.topBar.animate().cancel()
+            binding.topBar.animate()
+                .alpha(0f)
+                .translationY(-binding.topBar.height.toFloat())
+                .setDuration(160)
+                .withEndAction {
+                    if (browserChromeHidden) binding.topBar.visibility = View.GONE
+                }
+                .start()
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun createTab(url: String, isPrivate: Boolean = false): BrowserTab {
         val webView = WebView(this)
@@ -533,14 +687,16 @@ class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        // Preserve compatibility for regular browsing. Private tabs still block third-party cookies.
-        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate)
+        // First-party cookies stay available. Third-party cookies are limited to supported service pages.
+        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate && isThirdPartyMediaService(url))
 
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
+            javaScriptCanOpenWindowsAutomatically = false
+            setSupportMultipleWindows(true)
             loadsImagesAutomatically = true
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -587,25 +743,28 @@ class MediaHubActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val reqUrl = request?.url?.toString() ?: return false
-                if (reqUrl.startsWith("http://") || reqUrl.startsWith("https://")) {
-                    view?.let { pageUrlsByWebView[it] = reqUrl }
-                    setBridgeEnabled(view, reqUrl)
-                    return false
-                }
-                return try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reqUrl))
-                    startActivity(intent)
-                    true
-                } catch (e: Exception) {
-                    true
-                }
+                return handleBrowserNavigation(view, reqUrl, request?.hasGesture() == true)
+            }
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                if (url.isNullOrBlank()) return false
+                return handleBrowserNavigation(view, url, false)
             }
 
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, pageUrl, favicon)
                 if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
+                if (view != null) {
+                    val tabIsPrivate = tabs.firstOrNull { it.webView === view }?.isPrivate == true
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(
+                        view,
+                        !tabIsPrivate && isThirdPartyMediaService(pageUrl)
+                    )
+                }
                 setBridgeEnabled(view, pageUrl)
                 if (view == activeWebView) {
+                    setBrowserChromeVisible(true)
                     isShieldEnabled = isShieldEnabledFor(pageUrl)
                     binding.progressBar.visibility = View.VISIBLE
                     pageBlockedCount = 0
@@ -624,6 +783,7 @@ class MediaHubActivity : AppCompatActivity() {
                 super.onReceivedError(view, request, error)
                 if (request?.isForMainFrame == true && view == activeWebView) {
                     binding.progressBar.visibility = View.GONE
+                    binding.swipeRefreshLayout.isRefreshing = false
                     Log.w(TAG, "Navigation failed for ${request.url}: ${error?.description}")
                     Toast.makeText(
                         this@MediaHubActivity,
@@ -633,11 +793,52 @@ class MediaHubActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onRenderProcessGone(
+                view: WebView?,
+                detail: RenderProcessGoneDetail?
+            ): Boolean {
+                if (view == null) return true
+                val tabIndex = tabs.indexOfFirst { it.webView === view }
+                if (tabIndex < 0) {
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                    return true
+                }
+
+                val oldTab = tabs[tabIndex]
+                val crashedUrl = view.url?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+                    ?: oldTab.url
+                val wasActive = tabIndex == activeTabIndex
+                if (wasActive && customView != null) hideCustomView()
+                binding.tabContainer.removeView(view)
+                pageUrlsByWebView.remove(view)
+                view.destroy()
+
+                val replacement = createTab(crashedUrl, oldTab.isPrivate).apply {
+                    title = oldTab.title
+                    blockedAds = oldTab.blockedAds
+                    isDesktop = oldTab.isDesktop
+                }
+                tabs[tabIndex] = replacement
+                applyDesktopMode(replacement.webView, replacement.isDesktop)
+                if (wasActive) switchToTab(tabIndex) else replacement.webView.visibility = View.GONE
+                loadUrlInWebView(replacement.webView, crashedUrl)
+                if (wasActive) {
+                    Toast.makeText(
+                        this@MediaHubActivity,
+                        "A page process stopped. Fokk restored this tab; reload if it remains blank.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return true
+            }
+
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
                 super.onPageFinished(view, pageUrl)
                 if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
                 if (view == activeWebView) {
                     binding.progressBar.visibility = View.GONE
+                    binding.swipeRefreshLayout.isRefreshing = false
                 }
                 injectAdblockScript(view, pageUrl)
                 if (isDarkMode && !isThirdPartyMediaService(pageUrl)) injectDarkModeScript(view, true)
@@ -726,6 +927,27 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: android.os.Message?
+            ): Boolean {
+                if (!isUserGesture) return false
+                val message = resultMsg ?: return false
+                val transport = message.obj as? WebView.WebViewTransport ?: return false
+                val sourceTab = tabs.firstOrNull { it.webView === view }
+                val newTab = createTab("about:blank", isPrivate = sourceTab?.isPrivate == true)
+                sourceTab?.let { newTab.isDesktop = it.isDesktop }
+                tabs.add(newTab)
+                switchToTab(tabs.lastIndex)
+                applyDesktopMode(newTab.webView, newTab.isDesktop)
+                transport.webView = newTab.webView
+                message.sendToTarget()
+                updateTabCounter()
+                return true
+            }
+
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 if (view == activeWebView) {
                     binding.progressBar.progress = newProgress
@@ -762,14 +984,27 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
                 super.onShowCustomView(view, callback)
-                if (customView != null) {
+                if (view == null || customView != null) {
                     callback?.onCustomViewHidden()
                     return
                 }
+                val decor = window.decorView
+                previousSystemUiVisibility = decor.systemUiVisibility
+                previousRequestedOrientation = requestedOrientation
+                previousWindowWasFullscreen = (window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0
                 customView = view
                 customViewCallback = callback
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                decor.systemUiVisibility = decor.systemUiVisibility or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 binding.fullscreenContainer.addView(
-                    customView,
+                    view,
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 )
                 binding.fullscreenContainer.visibility = View.VISIBLE
@@ -778,14 +1013,7 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun onHideCustomView() {
                 super.onHideCustomView()
-                if (customView == null) return
-
-                binding.fullscreenContainer.removeView(customView)
-                binding.fullscreenContainer.visibility = View.GONE
-                binding.mainContentLayout.visibility = View.VISIBLE
-                customViewCallback?.onCustomViewHidden()
-                customView = null
-                customViewCallback = null
+                hideCustomView()
             }
         }
 
@@ -794,12 +1022,10 @@ class MediaHubActivity : AppCompatActivity() {
             webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
                 val dy = scrollY - oldScrollY
                 if (dy > 12 && scrollY > 80) {
-                    binding.topBar.animate().translationY(-binding.topBar.height.toFloat()).alpha(0f).setDuration(180).start()
-                    binding.bottomNav.animate().translationY(binding.bottomNav.height.toFloat()).alpha(0f).setDuration(180).start()
+                    setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
                 } else if (dy < -12 || scrollY < 20) {
-                    binding.topBar.animate().translationY(0f).alpha(1f).setDuration(180).start()
-                    binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(180).start()
+                    setBrowserChromeVisible(true)
                 }
             }
         }
@@ -814,14 +1040,14 @@ class MediaHubActivity : AppCompatActivity() {
         val tab = createTab(url, isPrivate)
         tabs.add(tab)
         switchToTab(tabs.size - 1)
-        setBridgeEnabled(tab.webView, url)
-        tab.webView.loadUrl(url)
+        loadUrlInWebView(tab.webView, url)
         updateTabCounter()
         persistSession()
     }
 
     private fun switchToTab(index: Int) {
         if (index !in tabs.indices) return
+        setBrowserChromeVisible(true)
         activeTabIndex = index
         for (i in tabs.indices) {
             tabs[i].webView.visibility = if (i == index) View.VISIBLE else View.GONE
@@ -851,6 +1077,7 @@ class MediaHubActivity : AppCompatActivity() {
         if (index !in tabs.indices) return
         val removed = tabs.removeAt(index)
         binding.tabContainer.removeView(removed.webView)
+        pageUrlsByWebView.remove(removed.webView)
         removed.webView.destroy()
 
         if (tabs.isEmpty()) {
@@ -882,7 +1109,8 @@ class MediaHubActivity : AppCompatActivity() {
     private fun isThirdPartyMediaServiceHost(host: String): Boolean =
         listOf(
             "youtube.com", "youtube-nocookie.com", "youtu.be",
-            "spotify.com", "spotify.link", "instagram.com", "instagr.am"
+            "spotify.com", "spotify.link", "scdn.co", "spotifycdn.com",
+            "instagram.com", "instagr.am"
         )
             .any { host == it || host.endsWith(".$it") }
 
@@ -1042,6 +1270,7 @@ class MediaHubActivity : AppCompatActivity() {
 
         binding.urlInput.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
+                setBrowserChromeVisible(true)
                 val currentUrl = activeWebView?.url ?: ""
                 if (!currentUrl.contains("fokk_start.html") && currentUrl.isNotBlank()) {
                     binding.urlInput.setText(currentUrl)
@@ -1070,7 +1299,7 @@ class MediaHubActivity : AppCompatActivity() {
                     query.contains(".") && !query.contains(" ") -> "https://$query"
                     else -> currentSearchEngine.searchUrl + Uri.encode(query)
                 }
-                activeWebView?.loadUrl(rawTarget)
+                loadUrlInActiveWebView(rawTarget)
                 recordHistory(query, rawTarget)
                 binding.urlInput.clearFocus()
             }
@@ -1213,7 +1442,7 @@ class MediaHubActivity : AppCompatActivity() {
                 } else {
                     currentSearchEngine.searchUrl + Uri.encode(item.title)
                 }
-                activeWebView?.loadUrl(target)
+                loadUrlInActiveWebView(target)
                 recordHistory(item.title, target)
             }
             binding.layoutSuggestionsList.addView(row)
@@ -1365,7 +1594,7 @@ class MediaHubActivity : AppCompatActivity() {
                     row.addView(infoCol)
 
                     row.setOnClickListener {
-                        activeWebView?.loadUrl(url)
+                        loadUrlInActiveWebView(url)
                         dialog.dismiss()
                     }
 
@@ -1645,7 +1874,7 @@ class MediaHubActivity : AppCompatActivity() {
                     val item = jsonArr.getJSONObject(which)
                     val url = item.optString("url")
                     if (url.isNotBlank()) {
-                        activeWebView?.loadUrl(url)
+                        loadUrlInActiveWebView(url)
                     }
                 }
                 .setNegativeButton("Close", null)
@@ -1687,7 +1916,7 @@ class MediaHubActivity : AppCompatActivity() {
         // 3. Home button
         sheetBinding.btnMenuHome.alpha = if (isStartPage) 0.45f else 1.0f
         sheetBinding.btnMenuHome.setOnClickListener {
-            activeWebView?.loadUrl("file:///android_asset/fokk_start.html")
+            loadUrlInActiveWebView("file:///android_asset/fokk_start.html")
             dialog.dismiss()
         }
 
@@ -1841,7 +2070,7 @@ class MediaHubActivity : AppCompatActivity() {
             val currentUrl = activeTab?.url
             if (!currentUrl.isNullOrEmpty() && !currentUrl.contains("fokk_start.html")) {
                 val translateUrl = "https://translate.google.com/translate?sl=auto&tl=en&u=" + Uri.encode(currentUrl)
-                activeWebView?.loadUrl(translateUrl)
+                loadUrlInActiveWebView(translateUrl)
                 Toast.makeText(this, "Translating page...", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Open a website to translate", Toast.LENGTH_SHORT).show()
@@ -1974,7 +2203,7 @@ class MediaHubActivity : AppCompatActivity() {
         val shield = if (isShieldEnabledFor(url)) "On" else "Off"
         AlertDialog.Builder(this)
             .setTitle("Privacy: $host")
-            .setMessage("Shield: $shield\nThird-party cookies: ${if (activeTab?.isPrivate == true) "blocked in this private tab" else "allowed for site compatibility"}\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
+            .setMessage("Shield: $shield\nThird-party cookies: blocked by default; allowed on supported media services for playback compatibility. First-party cookies remain enabled for sign-in and site functions.\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
             .setPositiveButton("Clear site storage") { _, _ ->
                 WebStorage.getInstance().deleteOrigin("https://$host")
                 WebStorage.getInstance().deleteOrigin("http://$host")
@@ -2099,12 +2328,7 @@ class MediaHubActivity : AppCompatActivity() {
             return
         }
         if (customView != null) {
-            binding.fullscreenContainer.removeView(customView)
-            binding.fullscreenContainer.visibility = View.GONE
-            binding.mainContentLayout.visibility = View.VISIBLE
-            customViewCallback?.onCustomViewHidden()
-            customView = null
-            customViewCallback = null
+            hideCustomView()
         } else if (activeWebView?.canGoBack() == true) {
             activeWebView?.goBack()
         } else {

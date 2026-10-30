@@ -121,12 +121,19 @@
             android:progressTint="@color/fokk_cyan"
             android:visibility="gone" />
 
-        <!-- Dynamic Multi-Tab Viewport Frame Container -->
-        <FrameLayout
-            android:id="@+id/tabContainer"
+        <!-- Pull down at the top of a page to reload it. -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1">
+
+            <!-- Dynamic Multi-Tab Viewport Frame Container -->
+            <FrameLayout
+                android:id="@+id/tabContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         <!-- Redundant Bottom Navigation Bar (Removed as per user request) -->
         <LinearLayout

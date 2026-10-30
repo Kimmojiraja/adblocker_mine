@@ -1,6 +1,6 @@
 # Fokk Shield
 
-Fokk Shield is an Android browser with a built-in, on-device filter for known ad and tracker domains, plus a small set of cosmetic filters. Protection can be turned off for an individual site from the browser menu. Same-site requests are left alone to reduce breakage.
+Fokk Shield is an Android browser with a built-in, on-device filter for known ad and tracker domains, plus a small set of cosmetic filters. Protection can be turned off for an individual site from the browser menu. Same-site requests are left alone to reduce breakage. Third-party cookies are blocked by default, with compatibility exceptions for supported media services; first-party cookies remain available for sign-in and site features. The browser supports pull-to-refresh and collapses its address bar while scrolling.
 
 ## Scope
 

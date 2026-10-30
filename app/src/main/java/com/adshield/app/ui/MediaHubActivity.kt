@@ -19,6 +19,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
@@ -71,12 +73,13 @@ import java.util.Collections
 import java.util.Locale
 import java.util.UUID
 import java.util.WeakHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MediaHubActivity : AppCompatActivity() {
 
     enum class SearchEngine(val displayName: String, val searchUrl: String, val iconRes: Int) {
         GOOGLE("Google", "https://www.google.com/search?q=", R.drawable.ic_engine_google),
-        BRAVE("Brave", "https://search.brave.com/search?q=", R.drawable.ic_engine_brave),
+        BRAVE("Brave Search", "https://search.brave.com/search?q=", R.drawable.ic_engine_brave),
         DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=", R.drawable.ic_engine_duckduckgo),
         STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query=", R.drawable.ic_engine_startpage)
     }
@@ -103,6 +106,12 @@ class MediaHubActivity : AppCompatActivity() {
 
     private val tabs = mutableListOf<BrowserTab>()
     private val pageUrlsByWebView = Collections.synchronizedMap(WeakHashMap<WebView, String>())
+    private val pendingFilteredCounts = WeakHashMap<WebView, Int>()
+    private val filteredCountLock = Any()
+    private val pendingFilteredCountFlush = AtomicBoolean(false)
+    private var pendingFilteredCountTotal = 0
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val filteredCountFlushRunnable = Runnable { flushFilteredRequestCounts() }
     private var activeTabIndex = 0
     private var isShieldEnabled = true
     private var isDarkMode = false
@@ -341,13 +350,42 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun recordFilteredRequest(webView: WebView?) {
-        runOnUiThread {
-            tabs.firstOrNull { it.webView === webView }?.let { tab ->
-                tab.blockedAds += 1
-                if (tab.webView === activeWebView) pageBlockedCount += 1
+        synchronized(filteredCountLock) {
+            pendingFilteredCountTotal += 1
+            if (webView != null) {
+                pendingFilteredCounts[webView] = (pendingFilteredCounts[webView] ?: 0) + 1
             }
-            AdShieldApp.instance.incrementBlockedAds()
         }
+        scheduleFilteredCountFlush()
+    }
+
+    private fun scheduleFilteredCountFlush() {
+        if (pendingFilteredCountFlush.compareAndSet(false, true)) {
+            mainHandler.postDelayed(filteredCountFlushRunnable, 200L)
+        }
+    }
+
+    private fun flushFilteredRequestCounts() {
+        val snapshot: Map<WebView, Int>
+        val total: Int
+        synchronized(filteredCountLock) {
+            snapshot = pendingFilteredCounts.toMap()
+            total = pendingFilteredCountTotal
+            pendingFilteredCounts.clear()
+            pendingFilteredCountTotal = 0
+        }
+
+        snapshot.forEach { (webView, count) ->
+            tabs.firstOrNull { it.webView === webView }?.let { tab ->
+                tab.blockedAds += count
+                if (tab.webView === activeWebView) pageBlockedCount += count
+            }
+        }
+        if (total > 0) AdShieldApp.instance.incrementBlockedAds(total)
+
+        pendingFilteredCountFlush.set(false)
+        val hasMorePending = synchronized(filteredCountLock) { pendingFilteredCountTotal > 0 }
+        if (hasMorePending) scheduleFilteredCountFlush()
     }
 
     class WebAppInterface(private val activity: MediaHubActivity) {
@@ -683,7 +721,6 @@ class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
@@ -1019,7 +1056,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         // Dual Scroll Auto-Hide Toolbar mechanics
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            webView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
+                if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 val dy = scrollY - oldScrollY
                 if (dy > 12 && scrollY > 80) {
                     setBrowserChromeVisible(false)
@@ -1107,12 +1145,7 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun isThirdPartyMediaServiceHost(host: String): Boolean =
-        listOf(
-            "youtube.com", "youtube-nocookie.com", "youtu.be",
-            "spotify.com", "spotify.link", "scdn.co", "spotifycdn.com",
-            "instagram.com", "instagr.am"
-        )
-            .any { host == it || host.endsWith(".$it") }
+        THIRD_PARTY_MEDIA_SERVICE_DOMAINS.any { host == it || host.endsWith(".$it") }
 
     /** Standard protection leaves same-site requests alone to reduce breakage. */
     private fun isSameSite(firstHost: String, secondHost: String): Boolean =
@@ -1120,7 +1153,7 @@ class MediaHubActivity : AppCompatActivity() {
 
     private fun registrableDomain(rawHost: String): String {
         val host = rawHost.lowercase().trim('.').substringBefore('%')
-        if (host.isBlank() || ':' in host || host.matches(Regex("\\d{1,3}(\\.\\d{1,3}){3}"))) return host
+        if (host.isBlank() || ':' in host || IPV4_ADDRESS_REGEX.matches(host)) return host
         val labels = host.split('.').filter(String::isNotBlank)
         if (labels.size < 2) return host
         val lastTwo = labels.takeLast(2).joinToString(".")
@@ -1233,10 +1266,7 @@ class MediaHubActivity : AppCompatActivity() {
             lower.contains("analytics")) {
             return false
         }
-        return listOf(
-            "googlevideo.com", "ytimg.com", "ggpht.com", "mux.com", "bitmovin.com",
-            "peer5.com", "streamroot.io", "conviva.com", "nicepeopleatwork.com"
-        ).any { lower == it || lower.endsWith(".$it") }
+        return STREAMING_MEDIA_DOMAINS.any { lower == it || lower.endsWith(".$it") }
     }
 
     private fun setupControls() {
@@ -2078,6 +2108,11 @@ class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
+        sheetBinding.rowReaderMode.setOnClickListener {
+            dialog.dismiss()
+            openReaderView()
+        }
+
         sheetBinding.rowSearchEngine.setOnClickListener {
             dialog.dismiss()
             showSearchEngineDialog()
@@ -2214,6 +2249,40 @@ class MediaHubActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun openReaderView() {
+        val webView = activeWebView ?: return
+        if (isThirdPartyMediaService(webView.url)) {
+            Toast.makeText(this, "Reader View is for article pages", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val script = """(function(){
+            if(document.getElementById('__fokk_reader_root')) return 'already';
+            var source=document.querySelector('article')||document.querySelector('main')||document.body;
+            var content=source.cloneNode(true);
+            content.querySelectorAll('script,style,nav,header,footer,aside,form,button,[role="navigation"],[role="complementary"],iframe,video,svg').forEach(function(n){n.remove()});
+            var text=(content.innerText||'').trim();
+            if(text.length<180) return 'unsupported';
+            var root=document.createElement('div'); root.id='__fokk_reader_root';
+            root.innerHTML='<div id="__fokk_reader_bar"><b>Reader View</b><span><button id="__fokk_theme" aria-label="Toggle reading theme">◐</button><button id="__fokk_smaller" aria-label="Smaller text">A−</button><button id="__fokk_larger" aria-label="Larger text">A+</button><button id="__fokk_exit">Done</button></span></div><article id="__fokk_reader_article"><h1></h1><div id="__fokk_reader_content"></div></article>';
+            root.querySelector('h1').textContent=(document.querySelector('h1')||{}).innerText||document.title||'Article';
+            root.querySelector('#__fokk_reader_content').appendChild(content);
+            var style=document.createElement('style'); style.id='__fokk_reader_style';
+            style.textContent='html,body{margin:0!important;padding:0!important;background:#f7f3e9!important;color:#222!important}body>*:not(#__fokk_reader_root){display:none!important}#__fokk_reader_root{position:fixed;inset:0;z-index:2147483647;overflow:auto;background:#f7f3e9;color:#222;font:19px/1.75 Georgia,serif;padding:0 22px 48px;box-sizing:border-box}#__fokk_reader_bar{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;background:#f7f3e9;border-bottom:1px solid #ddd;padding:12px 0;font:14px/1.2 system-ui,sans-serif}#__fokk_reader_bar button{border:0;border-radius:18px;background:#e6e1d6;color:#222;padding:9px 12px;margin-left:6px;font:inherit}#__fokk_reader_article{max-width:700px;margin:34px auto}#__fokk_reader_article h1{font:700 32px/1.2 system-ui,sans-serif;margin:0 0 24px}#__fokk_reader_content{overflow-wrap:anywhere}#__fokk_reader_content img{max-width:100%;height:auto}#__fokk_reader_content a{color:#245fa8}#__fokk_reader_content p{margin:0 0 1.25em}';
+            document.head.appendChild(style); document.body.appendChild(root);
+            var size=19; root.querySelector('#__fokk_larger').onclick=function(){size=Math.min(30,size+2);root.style.fontSize=size+'px'};
+            root.querySelector('#__fokk_smaller').onclick=function(){size=Math.max(14,size-2);root.style.fontSize=size+'px'};
+            root.querySelector('#__fokk_theme').onclick=function(){var dark=root.dataset.theme!=='dark';root.dataset.theme=dark?'dark':'light';root.style.background=dark?'#17191d':'#f7f3e9';root.style.color=dark?'#e8e5dd':'#222';root.querySelector('#__fokk_reader_bar').style.background=root.style.background;root.querySelector('#__fokk_reader_bar').style.color=root.style.color;root.querySelector('#__fokk_reader_bar').style.borderColor=dark?'#373b42':'#ddd';root.querySelectorAll('a').forEach(function(a){a.style.color=dark?'#8ab4f8':'#245fa8'})};
+            root.querySelector('#__fokk_exit').onclick=function(){location.reload()};
+            return 'ok';
+        })();""".trimIndent()
+        webView.evaluateJavascript(script) { result ->
+            when (result?.trim('"')) {
+                "ok", "already" -> Toast.makeText(this, "Reader View opened · use Done to return", Toast.LENGTH_SHORT).show()
+                else -> Toast.makeText(this, "This page does not appear to contain a readable article", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     private fun reportBrokenSite() {
         val url = activeWebView?.url ?: activeTab?.url ?: return
         val details = "Fokk Browser broken-site report\nURL: $url\nShield: ${if (isShieldEnabledFor(url)) "on" else "off"}\nAndroid: ${Build.VERSION.RELEASE}\nApp: ${AppUpdateManager.getCurrentVersionName(this)}\n\nDescribe what did not work:"
@@ -2338,6 +2407,8 @@ class MediaHubActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         suggestionJob?.cancel()
+        mainHandler.removeCallbacks(filteredCountFlushRunnable)
+        flushFilteredRequestCounts()
         for (tab in tabs) {
             binding.tabContainer.removeView(tab.webView)
             tab.webView.destroy()
@@ -2347,6 +2418,16 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     companion object {
+        private val THIRD_PARTY_MEDIA_SERVICE_DOMAINS = setOf(
+            "youtube.com", "youtube-nocookie.com", "youtu.be",
+            "spotify.com", "spotify.link", "scdn.co", "spotifycdn.com",
+            "instagram.com", "instagr.am"
+        )
+        private val STREAMING_MEDIA_DOMAINS = setOf(
+            "googlevideo.com", "ytimg.com", "ggpht.com", "mux.com", "bitmovin.com",
+            "peer5.com", "streamroot.io", "conviva.com", "nicepeopleatwork.com"
+        )
+        private val IPV4_ADDRESS_REGEX = Regex("\\d{1,3}(\\.\\d{1,3}){3}")
         private val MULTI_LABEL_PUBLIC_SUFFIXES = setOf(
             "co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "org.au",
             "co.nz", "com.br", "com.cn", "com.sg", "com.tr", "co.in", "firm.in",

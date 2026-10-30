@@ -94,6 +94,22 @@ class MediaHubActivity : AppCompatActivity() {
         val webView: WebView
     )
 
+    private data class PendingWebPermission(
+        val request: PermissionRequest,
+        val webView: WebView,
+        val resources: Array<String>,
+        val androidPermissions: List<String>,
+        val origin: String,
+        val topLevelOrigin: String?
+    )
+
+    private data class PendingLocationPermission(
+        val callback: GeolocationPermissions.Callback,
+        val origin: String,
+        val webView: WebView,
+        val topLevelOrigin: String?
+    )
+
     private lateinit var binding: ActivityMediaHubBinding
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
@@ -107,6 +123,8 @@ class MediaHubActivity : AppCompatActivity() {
     private val tabs = mutableListOf<BrowserTab>()
     private val pageUrlsByWebView = Collections.synchronizedMap(WeakHashMap<WebView, String>())
     private val pendingFilteredCounts = WeakHashMap<WebView, Int>()
+    private val approvedWebMediaOrigins = mutableSetOf<String>()
+    private val approvedLocationOrigins = mutableSetOf<String>()
     private val filteredCountLock = Any()
     private val pendingFilteredCountFlush = AtomicBoolean(false)
     private var pendingFilteredCountTotal = 0
@@ -122,6 +140,8 @@ class MediaHubActivity : AppCompatActivity() {
     private var lastMediaPlayingTime = 0L
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingWebPermission: PendingWebPermission? = null
+    private var pendingLocationPermission: PendingLocationPermission? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -161,6 +181,50 @@ class MediaHubActivity : AppCompatActivity() {
                 recordHistory(spokenText, rawTarget)
             }
         }
+    }
+
+    private val webPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val pending = pendingWebPermission
+        pendingWebPermission = null
+        if (pending == null) return@registerForActivityResult
+
+        val stillOpen = tabs.any { it.webView === pending.webView }
+        val currentOrigin = pending.webView.url?.let(::getWebOrigin)
+        val permissionsGranted = pending.androidPermissions.isNotEmpty() &&
+            pending.androidPermissions.all {
+                val wasGranted = grants[it] ?: (ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED)
+                wasGranted && ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+        if (stillOpen && currentOrigin == pending.topLevelOrigin && permissionsGranted) {
+            approvedWebMediaOrigins.add(sitePermissionKey(pending.origin, pending.topLevelOrigin))
+            pending.request.grant(pending.resources)
+        } else {
+            pending.request.deny()
+        }
+    }
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val pending = pendingLocationPermission
+        pendingLocationPermission = null
+        if (pending == null) return@registerForActivityResult
+
+        val stillOpen = tabs.any { it.webView === pending.webView }
+        val currentOrigin = pending.webView.url?.let(::getWebOrigin)
+        val hasLocation = listOf(
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ).any { permission ->
+            (grants[permission] == true || ContextCompat.checkSelfPermission(this, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) &&
+                ContextCompat.checkSelfPermission(this, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        val allowed = stillOpen && pending.webView === activeWebView &&
+            currentOrigin == pending.topLevelOrigin && hasLocation
+        if (allowed) approvedLocationOrigins.add(sitePermissionKey(pending.origin, pending.topLevelOrigin))
+        pending.callback.invoke(pending.origin, allowed, false)
     }
 
     private fun startVoiceSearch() {
@@ -620,6 +684,147 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun getWebOrigin(rawUrl: String?): String? = runCatching {
+        val uri = Uri.parse(rawUrl)
+        val scheme = uri.scheme?.lowercase(Locale.ROOT)
+        val host = uri.host?.lowercase(Locale.ROOT)
+        if (host.isNullOrBlank() || (scheme != "https" && !(scheme == "http" && host in setOf("localhost", "127.0.0.1", "::1")))) {
+            null
+        } else {
+            val includePort = uri.port != -1 &&
+                !((scheme == "https" && uri.port == 443) || (scheme == "http" && uri.port == 80))
+            val authorityHost = if (':' in host && !host.startsWith("[")) "[$host]" else host
+            val port = if (includePort) ":${uri.port}" else ""
+            "$scheme://$authorityHost$port"
+        }
+    }.getOrNull()
+
+    private fun handleWebPermissionRequest(webView: WebView, request: PermissionRequest) {
+        val requested = request.resources.distinct().toTypedArray()
+        val permissions = buildList {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested) add(android.Manifest.permission.CAMERA)
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested) add(android.Manifest.permission.RECORD_AUDIO)
+        }
+        val origin = request.origin.toString().trimEnd('/')
+        val currentOrigin = getWebOrigin(webView.url)
+        val supportedResources = requested.all {
+            it == PermissionRequest.RESOURCE_VIDEO_CAPTURE || it == PermissionRequest.RESOURCE_AUDIO_CAPTURE
+        }
+
+        if (requested.isEmpty() || permissions.isEmpty() || !supportedResources ||
+            getWebOrigin(origin) != origin || currentOrigin == null || webView !== activeWebView ||
+            pendingWebPermission != null || pendingLocationPermission != null) {
+            request.deny()
+            return
+        }
+
+        if (sitePermissionKey(origin, currentOrigin) in approvedWebMediaOrigins && permissions.all {
+                ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }) {
+            request.grant(requested)
+            return
+        }
+
+        val requestedCapabilities = buildList {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in requested) add("camera")
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in requested) add("microphone")
+        }.joinToString(" and ")
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Allow $requestedCapabilities?")
+            .setMessage("$origin is asking to use your $requestedCapabilities. Approve here; Android may also ask for system permission.")
+            .setNegativeButton("Deny") { _, _ -> request.deny() }
+            .setPositiveButton("Continue") { _, _ ->
+                val pending = PendingWebPermission(request, webView, requested, permissions, origin, currentOrigin)
+                pendingWebPermission = pending
+                val missing = permissions.filter {
+                    ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                }
+                if (missing.isEmpty()) {
+                    pendingWebPermission = null
+                    if (webView.url?.let(::getWebOrigin) == currentOrigin && tabs.any { it.webView === webView }) {
+                        approvedWebMediaOrigins.add(sitePermissionKey(origin, currentOrigin))
+                        request.grant(requested)
+                    } else request.deny()
+                } else {
+                    webPermissionLauncher.launch(missing.toTypedArray())
+                }
+            }
+            .setOnCancelListener { request.deny() }
+            .show()
+    }
+
+    private fun cancelPendingWebPermission(webView: WebView) {
+        val pending = pendingWebPermission ?: return
+        if (pending.webView === webView) {
+            pendingWebPermission = null
+            pending.request.deny()
+        }
+    }
+
+    private fun sitePermissionKey(requestingOrigin: String, topLevelOrigin: String?): String =
+        "${topLevelOrigin.orEmpty()}|$requestingOrigin"
+
+    private fun handleGeolocationPrompt(
+        webView: WebView,
+        rawOrigin: String?,
+        callback: GeolocationPermissions.Callback
+    ) {
+        val origin = rawOrigin?.trimEnd('/') ?: run {
+            callback.invoke(rawOrigin.orEmpty(), false, false)
+            return
+        }
+        val currentOrigin = getWebOrigin(webView.url)
+        if (getWebOrigin(origin) != origin || currentOrigin == null || webView !== activeWebView ||
+            pendingLocationPermission != null || pendingWebPermission != null) {
+            callback.invoke(origin, false, false)
+            return
+        }
+
+        val locationPermissions = listOf(
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        val hasLocation = locationPermissions.any {
+            ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (sitePermissionKey(origin, currentOrigin) in approvedLocationOrigins && hasLocation) {
+            callback.invoke(origin, true, false)
+            return
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Allow location access?")
+            .setMessage("$origin is asking for your device location. You can choose approximate or precise access in Android's system prompt.")
+            .setNegativeButton("Deny") { _, _ -> callback.invoke(origin, false, false) }
+            .setPositiveButton("Continue") { _, _ ->
+                val pending = PendingLocationPermission(callback, origin, webView, currentOrigin)
+                pendingLocationPermission = pending
+                val missing = locationPermissions.filter {
+                    ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                }
+                if (missing.isEmpty()) {
+                    pendingLocationPermission = null
+                    if (webView.url?.let(::getWebOrigin) == currentOrigin && webView === activeWebView) {
+                        approvedLocationOrigins.add(sitePermissionKey(origin, currentOrigin))
+                        callback.invoke(origin, true, false)
+                    } else callback.invoke(origin, false, false)
+                } else {
+                    locationPermissionLauncher.launch(missing.toTypedArray())
+                }
+            }
+            .setOnCancelListener { callback.invoke(origin, false, false) }
+            .show()
+    }
+
+    private fun cancelPendingLocationPermission(webView: WebView) {
+        val pending = pendingLocationPermission ?: return
+        if (pending.webView === webView) {
+            pendingLocationPermission = null
+            pending.callback.invoke(pending.origin, false, false)
+        }
+    }
+
     private fun loadUrlInWebView(webView: WebView?, url: String) {
         if (webView == null) return
         val tabIsPrivate = tabs.firstOrNull { it.webView === webView }?.isPrivate == true
@@ -738,8 +943,9 @@ class MediaHubActivity : AppCompatActivity() {
             useWideViewPort = true
             loadWithOverviewMode = true
             cacheMode = if (isPrivate) WebSettings.LOAD_NO_CACHE else WebSettings.LOAD_DEFAULT
-            // Never broadly allow active HTTP content inside HTTPS pages.
-            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            // Do not let an HTTPS page silently load active content over HTTP.
+            // This blocks downgrade/injection paths; a site with legacy HTTP embeds may need its own fix.
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
             allowContentAccess = false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
@@ -791,6 +997,10 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, pageUrl, favicon)
+                view?.let {
+                    cancelPendingWebPermission(it)
+                    cancelPendingLocationPermission(it)
+                }
                 if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
                 if (view != null) {
                     val tabIsPrivate = tabs.firstOrNull { it.webView === view }?.isPrivate == true
@@ -964,6 +1174,25 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                if (request == null) return
+                runOnUiThread { handleWebPermissionRequest(webView, request) }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                if (request != null && pendingWebPermission?.request === request) {
+                    pendingWebPermission = null
+                }
+            }
+
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String?,
+                callback: GeolocationPermissions.Callback?
+            ) {
+                if (callback == null) return
+                runOnUiThread { handleGeolocationPrompt(webView, origin, callback) }
+            }
+
             override fun onCreateWindow(
                 view: WebView?,
                 isDialog: Boolean,
@@ -1114,6 +1343,8 @@ class MediaHubActivity : AppCompatActivity() {
     private fun closeTab(index: Int) {
         if (index !in tabs.indices) return
         val removed = tabs.removeAt(index)
+        cancelPendingWebPermission(removed.webView)
+        cancelPendingLocationPermission(removed.webView)
         binding.tabContainer.removeView(removed.webView)
         pageUrlsByWebView.remove(removed.webView)
         removed.webView.destroy()
@@ -2238,7 +2469,7 @@ class MediaHubActivity : AppCompatActivity() {
         val shield = if (isShieldEnabledFor(url)) "On" else "Off"
         AlertDialog.Builder(this)
             .setTitle("Privacy: $host")
-            .setMessage("Shield: $shield\nThird-party cookies: blocked by default; allowed on supported media services for playback compatibility. First-party cookies remain enabled for sign-in and site functions.\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
+            .setMessage("Shield: $shield\nConnection: ${if (Uri.parse(url).scheme.equals("https", true)) "HTTPS" else "Not HTTPS"}\nThird-party cookies: blocked by default; allowed on supported media services for playback compatibility. First-party cookies remain enabled for sign-in and site functions.\nMixed content: active HTTP content blocked on HTTPS pages\nCamera, microphone and location: ask before use, then require Android permission.")
             .setPositiveButton("Clear site storage") { _, _ ->
                 WebStorage.getInstance().deleteOrigin("https://$host")
                 WebStorage.getInstance().deleteOrigin("http://$host")
@@ -2407,6 +2638,10 @@ class MediaHubActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         suggestionJob?.cancel()
+        pendingWebPermission?.request?.deny()
+        pendingWebPermission = null
+        pendingLocationPermission?.let { it.callback.invoke(it.origin, false, false) }
+        pendingLocationPermission = null
         mainHandler.removeCallbacks(filteredCountFlushRunnable)
         flushFilteredRequestCounts()
         for (tab in tabs) {

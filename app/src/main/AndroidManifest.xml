@@ -8,6 +8,11 @@
     <!-- Biometric security for private tabs -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Requested only after a secure website asks and the user approves in Fokk. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:name=".AdShieldApp"

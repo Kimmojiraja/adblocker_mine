@@ -109,7 +109,7 @@
                     android:layout_height="wrap_content">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
@@ -124,8 +124,9 @@
                             app:tint="#7C6CF6" />
 
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:layout_marginStart="12dp"
                             android:orientation="vertical">
 
@@ -139,10 +140,12 @@
 
                             <TextView
                                 android:id="@+id/textMenuBlockedInfo"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="0 requests filtered on this page"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:text="Cross-site requests observed: 0 · filtered by Fokk: 0"
                                 android:textColor="#7C6CF6"
                                 android:textSize="11.5sp" />
                         </LinearLayout>

@@ -1,11 +1,14 @@
 package com.adshield.app.model
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.net.IDN
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.Locale
 
 class BlocklistEngine(private val context: Context) {
 
@@ -16,6 +19,7 @@ class BlocklistEngine(private val context: Context) {
     private val customWhitelistDomains = ConcurrentHashMap.newKeySet<String>()
     private val isReady = AtomicBoolean(false)
 
+    @Synchronized
     fun initialize() {
         if (isReady.get()) return
 
@@ -28,11 +32,14 @@ class BlocklistEngine(private val context: Context) {
                 BufferedReader(InputStreamReader(inputStream)).use { reader ->
                     var line: String? = reader.readLine()
                     while (line != null) {
-                        val trimmed = line.trim().lowercase()
+                        val trimmed = line.trim()
                         if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                            blockedDomains.add(trimmed)
-                            coreBlockedDomains.add(trimmed)
-                            count++
+                            val normalized = normalizeDomain(trimmed)
+                            if (normalized.isNotEmpty()) {
+                                blockedDomains.add(normalized)
+                                coreBlockedDomains.add(normalized)
+                                count++
+                            }
                         }
                         line = reader.readLine()
                     }
@@ -79,40 +86,34 @@ class BlocklistEngine(private val context: Context) {
     )
 
     fun isDomainBlocked(rawDomain: String): Boolean {
+        // Application startup warms the list on IO, but WebView can issue requests
+        // before that task runs. Complete local initialization before failing open.
+        if (!isReady.get()) initialize()
         if (!isReady.get()) return false
 
         val domain = normalizeDomain(rawDomain)
         if (domain.isEmpty()) return false
 
-        // 1. User custom whitelist takes absolute priority
-        if (whitelistDomains.contains(domain)) return false
-
-        // 2. Direct exact block match
-        if (blockedDomains.contains(domain)) return true
-
-        // 3. Essential streaming/infrastructure whitelist
+        // Evaluate complete hierarchies in precedence order so a parent whitelist
+        // cannot be bypassed by an exact block entry for one of its subdomains.
+        if (matchesDomainOrParent(domain, customWhitelistDomains)) return false
+        if (matchesDomainOrParent(domain, customBlockedDomains)) return true
         if (isWhitelisted(domain)) return false
-
-        // 4. Hierarchical subdomain match (e.g. "video-ads.doubleclick.net" -> "doubleclick.net")
-        var dotIndex = domain.indexOf('.')
-        while (dotIndex != -1 && dotIndex < domain.length - 1) {
-            val parentDomain = domain.substring(dotIndex + 1)
-            if (whitelistDomains.contains(parentDomain)) return false
-            if (blockedDomains.contains(parentDomain)) return true
-            if (isWhitelisted(parentDomain)) return false
-            dotIndex = domain.indexOf('.', dotIndex + 1)
-        }
-
-        return false
+        return matchesDomainOrParent(domain, coreBlockedDomains)
     }
 
-    private fun isWhitelisted(domain: String): Boolean {
-        if (essentialWhitelist.contains(domain)) return true
-        for (w in essentialWhitelist) {
-            if (domain.endsWith(".$w")) return true
+    private fun matchesDomainOrParent(domain: String, candidates: Set<String>): Boolean {
+        var current = domain
+        while (true) {
+            if (candidates.contains(current)) return true
+            val dotIndex = current.indexOf('.')
+            if (dotIndex < 0 || dotIndex == current.lastIndex) return false
+            current = current.substring(dotIndex + 1)
         }
-        return false
     }
+
+    private fun isWhitelisted(domain: String): Boolean =
+        matchesDomainOrParent(domain, essentialWhitelist)
 
     fun addCustomBlockedDomain(domain: String) {
         val normalized = normalizeDomain(domain)
@@ -154,17 +155,30 @@ class BlocklistEngine(private val context: Context) {
     private fun saveCustomRules() {
         val prefs = context.getSharedPreferences("adshield_custom_rules", Context.MODE_PRIVATE)
         prefs.edit()
-            .putStringSet("custom_blacklist", customBlockedDomains)
-            .putStringSet("custom_whitelist", customWhitelistDomains)
+            .putStringSet("custom_blacklist", customBlockedDomains.toSet())
+            .putStringSet("custom_whitelist", customWhitelistDomains.toSet())
             .apply()
     }
 
-    private fun normalizeDomain(value: String): String = value.trim().lowercase()
-        .removePrefix("https://")
-        .removePrefix("http://")
-        .substringBefore('/')
-        .substringBefore(':')
-        .trimEnd('.')
+    private fun normalizeDomain(value: String): String {
+        val input = value.trim()
+        if (input.isEmpty() || '*' in input) return ""
+        val uri = runCatching {
+            Uri.parse(if (input.contains("://")) input else "http://$input")
+        }.getOrNull() ?: return ""
+        val host = uri.host?.trim('[', ']')?.trimEnd('.')?.lowercase(Locale.ROOT).orEmpty()
+        if (host.isEmpty()) return ""
+        if (':' in host) return host // IPv6 literals are already ASCII and have no DNS suffix hierarchy.
+
+        val asciiHost = runCatching { IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES) }
+            .getOrNull()
+            ?.lowercase(Locale.ROOT)
+            ?: return ""
+        if (asciiHost.length > 253 || asciiHost.split('.').any { label ->
+                label.isEmpty() || label.length > 63 || label.startsWith('-') || label.endsWith('-')
+            }) return ""
+        return asciiHost
+    }
 
     fun getLoadedCount(): Int = blockedDomains.size
 

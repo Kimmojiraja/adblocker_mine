@@ -181,7 +181,11 @@ object AppUpdateManager {
                 }
 
                 val fileLength = conn.contentLength
-                val apkFile = File(activity.cacheDir, "FokkShield_update.apk")
+                val updateDirectory = File(activity.cacheDir, "updates")
+                if (!updateDirectory.isDirectory && !updateDirectory.mkdirs()) {
+                    throw IllegalStateException("Could not create update cache directory")
+                }
+                val apkFile = File(updateDirectory, "FokkShield_update.apk")
                 if (apkFile.exists()) apkFile.delete()
 
                 val input = conn.inputStream

@@ -4,14 +4,6 @@
     if (window.__fokkshield_loaded) return;
     window.__fokkshield_loaded = true;
 
-    function reportBlocked(count = 1) {
-        try {
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onAdsBlocked === 'function') {
-                window.FokkShieldBridge.onAdsBlocked(count);
-            }
-        } catch (e) {}
-    }
-
     const cosmeticCss = `
         ins.adsbygoogle,
         .adsbygoogle,
@@ -108,7 +100,6 @@
             if (el.getAttribute('data-fokk-ai-hidden') === 'true') return;
             el.setAttribute('data-fokk-ai-hidden', 'true');
             el.style.setProperty('display', 'none', 'important');
-            reportBlocked(1);
         });
     }
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude old records in case a backup runs before the migration has launched. -->
+    <exclude domain="sharedpref" path="fokk_browser_prefs.xml" />
+    <!-- History, open tabs, per-site shield exceptions, and saved-page metadata stay local. -->
+    <exclude domain="sharedpref" path="fokk_browser_local.xml" />
+    <!-- Saved article text and the WebView profiles are device-local browser data. -->
+    <exclude domain="file" path="offline_pages/" />
+    <exclude domain="root" path="app_webview/" />
+    <exclude domain="root" path="app_webview_fokk_private/" />
+</full-backup-content>

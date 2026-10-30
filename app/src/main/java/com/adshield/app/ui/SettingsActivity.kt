@@ -24,6 +24,7 @@ class SettingsActivity : AppCompatActivity() {
 
         setupToolbar()
         setupCustomRuleButtons()
+        setupSearchPrivacy()
         setupPrivateDnsGuide()
         setupPersonalizationButtons()
         setupUpdateChecker()
@@ -61,6 +62,20 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "Copied 'p2.freedns.controld.com' to clipboard!", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun setupSearchPrivacy() {
+        val preferences = getSharedPreferences("fokk_browser_settings_v2", Context.MODE_PRIVATE)
+        binding.switchRemoteSuggestions.isChecked = preferences.getBoolean(PREF_REMOTE_SUGGESTIONS, false)
+        binding.switchRemoteSuggestions.setOnCheckedChangeListener { _, enabled ->
+            preferences.edit().putBoolean(PREF_REMOTE_SUGGESTIONS, enabled).apply()
+            val message = if (enabled) {
+                "Typed searches may be sent to DuckDuckGo before you submit them"
+            } else {
+                "Only local history suggestions are shown"
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
+    }
     private fun setupPersonalizationButtons() {
         binding.btnWallpapersThemes.setOnClickListener {
             val intent = Intent(this, MediaHubActivity::class.java).apply {
@@ -87,5 +102,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnCheckForUpdates.setOnClickListener {
             AppUpdateManager.checkForUpdates(this, manualCheck = true)
         }
+    }
+
+    companion object {
+        private const val PREF_REMOTE_SUGGESTIONS = "fokk_remote_search_suggestions"
     }
 }

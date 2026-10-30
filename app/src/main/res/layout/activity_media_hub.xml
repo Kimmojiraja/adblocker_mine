@@ -77,17 +77,6 @@
                     app:tint="@color/text_secondary"
                     android:contentDescription="Voice Search" />
 
-                <!-- Download Media Sniffer Button (visible when stream detected) -->
-                <ImageButton
-                    android:id="@+id/btnDownloadMedia"
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_download"
-                    app:tint="@color/fokk_cyan"
-                    android:visibility="gone"
-                    android:contentDescription="Download Media" />
             </LinearLayout>
 
             <!-- Tab Count Badge Button: [ 1 ] -->

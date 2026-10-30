@@ -52,7 +52,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="1dp"
-                    android:text="Brave &amp; uBlock Grade On-Device Customization"
+                    android:text="Local website filters and browser customization"
                     android:textColor="@color/text_secondary"
                     android:textSize="11.5sp" />
             </LinearLayout>
@@ -75,7 +75,7 @@
                 android:orientation="vertical"
                 android:padding="12dp">
 
-                <!-- Strict Ad & Banner Killer -->
+                <!-- Built-in browser ad and tracker filter -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -91,7 +91,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Strict Ad &amp; Banner Killer"
+                            android:text="Standard Browser Shield"
                             android:textColor="@color/text_primary"
                             android:textSize="13.5sp"
                             android:textStyle="bold" />
@@ -99,51 +99,13 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cosmetic element collapsing + DNS network blocking"
+                            android:text="Blocks listed third-party ads and trackers; turn it off per site if a page breaks"
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
                     </LinearLayout>
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchStrictAdblock"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:checked="true" />
-                </RelativeLayout>
-
-                <!-- Cookie & GDPR Wall Auto-Dismiss -->
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_toStartOf="@id/switchCookieConsent"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Cookie &amp; GDPR Auto-Dismiss"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13.5sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Silently suppress annoying 'We use cookies' overlays"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchCookieConsent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -166,7 +128,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Social Media Tracker Shield"
+                            android:text="Embedded Tracker Filter"
                             android:textColor="@color/text_primary"
                             android:textSize="13.5sp"
                             android:textStyle="bold" />
@@ -174,7 +136,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Blocks embedded Facebook/Meta/TikTok telemetry pixels"
+                            android:text="Filters selected third-party tracking requests on websites"
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -185,7 +147,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:checked="true" />
+                        android:checked="false" />
                 </RelativeLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -210,7 +172,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Custom Userscript (JavaScript)"
+                    android:text="User-Provided JavaScript"
                     android:textColor="@color/text_primary"
                     android:textSize="13.5sp"
                     android:textStyle="bold" />
@@ -219,7 +181,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="1dp"
-                    android:text="Runs custom Tampermonkey-style scripts on every page"
+                    android:text="Runs only on websites opened in this browser; disabled on YouTube, Spotify, and Instagram"
                     android:textColor="@color/text_secondary"
                     android:textSize="11sp" />
 

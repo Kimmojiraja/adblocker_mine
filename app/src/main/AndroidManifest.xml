@@ -2,11 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network permissions for local VPN & DNS resolving -->
+    <!-- Network access for the built-in browser -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Audio control to mute sound during unskippable video ads -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Biometric security for private tabs -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -33,7 +31,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Ad-Free YouTube & Social Media Hub -->
+        <!-- Built-in browser and privacy tools -->
         <activity
             android:name=".ui.MediaHubActivity"
             android:exported="false"
@@ -53,31 +51,6 @@
             android:exported="false"
             android:label="@string/title_settings" />
 
-
-        <!-- Accessibility Service for YouTube Auto-Skip and Audio Mute -->
-        <service
-            android:name=".service.YouTubeAdSkipperService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:label="@string/accessibility_service_label"
-            android:description="@string/accessibility_service_desc"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
-
-        <!-- Spotify Zero-VPN Audio Ad Silencer -->
-        <receiver
-            android:name=".receiver.SpotifyAdMuterReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.spotify.music.metadatachanged" />
-                <action android:name="com.spotify.music.playbackstatechanged" />
-            </intent-filter>
-        </receiver>
 
         <!-- Quick Settings Notification Bar Tile -->
         <service

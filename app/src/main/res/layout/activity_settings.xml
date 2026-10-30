@@ -28,105 +28,6 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- Upstream DNS Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#131B2B"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#24344D"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Upstream DNS Server"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:layout_marginBottom="12dp"
-                        android:text="Used to securely resolve non-ad domain queries"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerDns"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/ic_launcher_background"
-                        android:backgroundTint="@color/background_dark" />
-
-                    <Button
-                        android:id="@+id/btnSaveDns"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_gravity="end"
-                        android:layout_marginTop="10dp"
-                        android:text="Apply DNS"
-                        android:textSize="13sp"
-                        app:cornerRadius="8dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- YouTube Audio Mute Switch Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#131B2B"
-                app:cardCornerRadius="20dp"
-                app:strokeColor="#24344D"
-                app:strokeWidth="1dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="18dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_toStartOf="@id/switchAutoMute"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Auto-Mute Unskippable Ads"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Mutes audio during YouTube unskippable countdown ads"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchAutoMute"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Custom Domain Rules -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -304,7 +205,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Native Android Private DNS (Zero Battery)"
+                        android:text="Optional Private DNS Provider"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -314,7 +215,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="3dp"
-                        android:text="Android 9+ includes native Private DNS (DoT) which blocks ads system-wide without running any VPN background app at all:\n1. Settings -> Network &amp; Internet -> Private DNS.\n2. Select 'Private DNS provider hostname'.\n3. Enter: p2.freedns.controld.com"
+                        android:text="Android's Private DNS setting lets you choose a third-party provider. Filtering and data handling depend on that provider; Fokk Shield only copies the hostname for you.\n1. Settings -> Network &amp; Internet -> Private DNS.\n2. Select 'Private DNS provider hostname'.\n3. Enter: p2.freedns.controld.com"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 

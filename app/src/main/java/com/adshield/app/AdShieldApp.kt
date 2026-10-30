@@ -32,7 +32,6 @@ class AdShieldApp : Application() {
         blocklistEngine = BlocklistEngine(this)
         applicationScope.launch {
             blocklistEngine.initialize()
-            com.adshield.app.model.SelectorSyncManager.syncSelectorsAsync()
         }
     }
 
@@ -57,42 +56,13 @@ class AdShieldApp : Application() {
         prefs.edit().putLong(KEY_BLOCKED_ADS, current + count).apply()
     }
 
-    fun incrementSkippedYouTubeAds() {
-        val current = prefs.getLong(KEY_SKIPPED_YT_ADS, 0L)
-        prefs.edit().putLong(KEY_SKIPPED_YT_ADS, current + 1).apply()
-    }
-
-    fun incrementMutedSpotifyAds() {
-        val current = prefs.getLong(KEY_MUTED_SPOTIFY_ADS, 0L)
-        prefs.edit().putLong(KEY_MUTED_SPOTIFY_ADS, current + 1).apply()
-    }
-
-    fun incrementSkippedSocialAds() {
-        val current = prefs.getLong(KEY_SKIPPED_SOCIAL_ADS, 0L)
-        prefs.edit().putLong(KEY_SKIPPED_SOCIAL_ADS, current + 1).apply()
-    }
-
     fun getBlockedAdsCount(): Long = prefs.getLong(KEY_BLOCKED_ADS, 0L)
-    fun getSkippedYouTubeAdsCount(): Long = prefs.getLong(KEY_SKIPPED_YT_ADS, 0L)
-    fun getMutedSpotifyAdsCount(): Long = prefs.getLong(KEY_MUTED_SPOTIFY_ADS, 0L)
-    fun getSkippedSocialAdsCount(): Long = prefs.getLong(KEY_SKIPPED_SOCIAL_ADS, 0L)
-    fun getTotalAdsEliminated(): Long = getBlockedAdsCount() + getSkippedYouTubeAdsCount() + getMutedSpotifyAdsCount() + getSkippedSocialAdsCount()
 
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"
         const val PREFS_NAME = "adshield_prefs"
         const val KEY_BLOCKED_ADS = "key_blocked_ads_count"
-        const val KEY_SKIPPED_YT_ADS = "key_skipped_yt_ads_count"
-        const val KEY_MUTED_SPOTIFY_ADS = "key_muted_spotify_ads_count"
-        const val KEY_SKIPPED_SOCIAL_ADS = "key_skipped_social_ads_count"
         const val KEY_VPN_ENABLED = "key_vpn_enabled"
-        const val KEY_YT_SKIPPER_ENABLED = "key_yt_skipper_enabled"
-        const val KEY_SPOTIFY_MUTER_ENABLED = "key_spotify_muter_enabled"
-        const val KEY_INSTAGRAM_SKIPPER_ENABLED = "key_instagram_skipper_enabled"
-        const val KEY_X_SKIPPER_ENABLED = "key_x_skipper_enabled"
-        const val KEY_REDDIT_SKIPPER_ENABLED = "key_reddit_skipper_enabled"
-        const val KEY_AUTO_MUTE_ENABLED = "key_auto_mute_enabled"
-        const val KEY_UPSTREAM_DNS = "key_upstream_dns"
 
         lateinit var instance: AdShieldApp
             private set

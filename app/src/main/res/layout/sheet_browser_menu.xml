@@ -132,7 +132,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Fokk Shield Protection"
+                                android:text="Fokk Shield for this site"
                                 android:textColor="@color/text_primary"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -142,7 +142,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="0 ads &amp; trackers blocked on this page"
+                                android:text="0 requests filtered on this page"
                                 android:textColor="#7C6CF6"
                                 android:textSize="11.5sp" />
                         </LinearLayout>
@@ -169,7 +169,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_status_badge"
-                        android:text="Social Shield Active"
+                        android:text="Website Filters Active"
                         android:textColor="@color/text_primary"
                         android:textSize="11sp" />
 
@@ -179,7 +179,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/bg_status_badge"
-                        android:text="AI Slop Filter Active"
+                        android:text="AI Result Filter Active"
                         android:textColor="@color/text_primary"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -228,7 +228,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Social Shield, AI Filter, Spotify &amp; YouTube muter"
+                        android:text="Website privacy filters and site controls"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -700,33 +700,6 @@
                     android:textSize="14.5sp" />
             </LinearLayout>
 
-            <!-- Download Active Video -->
-            <LinearLayout
-                android:id="@+id/rowDownloadVideo"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="8dp">
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_download"
-                    app:tint="@color/text_secondary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:text="Download Video from Page"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14.5sp" />
-            </LinearLayout>
-
             <!-- Device Downloads Folder -->
             <LinearLayout
                 android:id="@+id/rowDownloads"
@@ -878,14 +851,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Extensions &amp; Filter Rules"
+                        android:text="Website Filters &amp; Customization"
                         android:textColor="@color/text_primary"
                         android:textSize="14.5sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Userscripts, Cookie shields &amp; Custom CSS"
+                        android:text="Custom scripts and CSS for supported websites"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>

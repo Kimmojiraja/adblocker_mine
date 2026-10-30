@@ -40,8 +40,6 @@ import android.os.Environment
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.webkit.WebViewCompat
-import androidx.webkit.WebViewFeature
 import com.adshield.app.AdShieldApp
 import com.adshield.app.MainActivity
 import com.adshield.app.R
@@ -55,7 +53,9 @@ import com.adshield.app.databinding.SheetTabSwitcherBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -66,8 +66,10 @@ import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Collections
 import java.util.Locale
 import java.util.UUID
+import java.util.WeakHashMap
 
 class MediaHubActivity : AppCompatActivity() {
 
@@ -95,13 +97,12 @@ class MediaHubActivity : AppCompatActivity() {
     private var pageBlockedCount = 0
 
     private val tabs = mutableListOf<BrowserTab>()
+    private val pageUrlsByWebView = Collections.synchronizedMap(WeakHashMap<WebView, String>())
     private var activeTabIndex = 0
     private var isShieldEnabled = true
     private var isDarkMode = false
     private var showingPrivateTabs = false
     private var isMediaPlaying = false
-    private var detectedMediaUrl: String? = null
-    private var detectedMediaTitle: String? = null
     private var isBiometricAuthenticatedForSession = false
 
     private var lastMediaPlayingTime = 0L
@@ -142,9 +143,8 @@ class MediaHubActivity : AppCompatActivity() {
                 } else {
                     currentSearchEngine.searchUrl + Uri.encode(spokenText)
                 }
-                val targetUrl = cleanTrackingParameters(rawTarget)
-                activeWebView?.loadUrl(targetUrl)
-                recordHistory(spokenText, targetUrl)
+                activeWebView?.loadUrl(rawTarget)
+                recordHistory(spokenText, rawTarget)
             }
         }
     }
@@ -257,7 +257,11 @@ class MediaHubActivity : AppCompatActivity() {
         defaultUa.replace("; wv", "").replace("Version/4.0 ", "")
     }
 
-    private val desktopUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+    private val desktopUa: String by lazy {
+        cleanMobileUa
+            .replace(Regex("\\(Linux; Android [^)]*\\)"), "(Windows NT 10.0; Win64; x64)")
+            .replace("Mobile Safari/", "Safari/")
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -309,10 +313,20 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     fun onPageAdsBlocked(count: Int) {
+        // Keep page and app totals in sync with the cosmetic filter callback.
         pageBlockedCount += count
         activeTab?.let { it.blockedAds += count }
         AdShieldApp.instance.incrementBlockedAds(count)
-// blocked count updated in memory
+    }
+
+    private fun recordFilteredRequest(webView: WebView?) {
+        runOnUiThread {
+            tabs.firstOrNull { it.webView === webView }?.let { tab ->
+                tab.blockedAds += 1
+                if (tab.webView === activeWebView) pageBlockedCount += 1
+            }
+            AdShieldApp.instance.incrementBlockedAds()
+        }
     }
 
     class WebAppInterface(private val activity: MediaHubActivity) {
@@ -325,10 +339,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun getStats(): String {
-            val total = AdShieldApp.instance.getTotalAdsEliminated().coerceAtLeast(1420L)
-            val trackers = (total * 0.65).toLong()
-            val savedMb = (total * 0.035).toLong() + 12L
-            return """{"blocked":$total,"trackers":$trackers,"savedMb":$savedMb}"""
+            val total = AdShieldApp.instance.getBlockedAdsCount()
+            return """{"blocked":$total}"""
         }
 
         @JavascriptInterface
@@ -379,13 +391,6 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
-        fun onMediaSourceFound(url: String, title: String, tag: String) {
-            activity.runOnUiThread {
-                activity.handleMediaSourceFound(url, title, tag)
-            }
-        }
-
-        @JavascriptInterface
         fun getSearchEngine(): String {
             return activity.currentSearchEngine.name
         }
@@ -400,123 +405,6 @@ class MediaHubActivity : AppCompatActivity() {
                 if (isPlaying || hasActiveVideo) {
                     activity.lastMediaPlayingTime = System.currentTimeMillis()
                 }
-            }
-        }
-    }
-
-    
-    private val TRACKING_PARAMS = setOf(
-        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-        "fbclid", "gclid", "twclid", "igshid", "msclkid", "mc_eid", "_ga", "_gl"
-    )
-
-    fun cleanTrackingParameters(url: String): String {
-        try {
-            val uri = Uri.parse(url)
-            if (uri.isOpaque || uri.queryParameterNames.isEmpty()) return url
-            val hasTracker = uri.queryParameterNames.any { it.lowercase() in TRACKING_PARAMS }
-            if (!hasTracker) return url
-
-            val builder = uri.buildUpon().clearQuery()
-            for (param in uri.queryParameterNames) {
-                if (param.lowercase() !in TRACKING_PARAMS) {
-                    for (value in uri.getQueryParameters(param)) {
-                        builder.appendQueryParameter(param, value)
-                    }
-                }
-            }
-            return builder.build().toString()
-        } catch (e: Exception) {
-            return url
-        }
-    }
-
-    fun handleMediaSourceFound(url: String, title: String, tag: String) {
-        if (url.isBlank() || url.startsWith("blob:") || url == detectedMediaUrl) return
-        detectedMediaUrl = url
-        detectedMediaTitle = title.ifBlank { activeTab?.title ?: "Web_Media" }
-        binding.btnDownloadMedia.visibility = View.VISIBLE
-    }
-
-    private fun showDownloadMediaDialog() {
-        val currentUrl = activeWebView?.url ?: activeTab?.url ?: ""
-        val url = detectedMediaUrl
-        val isYouTube = currentUrl.contains("youtube.com") || currentUrl.contains("youtu.be")
-        val isInstagram = currentUrl.contains("instagram.com")
-        val isTwitter = currentUrl.contains("twitter.com") || currentUrl.contains("x.com")
-        val isReddit = currentUrl.contains("reddit.com")
-
-        if (url.isNullOrBlank()) {
-            activeWebView?.evaluateJavascript(
-                """(function() {
-                    var v = document.querySelector('video');
-                    if (v) return v.currentSrc || v.src || (v.querySelector('source') ? v.querySelector('source').src : '');
-                    return '';
-                })();""".trimIndent()
-            ) { directSrc ->
-                val cleanDirect = directSrc?.replace("\"", "")?.replace("'", "")?.trim() ?: ""
-                if (cleanDirect.isNotBlank() && cleanDirect != "null" && !cleanDirect.startsWith("blob:")) {
-                    detectedMediaUrl = cleanDirect
-                    showDownloadMediaDialog()
-                } else if (isYouTube || isInstagram || isTwitter || isReddit) {
-                    Toast.makeText(this, "No direct downloadable media stream was found on this page", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this, "No downloadable video detected on this page yet", Toast.LENGTH_SHORT).show()
-                }
-            }
-            return
-        }
-
-        val rawTitle = detectedMediaTitle ?: activeTab?.title ?: "Web_Video"
-        val cleanTitle = rawTitle.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(35) + ".mp4"
-
-        if (isYouTube) {
-            val builder = AlertDialog.Builder(this)
-                .setTitle("Download Video")
-                .setMessage("Save the media stream detected by this page? Protected or adaptive streams may not be downloadable as one playable file.")
-
-            builder.setPositiveButton("Download MP4 Stream") { _, _ ->
-                startDirectMediaDownload(url, cleanTitle)
-            }
-            builder.setNegativeButton("Cancel", null)
-            builder.show()
-            return
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Download Video")
-            .setMessage("Save \"$cleanTitle\" directly to your device Downloads folder?")
-            .setPositiveButton("Download") { _, _ ->
-                startDirectMediaDownload(url, cleanTitle)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun startDirectMediaDownload(url: String, fileName: String) {
-        try {
-            val uri = Uri.parse(url)
-            if (uri.scheme != "https" && uri.scheme != "http") {
-                Toast.makeText(this, "Only direct HTTP(S) media links can be downloaded", Toast.LENGTH_SHORT).show()
-                return
-            }
-            val request = DownloadManager.Request(Uri.parse(url)).apply {
-                setTitle(fileName)
-                setDescription("Downloading via Fokk Browser...")
-                setMimeType("video/mp4")
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                setAllowedOverMetered(true)
-                setAllowedOverRoaming(true)
-            }
-            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
-            Toast.makeText(this, "Download started! Saving to Downloads folder...", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-            } catch (ex: Exception) {
-                Toast.makeText(this, "Cannot start download: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -597,8 +485,8 @@ class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private fun recordHistory(title: String, url: String) {
-        if (activeTab?.isPrivate == true) return
+    private fun recordHistory(title: String, url: String, isPrivate: Boolean = activeTab?.isPrivate == true) {
+        if (isPrivate) return
         if (url.startsWith("file://") || url.isBlank()) return
 
         try {
@@ -645,8 +533,8 @@ class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        // Block third-party tracking cookies globally for privacy
-        cookieManager.setAcceptThirdPartyCookies(webView, false)
+        // Preserve compatibility for regular browsing. Private tabs still block third-party cookies.
+        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -694,25 +582,14 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Pre-inject content blocker at document start if supported
-        if (injectionScript.isNotEmpty() && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            try {
-                WebViewCompat.addDocumentStartJavaScript(webView, injectionScript, setOf("*"))
-            } catch (e: Exception) {
-                Log.w(TAG, "Document start script error", e)
-            }
-        }
+        // Content filters are applied after navigation and only on supported, non-platform sites.
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val reqUrl = request?.url?.toString() ?: return false
                 if (reqUrl.startsWith("http://") || reqUrl.startsWith("https://")) {
+                    view?.let { pageUrlsByWebView[it] = reqUrl }
                     setBridgeEnabled(view, reqUrl)
-                    val cleanUrl = cleanTrackingParameters(reqUrl)
-                    if (cleanUrl != reqUrl) {
-                        view?.loadUrl(cleanUrl)
-                        return true
-                    }
                     return false
                 }
                 return try {
@@ -726,104 +603,91 @@ class MediaHubActivity : AppCompatActivity() {
 
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, pageUrl, favicon)
+                if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
                 setBridgeEnabled(view, pageUrl)
-                isShieldEnabled = isShieldEnabledFor(pageUrl)
                 if (view == activeWebView) {
+                    isShieldEnabled = isShieldEnabledFor(pageUrl)
                     binding.progressBar.visibility = View.VISIBLE
                     pageBlockedCount = 0
                     // page reset
-                    detectedMediaUrl = null
-                    detectedMediaTitle = null
-                    val isYtVideo = pageUrl?.let { it.contains("youtube.com/watch") || it.contains("youtube.com/shorts/") || it.contains("youtu.be/") } == true
-                    binding.btnDownloadMedia.visibility = if (isYtVideo) View.VISIBLE else View.GONE
                     if (pageUrl != null && !binding.urlInput.hasFocus()) {
                         updateUrlBar(pageUrl, null)
                     }
                 }
-                injectAdblockScript(view)
-                if (isDarkMode) injectDarkModeScript(view, true)
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+                if (request?.isForMainFrame == true && view == activeWebView) {
+                    binding.progressBar.visibility = View.GONE
+                    Log.w(TAG, "Navigation failed for ${request.url}: ${error?.description}")
+                    Toast.makeText(
+                        this@MediaHubActivity,
+                        "This page could not load. Check your connection or try turning off the site shield.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
 
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
                 super.onPageFinished(view, pageUrl)
+                if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
                 if (view == activeWebView) {
                     binding.progressBar.visibility = View.GONE
                 }
-                injectAdblockScript(view)
-                pageUrl?.let {
-                    activeTab?.url = it
-                    if (it.contains("fokk_start.html")) {
-                        activeTab?.title = "New Tab"
-                    } else {
-                        recordHistory(view?.title ?: it, it)
+                injectAdblockScript(view, pageUrl)
+                if (isDarkMode && !isThirdPartyMediaService(pageUrl)) injectDarkModeScript(view, true)
+                val loadedTab = tabs.firstOrNull { it.webView == view }
+                pageUrl?.let { loadedUrl ->
+                    loadedTab?.url = loadedUrl
+                    if (loadedUrl.contains("fokk_start.html")) {
+                        loadedTab?.title = "New Tab"
+                    } else if (loadedTab != null) {
+                        recordHistory(view?.title ?: loadedUrl, loadedUrl, loadedTab.isPrivate)
                     }
-                    updateUrlBar(it, view?.title)
+                    if (view == activeWebView) updateUrlBar(loadedUrl, view?.title)
                 }
                 view?.title?.let {
-                    if (it.isNotEmpty() && activeTab?.url?.contains("fokk_start.html") != true) {
-                        activeTab?.title = it
+                    if (it.isNotEmpty() && loadedTab?.url?.contains("fokk_start.html") != true) {
+                        loadedTab?.title = it
                     }
                 }
 
                 // If tab is in desktop mode, inject desktop viewport meta override
-                if (activeTab?.isDesktop == true) {
+                if (loadedTab?.isDesktop == true && !isThirdPartyMediaService(pageUrl)) {
                     val js = "javascript:(function(){let vp=document.querySelector('meta[name=\"viewport\"]');if(vp){vp.setAttribute('content','width=1280, initial-scale=0.85');}})();"
                     view?.evaluateJavascript(js, null)
                 }
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                if (!isShieldEnabledFor(request?.url?.toString())) return super.shouldInterceptRequest(view, request)
+                // Never replace a requested document with a synthetic empty response.
+                if (request?.isForMainFrame == true) return super.shouldInterceptRequest(view, request)
+
+                val pageUrl = view?.let { pageUrlsByWebView[it] }
+                val requestUrl = request?.url?.toString()
+                if (isThirdPartyMediaService(pageUrl) || isThirdPartyMediaService(requestUrl) ||
+                    !isShieldEnabledFor(pageUrl ?: requestUrl)) {
+                    return super.shouldInterceptRequest(view, request)
+                }
 
                 val host = request?.url?.host ?: return super.shouldInterceptRequest(view, request)
+                val pageHost = pageUrl?.let { runCatching { Uri.parse(it).host }.getOrNull() }
+                if (pageHost != null && isSameSite(pageHost, host)) {
+                    return super.shouldInterceptRequest(view, request)
+                }
                 val urlStr = request.url.toString().lowercase()
-
-                // Universal Media Stream Sniffer: detect video URLs across YouTube, social platforms, and media sites
-                val isMediaStream = (
-                    urlStr.contains(".mp4") ||
-                    urlStr.contains(".webm") ||
-                    urlStr.contains(".m4v") ||
-                    urlStr.contains("googlevideo.com/videoplayback") ||
-                    urlStr.contains("video.twimg.com") ||
-                    urlStr.contains("v.redd.it") ||
-                    urlStr.contains("fbcdn.net")
-                ) && !urlStr.contains("doubleclick") && !urlStr.contains("googleads") && !urlStr.contains("/pagead/")
-
-                if (isMediaStream) {
-                    val rawUrl = request.url.toString()
-                    runOnUiThread {
-                        handleMediaSourceFound(rawUrl, activeTab?.title ?: "Web Video", "video")
-                    }
-                }
-
-                // Block YouTube prerolls, ad telemetry, and ad video streams before streaming host pass-through
-                val isYouTubeAd = (
-                    urlStr.contains("/api/stats/ads") ||
-                    urlStr.contains("/youtubei/v1/player/ad_break") ||
-                    urlStr.contains("/ptracking?") ||
-                    urlStr.contains("/pagead/") ||
-                    urlStr.contains("googleads") ||
-                    urlStr.contains("doubleclick.net") ||
-                    (urlStr.contains("googlevideo.com") && (urlStr.contains("&adformat=") || urlStr.contains("?adformat=")))
-                )
-                if (isYouTubeAd) {
-                    runOnUiThread { onPageAdsBlocked(1) }
-                    return WebResourceResponse(
-                        "text/plain",
-                        "UTF-8",
-                        200,
-                        "OK",
-                        mapOf("Access-Control-Allow-Origin" to "*"),
-                        ByteArrayInputStream("".toByteArray(Charsets.UTF_8))
-                    )
-                }
 
                 if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
                 val isStrictAdblock = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
-                val isSocialShield = prefs.getBoolean(PREF_SOCIAL_WIDGETS, true)
+                val isSocialShield = prefs.getBoolean(PREF_SOCIAL_WIDGETS, false)
 
                 val isSocialTracker = isSocialShield && (
                     host.contains("connect.facebook.net") ||
@@ -840,7 +704,7 @@ class MediaHubActivity : AppCompatActivity() {
                         urlStr.contains("adservice.google.")
 
                 if (isSocialTracker || (isStrictAdblock && (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)))) {
-                    runOnUiThread { onPageAdsBlocked(1) }
+                    recordFilteredRequest(view)
                     val mimeType = if (urlStr.endsWith(".js") || urlStr.contains(".js?")) "application/javascript" else "text/plain"
                     val emptyPayload = if (mimeType == "application/javascript") "/* blocked by fokk shield */" else ""
                     return WebResourceResponse(
@@ -1004,7 +868,36 @@ class MediaHubActivity : AppCompatActivity() {
 
     private fun isShieldEnabledFor(url: String?): Boolean {
         val host = try { Uri.parse(url).host?.lowercase() } catch (_: Exception) { null } ?: return true
-        return host !in prefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty()
+        if (isThirdPartyMediaServiceHost(host)) return false
+        val disabledSites = prefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty()
+        return host !in disabledSites && registrableDomain(host) !in disabledSites
+    }
+
+    /** Keep ad filters and injected scripts out of third-party streaming services. */
+    private fun isThirdPartyMediaService(url: String?): Boolean {
+        val host = try { Uri.parse(url).host?.lowercase() } catch (_: Exception) { null } ?: return false
+        return isThirdPartyMediaServiceHost(host)
+    }
+
+    private fun isThirdPartyMediaServiceHost(host: String): Boolean =
+        listOf(
+            "youtube.com", "youtube-nocookie.com", "youtu.be",
+            "spotify.com", "spotify.link", "instagram.com", "instagr.am"
+        )
+            .any { host == it || host.endsWith(".$it") }
+
+    /** Standard protection leaves same-site requests alone to reduce breakage. */
+    private fun isSameSite(firstHost: String, secondHost: String): Boolean =
+        registrableDomain(firstHost) == registrableDomain(secondHost)
+
+    private fun registrableDomain(rawHost: String): String {
+        val host = rawHost.lowercase().trim('.').substringBefore('%')
+        if (host.isBlank() || ':' in host || host.matches(Regex("\\d{1,3}(\\.\\d{1,3}){3}"))) return host
+        val labels = host.split('.').filter(String::isNotBlank)
+        if (labels.size < 2) return host
+        val lastTwo = labels.takeLast(2).joinToString(".")
+        val suffixLabels = if (lastTwo in MULTI_LABEL_PUBLIC_SUFFIXES) 2 else 1
+        return labels.takeLast(minOf(labels.size, suffixLabels + 1)).joinToString(".")
     }
 
     private fun setShieldEnabledForCurrentSite(enabled: Boolean) {
@@ -1014,8 +907,14 @@ class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, "Open a website to change its shield setting", Toast.LENGTH_SHORT).show()
             return
         }
+        val site = registrableDomain(host)
         val disabled = prefs.getStringSet(PREF_SHIELD_DISABLED_SITES, emptySet()).orEmpty().toMutableSet()
-        if (enabled) disabled.remove(host) else disabled.add(host)
+        if (enabled) {
+            disabled.remove(host)
+            disabled.remove(site)
+        } else {
+            disabled.add(site)
+        }
         prefs.edit().putStringSet(PREF_SHIELD_DISABLED_SITES, disabled).apply()
         isShieldEnabled = enabled
     }
@@ -1045,21 +944,15 @@ class MediaHubActivity : AppCompatActivity() {
         if (tabs.isEmpty()) addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
     }
 
-    private fun injectAdblockScript(webView: WebView?) {
+    private fun injectAdblockScript(webView: WebView?, pageUrl: String? = webView?.url) {
         if (webView == null) return
+        if (isThirdPartyMediaService(pageUrl) || !isShieldEnabledFor(pageUrl)) return
         if (injectionScript.isNotEmpty()) {
             webView.evaluateJavascript(injectionScript, null)
             val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
             if (!isAiFilter) {
                 webView.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled(false);", null)
             }
-        }
-
-        // Cookie & GDPR Wall Auto-Dismiss
-        val isCookieConsent = prefs.getBoolean(PREF_COOKIE_CONSENT, true)
-        if (isCookieConsent) {
-            val cookieDismissJs = "javascript:(function(){let d=document.getElementById('__fokk_cookie_killer');if(!d){let s=document.createElement('style');s.id='__fokk_cookie_killer';s.innerHTML='#onetrust-consent-sdk, #onetrust-banner-sdk, .onetrust-pc-dark, .cookie-banner, .cookie-notice, #cookie-notice, .qc-cmp2-container, #cmp-app-container, .fc-consent-root { display: none !important; height: 0 !important; visibility: hidden !important; }';(document.head||document.documentElement).appendChild(s);}})();"
-            webView.evaluateJavascript(cookieDismissJs, null)
         }
 
         // Custom User CSS
@@ -1082,7 +975,9 @@ class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         webView.removeJavascriptInterface("FokkShieldBridge")
         webView.removeJavascriptInterface("FokkMediaBridge")
-        webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
+        if (!isThirdPartyMediaService(url)) {
+            webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
+        }
         if (url?.startsWith("file:///android_asset/") == true) {
             webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
         }
@@ -1090,6 +985,7 @@ class MediaHubActivity : AppCompatActivity() {
 
     private fun injectDarkModeScript(webView: WebView?, enable: Boolean) {
         if (webView == null) return
+        if (isThirdPartyMediaService(webView.url)) return
         val js = if (enable) {
             "javascript:(function(){let d=document.getElementById('__fokk_dark');if(!d){let s=document.createElement('style');s.id='__fokk_dark';s.innerHTML='html { filter: invert(90%) hue-rotate(180deg) !important; background: #111 !important; } img, video, iframe, canvas { filter: invert(100%) hue-rotate(180deg) !important; }';document.head.appendChild(s);}})();"
         } else {
@@ -1109,12 +1005,10 @@ class MediaHubActivity : AppCompatActivity() {
             lower.contains("analytics")) {
             return false
         }
-        return lower.endsWith("googlevideo.com") ||
-                lower.endsWith("ytimg.com") ||
-                lower.endsWith("ggpht.com") ||
-                lower == "youtube.com" ||
-                lower.endsWith(".youtube.com") ||
-                lower == "youtu.be"
+        return listOf(
+            "googlevideo.com", "ytimg.com", "ggpht.com", "mux.com", "bitmovin.com",
+            "peer5.com", "streamroot.io", "conviva.com", "nicepeopleatwork.com"
+        ).any { lower == it || lower.endsWith(".$it") }
     }
 
     private fun setupControls() {
@@ -1124,10 +1018,6 @@ class MediaHubActivity : AppCompatActivity() {
 
         binding.btnVoiceSearch.setOnClickListener {
             startVoiceSearch()
-        }
-
-        binding.btnDownloadMedia.setOnClickListener {
-            showDownloadMediaDialog()
         }
 
         binding.btnNavTabs.setOnClickListener {
@@ -1180,9 +1070,8 @@ class MediaHubActivity : AppCompatActivity() {
                     query.contains(".") && !query.contains(" ") -> "https://$query"
                     else -> currentSearchEngine.searchUrl + Uri.encode(query)
                 }
-                val targetUrl = cleanTrackingParameters(rawTarget)
-                activeWebView?.loadUrl(targetUrl)
-                recordHistory(query, targetUrl)
+                activeWebView?.loadUrl(rawTarget)
+                recordHistory(query, rawTarget)
                 binding.urlInput.clearFocus()
             }
         }
@@ -1200,13 +1089,14 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun showRecentHistoryOrSuggestions(query: String) {
+        suggestionJob?.cancel()
+        suggestionJob = null
         if (query.isEmpty()) {
             val historyList = getRecentHistory()
             displaySuggestions(historyList)
             return
         }
 
-        suggestionJob?.cancel()
         val historyList = getRecentHistory().filter {
             it.title.contains(query, ignoreCase = true) || it.url.contains(query, ignoreCase = true)
         }
@@ -1217,16 +1107,19 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         suggestionJob = lifecycleScope.launch(Dispatchers.IO) {
+            delay(300)
             val mergedList = historyList.toMutableList()
+            var conn: HttpURLConnection? = null
             try {
                 val endpoint = "https://duckduckgo.com/ac/?q=${Uri.encode(query)}&type=list"
-                val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 1200
-                    readTimeout = 1200
+                val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 800
+                    readTimeout = 800
                     setRequestProperty("User-Agent", cleanMobileUa)
                 }
-                if (conn.responseCode == 200) {
-                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                conn = connection
+                if (connection.responseCode == 200) {
+                    val text = connection.inputStream.bufferedReader().use { it.readText() }
                     val jsonArr = JSONArray(text)
                     if (jsonArr.length() >= 2) {
                         val suggestionsArr = jsonArr.getJSONArray(1)
@@ -1239,10 +1132,16 @@ class MediaHubActivity : AppCompatActivity() {
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+            } finally {
+                conn?.disconnect()
             }
             withContext(Dispatchers.Main) {
-                displaySuggestions(mergedList)
+                if (binding.urlInput.hasFocus() && binding.urlInput.text.toString().trim() == query) {
+                    displaySuggestions(mergedList)
+                }
             }
         }
     }
@@ -1380,23 +1279,21 @@ class MediaHubActivity : AppCompatActivity() {
         dialog.setContentView(sheetBinding.root)
 
         sheetBinding.switchStrictAdblock.isChecked = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
-        sheetBinding.switchCookieConsent.isChecked = prefs.getBoolean(PREF_COOKIE_CONSENT, true)
-        sheetBinding.switchSocialWidgets.isChecked = prefs.getBoolean(PREF_SOCIAL_WIDGETS, true)
+        sheetBinding.switchSocialWidgets.isChecked = prefs.getBoolean(PREF_SOCIAL_WIDGETS, false)
         sheetBinding.editCustomJs.setText(prefs.getString(PREF_CUSTOM_JS, "") ?: "")
         sheetBinding.editCustomCss.setText(prefs.getString(PREF_CUSTOM_CSS, "") ?: "")
 
         sheetBinding.btnSaveExtensions.setOnClickListener {
             prefs.edit()
                 .putBoolean(PREF_STRICT_ADBLOCK, sheetBinding.switchStrictAdblock.isChecked)
-                .putBoolean(PREF_COOKIE_CONSENT, sheetBinding.switchCookieConsent.isChecked)
                 .putBoolean(PREF_SOCIAL_WIDGETS, sheetBinding.switchSocialWidgets.isChecked)
                 .putString(PREF_CUSTOM_JS, sheetBinding.editCustomJs.text.toString().trim())
                 .putString(PREF_CUSTOM_CSS, sheetBinding.editCustomCss.text.toString().trim())
                 .apply()
 
-            injectAdblockScript(activeWebView)
-            Toast.makeText(this, "Custom Filters & Extensions Applied!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Browser filters saved. Reloading the current page…", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
+            activeWebView?.reload()
         }
 
         dialog.show()
@@ -1814,7 +1711,7 @@ class MediaHubActivity : AppCompatActivity() {
             showSavedPagesDialog()
         }
 
-        sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount ads & trackers blocked on this page"
+        sheetBinding.textMenuBlockedInfo.text = "$pageBlockedCount requests filtered on this page"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
         sheetBinding.badgeSocialShield.alpha = if (isShieldEnabled) 1.0f else 0.4f
         sheetBinding.badgeAiFilter.alpha = if (isShieldEnabled) 1.0f else 0.4f
@@ -1862,11 +1759,6 @@ class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        sheetBinding.rowDownloadVideo.setOnClickListener {
-            dialog.dismiss()
-            showDownloadMediaDialog()
-        }
-
         val showShortcuts = prefs.getBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, true)
         sheetBinding.switchShowShortcuts.isChecked = showShortcuts
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
@@ -1897,35 +1789,34 @@ class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
+            if (isThirdPartyMediaService(activeWebView?.url)) {
+                sheetBinding.switchMenuShield.isChecked = false
+                Toast.makeText(this, "Filtering is disabled for this service", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
             setShieldEnabledForCurrentSite(isChecked)
             sheetBinding.badgeSocialShield.alpha = if (isChecked) 1.0f else 0.4f
             val isAiOn = prefs.getBoolean(PREF_AI_FILTER, true)
             sheetBinding.badgeAiFilter.alpha = if (isChecked && isAiOn) 1.0f else 0.4f
             val msg = if (isChecked) "Fokk Shield Protection Enabled" else "Fokk Shield Paused"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            activeWebView?.reload()
         }
 
         sheetBinding.switchDesktop.setOnCheckedChangeListener { _, isChecked ->
             activeTab?.let { tab ->
                 tab.isDesktop = isChecked
                 applyDesktopMode(tab.webView, tab.isDesktop)
-                var currentUrl = tab.webView.url ?: tab.url
-                if (tab.isDesktop && currentUrl.contains("m.youtube.com")) {
-                    currentUrl = currentUrl.replace("m.youtube.com", "www.youtube.com")
-                    tab.webView.loadUrl(currentUrl)
-                } else if (!tab.isDesktop && currentUrl.contains("www.youtube.com")) {
-                    currentUrl = currentUrl.replace("www.youtube.com", "m.youtube.com")
-                    tab.webView.loadUrl(currentUrl)
-                } else {
-                    tab.webView.reload()
-                }
+                tab.webView.reload()
             }
             dialog.dismiss()
         }
 
         sheetBinding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
             isDarkMode = isChecked
-            injectDarkModeScript(activeWebView, isDarkMode)
+            if (!isThirdPartyMediaService(activeWebView?.url)) {
+                injectDarkModeScript(activeWebView, isDarkMode)
+            }
             dialog.dismiss()
         }
 
@@ -2068,9 +1959,7 @@ class MediaHubActivity : AppCompatActivity() {
                         Toast.makeText(this, "Download cancelled", Toast.LENGTH_SHORT).show()
                     }
                     DownloadManager.STATUS_FAILED -> {
-                        if (entry.url.startsWith("https://") || entry.url.startsWith("http://")) {
-                            startDirectMediaDownload(entry.url, entry.title)
-                        }
+                        Toast.makeText(this, "Download failed. Reopen the page and retry the download from its link.", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -2085,7 +1974,7 @@ class MediaHubActivity : AppCompatActivity() {
         val shield = if (isShieldEnabledFor(url)) "On" else "Off"
         AlertDialog.Builder(this)
             .setTitle("Privacy: $host")
-            .setMessage("Shield: $shield\nThird-party cookies: blocked\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
+            .setMessage("Shield: $shield\nThird-party cookies: ${if (activeTab?.isPrivate == true) "blocked in this private tab" else "allowed for site compatibility"}\nMixed content: restricted\nCamera, microphone and location: not granted by this browser.")
             .setPositiveButton("Clear site storage") { _, _ ->
                 WebStorage.getInstance().deleteOrigin("https://$host")
                 WebStorage.getInstance().deleteOrigin("http://$host")
@@ -2116,7 +2005,7 @@ class MediaHubActivity : AppCompatActivity() {
         if (!inPip) {
             binding.topBar.visibility = View.VISIBLE
             binding.bottomNav.visibility = View.VISIBLE
-            activeWebView?.evaluateJavascript(
+            if (!isThirdPartyMediaService(activeWebView?.url)) activeWebView?.evaluateJavascript(
                 """(function() {
                     document.documentElement.classList.remove('fokk-pip-active');
                     if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();
@@ -2183,11 +2072,15 @@ class MediaHubActivity : AppCompatActivity() {
             binding.cardSuggestions.visibility = View.GONE
             activeWebView?.onResume()
             activeWebView?.resumeTimers()
-            activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
+            if (!isThirdPartyMediaService(activeWebView?.url)) {
+                activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
+            }
         } else {
             binding.topBar.visibility = View.VISIBLE
             binding.bottomNav.visibility = View.VISIBLE
-            activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
+            if (!isThirdPartyMediaService(activeWebView?.url)) {
+                activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
+            }
             activeWebView?.requestLayout()
         }
     }
@@ -2230,13 +2123,18 @@ class MediaHubActivity : AppCompatActivity() {
     }
 
     companion object {
+        private val MULTI_LABEL_PUBLIC_SUFFIXES = setOf(
+            "co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "org.au",
+            "co.nz", "com.br", "com.cn", "com.sg", "com.tr", "co.in", "firm.in",
+            "net.in", "org.in", "com.mx", "co.za", "co.jp", "ne.jp", "com.tw"
+        )
+
         const val EXTRA_URL = "extra_url"
         const val EXTRA_OPEN_ACTION = "extra_open_action"
         private const val TAG = "FokkBrowser"
         private const val PREFS_NAME = "fokk_browser_prefs"
         private const val PREF_SEARCH_ENGINE = "fokk_search_engine"
         private const val PREF_STRICT_ADBLOCK = "filter_strict_adblock"
-        private const val PREF_COOKIE_CONSENT = "filter_cookie_consent"
         private const val PREF_SOCIAL_WIDGETS = "filter_social_trackers"
         private const val PREF_CUSTOM_JS = "custom_userscript"
         private const val PREF_CUSTOM_CSS = "custom_usercss"

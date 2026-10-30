@@ -58,7 +58,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="NO-VPN ARCHITECTURE • ON-DEVICE"
+                            android:text="BROWSER FILTERS • NO LOCAL VPN"
                             android:textColor="@color/fokk_cyan"
                             android:textSize="10sp"
                             android:textStyle="bold"
@@ -117,14 +117,14 @@
                     android:background="@drawable/bg_status_badge"
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="2dp"
-                    android:text="ALL SYSTEMS SHIELDED"
+                    android:text="BROWSER SHIELD READY"
                     android:textColor="@color/fokk_cyan"
                     android:textSize="9.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Live Impact Matrix -->
+        <!-- Browser shield activity -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -152,13 +152,13 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="LIVE DEFENSE MATRIX"
+                        android:text="BROWSER SHIELD ACTIVITY"
                         android:textColor="@color/text_tertiary"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.08" />
 
-                    <!-- Live Total Eliminated Counter Badge -->
+                    <!-- Live browser request counter -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -170,7 +170,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="TOTAL: "
+                            android:text="FILTERED: "
                             android:textColor="@color/text_secondary"
                             android:textSize="10sp"
                             android:textStyle="bold" />
@@ -186,98 +186,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <!-- Stat 1: YouTube Ads Skipped -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_stat_chip"
-                        android:padding="12dp"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:id="@+id/textYtSkippedCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="@color/youtube_red"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="YT Skipped"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <!-- Stat 2: Spotify Ads Muted -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginHorizontal="3dp"
-                        android:background="@drawable/bg_stat_chip"
-                        android:padding="12dp"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:id="@+id/textSpotifyMutedCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="@color/spotify_green"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Audio Muted"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <!-- Stat 3: Time Reclaimed -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:background="@drawable/bg_stat_chip"
-                        android:padding="12dp"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:id="@+id/textTimeReclaimed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0m"
-                            android:textColor="@color/fokk_cyan"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Time Saved"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -341,7 +249,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Brave &amp; Firefox grade engine: multi-tab browsing, cosmetic element collapsing, and ad-free streaming."
+                            android:text="Multi-tab browsing, per-site filters, private tabs, and site controls."
                             android:textColor="@color/text_secondary"
                             android:textSize="12.5sp"
                             android:lineSpacingExtra="2dp" />
@@ -416,7 +324,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Feature 1: YouTube Smart Auto-Skipper & Muter -->
+        <!-- Browser protection applies to ordinary websites only. Third-party streaming services are left unchanged. -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -427,230 +335,17 @@
             app:strokeColor="@color/card_border"
             app:strokeWidth="1dp">
 
-            <LinearLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_toStartOf="@id/switchYtSkipper"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:src="@drawable/ic_youtube" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="YouTube Ad Assistant"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Instantly clicks 'Skip Ad' in 0.05s, silences unskippable bumper ads, and fast-skips sponsored YouTube Shorts."
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp"
-                            android:lineSpacingExtra="2dp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchYtSkipper"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <!-- Help / Troubleshooting Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPermissionHelp"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:paddingHorizontal="0dp"
-                    android:text="Troubleshoot &amp; Device Permissions"
-                    android:textColor="@color/secondary"
-                    android:textSize="12sp"
-                    app:icon="@drawable/ic_info"
-                    app:iconSize="16dp"
-                    app:iconTint="@color/secondary" />
-            </LinearLayout>
+                android:padding="18dp"
+                android:text="Built-in ad and tracker filters for websites opened in Fokk Shield Browser, with a per-site off switch. The browser leaves YouTube, Spotify, and Instagram pages untouched."
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:lineSpacingExtra="2dp" />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Feature 2: Spotify Zero-VPN Ad Silencer -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/surface_dark"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/card_border"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_toStartOf="@id/switchSpotifyMuter"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:src="@drawable/ic_spotify" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="Spotify Ad Silencer"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Silences audio commercials automatically and restores music playback volume the exact millisecond music resumes."
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp"
-                            android:lineSpacingExtra="2dp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchSpotifyMuter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <!-- Help Button for Spotify Setup -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSpotifyHelp"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:paddingHorizontal="0dp"
-                    android:text="Spotify Integration Guide"
-                    android:textColor="@color/spotify_green"
-                    android:textSize="12sp"
-                    app:icon="@drawable/ic_info"
-                    app:iconSize="16dp"
-                    app:iconTint="@color/spotify_green" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Feature 2B: Instagram Ad & Sponsored Skipper -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/surface_dark"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/card_border"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_toStartOf="@id/switchInstagramSkipper"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:src="@drawable/ic_instagram" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="Instagram Reels Ad Skipper"
-                                android:textColor="@color/text_primary"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Fast-skips sponsored Reels and advertiser promotions instantly in your native Instagram Reels feed."
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp"
-                            android:lineSpacingExtra="2dp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchInstagramSkipper"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Feature 3: System-Wide Ad Blocker (Private DNS) -->
+        <!-- Optional user-configured DNS provider -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -683,7 +378,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
-                        android:text="System Ad Blocker (Native DNS)"
+                        android:text="Private DNS Setup Guide"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -693,7 +388,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Blocks banners, trackers, and popup ads across Chrome and games via Android's native Private DNS. Zero VPN tunnel, UPI &amp; banking safe."
+                    android:text="Copy a third-party DNS provider hostname and review it in Android Settings. Filtering depends on that provider and may not cover every app or ad."
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp"
                     android:lineSpacingExtra="2dp" />
@@ -705,7 +400,7 @@
                     android:layout_height="48dp"
                     android:layout_marginTop="14dp"
                     android:backgroundTint="@color/surface_elevated"
-                    android:text="Configure Private DNS (1-Tap)"
+                    android:text="Copy Hostname &amp; Open Settings"
                     android:textColor="@color/text_primary"
                     android:textSize="13sp"
                     app:cornerRadius="12dp"

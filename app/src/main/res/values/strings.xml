@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">Fokk Shield</string>
-    <string name="accessibility_service_label">Fokk Shield Assistant</string>
-    <string name="accessibility_service_desc">Automatically skips video ads on YouTube, mutes unskippable ads, and silences Spotify ads.</string>
     <string name="title_brand_guide">Brand Battery Optimizer</string>
     <string name="title_settings">Settings &amp; Filters</string>
 </resources>

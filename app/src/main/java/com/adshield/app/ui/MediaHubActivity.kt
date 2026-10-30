@@ -3567,6 +3567,11 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val MAX_RESTORED_TABS = 12
         private const val MAX_REPORTED_HOSTS = 12
         private const val MAX_DOWNLOAD_FILENAME_LENGTH = 180
+        private const val MEDIA_RECENT_ACTIVITY_WINDOW_MS = 5_000L
+        private const val PREF_SHIELD_DISABLED_SITES = "key_shield_disabled_sites"
+        private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
+        private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
+        private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,
@@ -3574,10 +3579,5 @@ open class MediaHubActivity : AppCompatActivity() {
             PREF_SHIELD_DISABLED_SITES,
             OfflinePageStore.PREF_SAVED_PAGES
         )
-        private const val MEDIA_RECENT_ACTIVITY_WINDOW_MS = 5_000L
-        private const val PREF_SHIELD_DISABLED_SITES = "key_shield_disabled_sites"
-        private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
-        private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
-        private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
     }
 }

@@ -18,9 +18,9 @@ class PrivateBrowserActivity : MediaHubActivity() {
             try {
                 WebView.setDataDirectorySuffix(PRIVATE_WEBVIEW_SUFFIX)
                 privateProfileConfigured = true
-            } catch (_: IllegalStateException) {
+            } catch (e: IllegalStateException) {
                 privateProfileSetupFailed = true
-            } catch (_: IllegalArgumentException) {
+            } catch (e: IllegalArgumentException) {
                 privateProfileSetupFailed = true
             }
         }

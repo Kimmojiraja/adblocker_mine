@@ -439,7 +439,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     conn.setRequestProperty("Accept", "application/dns-json")
                     if (conn.responseCode == 200) {
                         val body = conn.inputStream.bufferedReader().use { it.readText() }
-                        val isBlocked = body.contains(""0.0.0.0"") || body.contains(""Status": 3") || body.contains(""Status":3")
+                        val isBlocked = body.contains("0.0.0.0") || body.contains("\"Status\": 3") || body.contains("\"Status\":3")
                         eliteDnsCache[host] = isBlocked
                     }
                 } catch (_: Exception) {
@@ -4991,6 +4991,9 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_HTTPS_ONLY = "fokk_https_only_enabled"
         private const val PREF_FOKKO_AI = "fokk_fokko_ai_enabled"
         private const val PREF_ACTIVE_THEME = "fokk_active_theme"
+        private const val PREF_USER_AVATAR = "fokk_user_avatar"
+        private const val PREF_USER_ALIAS = "fokk_user_alias"
+        private const val PREF_ELITE_DNS_FILTER = "fokk_elite_dns_filter"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,

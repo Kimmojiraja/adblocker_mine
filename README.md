@@ -1,4 +1,4 @@
-# Fokk Shield Browser
+# Fokk Browser project 
 
 <p align="center">
   <img width="800" alt="Fokk Shield Browser" src="https://github.com/user-attachments/assets/70e9a0ca-0f16-46ad-ae70-c9cf176e186e" />

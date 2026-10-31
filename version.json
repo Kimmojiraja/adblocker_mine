@@ -1,6 +1,6 @@
 {
-  "versionCode": 58,
-  "versionName": "1.0.58",
+  "versionCode": 59,
+  "versionName": "1.0.59",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- YouTube Zero-Blank-Screen Anti-Stall Engine: Pre-emptive /youtubei/v1/player JSON response cleansing and automatic stream recovery eliminating 'Sponsored 1 of 2 0:00' pauses.\n- Instagram Feed Sponsored Posts Scrubber: Comprehensive suppression of sponsored feed posts, suggested cards, and paid partnerships via native CSS :has() and continuous DOM filtering.\n- Full-Bleed Zero-Gap Floating Command Bar: Fullscreen viewport eliminating all empty space when the toolbar hides on scroll, with smart idle auto-reappearance."
+  "changelog": "- Native Document-Start Script Execution: Injected adshield engine via WebViewCompat.addDocumentStartJavaScript before any page script executes.\n- Pre-Emptive YouTube Player Cleanser: Sanitizes window.ytInitialPlayerResponse and /youtubei/v1/player JSON to eliminate 'Sponsored 1 of 2 0:00' ad screens.\n- Instagram Feed & GraphQL Ad Filter: Dynamic GraphQL query filtering removing sponsored media and paid partnerships before timeline rendering.\n- Full-Bleed Floating Command Bar: Fullscreen viewport with zero dead space and smart idle auto-reappearance."
 }

@@ -4,7 +4,122 @@
     if (window.__fokkshield_loaded) return;
     window.__fokkshield_loaded = true;
 
-    // YouTube / Media Player Network Interceptor (Pre-Emptive Ad Stripper)
+    // =========================================================================
+    // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
+    // =========================================================================
+    function sanitizeYtPlayerResponse(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        try {
+            if (obj.adPlacements) delete obj.adPlacements;
+            if (obj.playerAds) delete obj.playerAds;
+            if (obj.adSlots) delete obj.adSlots;
+            if (obj.playbackTracking) {
+                delete obj.playbackTracking.videostatsPlaybackUrl;
+                delete obj.playbackTracking.videostatsDelayplayUrl;
+                delete obj.playbackTracking.videostatsWatchtimeUrl;
+                delete obj.playbackTracking.videostatsPtrackingUrl;
+            }
+        } catch (e) {}
+    }
+
+    function sanitizeYtData(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        try {
+            if (obj.adPlacements) delete obj.adPlacements;
+            if (obj.playerAds) delete obj.playerAds;
+            if (obj.adSlots) delete obj.adSlots;
+        } catch (e) {}
+    }
+
+    // Hook ytInitialPlayerResponse so initial inline page data is sanitized before player boots
+    let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
+    if (_ytInitialPlayerResponse) sanitizeYtPlayerResponse(_ytInitialPlayerResponse);
+    try {
+        Object.defineProperty(window, 'ytInitialPlayerResponse', {
+            get: function() { return _ytInitialPlayerResponse; },
+            set: function(val) {
+                sanitizeYtPlayerResponse(val);
+                _ytInitialPlayerResponse = val;
+            },
+            configurable: true
+        });
+    } catch (e) {}
+
+    let _ytInitialData = window.ytInitialData;
+    if (_ytInitialData) sanitizeYtData(_ytInitialData);
+    try {
+        Object.defineProperty(window, 'ytInitialData', {
+            get: function() { return _ytInitialData; },
+            set: function(val) {
+                sanitizeYtData(val);
+                _ytInitialData = val;
+            },
+            configurable: true
+        });
+    } catch (e) {}
+
+    // Instagram response scrubber
+    function sanitizeInstagramData(data) {
+        if (!data || typeof data !== 'object') return false;
+        let modified = false;
+        try {
+            // GraphQL timeline connection
+            if (data.data && data.data.xdt_api__v1__feed__timeline__connection) {
+                const conn = data.data.xdt_api__v1__feed__timeline__connection;
+                if (Array.isArray(conn.edges)) {
+                    conn.edges = conn.edges.filter(function(edge) {
+                        const node = edge && edge.node;
+                        if (!node) return true;
+                        if (node.__typename === 'XDTFeedItem' && node.media_or_ad) {
+                            return !node.media_or_ad.ad_id && !node.media_or_ad.is_paid_partnership && !node.media_or_ad.sponsored_data;
+                        }
+                        if (node.is_ad || node.is_sponsored || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
+                        return true;
+                    });
+                    modified = true;
+                }
+            }
+
+            // GraphQL stories/reels connection
+            if (data.data && data.data.xdt_api__v1__feed__reels_tray__connection) {
+                const conn = data.data.xdt_api__v1__feed__reels_tray__connection;
+                if (Array.isArray(conn.edges)) {
+                    conn.edges = conn.edges.filter(function(edge) {
+                        const node = edge && edge.node;
+                        if (!node) return true;
+                        if (node.is_ad || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
+                        return true;
+                    });
+                    modified = true;
+                }
+            }
+
+            // REST timeline feed items
+            if (Array.isArray(data.feed_items)) {
+                data.feed_items = data.feed_items.filter(function(item) {
+                    if (item.ad_id || item.is_sponsored || item.sponsored_data) return false;
+                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership)) return false;
+                    return true;
+                });
+                modified = true;
+            }
+
+            // REST general items
+            if (Array.isArray(data.items)) {
+                data.items = data.items.filter(function(item) {
+                    if (item.ad_id || item.is_sponsored || item.sponsored_data) return false;
+                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership)) return false;
+                    return true;
+                });
+                modified = true;
+            }
+        } catch (e) {}
+        return modified;
+    }
+
+    // =========================================================================
+    // 2. Network Hook: Fetch & XHR Interceptor (YouTube + Instagram)
+    // =========================================================================
     (function installNetworkInterceptor() {
         if (window.__fokk_net_hooked) return;
         window.__fokk_net_hooked = true;
@@ -15,21 +130,24 @@
                 const response = await origFetch.apply(this, args);
                 try {
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
-                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next')) {
+
+                    // YouTube player data
+                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') || url.includes('/youtubei/v1/reel/')) {
                         const clone = response.clone();
                         const data = await clone.json();
-                        let modified = false;
-                        if (data.adPlacements) { delete data.adPlacements; modified = true; }
-                        if (data.playerAds) { delete data.playerAds; modified = true; }
-                        if (data.adSlots) { delete data.adSlots; modified = true; }
-                        if (data.playbackTracking) {
-                            delete data.playbackTracking.videostatsPlaybackUrl;
-                            delete data.playbackTracking.videostatsDelayplayUrl;
-                            delete data.playbackTracking.videostatsWatchtimeUrl;
-                            delete data.playbackTracking.videostatsPtrackingUrl;
-                            modified = true;
-                        }
-                        if (modified) {
+                        sanitizeYtPlayerResponse(data);
+                        return new Response(JSON.stringify(data), {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: response.headers
+                        });
+                    }
+
+                    // Instagram feed & GraphQL data
+                    if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') || url.includes('/api/v1/feed/reels_tray/')) {
+                        const clone = response.clone();
+                        const data = await clone.json();
+                        if (sanitizeInstagramData(data)) {
                             return new Response(JSON.stringify(data), {
                                 status: response.status,
                                 statusText: response.statusText,
@@ -50,27 +168,33 @@
                 return origOpen.apply(this, arguments);
             };
             XMLHttpRequest.prototype.send = function(body) {
-                if (this._fokkTargetUrl && (typeof this._fokkTargetUrl === 'string') &&
-                    (this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next'))) {
-                    const self = this;
-                    const origOnReady = this.onreadystatechange;
-                    this.onreadystatechange = function() {
-                        if (self.readyState === 4 && self.status === 200) {
-                            try {
-                                const data = JSON.parse(self.responseText);
-                                let modified = false;
-                                if (data.adPlacements) { delete data.adPlacements; modified = true; }
-                                if (data.playerAds) { delete data.playerAds; modified = true; }
-                                if (data.adSlots) { delete data.adSlots; modified = true; }
-                                if (modified) {
-                                    const cleaned = JSON.stringify(data);
-                                    Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
-                                    Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
-                                }
-                            } catch (e) {}
-                        }
-                        if (origOnReady) origOnReady.apply(this, arguments);
-                    };
+                if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
+                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next') || this._fokkTargetUrl.includes('/youtubei/v1/reel/');
+                    const isIg = this._fokkTargetUrl.includes('/graphql/query') || this._fokkTargetUrl.includes('/api/v1/feed/timeline/') || this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/');
+                    if (isYt || isIg) {
+                        const self = this;
+                        const origOnReady = this.onreadystatechange;
+                        this.onreadystatechange = function() {
+                            if (self.readyState === 4 && self.status === 200) {
+                                try {
+                                    const data = JSON.parse(self.responseText);
+                                    let modified = false;
+                                    if (isYt) {
+                                        sanitizeYtPlayerResponse(data);
+                                        modified = true;
+                                    } else if (isIg) {
+                                        modified = sanitizeInstagramData(data);
+                                    }
+                                    if (modified) {
+                                        const cleaned = JSON.stringify(data);
+                                        Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
+                                        Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
+                                    }
+                                } catch (e) {}
+                            }
+                            if (origOnReady) origOnReady.apply(this, arguments);
+                        };
+                    }
                 }
                 return origSend.apply(this, arguments);
             };
@@ -275,6 +399,9 @@
     // =========================================================================
     let adWasMutedByShield = false;
 
+    // =========================================================================
+    // YouTube Web Video Ad Auto-Skipper & Instant Stall Bypass Engine
+    // =========================================================================
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
@@ -321,25 +448,34 @@
                             !!document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay, [class*="ad-showing"]');
         const video = document.querySelector('video.html5-main-video, video');
 
-        if (isAdShowing && video) {
-            try {
-                if (!video.muted) {
-                    video.muted = true;
-                    adWasMutedByShield = true;
-                }
-                video.playbackRate = 16.0;
-                if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
-                    video.currentTime = Math.max(0, video.duration - 0.05);
-                } else {
-                    // Blocked ad media (duration is 0 or NaN, stalled at 0:00): trigger ended to release the player
-                    video.dispatchEvent(new Event('ended'));
-                }
-                if (video.paused) {
-                    video.play().catch(function() {});
-                }
-            } catch (e) {}
+        if (isAdShowing) {
+            // Remove ad overlay containers immediately
+            document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer, [class*="ad-overlay"]').forEach(function(el) {
+                try { el.remove(); } catch (e) {}
+            });
+            if (playerEl) {
+                playerEl.classList.remove('ad-showing', 'ad-interrupting');
+            }
+            if (video) {
+                try {
+                    if (!video.muted) {
+                        video.muted = true;
+                        adWasMutedByShield = true;
+                    }
+                    video.playbackRate = 16.0;
+                    if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
+                        video.currentTime = Math.max(0, video.duration - 0.05);
+                    } else {
+                        // Dead/blocked ad stream (paused at 0:00 or duration is 0/NaN): trigger ended to release player
+                        video.dispatchEvent(new Event('ended'));
+                    }
+                    if (video.paused) {
+                        video.play().catch(function() {});
+                    }
+                } catch (e) {}
+            }
         } else if (video) {
-            // Content video active: restore 1.0x speed and audio
+            // Content video active: restore normal speed and un-mute
             if (video.playbackRate > 1.0) {
                 video.playbackRate = 1.0;
             }
@@ -354,6 +490,62 @@
         setInterval(runYouTubeAdSkipper, 100);
         document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
+    }
+
+    // =========================================================================
+    // Instagram Feed Ad & Sponsored Story Scrubber
+    // =========================================================================
+    function scrubInstagramAds() {
+        if (!window.location.hostname.includes('instagram.com')) return;
+
+        // 1. Scrub Sponsored Articles / Posts from feed
+        const articles = document.querySelectorAll('article, div[role="presentation"] > div > div, main div > div > article');
+        articles.forEach(function(post) {
+            try {
+                let isSponsored = false;
+
+                // Check 1: Direct link to /about/ads
+                if (post.querySelector('a[href*="/about/ads"], a[href*="about/ads"]')) {
+                    isSponsored = true;
+                }
+
+                // Check 2: Sponsored / Paid partnership aria-label
+                if (!isSponsored && post.querySelector('[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i]')) {
+                    isSponsored = true;
+                }
+
+                // Check 3: Text content in headers/spans
+                if (!isSponsored) {
+                    const headers = post.querySelectorAll('header span, header a, span[dir="auto"]');
+                    for (let i = 0; i < headers.length; i++) {
+                        const t = (headers[i].textContent || '').trim().toLowerCase();
+                        if (t === 'sponsored' || t === 'paid partnership' || t.startsWith('sponsored ·')) {
+                            isSponsored = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Check 4: App install / shop prompts in feed
+                if (!isSponsored && post.querySelector('a[href*="play.google.com"], a[href*="itunes.apple.com"]')) {
+                    isSponsored = true;
+                }
+
+                if (isSponsored) {
+                    post.style.setProperty('display', 'none', 'important');
+                    post.remove();
+                }
+            } catch (e) {}
+        });
+
+        // 2. Remove Instagram web app banner & full-screen app gate dialogs
+        document.querySelectorAll('div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"])').forEach(function(el) {
+            try { el.remove(); } catch (e) {}
+        });
+    }
+
+    if (window.location.hostname.includes('instagram.com')) {
+        setInterval(scrubInstagramAds, 300);
     }
 
     // =========================================================================
@@ -526,6 +718,7 @@
                     pendingSweep = false;
                     if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
                     if (host.includes('youtube.com')) runYouTubeAdSkipper();
+                    if (host.includes('instagram.com')) scrubInstagramAds();
                     scrubAppPromos();
                     scrubCookieBanners();
                     document.querySelectorAll('video').forEach(hookVideoPlayback);
@@ -545,6 +738,7 @@
             scrubAppPromos();
             scrubCookieBanners();
             runYouTubeAdSkipper();
+            scrubInstagramAds();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
@@ -552,6 +746,7 @@
         scrubAppPromos();
         scrubCookieBanners();
         runYouTubeAdSkipper();
+        scrubInstagramAds();
         document.querySelectorAll('video').forEach(hookVideoPlayback);
     }
 

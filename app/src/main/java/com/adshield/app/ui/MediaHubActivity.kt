@@ -46,6 +46,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.webkit.*
 import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -1720,6 +1721,21 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        if (injectionScript.isEmpty()) loadInjectionScript()
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            try {
+                if (injectionScript.isNotEmpty()) {
+                    WebViewCompat.addDocumentStartJavaScript(
+                        webView,
+                        injectionScript,
+                        setOf("*")
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to register document start script", e)
+            }
+        }
+
         val barInset = (70 * resources.displayMetrics.density).toInt()
         webView.setPadding(0, 0, 0, barInset)
         webView.clipToPadding = false
@@ -1946,10 +1962,40 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
+                val urlStr = request.url.toString().lowercase()
+                val isAdScript = urlStr.contains("/pagead/") ||
+                        urlStr.contains("adsbygoogle.js") ||
+                        urlStr.contains("googletagservices.com") ||
+                        urlStr.contains("googleadservices.com") ||
+                        urlStr.contains("/gpt.js") ||
+                        urlStr.contains("adservice.google.") ||
+                        urlStr.contains("/api/stats/ads") ||
+                        urlStr.contains("/youtubei/v1/player/ad_break")
+
+                if (isAdScript) {
+                    recordFilteredRequest(view, host)
+                    val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
+                    val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")
+                    val mimeType = when {
+                        isJson -> "application/json"
+                        isJs -> "application/javascript"
+                        else -> "text/plain"
+                    }
+                    val emptyPayload = when {
+                        isJson -> "{}"
+                        isJs -> "/* blocked by fokk shield */"
+                        else -> ""
+                    }
+                    return WebResourceResponse(
+                        mimeType,
+                        "UTF-8",
+                        ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
+                    )
+                }
+
                 if (pageHost != null && !isCrossSiteRequest) {
                     return super.shouldInterceptRequest(view, request)
                 }
-                val urlStr = request.url.toString().lowercase()
 
                 if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)

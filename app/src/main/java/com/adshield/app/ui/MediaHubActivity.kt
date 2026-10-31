@@ -43,6 +43,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.ArrayAdapter
+import android.widget.RadioButton
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
@@ -2612,12 +2614,32 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun showSearchEngineDialog() {
         val engines = SearchEngine.values()
-        val items = engines.map { it.displayName }.toTypedArray()
-        val selectedIdx = engines.indexOf(currentSearchEngine).coerceAtLeast(0)
+        val adapter = object : ArrayAdapter<SearchEngine>(this, 0, engines) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val row = convertView ?: layoutInflater.inflate(R.layout.item_search_engine_choice, parent, false)
+                val engine = getItem(position) ?: return row
+                val imgLogo = row.findViewById<ImageView>(R.id.imgEngineLogo)
+                val textName = row.findViewById<TextView>(R.id.textEngineName)
+                val textDesc = row.findViewById<TextView>(R.id.textEngineDesc)
+                val radioBtn = row.findViewById<RadioButton>(R.id.radioEngineSelected)
+
+                imgLogo.setImageResource(engine.iconRes)
+                textName.text = engine.displayName
+                textDesc.text = when (engine) {
+                    SearchEngine.ECOSIA -> "Trees & Climate Action • 100% Green (Default)"
+                    SearchEngine.DUCKDUCKGO -> "Private Search • Zero Tracker Profiling"
+                    SearchEngine.BRAVE -> "Independent Web Index • Ad-Free"
+                    SearchEngine.GOOGLE -> "Comprehensive Global Index"
+                    SearchEngine.STARTPAGE -> "Google Results with Absolute Privacy"
+                }
+                radioBtn.isChecked = (engine == currentSearchEngine)
+                return row
+            }
+        }
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Default Search Engine")
-            .setSingleChoiceItems(items, selectedIdx) { dialog, which ->
+            .setAdapter(adapter) { dialog, which ->
                 val chosen = engines[which]
                 applySearchEngine(chosen)
                 Toast.makeText(this, "${chosen.displayName} set as default search engine", Toast.LENGTH_SHORT).show()
@@ -3340,6 +3362,7 @@ open class MediaHubActivity : AppCompatActivity() {
         val showShortcuts = prefs.getBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, true)
         sheetBinding.switchShowShortcuts.isChecked = showShortcuts
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
+        sheetBinding.imgMenuEngine.setImageResource(currentSearchEngine.iconRes)
 
         val currentToolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
         sheetBinding.textToolbarPosition.text = if (currentToolbarPos.equals("top", ignoreCase = true)) "Top" else "Bottom (Thumb Reach)"
@@ -3369,6 +3392,10 @@ open class MediaHubActivity : AppCompatActivity() {
             activeWebView?.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled($isChecked);", null)
             val msg = if (isChecked) "AI Overviews & Slop Filter Enabled" else "AI Overviews & Slop Filter Disabled"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        sheetBinding.rowAiFilter.setOnClickListener {
+            sheetBinding.switchAiFilter.isChecked = !sheetBinding.switchAiFilter.isChecked
         }
 
         sheetBinding.badgeAiFilter.setOnClickListener {

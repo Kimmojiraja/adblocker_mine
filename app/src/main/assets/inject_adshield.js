@@ -22,6 +22,40 @@
         #tads,
         #tadsb,
 
+        /* Web-Wide Cookie Consent Banners, Overlays & Prompts */
+        #onetrust-consent-sdk,
+        #onetrust-banner-sdk,
+        .onetrust-pc-dark-filter,
+        #CybotCookiebotDialog,
+        #CybotCookiebotDialogBodyUnderlay,
+        .qc-cmp2-container,
+        .qc-cmp-cleanslate,
+        .fc-consent-root,
+        .cc-window,
+        .cc-banner,
+        div[class*="cookie-notice"],
+        div[class*="cookie_notice"],
+        div[class*="CookieNotice"],
+        div[class*="cookie-consent"],
+        div[class*="cookie_consent"],
+        div[class*="CookieConsent"],
+        div[class*="cookie-banner"],
+        div[class*="cookie_banner"],
+        div[class*="CookieBanner"],
+        div[class*="cookie-modal"],
+        div[data-test-id*="cookie"],
+        div[data-testid*="cookie"],
+        div[id*="cookie-consent"],
+        div[id*="cookie-notice"],
+        div[id*="cookie-banner"],
+        div[aria-modal="true"]:has(form[action*="consent.google"]),
+        form[action*="consent.google"],
+        div[class*="consent-banner"],
+        div[class*="consent-modal"],
+        div[class*="consent-overlay"],
+        div[class*="consent_overlay"],
+        div[id*="sp_message_container"],
+
         /* YouTube Web Ads & Sponsored Cards */
         ytm-item-section-renderer:has(ytm-promoted-sparkles-web-renderer),
         ytm-item-section-renderer:has(ytm-ad-slot-renderer),
@@ -97,6 +131,54 @@
     }
 
     injectCosmetics();
+
+// =========================================================================
+    // Cookie Consent Auto-Dismiss & Scrubber (Web-Wide + Ecosia)
+    // =========================================================================
+    function scrubCookieBanners() {
+        const host = window.location.hostname;
+
+        // 1. Ecosia specific cookie consent auto-handling
+        if (host.includes('ecosia.org')) {
+            const ecosiaButtons = Array.from(document.querySelectorAll('button, a'));
+            for (let i = 0; i < ecosiaButtons.length; i++) {
+                const text = (ecosiaButtons[i].innerText || ecosiaButtons[i].textContent || '').trim().toLowerCase();
+                if (text === 'reject non-essential' || text === 'accept all' || text.includes('reject non-essential')) {
+                    try { ecosiaButtons[i].click(); break; } catch (e) {}
+                }
+            }
+            // If banner still present, remove container directly
+            document.querySelectorAll('div[data-test-id*="cookie"], div[class*="cookie"], div[class*="consent"], div[role="dialog"]').forEach(function(el) {
+                const content = (el.innerText || el.textContent || '').toLowerCase();
+                if (content.includes('cookies help us improve') || (content.includes('essential cookies') && content.includes('non-essential cookies'))) {
+                    try { el.remove(); } catch (e) { el.style.setProperty('display', 'none', 'important'); }
+                }
+            });
+            if (document.documentElement) document.documentElement.style.overflow = 'auto';
+            if (document.body) document.body.style.overflow = 'auto';
+        }
+
+        // 2. Generic OneTrust, Cookiebot, & popular consent banners
+        document.querySelectorAll('#onetrust-consent-sdk, #CybotCookiebotDialog, .qc-cmp2-container, .fc-consent-root').forEach(function(el) {
+            try { el.remove(); } catch (e) { el.style.setProperty('display', 'none', 'important'); }
+        });
+
+        // 3. Auto-click popular reject / accept buttons to save preference quietly
+        const consentSelectors = [
+            '#onetrust-reject-all-handler',
+            '#onetrust-accept-btn-handler',
+            '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+            '#CybotCookiebotDialogBodyButtonAccept',
+            'button[id*="reject-all"]',
+            'button[id*="accept-all"]'
+        ];
+        for (let i = 0; i < consentSelectors.length; i++) {
+            const btn = document.querySelector(consentSelectors[i]);
+            if (btn && typeof btn.click === 'function') {
+                try { btn.click(); break; } catch (e) {}
+            }
+        }
+    }
 
     // =========================================================================
     // YouTube Web Video Ad Auto-Skipper (Zero-Stall, Audio-Safe)
@@ -175,7 +257,7 @@
     // =========================================================================
     function scrubAppPromos() {
         const host = window.location.hostname;
-        const isAppNagHost = host.includes('youtube.com') || host.includes('spotify.com') ||
+        const isAppNagHost = host.includes('ecosia.org') || host.includes('youtube.com') || host.includes('spotify.com') ||
             host.includes('reddit.com') || host.includes('instagram.com') || host.includes('quora.com');
         if (!isAppNagHost) return;
 
@@ -327,7 +409,7 @@
     // =========================================================================
     try {
         const host = window.location.hostname;
-        const needsObserver = host.includes('youtube.com') || host.includes('spotify.com') ||
+        const needsObserver = host.includes('ecosia.org') || host.includes('youtube.com') || host.includes('spotify.com') ||
             host.includes('reddit.com') || host.includes('google.') || host.includes('bing.com') ||
             host.includes('instagram.com');
 
@@ -341,6 +423,7 @@
                     if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
                     if (host.includes('youtube.com')) runYouTubeAdSkipper();
                     scrubAppPromos();
+                    scrubCookieBanners();
                     document.querySelectorAll('video').forEach(hookVideoPlayback);
                 }, 400);
             });
@@ -356,12 +439,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             scrubAiContent();
             scrubAppPromos();
+            scrubCookieBanners();
             runYouTubeAdSkipper();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
         });
     } else {
         scrubAiContent();
         scrubAppPromos();
+        scrubCookieBanners();
         runYouTubeAdSkipper();
         document.querySelectorAll('video').forEach(hookVideoPlayback);
     }

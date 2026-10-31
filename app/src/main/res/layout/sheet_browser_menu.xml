@@ -948,6 +948,14 @@
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
                     </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/imgMenuEngine"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginEnd="6dp"
+                        android:src="@drawable/ic_engine_ecosia"
+                        android:contentDescription="Current Engine" />
                 </LinearLayout>
 
                 <!-- Toolbar Position -->

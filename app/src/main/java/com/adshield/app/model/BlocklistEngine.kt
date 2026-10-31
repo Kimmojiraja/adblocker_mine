@@ -18,6 +18,7 @@ class BlocklistEngine(private val context: Context) {
     private val customBlockedDomains = ConcurrentHashMap.newKeySet<String>()
     private val customWhitelistDomains = ConcurrentHashMap.newKeySet<String>()
     private val isReady = AtomicBoolean(false)
+    private val decisionCache = ConcurrentHashMap<String, Boolean>()
 
     @Synchronized
     fun initialize() {
@@ -86,20 +87,31 @@ class BlocklistEngine(private val context: Context) {
     )
 
     fun isDomainBlocked(rawDomain: String): Boolean {
+        val cached = decisionCache[rawDomain]
+        if (cached != null) return cached
+
         // Application startup warms the list on IO, but WebView can issue requests
         // before that task runs. Complete local initialization before failing open.
         if (!isReady.get()) initialize()
         if (!isReady.get()) return false
 
         val domain = normalizeDomain(rawDomain)
-        if (domain.isEmpty()) return false
+        if (domain.isEmpty()) {
+            decisionCache[rawDomain] = false
+            return false
+        }
 
         // Evaluate complete hierarchies in precedence order so a parent whitelist
         // cannot be bypassed by an exact block entry for one of its subdomains.
-        if (matchesDomainOrParent(domain, customWhitelistDomains)) return false
-        if (matchesDomainOrParent(domain, customBlockedDomains)) return true
-        if (isWhitelisted(domain)) return false
-        return matchesDomainOrParent(domain, coreBlockedDomains)
+        val blocked = if (matchesDomainOrParent(domain, customWhitelistDomains)) false
+        else if (matchesDomainOrParent(domain, customBlockedDomains)) true
+        else if (isWhitelisted(domain)) false
+        else matchesDomainOrParent(domain, coreBlockedDomains)
+
+        if (decisionCache.size < 50000) {
+            decisionCache[rawDomain] = blocked
+        }
+        return blocked
     }
 
     private fun matchesDomainOrParent(domain: String, candidates: Set<String>): Boolean {
@@ -122,6 +134,7 @@ class BlocklistEngine(private val context: Context) {
             whitelistDomains.remove(normalized)
             customBlockedDomains.add(normalized)
             customWhitelistDomains.remove(normalized)
+            decisionCache.clear()
             saveCustomRules()
         }
     }
@@ -135,6 +148,7 @@ class BlocklistEngine(private val context: Context) {
             if (!coreBlockedDomains.contains(normalized)) blockedDomains.remove(normalized)
             customWhitelistDomains.add(normalized)
             customBlockedDomains.remove(normalized)
+            decisionCache.clear()
             saveCustomRules()
         }
     }
@@ -149,6 +163,7 @@ class BlocklistEngine(private val context: Context) {
         whitelistDomains.remove(normalized)
         customBlockedDomains.remove(normalized)
         customWhitelistDomains.remove(normalized)
+        decisionCache.clear()
         saveCustomRules()
     }
 

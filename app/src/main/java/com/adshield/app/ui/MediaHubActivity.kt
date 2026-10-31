@@ -24,6 +24,15 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.HapticFeedbackConstants
 import java.io.FileOutputStream
+import android.speech.tts.TextToSpeech
+import java.net.Socket
+import java.net.InetSocketAddress
+import java.net.URL
+import java.net.HttpURLConnection
+import com.google.android.material.chip.Chip
+import com.adshield.app.databinding.SheetAiSummaryBinding
+import org.json.JSONObject
+import org.json.JSONArray
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -115,6 +124,9 @@ open class MediaHubActivity : AppCompatActivity() {
         var isOfflineReader: Boolean = false,
         var isSuspended: Boolean = false,
         var suspendedForMemory: Boolean = false,
+        var lastActiveTime: Long = System.currentTimeMillis(),
+        var isHibernated: Boolean = false,
+        var savedScrollY: Int = 0,
         val isPrivate: Boolean = false,
         var webView: WebView?
     )
@@ -162,6 +174,15 @@ open class MediaHubActivity : AppCompatActivity() {
     private var injectionScript = ""
     private var fokkoScript = ""
     private var fokkoCss = ""
+    private var readerScript = ""
+    private var readerCss = ""
+    private var summarizerScript = ""
+    private var textToSpeech: TextToSpeech? = null
+    var lastPaywallUrl = ""
+    var isDualDeckMode = false
+    private var secondaryTabIndex = -1
+    private val prewarmedHosts = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
     private val tabs = mutableListOf<BrowserTab>()
     private val pageUrlsByWebView = Collections.synchronizedMap(WeakHashMap<WebView, String>())
     private val pendingFilteredCounts = WeakHashMap<WebView, Int>()
@@ -758,6 +779,25 @@ open class MediaHubActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load Fokko AI assets", e)
         }
+        try {
+            assets.open("fokk_reader.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    readerScript = reader.readText()
+                }
+            }
+            assets.open("fokk_reader.css").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    readerCss = reader.readText()
+                }
+            }
+            assets.open("fokk_summarizer.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    summarizerScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load Fokk Reader / Summarizer assets", e)
+        }
     }
 
     private fun recordFilteredRequest(webView: WebView?, host: String) {
@@ -984,6 +1024,40 @@ open class MediaHubActivity : AppCompatActivity() {
         fun openShieldDashboard() {
             activity.runOnUiThread {
                 activity.openShieldDashboard()
+            }
+        }
+
+        @JavascriptInterface
+        fun onPaywallDetected(url: String) {
+            activity.runOnUiThread {
+                activity.lastPaywallUrl = url
+                activity.binding.btnPaywallMirror.visibility = View.VISIBLE
+            }
+        }
+
+        @JavascriptInterface
+        fun preWarmUrl(url: String) {
+            activity.speculativePreWarm(url)
+        }
+
+        @JavascriptInterface
+        fun showAiSummaryData(summaryJson: String) {
+            activity.runOnUiThread {
+                activity.showAiSummarySheet(summaryJson)
+            }
+        }
+
+        @JavascriptInterface
+        fun speakText(text: String) {
+            activity.runOnUiThread {
+                activity.startTextToSpeech(text)
+            }
+        }
+
+        @JavascriptInterface
+        fun stopSpeech() {
+            activity.runOnUiThread {
+                activity.stopTextToSpeech()
             }
         }
     }
@@ -2082,8 +2156,16 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun switchToTab(index: Int) {
         if (index !in tabs.indices) return
         setBrowserChromeVisible(true)
+        val previousTab = activeTab
+        previousTab?.lastActiveTime = System.currentTimeMillis()
+
         activeTabIndex = index
         val current = tabs[index]
+        current.lastActiveTime = System.currentTimeMillis()
+        if (current.isHibernated) {
+            current.isHibernated = false
+            current.webView?.resumeTimers()
+        }
         if (current.webView == null) {
             val restored = createTab(current.url, current.isPrivate)
             val restoredWebView = restored.webView ?: return
@@ -2099,6 +2181,7 @@ open class MediaHubActivity : AppCompatActivity() {
         for (i in tabs.indices) {
             tabs[i].webView?.visibility = if (i == index) View.VISIBLE else View.GONE
         }
+        checkAndHibernateBackgroundTabs()
         if (current.shouldLoadOnSelect) {
             current.shouldLoadOnSelect = false
             loadUrlInWebView(current.webView, current.url)
@@ -2290,6 +2373,13 @@ open class MediaHubActivity : AppCompatActivity() {
         if (!isShieldEnabledFor(pageUrl)) return
         if (injectionScript.isNotEmpty()) {
             webView.evaluateJavascript(injectionScript, null)
+            if (readerScript.isNotEmpty()) {
+                val readerInit = readerScript.replace("__FOKK_READER_CSS__", readerCss.replace("`", "\\`").replace("\\", "\\\\"))
+                webView.evaluateJavascript(readerInit, null)
+            }
+            if (summarizerScript.isNotEmpty()) {
+                webView.evaluateJavascript(summarizerScript, null)
+            }
             val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
             if (!isAiFilter) {
                 webView.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled(false);", null)
@@ -2414,6 +2504,19 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun setupControls() {
         setupQuickEngineSwitcher()
+
+        binding.btnReaderMode.setOnClickListener {
+            openReaderView()
+        }
+
+        binding.btnAiSummary.setOnClickListener {
+            showSmartPageSummaryDialog()
+        }
+
+        binding.btnPaywallMirror.setOnClickListener {
+            openPaywallMirror()
+        }
+
         binding.imgEngineIcon.setOnClickListener {
             showSearchEngineDialog()
         }
@@ -3617,6 +3720,11 @@ open class MediaHubActivity : AppCompatActivity() {
             openReaderView()
         }
 
+        sheetBinding.rowDualDeck.setOnClickListener {
+            dialog.dismiss()
+            toggleDualDeckMode()
+        }
+
         sheetBinding.rowSmartSummary.setOnClickListener {
             dialog.dismiss()
             showSmartPageSummaryDialog()
@@ -3897,41 +4005,258 @@ open class MediaHubActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun openReaderView() {
-        val webView = activeWebView ?: return
-        if (isThirdPartyMediaService(webView.url)) {
-            Toast.makeText(this, "Reader View is for article pages", Toast.LENGTH_SHORT).show()
-            return
+    // =========================================================================
+    // DUAL-DECK SPLIT VIEWPORT MULTITASKING
+    // =========================================================================
+    fun toggleDualDeckMode() {
+        isDualDeckMode = !isDualDeckMode
+        if (isDualDeckMode) {
+            secondaryTabIndex = if (tabs.size > 1) {
+                tabs.indices.firstOrNull { it != activeTabIndex } ?: -1
+            } else -1
+
+            if (secondaryTabIndex == -1) {
+                addNewTab("file:///android_asset/fokk_start.html", isPrivate = activeTab?.isPrivate == true)
+                secondaryTabIndex = tabs.lastIndex
+            }
+
+            val secondaryTab = tabs.getOrNull(secondaryTabIndex)
+            val secondaryWebView = secondaryTab?.webView
+
+            binding.splitDivider.visibility = View.VISIBLE
+            binding.tabContainerSecondary.visibility = View.VISIBLE
+            binding.tabContainerSecondary.removeAllViews()
+
+            if (secondaryWebView != null) {
+                (secondaryWebView.parent as? ViewGroup)?.removeView(secondaryWebView)
+                secondaryWebView.visibility = View.VISIBLE
+                binding.tabContainerSecondary.addView(secondaryWebView)
+            }
+
+            Toast.makeText(this, "Dual-Deck Split View Active", Toast.LENGTH_SHORT).show()
+        } else {
+            binding.splitDivider.visibility = View.GONE
+            binding.tabContainerSecondary.visibility = View.GONE
+
+            val secondaryTab = tabs.getOrNull(secondaryTabIndex)
+            val secondaryWebView = secondaryTab?.webView
+            if (secondaryWebView != null) {
+                binding.tabContainerSecondary.removeView(secondaryWebView)
+                secondaryWebView.visibility = View.GONE
+                if (binding.tabContainer.indexOfChild(secondaryWebView) == -1) {
+                    binding.tabContainer.addView(secondaryWebView)
+                }
+            }
+            secondaryTabIndex = -1
+            Toast.makeText(this, "Single View Restored", Toast.LENGTH_SHORT).show()
         }
-        val script = """(function(){
-            if(document.getElementById('__fokk_reader_root')) return 'already';
-            var source=document.querySelector('article')||document.querySelector('main')||document.body;
-            var content=source.cloneNode(true);
-            content.querySelectorAll('script,style,nav,header,footer,aside,form,button,[role="navigation"],[role="complementary"],iframe,video,svg').forEach(function(n){n.remove()});
-            var text=(content.innerText||'').trim();
-            if(text.length<180) return 'unsupported';
-            var root=document.createElement('div'); root.id='__fokk_reader_root';
-            root.innerHTML='<div id="__fokk_reader_bar"><b>Reader View</b><span><button id="__fokk_theme" aria-label="Toggle reading theme">◐</button><button id="__fokk_smaller" aria-label="Smaller text">A−</button><button id="__fokk_larger" aria-label="Larger text">A+</button><button id="__fokk_exit">Done</button></span></div><article id="__fokk_reader_article"><h1></h1><div id="__fokk_reader_content"></div></article>';
-            root.querySelector('h1').textContent=(document.querySelector('h1')||{}).innerText||document.title||'Article';
-            root.querySelector('#__fokk_reader_content').appendChild(content);
-            var style=document.createElement('style'); style.id='__fokk_reader_style';
-            style.textContent='html,body{margin:0!important;padding:0!important;background:#f7f3e9!important;color:#222!important}body>*:not(#__fokk_reader_root){display:none!important}#__fokk_reader_root{position:fixed;inset:0;z-index:2147483647;overflow:auto;background:#f7f3e9;color:#222;font:19px/1.75 Georgia,serif;padding:0 22px 48px;box-sizing:border-box}#__fokk_reader_bar{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;background:#f7f3e9;border-bottom:1px solid #ddd;padding:12px 0;font:14px/1.2 system-ui,sans-serif}#__fokk_reader_bar button{border:0;border-radius:18px;background:#e6e1d6;color:#222;padding:9px 12px;margin-left:6px;font:inherit}#__fokk_reader_article{max-width:700px;margin:34px auto}#__fokk_reader_article h1{font:700 32px/1.2 system-ui,sans-serif;margin:0 0 24px}#__fokk_reader_content{overflow-wrap:anywhere}#__fokk_reader_content img{max-width:100%;height:auto}#__fokk_reader_content a{color:#245fa8}#__fokk_reader_content p{margin:0 0 1.25em}';
-            document.head.appendChild(style); document.body.appendChild(root);
-            var size=19; root.querySelector('#__fokk_larger').onclick=function(){size=Math.min(30,size+2);root.style.fontSize=size+'px'};
-            root.querySelector('#__fokk_smaller').onclick=function(){size=Math.max(14,size-2);root.style.fontSize=size+'px'};
-            root.querySelector('#__fokk_theme').onclick=function(){var dark=root.dataset.theme!=='dark';root.dataset.theme=dark?'dark':'light';root.style.background=dark?'#17191d':'#f7f3e9';root.style.color=dark?'#e8e5dd':'#222';root.querySelector('#__fokk_reader_bar').style.background=root.style.background;root.querySelector('#__fokk_reader_bar').style.color=root.style.color;root.querySelector('#__fokk_reader_bar').style.borderColor=dark?'#373b42':'#ddd';root.querySelectorAll('a').forEach(function(a){a.style.color=dark?'#8ab4f8':'#245fa8'})};
-            root.querySelector('#__fokk_exit').onclick=function(){location.reload()};
-            return 'ok';
-        })();""".trimIndent()
-        webView.evaluateJavascript(script) { result ->
-            when (result?.trim('"')) {
-                "ok", "already" -> Toast.makeText(this, "Reader View opened · use Done to return", Toast.LENGTH_SHORT).show()
-                else -> Toast.makeText(this, "This page does not appear to contain a readable article", Toast.LENGTH_LONG).show()
+    }
+
+    // =========================================================================
+    // 100% ON-DEVICE AI SUMMARY SHEET & TEXT-TO-SPEECH
+    // =========================================================================
+    fun showAiSummarySheet(summaryJson: String) {
+        try {
+            val json = JSONObject(summaryJson)
+            val title = json.optString("title", "Article Summary")
+            val readingTime = json.optString("readingTime", "3 min read")
+            val bulletsArray = json.optJSONArray("bullets") ?: JSONArray()
+            val metricsArray = json.optJSONArray("metrics") ?: JSONArray()
+
+            val sheetDialog = BottomSheetDialog(this, R.style.TransparentBottomSheetDialogTheme)
+            val sheetBinding = SheetAiSummaryBinding.inflate(layoutInflater)
+            sheetDialog.setContentView(sheetBinding.root)
+
+            sheetBinding.textSummaryTitle.text = title
+            sheetBinding.textSummaryMeta.text = "$readingTime • 100% On-Device • Zero Server Latency"
+
+            sheetBinding.layoutSummaryBullets.removeAllViews()
+            val density = resources.displayMetrics.density
+            val fullText = StringBuilder()
+
+            for (i in 0 until bulletsArray.length()) {
+                val bullet = bulletsArray.getString(i)
+                fullText.append("• ").append(bullet).append("\n\n")
+
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
+                    setBackgroundResource(R.drawable.bg_search_chip)
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        bottomMargin = (8 * density).toInt()
+                    }
+                }
+
+                val dot = TextView(this).apply {
+                    text = "• "
+                    setTextColor(getColor(R.color.fokk_cyan))
+                    textSize = 14f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                }
+
+                val textTv = TextView(this).apply {
+                    text = bullet
+                    setTextColor(getColor(R.color.text_primary))
+                    textSize = 13.5f
+                    lineSpacingMultiplier = 1.35f
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                }
+
+                row.addView(dot)
+                row.addView(textTv)
+                sheetBinding.layoutSummaryBullets.addView(row)
+            }
+
+            if (metricsArray.length() > 0) {
+                sheetBinding.textMetricsLabel.visibility = View.VISIBLE
+                sheetBinding.chipGroupMetrics.visibility = View.VISIBLE
+                sheetBinding.chipGroupMetrics.removeAllViews()
+
+                for (i in 0 until metricsArray.length()) {
+                    val metric = metricsArray.getString(i)
+                    val chip = Chip(this).apply {
+                        text = metric
+                        setTextColor(getColor(R.color.fokk_cyan))
+                        setChipBackgroundColorResource(R.color.card_surface)
+                        chipStrokeColor = ColorStateList.valueOf(getColor(R.color.fokk_cyan))
+                        chipStrokeWidth = 1 * density
+                        textSize = 11.5f
+                    }
+                    sheetBinding.chipGroupMetrics.addView(chip)
+                }
+            }
+
+            sheetBinding.btnCloseSummary.setOnClickListener {
+                sheetDialog.dismiss()
+            }
+
+            sheetBinding.btnCopySummary.setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Fokk AI Summary", fullText.toString().trim()))
+                Toast.makeText(this, "Summary copied to clipboard", Toast.LENGTH_SHORT).show()
+                sheetDialog.dismiss()
+            }
+
+            sheetBinding.btnListenSummary.setOnClickListener {
+                startTextToSpeech(fullText.toString().trim())
+                Toast.makeText(this, "Reading summary aloud...", Toast.LENGTH_SHORT).show()
+            }
+
+            sheetDialog.show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not render summary", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun initTextToSpeech() {
+        if (textToSpeech == null) {
+            textToSpeech = TextToSpeech(this) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    textToSpeech?.language = Locale.getDefault()
+                }
             }
         }
     }
 
-    private fun showSmartPageSummaryDialog() {
+    fun startTextToSpeech(text: String) {
+        initTextToSpeech()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "fokk_tts")
+        } else {
+            @Suppress("DEPRECATION")
+            textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null)
+        }
+    }
+
+    fun stopTextToSpeech() {
+        textToSpeech?.stop()
+    }
+
+    // =========================================================================
+    // SPECULATIVE CLOUDFLARE DoH PRE-WARMER (0ms Perceived Latency)
+    // =========================================================================
+    fun speculativePreWarm(url: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val host = Uri.parse(url).host ?: return@launch
+                if (!prewarmedHosts.add(host)) return@launch
+
+                val dohUrl = "https://1.1.1.1/dns-query?name=$host&type=A"
+                val conn = URL(dohUrl).openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Accept", "application/dns-json")
+                conn.connectTimeout = 800
+                conn.readTimeout = 800
+                conn.connect()
+                if (conn.responseCode == 200) {
+                    val response = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(response)
+                    val answers = json.optJSONArray("Answer")
+                    val ip = answers?.optJSONObject(0)?.optString("data")
+
+                    if (!ip.isNullOrBlank()) {
+                        Socket().use { socket ->
+                            socket.connect(InetSocketAddress(ip, 443), 400)
+                        }
+                    }
+                }
+                conn.disconnect()
+            } catch (e: Exception) {}
+        }
+    }
+
+    // =========================================================================
+    // PAYWALL MIRROR SWITCHER
+    // =========================================================================
+    fun openPaywallMirror() {
+        val url = lastPaywallUrl.ifEmpty { activeWebView?.url.orEmpty() }
+        if (url.isNotBlank() && !url.contains("fokk_start.html")) {
+            val mirrorUrl = "https://archive.is/newest/$url"
+            loadUrlInActiveWebView(mirrorUrl)
+            Toast.makeText(this, "Opening archive mirror snapshot...", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // =========================================================================
+    // SMART TAB HIBERNATION (MEMORY SAVER)
+    // =========================================================================
+    private fun checkAndHibernateBackgroundTabs() {
+        val now = System.currentTimeMillis()
+        val HIBERNATION_TIMEOUT_MS = 5 * 60 * 1000L // 5 minutes
+
+        tabs.forEachIndexed { idx, tab ->
+            if (idx != activeTabIndex && idx != secondaryTabIndex && !tab.isHibernated && !isMediaPlaying) {
+                if (now - tab.lastActiveTime > HIBERNATION_TIMEOUT_MS) {
+                    tab.isHibernated = true
+                    tab.savedScrollY = tab.webView?.scrollY ?: 0
+                    tab.webView?.pauseTimers()
+                    tab.webView?.destroyDrawingCache()
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // READER MODE & AI SUMMARIZER LAUNCHERS
+    // =========================================================================
+    fun openReaderView() {
+        val webView = activeWebView ?: return
+        if (isThirdPartyMediaService(webView.url) || webView.url?.contains("fokk_start.html") == true) {
+            Toast.makeText(this, "Reader View is for article pages", Toast.LENGTH_SHORT).show()
+            return
+        }
+        webView.evaluateJavascript("if (typeof toggleFokkReaderMode === 'function') { toggleFokkReaderMode(); } else { 'loading'; }") { res ->
+            if (res == null || res == "null" || res.contains("loading")) {
+                val js = "$readerScript; toggleFokkReaderMode();"
+                webView.evaluateJavascript(js, null)
+            }
+        }
+    }
+
+    fun showSmartPageSummaryDialog() {
         val webView = activeWebView
         val url = webView?.url
         if (webView == null || url.isNullOrBlank() || url.contains("fokk_start.html")) {
@@ -3939,229 +4264,14 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
 
-        Toast.makeText(this, "Analyzing article and extracting key insights...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Generating on-device AI summary...", Toast.LENGTH_SHORT).show()
 
-        val script = """
-            (function() {
-                try {
-                    var title = (document.querySelector('h1') || {}).innerText || document.title || '';
-                    var metaDesc = (document.querySelector('meta[name="description"]') || {}).content ||
-                                   (document.querySelector('meta[property="og:description"]') || {}).content || '';
-                    var host = window.location.hostname || '';
-                    var paras = [];
-                    var nodes = document.querySelectorAll('article p, main p, [role="main"] p, p');
-                    for (var i = 0; i < nodes.length; i++) {
-                        var txt = (nodes[i].innerText || '').trim();
-                        if (txt.length > 50 &&
-                            !txt.toLowerCase().includes('cookie') &&
-                            !txt.toLowerCase().includes('subscribe') &&
-                            !txt.toLowerCase().includes('sign in') &&
-                            !txt.toLowerCase().includes('all rights reserved')) {
-                            paras.push(txt);
-                            if (paras.length >= 8) break;
-                        }
-                    }
-                    return JSON.stringify({
-                        title: title.trim(),
-                        desc: metaDesc.trim(),
-                        host: host,
-                        paragraphs: paras
-                    });
-                } catch(e) {
-                    return JSON.stringify({ title: document.title || '', desc: '', host: '', paragraphs: [] });
-                }
-            })();
-        """.trimIndent()
-
-        webView.evaluateJavascript(script) { resultJson ->
-            runOnUiThread {
-                displaySummaryBottomSheet(resultJson, url)
+        webView.evaluateJavascript("if (typeof triggerFokkSummarizer === 'function') { triggerFokkSummarizer(); } else { 'loading'; }") { res ->
+            if (res == null || res == "null" || res.contains("loading")) {
+                val js = "$summarizerScript; triggerFokkSummarizer();"
+                webView.evaluateJavascript(js, null)
             }
         }
-    }
-
-    private fun displaySummaryBottomSheet(rawJson: String?, pageUrl: String) {
-        if (rawJson.isNullOrBlank() || rawJson == "null") {
-            Toast.makeText(this, "Could not extract summary from this page", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val parsed = try {
-            val unquoted = if (rawJson.startsWith("\"") && rawJson.endsWith("\"")) {
-                org.json.JSONTokener(rawJson).nextValue().toString()
-            } else {
-                rawJson
-            }
-            org.json.JSONObject(unquoted)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Unable to parse article summary", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val title = parsed.optString("title").ifEmpty { "Article Summary" }
-        val desc = parsed.optString("desc")
-        val host = parsed.optString("host")
-        val jsonParas = parsed.optJSONArray("paragraphs")
-        val paras = mutableListOf<String>()
-        if (jsonParas != null) {
-            for (i in 0 until jsonParas.length()) {
-                val p = jsonParas.optString(i)
-                if (p.isNotBlank()) paras.add(p)
-            }
-        }
-
-        if (paras.isEmpty() && desc.isBlank()) {
-            Toast.makeText(this, "This page does not contain enough text content to summarize", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val fullTextBuilder = StringBuilder()
-        if (desc.isNotBlank()) fullTextBuilder.append(desc).append(" ")
-        paras.forEach { fullTextBuilder.append(it).append(" ") }
-        val fullText = fullTextBuilder.toString()
-        val wordCount = fullText.split("\\s+".toRegex()).filter { it.isNotBlank() }.size
-        val readTimeMinutes = (wordCount / 200).coerceAtLeast(1)
-
-        val bullets = mutableListOf<String>()
-        if (desc.isNotBlank() && desc.length > 30) {
-            bullets.add(desc)
-        }
-        for (p in paras) {
-            if (bullets.size >= 5) break
-            val sentences = p.split(". ").filter { it.trim().length > 25 }
-            if (sentences.isNotEmpty()) {
-                bullets.add(sentences.first().trim().removeSuffix(".") + ".")
-            } else {
-                bullets.add(p)
-            }
-        }
-
-        val dialog = BottomSheetDialog(this)
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 40, 48, 48)
-            setBackgroundColor(android.graphics.Color.parseColor("#0F141F"))
-        }
-
-        val headerRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-        }
-        val headerTitle = TextView(this).apply {
-            text = "Smart AI Page Summary"
-            setTextColor(android.graphics.Color.WHITE)
-            textSize = 17f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        val privacyBadge = TextView(this).apply {
-            text = "On-Device · Private"
-            setTextColor(android.graphics.Color.parseColor("#00E5FF"))
-            textSize = 11f
-            setBackgroundResource(R.drawable.bg_status_badge)
-            setPadding(16, 6, 16, 6)
-        }
-        headerRow.addView(headerTitle)
-        headerRow.addView(privacyBadge)
-        container.addView(headerRow)
-
-        val articleTitleView = TextView(this).apply {
-            text = title
-            setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
-            textSize = 15f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setPadding(0, 20, 0, 8)
-        }
-        container.addView(articleTitleView)
-
-        val statsView = TextView(this).apply {
-            text = "Estimated ~${readTimeMinutes} min read · $wordCount words ${if (host.isNotBlank()) "· $host" else ""}"
-            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
-            textSize = 12f
-            setPadding(0, 0, 0, 18)
-        }
-        container.addView(statsView)
-
-        val divider = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2)
-            setBackgroundColor(android.graphics.Color.parseColor("#1E293B"))
-        }
-        container.addView(divider)
-
-        val scroll = androidx.core.widget.NestedScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f).apply {
-                topMargin = 16
-                bottomMargin = 20
-            }
-        }
-        val bulletsContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
-        val summaryCopyText = StringBuilder()
-        summaryCopyText.append("Summary: ").append(title).append("\n\n")
-
-        for (bullet in bullets) {
-            val bulletRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, 8, 0, 8)
-            }
-            val dot = TextView(this).apply {
-                text = "• "
-                setTextColor(android.graphics.Color.parseColor("#00E5FF"))
-                textSize = 16f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            }
-            val bulletText = TextView(this).apply {
-                text = bullet
-                setTextColor(android.graphics.Color.parseColor("#CBD5E1"))
-                textSize = 13.5f
-                setLineSpacing(0f, 1.25f)
-            }
-            bulletRow.addView(dot)
-            bulletRow.addView(bulletText)
-            bulletsContainer.addView(bulletRow)
-
-            summaryCopyText.append("• ").append(bullet).append("\n")
-        }
-        scroll.addView(bulletsContainer)
-        container.addView(scroll)
-
-        val actionsRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.END
-        }
-        val btnCopy = com.google.android.material.button.MaterialButton(this).apply {
-            text = "Copy"
-            setTextColor(android.graphics.Color.WHITE)
-            setBackgroundColor(android.graphics.Color.parseColor("#1E293B"))
-            cornerRadius = 24
-            setOnClickListener {
-                val clip = ClipData.newPlainText("Article Summary", summaryCopyText.toString())
-                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-                Toast.makeText(this@MediaHubActivity, "Summary copied to clipboard", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-            }
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                rightMargin = 14
-            }
-        }
-        val btnReader = com.google.android.material.button.MaterialButton(this).apply {
-            text = "Reader View"
-            setTextColor(android.graphics.Color.WHITE)
-            setBackgroundColor(android.graphics.Color.parseColor("#5B48EE"))
-            cornerRadius = 24
-            setOnClickListener {
-                dialog.dismiss()
-                openReaderView()
-            }
-        }
-        actionsRow.addView(btnCopy)
-        actionsRow.addView(btnReader)
-        container.addView(actionsRow)
-
-        dialog.setContentView(container)
-        dialog.show()
     }
 
     private fun reportBrokenSite() {
@@ -4312,6 +4422,8 @@ open class MediaHubActivity : AppCompatActivity() {
         ) {
             clearPrivateProfileData()
         }
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
         super.onDestroy()
     }
 

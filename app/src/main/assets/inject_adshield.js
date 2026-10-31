@@ -450,4 +450,86 @@
         runYouTubeAdSkipper();
         document.querySelectorAll('video').forEach(hookVideoPlayback);
     }
+
+    // =========================================================================
+    // 1. UNIVERSAL BACKGROUND MEDIA DECOUPLER
+    // Prevents YouTube, Spotify, and audio streams from pausing on tab switch/lock
+    // =========================================================================
+    try {
+        // Spoof document visibility
+        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
+
+        // Neutralize visibilitychange and blur events that pause video
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (type === 'visibilitychange' || type === 'webkitvisibilitychange' || type === 'pagehide') {
+                const wrappedListener = function(event) {
+                    // Swallow event if it tries to report hidden
+                    if (document.hidden) return;
+                    return listener.apply(this, arguments);
+                };
+                return originalAddEventListener.call(this, type, wrappedListener, options);
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+    } catch(e) {}
+
+    // =========================================================================
+    // 2. SPECULATIVE TOUCH DECELERATION & HOVER PRE-WARMER
+    // Resolves DNS and warms TCP/TLS before finger clicks link (0ms latency feel)
+    // =========================================================================
+    try {
+        let prewarmedUrls = new Set();
+        let hoverTimer = null;
+
+        function checkAndPrewarm(el) {
+            const anchor = el.closest('a[href]');
+            if (!anchor) return;
+            const href = anchor.href;
+            if (!href || !href.startsWith('http') || prewarmedUrls.has(href)) return;
+            prewarmedUrls.add(href);
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.preWarmUrl === 'function') {
+                window.FokkShieldBridge.preWarmUrl(href);
+            }
+        }
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.target) checkAndPrewarm(e.target);
+        }, { passive: true });
+
+        document.addEventListener('pointerover', function(e) {
+            if (hoverTimer) clearTimeout(hoverTimer);
+            hoverTimer = setTimeout(() => {
+                if (e.target) checkAndPrewarm(e.target);
+            }, 60);
+        }, { passive: true });
+    } catch(e) {}
+
+    // =========================================================================
+    // 3. PAYWALL & RESTRICTIVE OVERLAY DETECTOR
+    // Detects paywalls and notifies native UI to show 1-tap "Mirror View" badge
+    // =========================================================================
+    try {
+        function detectPaywall() {
+            const paywallSelectors = [
+                '[class*="paywall"]', '[id*="paywall"]', '.subscription-wall',
+                '[class*="article-gate"]', '[id*="article-gate"]', '.metered-paywall',
+                'div[data-component="paywall"]', '#piano-id', '.piano-container'
+            ];
+            for (let sel of paywallSelectors) {
+                const el = document.querySelector(sel);
+                if (el && el.offsetParent !== null) {
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onPaywallDetected === 'function') {
+                        window.FokkShieldBridge.onPaywallDetected(window.location.href);
+                    }
+                    break;
+                }
+            }
+        }
+        setTimeout(detectPaywall, 2000);
+    } catch(e) {}
+
 })();

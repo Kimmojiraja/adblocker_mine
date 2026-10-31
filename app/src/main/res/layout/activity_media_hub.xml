@@ -27,11 +27,42 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <!-- Dynamic Multi-Tab Viewport Frame Container -->
-            <FrameLayout
-                android:id="@+id/tabContainer"
+            <!-- Dual-Deck Multi-Tab Viewport Frame Container -->
+            <LinearLayout
+                android:id="@+id/dualDeckContainer"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <FrameLayout
+                    android:id="@+id/tabContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <!-- Dual-Deck Split Divider -->
+                <LinearLayout
+                    android:id="@+id/splitDivider"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:background="#162238"
+                    android:gravity="center"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="48dp"
+                        android:layout_height="4dp"
+                        android:background="@drawable/bg_stat_chip" />
+                </LinearLayout>
+
+                <!-- Secondary Split Viewport Frame -->
+                <FrameLayout
+                    android:id="@+id/tabContainerSecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:visibility="gone" />
+            </LinearLayout>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         <!-- Keep the main browser controls within thumb reach. -->
@@ -75,6 +106,36 @@
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
                     android:textSize="13sp" />
+
+                <ImageButton
+                    android:id="@+id/btnPaywallMirror"
+                    android:layout_width="32dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_unblock"
+                    app:tint="#10B981"
+                    android:visibility="gone"
+                    android:contentDescription="Mirror paywall view" />
+
+                <ImageButton
+                    android:id="@+id/btnReaderMode"
+                    android:layout_width="32dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_reader"
+                    app:tint="@color/fokk_cyan"
+                    android:visibility="gone"
+                    android:contentDescription="Reader view" />
+
+                <ImageButton
+                    android:id="@+id/btnAiSummary"
+                    android:layout_width="32dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_sparkle"
+                    app:tint="@color/fokk_cyan"
+                    android:visibility="gone"
+                    android:contentDescription="AI Page summary" />
 
                 <ImageButton
                     android:id="@+id/btnClearUrl"

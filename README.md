@@ -1,7 +1,7 @@
 # Fokk Browser project 
 
 <p align="center">
-  <img width="800" alt="Fokk Shield Browser" src="https://github.com/user-attachments/assets/70e9a0ca-0f16-46ad-ae70-c9cf176e186e" />
+  <img width="800" alt="Fokk Browser Project" src="https://github.com/user-attachments/assets/70e9a0ca-0f16-46ad-ae70-c9cf176e186e" />
 </p>
 
 Fokk Shield is a lightweight, privacy-focused Android web browser built for fast media playback, built-in torrent streaming, and clean web reading without background tracking.
@@ -10,7 +10,7 @@ Fokk Shield is a lightweight, privacy-focused Android web browser built for fast
 
 ## Overview
 
-Fokk Shield is designed to give users complete control over their mobile browsing experience. By running all content filtering and script sanitization locally on your device, the browser eliminates intrusive video ads, sponsored clutter, and analytics tracking with zero reliance on remote proxy servers.
+Fokk Browser Project is designed to give users complete control over their mobile browsing experience. By running all content filtering and script sanitization locally on your device, the browser eliminates intrusive video ads, sponsored clutter, and analytics tracking with zero reliance on remote proxy servers.
 
 ---
 
@@ -59,7 +59,7 @@ Fokk Shield is designed to give users complete control over their mobile browsin
 All request blocking, cosmetic filtering, and payload sanitization occur locally in memory on your phone. Browsing requests, search queries, and navigation history are never routed through intermediate proxy servers.
 
 ### Encrypted DNS Integration
-Fokk Shield supports encrypted DNS-over-HTTPS (DoH) and Android Private DNS providers to shield domain lookups from network-level snooping:
+Fokk Project supports encrypted DNS-over-HTTPS (DoH) and Android Private DNS providers to shield domain lookups from network-level snooping:
 - AdGuard DNS (`dns.adguard-dns.com`)
 - Mullvad Privacy DNS (`adblock.dns.mullvad.net`)
 - Cloudflare Security (`security.cloudflare-dns.com`)
@@ -92,5 +92,5 @@ The output APK will be generated at:
 
 ## License & Fair Use
 
-Fokk Shield is built using Android Jetpack, Kotlin Coroutines, and open-source ad-blocking specifications under Apache 2.0 / MIT licenses. All content filtering and DOM sanitization operate locally on content delivered to your device under user autonomy principles. All trademarks and brand names belong to their respective owners.
+Fokk Browser Project is built using Android Jetpack, Kotlin Coroutines, and open-source ad-blocking specifications under Apache 2.0 / MIT licenses. All content filtering and DOM sanitization operate locally on content delivered to your device under user autonomy principles. All trademarks and brand names belong to their respective owners.
 

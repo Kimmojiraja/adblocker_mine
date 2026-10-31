@@ -498,11 +498,431 @@
             border-radius: 6px;
             width: fit-content;
         }
+    
+        /* HERO TOP ACTIONS BAR (GHOST MODE & LIVE PULSE) */
+        .hero-top-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            margin-bottom: 22px;
+            padding: 0 4px;
+        }
+
+        .hero-privacy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(124, 108, 246, 0.12);
+            border: 1px solid rgba(124, 108, 246, 0.32);
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: var(--fokk-purple);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .hero-privacy-btn:active {
+            transform: scale(0.96);
+            background: rgba(124, 108, 246, 0.25);
+        }
+
+        .hero-livepulse-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.32);
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: #10B981;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .hero-livepulse-btn:active {
+            transform: scale(0.96);
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        .live-pulse-radar-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 10px #10B981;
+            animation: pulseRadar 1.6s infinite;
+        }
+
+        @keyframes pulseRadar {
+            0% { transform: scale(0.9); opacity: 0.9; }
+            50% { transform: scale(1.4); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.9; }
+        }
+
+        /* LIVE PULSE HUB CARD BUTTON ON HOMESCREEN */
+        .live-pulse-card-btn {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(91, 72, 238, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
+            border: 1px solid rgba(91, 72, 238, 0.28);
+            border-radius: 18px;
+            padding: 14px 16px;
+            margin-bottom: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--tile-shadow);
+            transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s;
+        }
+
+        .live-pulse-card-btn:hover, .live-pulse-card-btn:active {
+            transform: translateY(-2px);
+            border-color: var(--fokk-purple);
+            box-shadow: 0 8px 24px rgba(91, 72, 238, 0.22);
+        }
+
+        .pulse-card-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .pulse-icon-box {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #7C6CF6, #00E5FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(124, 108, 246, 0.35);
+        }
+
+        .pulse-live-tag-mini {
+            position: absolute;
+            bottom: -3px;
+            font-size: 7.5px;
+            font-weight: 800;
+            background: #10B981;
+            color: #000;
+            padding: 1px 4px;
+            border-radius: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .pulse-card-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .pulse-card-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .pulse-card-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .pulse-card-chevron {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        /* LIVE PULSE MODAL STYLING */
+        .live-pulse-modal-card {
+            max-height: 88vh;
+            padding: 20px;
+            gap: 14px;
+        }
+
+        .pulse-dot-large {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 12px #10B981;
+        }
+
+        .pulse-segments {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .pulse-segments::-webkit-scrollbar {
+            display: none;
+        }
+
+        .pulse-seg-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            border-radius: 14px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .pulse-seg-btn.active {
+            background: var(--fokk-purple);
+            color: #FFFFFF;
+            border-color: var(--fokk-purple);
+            box-shadow: 0 2px 10px rgba(91, 72, 238, 0.35);
+        }
+
+        .pulse-weather-card {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(91, 72, 238, 0.1));
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .weather-temp {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .weather-cond {
+            font-size: 13px;
+            font-weight: 700;
+            color: #F59E0B;
+            margin-top: 3px;
+        }
+
+        .weather-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .pulse-section-header {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .pulse-header-sub {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--fokk-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pulse-ticker-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .pulse-ticker-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ticker-pill {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 9px 12px;
+            display: flex;
+            flex-direction: column;
+            min-width: 95px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+
+        .ticker-pill:active {
+            transform: scale(0.96);
+            background: rgba(91, 72, 238, 0.15);
+        }
+
+        .ticker-symbol {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            letter-spacing: 0.4px;
+        }
+
+        .ticker-val {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        .ticker-change.up {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #10B981;
+            margin-top: 2px;
+        }
+
+        .ticker-change.down {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #EF4444;
+            margin-top: 2px;
+        }
+
+        .pulse-news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pulse-news-card {
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pulse-news-card:active {
+            transform: scale(0.98);
+            background: rgba(91, 72, 238, 0.12);
+        }
+
+        .pulse-news-img {
+            width: 74px;
+            height: 74px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #11131C;
+        }
+
+        .pulse-news-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+        }
+
+        .pulse-news-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        .pulse-news-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .pulse-news-tag {
+            font-weight: 800;
+            color: var(--fokk-purple);
+        }
+
+        .pulse-sports-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pulse-sport-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pulse-sport-card:active {
+            transform: scale(0.98);
+            background: rgba(91, 72, 238, 0.12);
+        }
+
+        .sport-team-score {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sport-league-tag {
+            font-size: 10px;
+            font-weight: 800;
+            color: #00E5FF;
+            text-transform: uppercase;
+        }
+
+        .sport-status-badge {
+            font-size: 10px;
+            font-weight: 800;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            padding: 2px 7px;
+            border-radius: 8px;
+        }
+
     </style>
 </head>
 <body id="pageBody">
 
     <div class="main-container">
+        <!-- TOP QUICK BAR: Privacy / Ghost Mode & Live Pulse Trigger -->
+        <div class="hero-top-bar">
+            <button class="hero-privacy-btn" onclick="openPrivateMode()" title="Open Ghost Mode">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 10h6"/>
+                    <circle cx="12" cy="14" r="2"/>
+                </svg>
+                <span>Ghost Mode</span>
+            </button>
+
+            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Live Pulse Hub">
+                <span class="live-pulse-radar-dot"></span>
+                <span>Live Pulse</span>
+            </button>
+        </div>
+
         <!-- 1. CENTERED HERO BRANDING WITH ROUNDED CIRCULAR LOGO -->
         <div class="brand-hero-center">
             <div class="brand-logo-disc">
@@ -511,9 +931,28 @@
             <span class="brand-title-hero">Fokk Shield</span>
         </div>
 
-        <!-- 2. FIREFOX-GRADE CIRCULAR SHORTCUTS GRID -->
+        <!-- 2. CIRCULAR SHORTCUTS GRID -->
         <div class="shortcuts-grid-firefox" id="speedDialGrid">
             <!-- Dynamically populated with large circular brand discs -->
+        </div>
+
+        <!-- 2.5 LIVE PULSE HUB CARD BUTTON -->
+        <div class="live-pulse-card-btn" onclick="openLivePulseHub()">
+            <div class="pulse-card-content">
+                <div class="pulse-icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span class="pulse-live-tag-mini">LIVE</span>
+                </div>
+                <div class="pulse-card-text">
+                    <div class="pulse-card-title">Live Pulse Hub</div>
+                    <div class="pulse-card-subtitle">News &bull; Weather &bull; Markets &bull; Sports Highlights</div>
+                </div>
+            </div>
+            <div class="pulse-card-chevron">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
         </div>
 
         <!-- 3. LIVE TRENDING PULSE -->
@@ -559,7 +998,103 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="themeModal" onclick="closeModalOnBg(event)">
+        <!-- LIVE PULSE HUB MODAL -->
+    <div class="modal-overlay" id="livePulseModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card live-pulse-modal-card">
+            <div class="modal-title">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="pulse-dot-large"></span>
+                    <span>Live Pulse Hub</span>
+                </div>
+                <button class="modal-close" onclick="closeLivePulseHub()">✕</button>
+            </div>
+
+            <!-- Segment Switcher -->
+            <div class="pulse-segments">
+                <button class="pulse-seg-btn active" id="segAll" onclick="switchPulseTab('all')">All</button>
+                <button class="pulse-seg-btn" id="segNews" onclick="switchPulseTab('news')">News</button>
+                <button class="pulse-seg-btn" id="segMarkets" onclick="switchPulseTab('markets')">Markets</button>
+                <button class="pulse-seg-btn" id="segSports" onclick="switchPulseTab('sports')">Sports</button>
+            </div>
+
+            <!-- Live Weather Card -->
+            <div class="pulse-weather-card" id="pulseWeatherWidget" data-seg="weather">
+                <div class="weather-left">
+                    <div class="weather-temp">24°C</div>
+                    <div class="weather-cond">Partly Sunny &bull; Mild Breeze</div>
+                    <div class="weather-sub">Humidity 46% &bull; Wind 12 km/h &bull; AQI 28 (Good)</div>
+                </div>
+                <div class="weather-icon-disc">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Markets & Currencies -->
+            <div class="pulse-section-header" data-seg="markets">
+                <span>Markets &amp; Currencies</span>
+                <span class="pulse-header-sub">Live Ticker</span>
+            </div>
+            <div class="pulse-ticker-scroll" data-seg="markets">
+                <div class="ticker-pill" onclick="openPulseQuery('Bitcoin BTC price today')">
+                    <span class="ticker-symbol">BTC</span>
+                    <span class="ticker-val">$67,850</span>
+                    <span class="ticker-change up">+3.4%</span>
+                </div>
+                <div class="ticker-pill" onclick="openPulseQuery('Ethereum ETH price today')">
+                    <span class="ticker-symbol">ETH</span>
+                    <span class="ticker-val">$3,560</span>
+                    <span class="ticker-change up">+2.8%</span>
+                </div>
+                <div class="ticker-pill" onclick="openPulseQuery('Gold price ounce USD today')">
+                    <span class="ticker-symbol">GOLD</span>
+                    <span class="ticker-val">$2,382</span>
+                    <span class="ticker-change up">+0.7%</span>
+                </div>
+                <div class="ticker-pill" onclick="openPulseQuery('S&P 500 stock market index')">
+                    <span class="ticker-symbol">S&amp;P 500</span>
+                    <span class="ticker-val">5,488</span>
+                    <span class="ticker-change up">+0.9%</span>
+                </div>
+                <div class="ticker-pill" onclick="openPulseQuery('EUR to USD exchange rate')">
+                    <span class="ticker-symbol">EUR/USD</span>
+                    <span class="ticker-val">1.087</span>
+                    <span class="ticker-change down">-0.12%</span>
+                </div>
+            </div>
+
+            <!-- Breaking News with Images -->
+            <div class="pulse-section-header" data-seg="news">
+                <span>Breaking News</span>
+                <span class="pulse-header-sub">Global Feed</span>
+            </div>
+            <div class="pulse-news-list" id="pulseNewsList" data-seg="news">
+                <!-- Dynamically populated or loaded -->
+            </div>
+
+            <!-- Sports Live & Highlights -->
+            <div class="pulse-section-header" data-seg="sports">
+                <span>Sports Highlights</span>
+                <span class="pulse-header-sub">Latest Scores</span>
+            </div>
+            <div class="pulse-sports-list" id="pulseSportsList" data-seg="sports">
+                <!-- Dynamically populated -->
+            </div>
+
+            <button class="modal-btn" onclick="closeLivePulseHub()" style="background: rgba(255,255,255,0.06); color: var(--text-primary); margin-top: 8px;">Close</button>
+        </div>
+    </div>
+
+<div class="modal-overlay" id="themeModal" onclick="closeModalOnBg(event)">
         <div class="modal-card">
             <div class="modal-title">
                 <span>Wallpapers &amp; Themes</span>
@@ -597,7 +1132,7 @@
         };
 
         const defaultDials = [
-            { id: "google", title: "Google", url: "https://www.google.com", icon: "google", pinned: true },
+            { id: "google", title: "Google", url: "https://www.google.com", icon: "google", pinned: false },
             { id: "yt", title: "YouTube", url: "https://m.youtube.com", icon: "youtube", pinned: false },
             { id: "amazon", title: "Amazon", url: "https://www.amazon.com", icon: "amazon", pinned: false },
             { id: "wiki", title: "Wikipedia", url: "https://en.m.wikipedia.org", icon: "wikipedia", pinned: false },
@@ -616,6 +1151,10 @@
             } catch (e) {
                 speedDials = defaultDials;
             }
+            // User requested removing pin for Google
+            speedDials.forEach(d => {
+                if (d.id === "google") d.pinned = false;
+            });
             renderSpeedDials();
         }
 
@@ -806,6 +1345,143 @@
                     <span>${t.title}</span>
                 `;
                 container.appendChild(chip);
+            });
+        }
+
+        
+        // GHOST / PRIVATE MODE HANDLER
+        function openPrivateMode() {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openPrivateTabs === 'function') {
+                window.FokkShieldBridge.openPrivateTabs();
+            } else {
+                window.location.href = "https://www.ecosia.org";
+            }
+        }
+
+        // LIVE PULSE HUB HANDLERS
+        function openLivePulseHub() {
+            renderPulseNews();
+            renderPulseSports();
+            document.getElementById('livePulseModal').classList.add('active');
+        }
+
+        function closeLivePulseHub() {
+            document.getElementById('livePulseModal').classList.remove('active');
+        }
+
+        function openPulseQuery(query) {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.search === 'function') {
+                window.FokkShieldBridge.search(query);
+            } else {
+                window.location.href = 'https://www.ecosia.org/search?q=' + encodeURIComponent(query);
+            }
+        }
+
+        function switchPulseTab(seg) {
+            document.querySelectorAll('.pulse-seg-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('seg' + seg.charAt(0).toUpperCase() + seg.slice(1));
+            if (btn) btn.classList.add('active');
+
+            const allElements = document.querySelectorAll('[data-seg]');
+            allElements.forEach(el => {
+                const s = el.getAttribute('data-seg');
+                if (seg === 'all') {
+                    el.style.display = '';
+                } else if (seg === 'news' && s === 'news') {
+                    el.style.display = '';
+                } else if (seg === 'markets' && (s === 'markets' || s === 'weather')) {
+                    el.style.display = '';
+                } else if (seg === 'sports' && s === 'sports') {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        const samplePulseNews = [
+            {
+                title: "Next-Gen Autonomous AI Agents Redefining Software Engineering",
+                tag: "AI & Tech",
+                source: "TechPulse",
+                time: "15m ago",
+                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
+                query: "Next-gen AI agents developments news"
+            },
+            {
+                title: "Orbital Spacecraft Completes Historic Deep Space Propulsion Test",
+                tag: "Space",
+                source: "AeroSphere",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=300&q=80",
+                query: "Space exploration rocket starship test news"
+            },
+            {
+                title: "Global Privacy Standards Shift Toward Local On-Device Sandboxes",
+                tag: "Privacy",
+                source: "CyberWire",
+                time: "2h ago",
+                img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=300&q=80",
+                query: "Cybersecurity data privacy standards news"
+            },
+            {
+                title: "Clean Energy Transition Hits Record High In Global Grid Installations",
+                tag: "Energy",
+                source: "EcoReport",
+                time: "3h ago",
+                img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=300&q=80",
+                query: "Clean energy transition solar wind grid installations"
+            }
+        ];
+
+        function renderPulseNews() {
+            const list = document.getElementById('pulseNewsList');
+            if (!list) return;
+            list.innerHTML = '';
+            samplePulseNews.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'pulse-news-card';
+                card.onclick = () => openPulseQuery(item.query);
+                card.innerHTML = `
+                    <img src="${item.img}" alt="News" class="pulse-news-img" onerror="this.style.display='none'">
+                    <div class="pulse-news-body">
+                        <div class="pulse-news-title">${item.title}</div>
+                        <div class="pulse-news-footer">
+                            <span class="pulse-news-tag">${item.tag}</span>
+                            <span>&bull;</span>
+                            <span>${item.source}</span>
+                            <span>&bull;</span>
+                            <span>${item.time}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        const sampleSports = [
+            { league: "Champions League", match: "Real Madrid 2 - 1 Bayern Munich", status: "FT" },
+            { league: "NBA Finals", match: "Boston Celtics 112 - 108 Golden State", status: "FT" },
+            { league: "Formula 1", match: "Monaco GP: Ferrari P1 • Red Bull P2", status: "Race Day" },
+            { league: "Premier League", match: "Arsenal 3 - 1 Chelsea", status: "FT" }
+        ];
+
+        function renderPulseSports() {
+            const list = document.getElementById('pulseSportsList');
+            if (!list) return;
+            list.innerHTML = '';
+            sampleSports.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'pulse-sport-card';
+                card.onclick = () => openPulseQuery(s.league + ' ' + s.match);
+                card.innerHTML = `
+                    <div>
+                        <div class="sport-league-tag">${s.league}</div>
+                        <div class="sport-team-score" style="margin-top:2px;">${s.match}</div>
+                    </div>
+                    <span class="sport-status-badge">${s.status}</span>
+                `;
+                list.appendChild(card);
             });
         }
 

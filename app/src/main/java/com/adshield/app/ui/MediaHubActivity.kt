@@ -1,5 +1,9 @@
 package com.adshield.app.ui
 
+import android.app.role.RoleManager
+import android.provider.Settings
+import android.widget.RelativeLayout
+
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
@@ -246,6 +250,14 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private val defaultBrowserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            Toast.makeText(this, "Fokk is now your default browser!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private val webPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
@@ -414,7 +426,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private var currentSearchEngine: SearchEngine = SearchEngine.GOOGLE
+    private var currentSearchEngine: SearchEngine = SearchEngine.ECOSIA
 
     private var cachedTrendingTopicsJson: String = """
         [
@@ -579,13 +591,15 @@ open class MediaHubActivity : AppCompatActivity() {
         binding = ActivityMediaHubBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.GOOGLE.name)
+        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.ECOSIA.name)
         currentSearchEngine = try {
-            SearchEngine.valueOf(savedEngineName ?: SearchEngine.GOOGLE.name)
+            SearchEngine.valueOf(savedEngineName ?: SearchEngine.ECOSIA.name)
         } catch (e: Exception) {
-            SearchEngine.GOOGLE
+            SearchEngine.ECOSIA
         }
         applySearchEngine(currentSearchEngine)
+        val toolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+        applyToolbarPosition(toolbarPos)
 
         loadInjectionScript()
         setupControls()
@@ -844,6 +858,29 @@ open class MediaHubActivity : AppCompatActivity() {
         @JavascriptInterface
         fun getTrendingTopics(): String {
             return activity.cachedTrendingTopicsJson
+        }
+
+        @JavascriptInterface
+        fun openPrivateTabs() {
+            activity.runOnUiThread {
+                activity.authenticateForPrivateTabs {
+                    if (activity.isIsolatedPrivateProfile) {
+                        activity.showingPrivateTabs = true
+                        activity.showTabSwitcherDialog()
+                    } else {
+                        activity.openIsolatedPrivateBrowser("file:///android_asset/fokk_start.html")
+                    }
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun newPrivateTab() {
+            activity.runOnUiThread {
+                activity.authenticateForPrivateTabs {
+                    activity.addNewTab("file:///android_asset/fokk_start.html", isPrivate = true)
+                }
+            }
         }
 
         @JavascriptInterface
@@ -2496,6 +2533,62 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyToolbarPosition(position: String) {
+        val isTop = position.equals("top", ignoreCase = true)
+        binding.mainContentLayout.removeView(binding.topBar)
+        if (isTop) {
+            val idx = binding.mainContentLayout.indexOfChild(binding.swipeRefreshLayout).coerceAtLeast(0)
+            binding.mainContentLayout.addView(binding.topBar, idx)
+            val lp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
+            if (lp != null) {
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                val density = resources.displayMetrics.density
+                lp.topMargin = (68 * density).toInt()
+                lp.bottomMargin = 0
+                binding.cardSuggestions.layoutParams = lp
+            }
+        } else {
+            binding.mainContentLayout.addView(binding.topBar)
+            val lp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
+            if (lp != null) {
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
+                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                val density = resources.displayMetrics.density
+                lp.topMargin = 0
+                lp.bottomMargin = (68 * density).toInt()
+                binding.cardSuggestions.layoutParams = lp
+            }
+        }
+    }
+
+    private fun openSetDefaultBrowserDialog() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER)) {
+                if (!roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)) {
+                    val roleIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_BROWSER)
+                    defaultBrowserLauncher.launch(roleIntent)
+                    return
+                } else {
+                    Toast.makeText(this, "Fokk Browser is already your default browser", Toast.LENGTH_SHORT).show()
+                    return
+                }
+            }
+        }
+        try {
+            val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(Settings.ACTION_SETTINGS)
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Please set Fokk as default browser in Android Settings", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun showSearchEngineDialog() {
         val engines = SearchEngine.values()
         val items = engines.map { it.displayName }.toTypedArray()
@@ -2724,12 +2817,14 @@ open class MediaHubActivity : AppCompatActivity() {
         val sheetBinding = SheetTabSwitcherBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
 
+        var tabSearchQuery = ""
+
         fun updateTabsView() {
             val normalTabs = tabs.filter { !it.isPrivate }
             val privateTabs = tabs.filter { it.isPrivate }
 
             sheetBinding.btnFilterNormal.text = "Tabs (${normalTabs.size})"
-            sheetBinding.btnFilterPrivate.text = "Private (${privateTabs.size})"
+            sheetBinding.btnFilterPrivate.text = "Ghost Mode (${privateTabs.size})"
 
             if (showingPrivateTabs) {
                 sheetBinding.btnFilterPrivate.setBackgroundResource(R.drawable.bg_stat_chip)
@@ -2743,12 +2838,27 @@ open class MediaHubActivity : AppCompatActivity() {
                 sheetBinding.btnFilterPrivate.setTextColor(getColor(R.color.text_secondary))
             }
 
-            val currentTabsList = tabs.filter { it.isPrivate == showingPrivateTabs }
+            val currentTabsList = tabs.filter {
+                it.isPrivate == showingPrivateTabs &&
+                (tabSearchQuery.isBlank() ||
+                 it.title.contains(tabSearchQuery, ignoreCase = true) ||
+                 it.url.contains(tabSearchQuery, ignoreCase = true))
+            }
             sheetBinding.layoutTabsGrid.removeAllViews()
 
             val density = resources.displayMetrics.density
 
-            for (i in currentTabsList.indices step 2) {
+            if (currentTabsList.isEmpty()) {
+                val emptyNotice = TextView(this).apply {
+                    text = if (tabSearchQuery.isNotEmpty()) "No tabs found matching \"$tabSearchQuery\"" else "No open tabs"
+                    setTextColor(getColor(R.color.text_secondary))
+                    textSize = 13f
+                    gravity = Gravity.CENTER
+                    setPadding(0, (32 * density).toInt(), 0, (32 * density).toInt())
+                }
+                sheetBinding.layoutTabsGrid.addView(emptyNotice)
+            } else {
+                for (i in currentTabsList.indices step 2) {
                 val row = LinearLayout(this).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2786,7 +2896,22 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
 
                 sheetBinding.layoutTabsGrid.addView(row)
+                }
             }
+        }
+
+        sheetBinding.editSearchTabs.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                tabSearchQuery = s?.toString()?.trim() ?: ""
+                sheetBinding.btnClearTabSearch.visibility = if (tabSearchQuery.isNotEmpty()) View.VISIBLE else View.GONE
+                updateTabsView()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        sheetBinding.btnClearTabSearch.setOnClickListener {
+            sheetBinding.editSearchTabs.setText("")
         }
 
         sheetBinding.btnFilterNormal.setOnClickListener {
@@ -3189,6 +3314,15 @@ open class MediaHubActivity : AppCompatActivity() {
         sheetBinding.switchShowShortcuts.isChecked = showShortcuts
         sheetBinding.textCurrentEngine.text = "${currentSearchEngine.displayName} (Active)"
 
+        val currentToolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+        sheetBinding.textToolbarPosition.text = if (currentToolbarPos.equals("top", ignoreCase = true)) "Top" else "Bottom (Thumb Reach)"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            val isDefault = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_BROWSER)
+            sheetBinding.textDefaultBrowser.text = if (isDefault) "Default Browser (Active)" else "Set Fokk as default browser"
+        }
+
         sheetBinding.switchShowShortcuts.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean(PREF_SHOW_HOMEPAGE_SHORTCUTS, isChecked).apply()
             activeWebView?.evaluateJavascript("if (typeof toggleHomepageShortcutsVisibility === 'function') toggleHomepageShortcutsVisibility($isChecked);", null)
@@ -3304,6 +3438,29 @@ open class MediaHubActivity : AppCompatActivity() {
         sheetBinding.rowSearchEngine.setOnClickListener {
             dialog.dismiss()
             showSearchEngineDialog()
+        }
+
+        sheetBinding.rowToolbarPosition.setOnClickListener {
+            val options = arrayOf("Bottom (Thumb Reach - Default)", "Top")
+            val current = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+            val selectedIndex = if (current.equals("top", ignoreCase = true)) 1 else 0
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Toolbar Position")
+                .setSingleChoiceItems(options, selectedIndex) { d, which ->
+                    val newPos = if (which == 1) "top" else "bottom"
+                    prefs.edit().putString(PREF_TOOLBAR_POSITION, newPos).apply()
+                    applyToolbarPosition(newPos)
+                    sheetBinding.textToolbarPosition.text = if (newPos == "top") "Top" else "Bottom (Thumb Reach)"
+                    Toast.makeText(this, "Toolbar position set to ${options[which]}", Toast.LENGTH_SHORT).show()
+                    d.dismiss()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        sheetBinding.rowDefaultBrowser.setOnClickListener {
+            dialog.dismiss()
+            openSetDefaultBrowserDialog()
         }
 
         sheetBinding.rowExtensions.setOnClickListener {
@@ -3992,6 +4149,7 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREFS_NAME = "fokk_browser_settings_v2"
         private const val LEGACY_PREFS_NAME = "fokk_browser_prefs"
         private const val LOCAL_PREFS_NAME = "fokk_browser_local"
+        private const val PREF_TOOLBAR_POSITION = "fokk_toolbar_position"
         private const val PREF_SEARCH_ENGINE = "fokk_search_engine"
         private const val PREF_REMOTE_SUGGESTIONS = "fokk_remote_search_suggestions"
         private const val PREF_STRICT_ADBLOCK = "filter_strict_adblock"

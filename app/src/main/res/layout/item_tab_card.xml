@@ -5,11 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="170dp"
     android:layout_margin="4dp"
-    app:cardBackgroundColor="#131B2B"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
-    app:strokeColor="#24344D"
-    app:strokeWidth="1dp">
+    app:cardBackgroundColor="#0F1523"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
+    app:strokeColor="#1E2A3E"
+    app:strokeWidth="1.2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,16 +20,16 @@
         <LinearLayout
             android:id="@+id/layoutCardHeader"
             android:layout_width="match_parent"
-            android:layout_height="32dp"
-            android:background="#172233"
+            android:layout_height="34dp"
+            android:background="#161F32"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp">
+            android:paddingHorizontal="10dp">
 
             <ImageView
                 android:id="@+id/imgTabIcon"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
                 android:src="@drawable/ic_launch"
                 app:tint="@color/fokk_cyan" />
 
@@ -38,30 +38,30 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="8dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="New Tab"
                 android:textColor="@color/text_primary"
-                android:textSize="11sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold" />
 
             <ImageButton
                 android:id="@+id/btnCloseTab"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_close"
                 app:tint="@color/text_secondary"
                 android:contentDescription="Close Tab" />
         </LinearLayout>
 
-        <!-- Tab Card Preview Body (Brave Snapshot Style) -->
+        <!-- Tab Card Preview Body -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#090D14"
+            android:background="#080C14"
             android:padding="8dp">
 
             <!-- Watermark / URL in Preview -->
@@ -73,9 +73,9 @@
 
                 <ImageView
                     android:id="@+id/imgPreviewLogo"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:alpha="0.7"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:alpha="0.65"
                     android:src="@drawable/ic_shield_check"
                     app:tint="@color/fokk_cyan" />
 
@@ -83,13 +83,13 @@
                     android:id="@+id/textTabUrl"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:paddingHorizontal="6dp"
+                    android:paddingHorizontal="8dp"
                     android:text="fokk://home"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="10.5sp" />
             </LinearLayout>
 
             <!-- Active Tab Indicator Badge -->
@@ -99,7 +99,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
                 android:background="@drawable/bg_stat_chip"
-                android:paddingHorizontal="6dp"
+                android:paddingHorizontal="7dp"
                 android:paddingVertical="2dp"
                 android:text="ACTIVE"
                 android:textColor="@color/fokk_cyan"
@@ -114,9 +114,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
                 android:background="#4A148C"
-                android:paddingHorizontal="5dp"
-                android:paddingVertical="1dp"
-                android:text="PRIVATE"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:text="GHOST"
                 android:textColor="#E1BEE7"
                 android:textSize="8sp"
                 android:textStyle="bold"

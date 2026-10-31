@@ -45,7 +45,7 @@
 
         /* YouTube Mobile Topbar Open App Button & Promos */
         ytm-open-app-button,
-        .mobile-topbar-header-endpoint,
+        .mobile-topbar-header-endpoint:has(ytm-open-app-button),
         c3-material-button[aria-label*="Open App"],
         a.c3-material-button[href*="redirect_app"],
         [aria-label*="Open App"],
@@ -180,7 +180,7 @@
         if (!isAppNagHost) return;
 
         if (host.includes('youtube.com')) {
-            document.querySelectorAll('ytm-open-app-button, .mobile-topbar-header-endpoint, [aria-label*="Open App"], [aria-label*="open app"]').forEach(function(el) {
+            document.querySelectorAll('ytm-open-app-button, .mobile-topbar-header-endpoint:has(ytm-open-app-button), [aria-label*="Open App"], [aria-label*="open app"]').forEach(function(el) {
                 el.style.setProperty('display', 'none', 'important');
             });
             document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-promoted-sparkles-web-renderer, ytm-ad-slot-renderer').forEach(function(el) {
@@ -188,6 +188,24 @@
                     const parent = el.closest('ytm-item-section-renderer, ytm-compact-promoted-item-renderer') || el;
                     parent.remove();
                 } catch (e) {}
+            });
+        } else if (host.includes('instagram.com')) {
+            // Remove Instagram app banners
+            document.querySelectorAll('div[data-testid="banner-mobile-app"], div[class*="MobileAppBanner"], div[role="dialog"]:has(a[href*="play.google.com"])').forEach(function(el) {
+                try { el.remove(); } catch (e) {}
+            });
+            // Scrub sponsored posts & suggestions from Instagram feed
+            document.querySelectorAll('article').forEach(function(article) {
+                if (article.dataset.fokkChecked) return;
+                const hasAdIndicator = article.querySelector('a[href*="/about/ads"], svg[aria-label="Sponsored"]') ||
+                    Array.from(article.querySelectorAll('span, a')).some(function(s) {
+                        const t = (s.innerText || s.textContent || '').trim().toLowerCase();
+                        return t === 'sponsored' || t === 'suggested for you' || t === 'suggested post';
+                    });
+                if (hasAdIndicator) {
+                    article.dataset.fokkChecked = 'true';
+                    article.style.setProperty('display', 'none', 'important');
+                }
             });
         } else if (host.includes('spotify.com')) {
             try {
@@ -279,11 +297,16 @@
         if (!video || video.__fokk_hooked) return;
         video.__fokk_hooked = true;
 
+        let pendingState = false;
         const updateState = function() {
-            const videos = Array.from(document.querySelectorAll('video'));
-            const isPlaying = videos.some(function(v) { return !v.paused && !v.ended; });
-            const hasActiveVideo = videos.some(function(v) { return v.currentTime > 0 && !v.ended; });
-            notifyNativePlayback(isPlaying, hasActiveVideo);
+            if (pendingState) return;
+            pendingState = true;
+            requestAnimationFrame(function() {
+                pendingState = false;
+                const isPlaying = !video.paused && !video.ended;
+                const hasActiveVideo = video.currentTime > 0 && !video.ended;
+                notifyNativePlayback(isPlaying, hasActiveVideo);
+            });
         };
 
         video.addEventListener('play', updateState);
@@ -305,7 +328,8 @@
     try {
         const host = window.location.hostname;
         const needsObserver = host.includes('youtube.com') || host.includes('spotify.com') ||
-            host.includes('reddit.com') || host.includes('google.') || host.includes('bing.com');
+            host.includes('reddit.com') || host.includes('google.') || host.includes('bing.com') ||
+            host.includes('instagram.com');
 
         if (needsObserver) {
             let pendingSweep = false;

@@ -945,6 +945,90 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Toolbar Position (Top / Bottom) -->
+            <LinearLayout
+                android:id="@+id/rowToolbarPosition"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_layers"
+                    app:tint="#00E5FF" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Toolbar Position"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14.5sp" />
+
+                    <TextView
+                        android:id="@+id/textToolbarPosition"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bottom (Thumb Reach)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Set as Default Browser -->
+            <LinearLayout
+                android:id="@+id/rowDefaultBrowser"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_launch"
+                    app:tint="#10B981" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Default Browser"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14.5sp" />
+
+                    <TextView
+                        android:id="@+id/textDefaultBrowser"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Set Fokk as default browser"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
             <!-- Extensions & Custom Filters -->
             <LinearLayout
                 android:id="@+id/rowExtensions"

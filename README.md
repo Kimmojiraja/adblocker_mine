@@ -4,7 +4,7 @@
   <img width="800" alt="Fokk Browser Project" src="https://github.com/user-attachments/assets/70e9a0ca-0f16-46ad-ae70-c9cf176e186e" />
 </p>
 
-Fokk Shield is a lightweight, privacy-focused Android web browser built for fast media playback, built-in torrent streaming, and clean web reading without background tracking.
+Fokk Browser Project is a lightweight, privacy-focused Android web browser built for fast media playback, built-in torrent streaming, and clean web reading without background tracking.
 
 ---
 

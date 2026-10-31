@@ -27,12 +27,8 @@ import java.io.FileOutputStream
 import android.speech.tts.TextToSpeech
 import java.net.Socket
 import java.net.InetSocketAddress
-import java.net.URL
-import java.net.HttpURLConnection
 import com.google.android.material.chip.Chip
 import com.adshield.app.databinding.SheetAiSummaryBinding
-import org.json.JSONObject
-import org.json.JSONArray
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -4063,7 +4059,7 @@ open class MediaHubActivity : AppCompatActivity() {
             val bulletsArray = json.optJSONArray("bullets") ?: JSONArray()
             val metricsArray = json.optJSONArray("metrics") ?: JSONArray()
 
-            val sheetDialog = BottomSheetDialog(this, R.style.TransparentBottomSheetDialogTheme)
+            val sheetDialog = BottomSheetDialog(this)
             val sheetBinding = SheetAiSummaryBinding.inflate(layoutInflater)
             sheetDialog.setContentView(sheetBinding.root)
 
@@ -4101,7 +4097,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     text = bullet
                     setTextColor(getColor(R.color.text_primary))
                     textSize = 13.5f
-                    lineSpacingMultiplier = 1.35f
+                    setLineSpacing(0f, 1.35f)
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                 }
 
@@ -4120,7 +4116,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     val chip = Chip(this).apply {
                         text = metric
                         setTextColor(getColor(R.color.fokk_cyan))
-                        setChipBackgroundColorResource(R.color.card_surface)
+                        setChipBackgroundColorResource(R.color.surface_dark)
                         chipStrokeColor = ColorStateList.valueOf(getColor(R.color.fokk_cyan))
                         chipStrokeWidth = 1 * density
                         textSize = 11.5f
@@ -4179,7 +4175,7 @@ open class MediaHubActivity : AppCompatActivity() {
     // SPECULATIVE CLOUDFLARE DoH PRE-WARMER (0ms Perceived Latency)
     // =========================================================================
     fun speculativePreWarm(url: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val host = Uri.parse(url).host ?: return@launch
                 if (!prewarmedHosts.add(host)) return@launch

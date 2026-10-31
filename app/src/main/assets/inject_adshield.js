@@ -4,7 +4,100 @@
     if (window.__fokkshield_loaded) return;
     window.__fokkshield_loaded = true;
 
+    // YouTube / Media Player Network Interceptor (Pre-Emptive Ad Stripper)
+    (function installNetworkInterceptor() {
+        if (window.__fokk_net_hooked) return;
+        window.__fokk_net_hooked = true;
+
+        if (window.fetch) {
+            const origFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await origFetch.apply(this, args);
+                try {
+                    const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
+                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next')) {
+                        const clone = response.clone();
+                        const data = await clone.json();
+                        let modified = false;
+                        if (data.adPlacements) { delete data.adPlacements; modified = true; }
+                        if (data.playerAds) { delete data.playerAds; modified = true; }
+                        if (data.adSlots) { delete data.adSlots; modified = true; }
+                        if (data.playbackTracking) {
+                            delete data.playbackTracking.videostatsPlaybackUrl;
+                            delete data.playbackTracking.videostatsDelayplayUrl;
+                            delete data.playbackTracking.videostatsWatchtimeUrl;
+                            delete data.playbackTracking.videostatsPtrackingUrl;
+                            modified = true;
+                        }
+                        if (modified) {
+                            return new Response(JSON.stringify(data), {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: response.headers
+                            });
+                        }
+                    }
+                } catch (e) {}
+                return response;
+            };
+        }
+
+        if (window.XMLHttpRequest) {
+            const origOpen = XMLHttpRequest.prototype.open;
+            const origSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                this._fokkTargetUrl = url;
+                return origOpen.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function(body) {
+                if (this._fokkTargetUrl && (typeof this._fokkTargetUrl === 'string') &&
+                    (this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next'))) {
+                    const self = this;
+                    const origOnReady = this.onreadystatechange;
+                    this.onreadystatechange = function() {
+                        if (self.readyState === 4 && self.status === 200) {
+                            try {
+                                const data = JSON.parse(self.responseText);
+                                let modified = false;
+                                if (data.adPlacements) { delete data.adPlacements; modified = true; }
+                                if (data.playerAds) { delete data.playerAds; modified = true; }
+                                if (data.adSlots) { delete data.adSlots; modified = true; }
+                                if (modified) {
+                                    const cleaned = JSON.stringify(data);
+                                    Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
+                                    Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
+                                }
+                            } catch (e) {}
+                        }
+                        if (origOnReady) origOnReady.apply(this, arguments);
+                    };
+                }
+                return origSend.apply(this, arguments);
+            };
+        }
+    })();
+
     const cosmeticCss = `
+        /* Instagram Sponsored & App Promo Hiding */
+        a[href*="/about/ads"],
+        div:has(> a[href*="/about/ads"]),
+        article:has(a[href*="/about/ads"]),
+        div[role="article"]:has(a[href*="/about/ads"]),
+        div:has(> [aria-label*="Sponsored"]),
+        article:has([aria-label*="Sponsored"]),
+        div[role="article"]:has([aria-label*="Sponsored"]),
+        div[role="dialog"]:has(a[href*="play.google.com"]),
+        div[data-testid="banner-mobile-app"],
+
+        /* YouTube Mobile Ad Overlays */
+        .ytm-player-ad-overlay,
+        ytm-player-ad-overlay,
+        .ytp-ad-player-overlay,
+        .ytp-ad-text,
+        .ytp-ad-preview-text,
+        .ytp-ad-module,
+        div[class*="ad-showing"] .ytp-ad-text,
+
         /* Generic ad slots & banners */
         ins.adsbygoogle,
         .adsbygoogle,
@@ -185,15 +278,7 @@
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        // 1. Trigger YouTube internal player API skip if available
-        try {
-            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-            if (player && typeof player.skipAd === 'function') {
-                player.skipAd();
-            }
-        } catch (e) {}
-
-        // 2. Programmatically click all modern YouTube skip buttons
+        // 1. Programmatically click all modern YouTube skip buttons
         const skipButtons = [
             '.ytp-ad-skip-button',
             '.ytp-ad-skip-button-modern',
@@ -204,7 +289,10 @@
             '.ytp-ad-overlay-close-button',
             'button[class*="skip-button"]',
             '.ytp-ad-skip-button-container button',
-            '.ytp-ad-skip-button-slot button'
+            '.ytp-ad-skip-button-slot button',
+            '.ytm-ad-skip-button',
+            '[aria-label*="Skip ad"]',
+            '[aria-label*="Skip Ad"]'
         ];
         for (let i = 0; i < skipButtons.length; i++) {
             const btn = document.querySelector(skipButtons[i]);
@@ -216,10 +304,21 @@
             }
         }
 
-        // 3. Detect ad state and accelerate video to end (Zero Waiting / Zero Blank Screen)
-        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-        const isAdShowing = (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) ||
-                            !!document.querySelector('.ad-showing, .ad-interrupting');
+        // 2. Trigger YouTube internal player API skip if available
+        try {
+            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, #player');
+            if (player && typeof player.skipAd === 'function') {
+                player.skipAd();
+            }
+        } catch (e) {}
+
+        // 3. Detect mobile YouTube sponsored ad or 0:00 stall state
+        const adBadge = document.querySelector('.ytp-ad-text, [class*="badge-and-title"], [aria-label*="Sponsored"], .ytm-ad-preview-text, .ytp-ad-preview-text');
+        const isSponsoredText = adBadge && /sponsored/i.test(adBadge.textContent || '');
+        const playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player, #player');
+        const isAdShowing = isSponsoredText ||
+                            (playerEl && (playerEl.classList.contains('ad-showing') || playerEl.classList.contains('ad-interrupting'))) ||
+                            !!document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay, [class*="ad-showing"]');
         const video = document.querySelector('video.html5-main-video, video');
 
         if (isAdShowing && video) {
@@ -231,6 +330,9 @@
                 video.playbackRate = 16.0;
                 if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
                     video.currentTime = Math.max(0, video.duration - 0.05);
+                } else {
+                    // Blocked ad media (duration is 0 or NaN, stalled at 0:00): trigger ended to release the player
+                    video.dispatchEvent(new Event('ended'));
                 }
                 if (video.paused) {
                     video.play().catch(function() {});
@@ -278,17 +380,17 @@
             document.querySelectorAll('div[data-testid="banner-mobile-app"], div[class*="MobileAppBanner"], div[role="dialog"]:has(a[href*="play.google.com"])').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
-            // Scrub sponsored posts & suggestions from Instagram feed
-            document.querySelectorAll('article').forEach(function(article) {
-                if (article.dataset.fokkChecked) return;
-                const hasAdIndicator = article.querySelector('a[href*="/about/ads"], svg[aria-label="Sponsored"]') ||
-                    Array.from(article.querySelectorAll('span, a')).some(function(s) {
-                        const t = (s.innerText || s.textContent || '').trim().toLowerCase();
-                        return t === 'sponsored' || t === 'suggested for you' || t === 'suggested post';
-                    });
-                if (hasAdIndicator) {
-                    article.dataset.fokkChecked = 'true';
-                    article.style.setProperty('display', 'none', 'important');
+            // Scrub sponsored feed posts, suggestions, and promotional cards from Instagram feed
+            const igCandidates = document.querySelectorAll('article, div[role="article"], main section > div > div > div');
+            igCandidates.forEach(function(item) {
+                if (item.tagName === 'MAIN' || item.tagName === 'BODY') return;
+                const text = (item.innerText || item.textContent || '');
+                const hasSponsoredKeyword = /\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Commandité)\b/i.test(text);
+                const hasAdLinks = !!item.querySelector('a[href*="/about/ads"], a[href*="instagram.com/about/ads"], svg[aria-label*="Sponsored"], [aria-label*="Sponsored"], [aria-label*="sponsored"]');
+                if (hasSponsoredKeyword || hasAdLinks) {
+                    item.style.setProperty('display', 'none', 'important');
+                    const container = item.closest('div[class*="x1y1aw1k"]') || item;
+                    container.style.setProperty('display', 'none', 'important');
                 }
             });
         } else if (host.includes('spotify.com')) {

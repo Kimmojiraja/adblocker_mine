@@ -1676,7 +1676,16 @@ open class MediaHubActivity : AppCompatActivity() {
         callback?.onCustomViewHidden()
     }
 
+    private val showChromeOnIdleRunnable = Runnable {
+        if (browserChromeHidden && customView == null) {
+            setBrowserChromeVisible(true)
+        }
+    }
+
     private fun setBrowserChromeVisible(visible: Boolean) {
+        val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
+        val density = resources.displayMetrics.density
+        val slideDistance = binding.topBar.height.toFloat() + (24 * density)
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
@@ -1685,7 +1694,8 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.topBar.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .setDuration(160)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         } else {
             if (browserChromeHidden) return
@@ -1693,11 +1703,11 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
-                .translationY(binding.topBar.height.toFloat())
-                .setDuration(160)
+                .translationY(if (isTop) -slideDistance else slideDistance)
+                .setDuration(220)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
                 .withEndAction {
-                    // Use INVISIBLE rather than GONE so LinearLayout does not resize or remeasure the WebView
-                    if (browserChromeHidden) binding.topBar.visibility = View.INVISIBLE
+                    if (browserChromeHidden) binding.topBar.visibility = View.GONE
                 }
                 .start()
         }
@@ -1710,6 +1720,9 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        val barInset = (70 * resources.displayMetrics.density).toInt()
+        webView.setPadding(0, 0, 0, barInset)
+        webView.clipToPadding = false
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
@@ -1806,6 +1819,7 @@ open class MediaHubActivity : AppCompatActivity() {
                         updateUrlBar(displayUrl, loadingTab?.title)
                     }
                 }
+                injectAdblockScript(view, pageUrl)
             }
 
             override fun onReceivedError(
@@ -2109,16 +2123,23 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Dual Scroll Auto-Hide Toolbar mechanics
+        // Dual Scroll Auto-Hide Toolbar mechanics with smart idle reappear
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 val dy = scrollY - oldScrollY
-                if (dy > 20 && scrollY > 120) {
+                binding.topBar.removeCallbacks(showChromeOnIdleRunnable)
+
+                if (dy > 18 && scrollY > 100) {
                     setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
-                } else if (dy < -20 || scrollY < 20) {
+                    binding.topBar.postDelayed(showChromeOnIdleRunnable, 1600)
+                } else if (dy < -18 || scrollY < 25) {
                     setBrowserChromeVisible(true)
+                } else {
+                    if (browserChromeHidden) {
+                        binding.topBar.postDelayed(showChromeOnIdleRunnable, 1400)
+                    }
                 }
             }
         }
@@ -3019,31 +3040,36 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun applyToolbarPosition(position: String) {
         val isTop = position.equals("top", ignoreCase = true)
-        binding.mainContentLayout.removeView(binding.topBar)
+        val lp = binding.topBar.layoutParams as? RelativeLayout.LayoutParams ?: return
+        val density = resources.displayMetrics.density
         if (isTop) {
-            val idx = binding.mainContentLayout.indexOfChild(binding.swipeRefreshLayout).coerceAtLeast(0)
-            binding.mainContentLayout.addView(binding.topBar, idx)
-            val lp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
-            if (lp != null) {
-                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                val density = resources.displayMetrics.density
-                lp.topMargin = (68 * density).toInt()
-                lp.bottomMargin = 0
-                binding.cardSuggestions.layoutParams = lp
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+            lp.topMargin = (10 * density).toInt()
+            lp.bottomMargin = 0
+            val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
+            if (cardLp != null) {
+                cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                cardLp.topMargin = (72 * density).toInt()
+                cardLp.bottomMargin = 0
+                binding.cardSuggestions.layoutParams = cardLp
             }
         } else {
-            binding.mainContentLayout.addView(binding.topBar)
-            val lp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
-            if (lp != null) {
-                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
-                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-                val density = resources.displayMetrics.density
-                lp.topMargin = 0
-                lp.bottomMargin = (68 * density).toInt()
-                binding.cardSuggestions.layoutParams = lp
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
+            lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            lp.topMargin = 0
+            lp.bottomMargin = (12 * density).toInt()
+            val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
+            if (cardLp != null) {
+                cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
+                cardLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                cardLp.topMargin = 0
+                cardLp.bottomMargin = (76 * density).toInt()
+                binding.cardSuggestions.layoutParams = cardLp
             }
         }
+        binding.topBar.layoutParams = lp
     }
 
     private fun openSetDefaultBrowserDialog() {

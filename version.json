@@ -1,6 +1,6 @@
 {
-  "versionCode": 57,
-  "versionName": "1.0.57",
+  "versionCode": 58,
+  "versionName": "1.0.58",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Direct Browser Launch: App icon opens Fokk Super-Browser directly with instant tab resume.\n- Decentralized Privacy Account & Cyberpunk Badges: Local vault profile with custom avatar photos and 6 cyberpunk insignias (Falcon, Aegis, Terminal, Vault, Valkyrie, Spectre).\n- 1-Click AdGuard DNS Engine: In-app real-time DoH domain filtering dropping ad networks before network handshakes with zero VPN and zero Accessibility overhead.\n- Mobile Private DNS Hub: Quick configuration for AdGuard, Mullvad, Cloudflare, and Control D system-wide DNS.\n- Financial Apps Zero-Disruption Whitelist: Essential payment portals (PayPal, Stripe, Visa, Mastercard, Google Pay, NPCI) protected against false positives."
+  "changelog": "- YouTube Zero-Blank-Screen Anti-Stall Engine: Pre-emptive /youtubei/v1/player JSON response cleansing and automatic stream recovery eliminating 'Sponsored 1 of 2 0:00' pauses.\n- Instagram Feed Sponsored Posts Scrubber: Comprehensive suppression of sponsored feed posts, suggested cards, and paid partnerships via native CSS :has() and continuous DOM filtering.\n- Full-Bleed Zero-Gap Floating Command Bar: Fullscreen viewport eliminating all empty space when the toolbar hides on scroll, with smart idle auto-reappearance."
 }

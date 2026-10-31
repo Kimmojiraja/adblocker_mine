@@ -5,27 +5,16 @@
     android:layout_height="match_parent"
     android:background="@color/background_dark">
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/mainContentLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:max="100"
-            android:progressTint="@color/fokk_cyan"
-            android:visibility="gone" />
-
-        <!-- Pull down at the top of a page to reload it. -->
+        <!-- Pull down at the top of a page to reload it. Full-bleed 100% viewport. -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_height="match_parent">
 
             <!-- Dual-Deck Multi-Tab Viewport Frame Container -->
             <LinearLayout
@@ -65,138 +54,151 @@
             </LinearLayout>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <!-- Keep the main browser controls within thumb reach. -->
-        <LinearLayout
-            android:id="@+id/topBar"
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:background="#0D111A"
+            android:layout_height="2dp"
+            android:layout_gravity="top"
+            android:max="100"
+            android:progressTint="@color/fokk_cyan"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Modern Cyber Floating Command Input Bar -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_floating_command_bar"
+        android:elevation="14dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_search_pill"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="10dp">
 
-            <LinearLayout
+            <ImageView
+                android:id="@+id/imgEngineIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_engine_google"
+                android:contentDescription="Search engine and site security" />
+
+            <EditText
+                android:id="@+id/urlInput"
                 android:layout_width="0dp"
-                android:layout_height="46dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_search_pill"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp">
-
-                <ImageView
-                    android:id="@+id/imgEngineIcon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_engine_google"
-                    android:contentDescription="Search engine and site security" />
-
-                <EditText
-                    android:id="@+id/urlInput"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="@null"
-                    android:hint="Search or enter address"
-                    android:imeOptions="actionGo"
-                    android:inputType="textUri"
-                    android:maxLines="1"
-                    android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_secondary"
-                    android:textSize="13sp" />
-
-                <ImageButton
-                    android:id="@+id/btnPaywallMirror"
-                    android:layout_width="32dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_unblock"
-                    app:tint="#10B981"
-                    android:visibility="gone"
-                    android:contentDescription="Mirror paywall view" />
-
-                <ImageButton
-                    android:id="@+id/btnReaderMode"
-                    android:layout_width="32dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_reader"
-                    app:tint="@color/fokk_cyan"
-                    android:visibility="gone"
-                    android:contentDescription="Reader view" />
-
-                <ImageButton
-                    android:id="@+id/btnAiSummary"
-                    android:layout_width="32dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_sparkle"
-                    app:tint="@color/fokk_cyan"
-                    android:visibility="gone"
-                    android:contentDescription="AI Page summary" />
-
-                <ImageButton
-                    android:id="@+id/btnClearUrl"
-                    android:layout_width="32dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_close"
-                    app:tint="@color/text_secondary"
-                    android:visibility="gone"
-                    android:contentDescription="Clear address" />
-
-                <ImageButton
-                    android:id="@+id/btnVoiceSearch"
-                    android:layout_width="32dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_mic"
-                    app:tint="@color/text_secondary"
-                    android:contentDescription="Voice search" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:id="@+id/btnNavTabs"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="6dp"
-                android:background="@drawable/bg_tab_counter"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="Open tabs">
-
-                <TextView
-                    android:id="@+id/textTabCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="1"
-                    android:textColor="@color/fokk_cyan"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:background="@null"
+                android:hint="Search or enter address"
+                android:imeOptions="actionGo"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="13sp" />
 
             <ImageButton
-                android:id="@+id/btnNavMenu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="2dp"
+                android:id="@+id/btnPaywallMirror"
+                android:layout_width="30dp"
+                android:layout_height="38dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_more_vert"
-                app:tint="@color/text_primary"
-                android:contentDescription="Browser menu" />
+                android:src="@drawable/ic_unblock"
+                app:tint="#10B981"
+                android:visibility="gone"
+                android:contentDescription="Mirror paywall view" />
+
+            <ImageButton
+                android:id="@+id/btnReaderMode"
+                android:layout_width="30dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_reader"
+                app:tint="@color/fokk_cyan"
+                android:visibility="gone"
+                android:contentDescription="Reader view" />
+
+            <ImageButton
+                android:id="@+id/btnAiSummary"
+                android:layout_width="30dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_sparkle"
+                app:tint="@color/fokk_cyan"
+                android:visibility="gone"
+                android:contentDescription="AI Page summary" />
+
+            <ImageButton
+                android:id="@+id/btnClearUrl"
+                android:layout_width="30dp"
+                android:layout_height="38dp"
+                android:layout_marginEnd="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_close"
+                app:tint="@color/text_secondary"
+                android:visibility="gone"
+                android:contentDescription="Clear address" />
+
+            <ImageButton
+                android:id="@+id/btnVoiceSearch"
+                android:layout_width="30dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_mic"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Voice search" />
         </LinearLayout>
 
-        <!-- Redundant Bottom Navigation Bar (Removed as per user request) -->
-        <LinearLayout
-            android:id="@+id/bottomNav"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:visibility="gone" />
+        <FrameLayout
+            android:id="@+id/btnNavTabs"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_tab_counter"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open tabs">
+
+            <TextView
+                android:id="@+id/textTabCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="1"
+                android:textColor="@color/fokk_cyan"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/btnNavMenu"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_more_vert"
+            app:tint="@color/text_primary"
+            android:contentDescription="Browser menu" />
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
     <!-- Top 10 Recent Browsing History Dropdown Overlay -->
     <com.google.android.material.card.MaterialCardView
@@ -205,7 +207,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="10dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="68dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         app:cardBackgroundColor="#131B2B"
         app:cardCornerRadius="18dp"

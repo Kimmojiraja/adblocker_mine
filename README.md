@@ -14,3 +14,4 @@ The filter is a lightweight domain and cosmetic filter, not a full implementatio
 ## Build
 
 Open this Android project in Android Studio and build the `app` module with a compatible Android Gradle Plugin installation.
+![Uploading WhatsApp Image 2026-10-31 at 19.50.33.jpeg…]()

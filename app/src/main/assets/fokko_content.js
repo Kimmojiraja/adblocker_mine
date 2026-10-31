@@ -742,7 +742,10 @@
       }
     });
 
-    document.body.appendChild(floatingBubble);
+    const container = document.body || document.documentElement;
+    if (container) {
+      container.appendChild(floatingBubble);
+    }
 
     document.addEventListener("selectionchange", () => {
       const selection = window.getSelection();
@@ -824,5 +827,8 @@
     scheduleScan();
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  const targetNode = document.body || document.documentElement;
+  if (targetNode) {
+    observer.observe(targetNode, { childList: true, subtree: true });
+  }
 })();

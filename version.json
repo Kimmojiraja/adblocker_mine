@@ -1,6 +1,6 @@
 {
-  "versionCode": 46,
-  "versionName": "1.0.46",
+  "versionCode": 47,
+  "versionName": "1.0.47",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Spotify Web Player DRM fix: auto-granted RESOURCE_PROTECTED_MEDIA_ID (Widevine Modular DRM) in WebChromeClient and adjusted desktop Linux User-Agent to enable seamless protected audio playback without 'Playback disabled' errors.\n- Platform compatibility: spoofed desktop Linux x86_64 platform signature for web streaming media engines."
+  "changelog": "- YouTube video audio fix: restored auto-unmute and 1.0x playback speed when main video plays, guarded ad skipper against fast-forwarding videos > 75s, and eliminated blank sponsored ad placeholders.\n- X (Twitter) login fix: enabled cross-domain cookie handling between x.com and api.twitter.com, permitted OAuth sign-in popups in onCreateWindow, and prevented content scripts from interfering with auth flows."
 }

@@ -1583,9 +1583,13 @@ open class MediaHubActivity : AppCompatActivity() {
                 isUserGesture: Boolean,
                 resultMsg: android.os.Message?
             ): Boolean {
-                if (!isUserGesture) return false
                 val message = resultMsg ?: return false
                 val transport = message.obj as? WebView.WebViewTransport ?: return false
+                val sourceHost = view?.url?.let { runCatching { Uri.parse(it).host?.lowercase(Locale.ROOT) }.getOrNull() }.orEmpty()
+                val isAuthOrTrustedHost = isThirdPartyMediaServiceHost(sourceHost) ||
+                    sourceHost.contains("google.") || sourceHost.contains("apple.") || sourceHost.contains("x.com") || sourceHost.contains("twitter.com")
+                if (!isUserGesture && !isDialog && !isAuthOrTrustedHost) return false
+
                 val sourceTab = tabs.firstOrNull { it.webView === view }
                 val newTab = createTab("about:blank", isPrivate = sourceTab?.isPrivate == true)
                 sourceTab?.let { newTab.isDesktop = it.isDesktop }
@@ -2097,10 +2101,14 @@ open class MediaHubActivity : AppCompatActivity() {
         // Fokko AI Fact Checker (X/Twitter, Reddit, Threads, Bluesky, LinkedIn, Web)
         if (prefs.getBoolean(PREF_FOKKO_AI, true) && fokkoScript.isNotEmpty()) {
             val host = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull() ?: ""
-            val isExcluded = host.contains("spotify.com") || host.contains("netflix.com")
+            val urlLower = pageUrl?.lowercase(Locale.ROOT) ?: ""
+            val isAuthFlow = urlLower.contains("/login") || urlLower.contains("/signup") ||
+                urlLower.contains("/i/flow/login") || urlLower.contains("/oauth") ||
+                urlLower.contains("accounts.google.com") || urlLower.contains("appleid.apple.com")
+            val isExcluded = isAuthFlow || host.contains("spotify.com") || host.contains("netflix.com")
             if (!isExcluded && (pageUrl?.startsWith("http://") == true || pageUrl?.startsWith("https://") == true)) {
                 if (fokkoCss.isNotEmpty()) {
-                    val safeCss = fokkoCss.replace("'", "\\'").replace("\n", " ")
+                    val safeCss = fokkoCss.replace("'", "\\'").replace("\n", " ").replace("\r", " ")
                     val cssJs = "javascript:(function(){let s=document.getElementById('__fokk_ai_css');if(!s){s=document.createElement('style');s.id='__fokk_ai_css';(document.head||document.documentElement).appendChild(s);}s.innerHTML='$safeCss';})();"
                     webView.evaluateJavascript(cssJs, null)
                 }
@@ -3601,7 +3609,8 @@ open class MediaHubActivity : AppCompatActivity() {
         private val THIRD_PARTY_MEDIA_SERVICE_DOMAINS = setOf(
             "youtube.com", "youtube-nocookie.com", "youtu.be",
             "spotify.com", "spotify.link", "scdn.co", "spotifycdn.com",
-            "instagram.com", "instagr.am"
+            "instagram.com", "instagr.am",
+            "x.com", "twitter.com", "twimg.com", "t.co"
         )
         private val STREAMING_MEDIA_DOMAINS = setOf(
             "googlevideo.com", "ytimg.com", "ggpht.com", "mux.com", "bitmovin.com",

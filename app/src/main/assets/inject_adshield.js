@@ -23,6 +23,10 @@
         #tadsb,
 
         /* YouTube Web Ads & Sponsored Cards */
+        ytm-item-section-renderer:has(ytm-promoted-sparkles-web-renderer),
+        ytm-item-section-renderer:has(ytm-ad-slot-renderer),
+        ytm-compact-promoted-item-renderer,
+        div.ytm-promoted-sparkles-web-renderer,
         ytm-promoted-sparkles-web-renderer,
         ytm-promoted-sparkles-text-search-web-renderer,
         ytm-companion-ad-renderer,
@@ -95,8 +99,10 @@
     injectCosmetics();
 
     // =========================================================================
-    // YouTube Web Video Ad Auto-Skipper (Zero-Stall)
+    // YouTube Web Video Ad Auto-Skipper (Zero-Stall, Audio-Safe)
     // =========================================================================
+    let adWasMutedByShield = false;
+
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
@@ -128,16 +134,33 @@
         // 3. Fast-forward video ad without black-screen pause stall
         const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
         const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting') || (player && player.classList.contains('ad-showing'));
+        const video = document.querySelector('video');
+
         if (isAdShowing) {
-            const video = document.querySelector('video');
             if (video) {
-                video.muted = true;
-                if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
-                    video.currentTime = Math.max(0, video.duration - 0.1);
+                // Video ads are short clips (<= 75 seconds). NEVER seek if duration > 75s
+                // because that means it is the main user video!
+                if (!isNaN(video.duration) && video.duration > 0 && video.duration <= 75 && !video.ended) {
+                    if (!video.muted) {
+                        video.muted = true;
+                        adWasMutedByShield = true;
+                    }
                     video.playbackRate = 16.0;
+                    video.currentTime = Math.max(0, video.duration - 0.1);
                 }
                 if (video.paused) {
                     video.play().catch(function() {});
+                }
+            }
+        } else {
+            // Main video is active: restore normal audio and normal 1.0x playback speed!
+            if (video) {
+                if (video.playbackRate > 1.0) {
+                    video.playbackRate = 1.0;
+                }
+                if (adWasMutedByShield || (video.muted && video.currentTime > 0.5)) {
+                    video.muted = false;
+                    adWasMutedByShield = false;
                 }
             }
         }
@@ -181,8 +204,11 @@
             if (document.body) document.body.style.overflow = 'auto';
         }
         if (host.includes('youtube.com')) {
-            document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-open-app-button').forEach(function(el) {
-                try { el.remove(); } catch (e) {}
+            document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-open-app-button, ytm-promoted-sparkles-web-renderer, ytm-ad-slot-renderer').forEach(function(el) {
+                try {
+                    const parent = el.closest('ytm-item-section-renderer, ytm-compact-promoted-item-renderer') || el;
+                    parent.remove();
+                } catch (e) {}
             });
         }
     }

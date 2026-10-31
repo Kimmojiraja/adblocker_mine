@@ -31,18 +31,13 @@
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="34">
 
-        <!-- Main Dashboard Activity -->
+        <!-- Main Dashboard Activity (Accessible via menu/tile) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:windowSoftInputMode="adjustResize" />
 
-        <!-- Built-in browser and privacy tools -->
+        <!-- Built-in browser and primary launcher entry point -->
         <activity
             android:name=".ui.MediaHubActivity"
             android:exported="true"
@@ -50,6 +45,10 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:hardwareAccelerated="true"
             android:supportsPictureInPicture="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

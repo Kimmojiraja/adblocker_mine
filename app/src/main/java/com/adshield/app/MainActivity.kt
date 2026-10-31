@@ -67,24 +67,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupNativePrivateDns() {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Control D Ad Blocker", "p2.freedns.controld.com")
-        clipboard.setPrimaryClip(clip)
+        val providers = arrayOf(
+            "AdGuard DNS (Recommended: Maximum Ad & Tracker Blocking)\nHostname: dns.adguard-dns.com",
+            "Mullvad Adblock (Strict Privacy & Zero Logs)\nHostname: adblock.dns.mullvad.net",
+            "Cloudflare Security & Speed (Malware Protection)\nHostname: security.cloudflare-dns.com",
+            "Control D Ad Blocker\nHostname: p2.freedns.controld.com"
+        )
+        val hostnames = arrayOf(
+            "dns.adguard-dns.com",
+            "adblock.dns.mullvad.net",
+            "security.cloudflare-dns.com",
+            "p2.freedns.controld.com"
+        )
 
         AlertDialog.Builder(this)
-            .setTitle("Copied DNS Hostname")
-            .setMessage("Control D DNS address copied to clipboard.\n\nSetup instructions:\n1. Open your phone's Network & Internet Settings.\n2. Tap 'Private DNS' (or Specified DNS).\n3. Select 'Private DNS provider hostname'.\n4. Paste 'p2.freedns.controld.com' and tap Save.\n\nThis only copies the provider hostname. Android applies it only after you choose to save it in Private DNS settings; filtering depends on that provider.")
-            .setPositiveButton("Open Network Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
-                try {
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    try {
-                        startActivity(Intent(Settings.ACTION_SETTINGS))
-                    } catch (ex: Exception) {
-                        Toast.makeText(this, "Please open phone Settings > Network & Internet > Private DNS", Toast.LENGTH_LONG).show()
+            .setTitle("Select Mobile Private DNS")
+            .setItems(providers) { _, which ->
+                val chosenHost = hostnames[which]
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Private DNS Provider", chosenHost))
+                Toast.makeText(this, "Copied '$chosenHost' to clipboard!", Toast.LENGTH_SHORT).show()
+
+                AlertDialog.Builder(this)
+                    .setTitle("Apply in Android Settings")
+                    .setMessage("Copied '$chosenHost'.\n\nTo activate system-wide:\n1. Tap 'Open Settings' below.\n2. Tap 'Private DNS'.\n3. Select 'Private DNS provider hostname'.\n4. Paste '$chosenHost' and tap Save.")
+                    .setPositiveButton("Open Settings") { _, _ ->
+                        try {
+                            startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+                        } catch (e: Exception) {
+                            try {
+                                startActivity(Intent(Settings.ACTION_SETTINGS))
+                            } catch (ex: Exception) {
+                                Toast.makeText(this, "Please open phone Settings > Network & Internet > Private DNS", Toast.LENGTH_LONG).show()
+                            }
+                        }
                     }
-                }
+                    .setNegativeButton("Done", null)
+                    .show()
             }
             .setNegativeButton("Cancel", null)
             .show()

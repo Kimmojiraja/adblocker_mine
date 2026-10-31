@@ -83,7 +83,19 @@ class BlocklistEngine(private val context: Context) {
         "gvt1.com",
         "googleusercontent.com",
         "1e100.net",
-        "android.com"
+        "android.com",
+        // Financial & Secure Payment Gateways (Guaranteed never blocked)
+        "paypal.com",
+        "paypalobjects.com",
+        "stripe.com",
+        "stripe.network",
+        "visa.com",
+        "mastercard.com",
+        "americanexpress.com",
+        "razorpay.com",
+        "plaid.com",
+        "pay.google.com",
+        "npci.org.in"
     )
 
     fun isDomainBlocked(rawDomain: String): Boolean {

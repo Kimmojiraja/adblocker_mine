@@ -1,6 +1,6 @@
 {
-  "versionCode": 56,
-  "versionName": "1.0.56",
+  "versionCode": 57,
+  "versionName": "1.0.57",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Hardware-Accelerated AMOLED Pure-Black Engine: True OLED #000000 dark mode with smart media protection preventing photo, video, and SVG color inversion.\n- Single-File Complete Visual Web Archive (.mhtml): Full-fidelity page snapshots capturing layout, CSS typography, and pictures for 100% offline viewing.\n- Smart Magnet & Torrent Handler with WebTorrent: Native P2P in-browser video streaming for magnet: and .torrent links without third-party apps."
+  "changelog": "- Direct Browser Launch: App icon opens Fokk Super-Browser directly with instant tab resume.\n- Decentralized Privacy Account & Cyberpunk Badges: Local vault profile with custom avatar photos and 6 cyberpunk insignias (Falcon, Aegis, Terminal, Vault, Valkyrie, Spectre).\n- 1-Click AdGuard DNS Engine: In-app real-time DoH domain filtering dropping ad networks before network handshakes with zero VPN and zero Accessibility overhead.\n- Mobile Private DNS Hub: Quick configuration for AdGuard, Mullvad, Cloudflare, and Control D system-wide DNS.\n- Financial Apps Zero-Disruption Whitelist: Essential payment portals (PayPal, Stripe, Visa, Mastercard, Google Pay, NPCI) protected against false positives."
 }

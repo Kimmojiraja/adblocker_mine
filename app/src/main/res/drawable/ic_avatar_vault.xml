@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#151221"
+        android:pathData="M24,4 L42,14 L42,34 L24,44 L6,34 L6,14 Z" />
+    <path
+        android:strokeColor="#C084FC"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M24,4 L42,14 L42,34 L24,44 L6,34 L6,14 Z" />
+    <!-- Vault Hex Dial & Bars -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M24,14 L33,19 L33,29 L24,34 L15,29 L15,19 Z" />
+    <path
+        android:fillColor="#C084FC"
+        android:pathData="M24,20 A4,4 0 1,0 24,28 A4,4 0 1,0 24,20 Z" />
+</vector>

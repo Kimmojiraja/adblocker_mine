@@ -186,10 +186,17 @@
         }
 
         /* Comparison - Unboxed Minimal Table */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 14px;
+        }
+
         .compare-table {
             width: 100%;
+            min-width: 500px;
             border-collapse: collapse;
-            margin-top: 14px;
             font-size: 12.5px;
         }
 
@@ -396,7 +403,7 @@
                 <img src="fokk_logo.png" alt="Fokk Logo" class="hero-logo-img" onerror="this.src='ic_fokk_logo.png'">
                 <div>
                     <h1 class="hero-title">Fokk</h1>
-                    <div class="version-tag">Version 1.0.52 &bull; Open Release</div>
+                    <div class="version-tag">Version 1.0.62 &bull; Cyber Release</div>
                 </div>
             </div>
             <p class="hero-tagline">
@@ -411,101 +418,163 @@
                 <h2 class="section-title">Why Fokk Is Different</h2>
             </div>
             <p class="paragraph">
-                Unlike mainstream mobile browsers that bundle hidden telemetry, background tracking, and crypto reward systems, Fokk is built around strict local sandboxing and minimum native overhead.
+                Unlike mainstream mobile browsers that bundle hidden telemetry, background tracking, and crypto reward systems, Fokk is built around strict local sandboxing, lightweight native execution, and power-user features.
             </p>
-            <table class="compare-table">
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th class="col-fokk">Fokk</th>
-                        <th>Chrome</th>
-                        <th>Firefox</th>
-                        <th>Brave</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Install Size</td>
-                        <td class="col-fokk">&lt; 7 MB</td>
-                        <td>~120 MB</td>
-                        <td>~95 MB</td>
-                        <td>~130 MB</td>
-                    </tr>
-                    <tr>
-                        <td>Background Telemetry</td>
-                        <td class="col-fokk"><span class="check-yes">Zero</span></td>
-                        <td><span class="cross-no">Pervasive</span></td>
-                        <td>Opt-out</td>
-                        <td>Diagnostic</td>
-                    </tr>
-                    <tr>
-                        <td>Crypto / Token Bloat</td>
-                        <td class="col-fokk"><span class="check-yes">None</span></td>
-                        <td><span class="check-yes">None</span></td>
-                        <td><span class="check-yes">None</span></td>
-                        <td><span class="cross-no">BAT Tokens</span></td>
-                    </tr>
-                    <tr>
-                        <td>Cookie Banner Blocker</td>
-                        <td class="col-fokk"><span class="check-yes">Native Auto</span></td>
-                        <td><span class="cross-no">None</span></td>
-                        <td>Extensions</td>
-                        <td>Shield Rules</td>
-                    </tr>
-                    <tr>
-                        <td>AI Slop Neutralizer</td>
-                        <td class="col-fokk"><span class="check-yes">Built-in</span></td>
-                        <td><span class="cross-no">Forced AI</span></td>
-                        <td>None</td>
-                        <td>None</td>
-                    </tr>
-                    <tr>
-                        <td>Isolated Ghost Mode</td>
-                        <td class="col-fokk"><span class="check-yes">Sandboxed</span></td>
-                        <td>Incognito</td>
-                        <td>Private</td>
-                        <td>Private</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="compare-table">
+                    <thead>
+                        <tr>
+                            <th>Capability</th>
+                            <th class="col-fokk">Fokk</th>
+                            <th>Brave</th>
+                            <th>Firefox</th>
+                            <th>Opera</th>
+                            <th>Chrome</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>App Size</td>
+                            <td class="col-fokk">&lt; 20 MB</td>
+                            <td>~180 MB</td>
+                            <td>~120 MB</td>
+                            <td>~150 MB</td>
+                            <td>~130 MB</td>
+                        </tr>
+                        <tr>
+                            <td>Background Telemetry</td>
+                            <td class="col-fokk"><span class="check-yes">Zero</span></td>
+                            <td>Diagnostic</td>
+                            <td>Opt-out</td>
+                            <td><span class="cross-no">Proxy Logging</span></td>
+                            <td><span class="cross-no">Pervasive</span></td>
+                        </tr>
+                        <tr>
+                            <td>Crypto / Token Bloat</td>
+                            <td class="col-fokk"><span class="check-yes">None</span></td>
+                            <td><span class="cross-no">BAT Tokens</span></td>
+                            <td><span class="check-yes">None</span></td>
+                            <td><span class="cross-no">Deals &amp; Crypto</span></td>
+                            <td><span class="check-yes">None</span></td>
+                        </tr>
+                        <tr>
+                            <td>YouTube Ads</td>
+                            <td class="col-fokk"><span class="check-yes">Pre-Emptive JSON (0 Black Screens)</span></td>
+                            <td>Network Filter (Prone to Black Screens)</td>
+                            <td>Via Addons</td>
+                            <td><span class="cross-no">Weak / Allowed</span></td>
+                            <td><span class="cross-no">Full Ads</span></td>
+                        </tr>
+                        <tr>
+                            <td>Instagram Web Ads</td>
+                            <td class="col-fokk"><span class="check-yes">GraphQL Intercept</span></td>
+                            <td>Basic CSS</td>
+                            <td>Via Addons</td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">Full Ads</span></td>
+                        </tr>
+                        <tr>
+                            <td>WebTorrent / Magnet Streaming</td>
+                            <td class="col-fokk"><span class="check-yes">Built-in Streaming</span></td>
+                            <td><span class="cross-no">Desktop Only</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                        </tr>
+                        <tr>
+                            <td>Dual-Deck Split Tabs</td>
+                            <td class="col-fokk"><span class="check-yes">Stacked Dual View</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                        </tr>
+                        <tr>
+                            <td>1-Tap Paywall Mirror</td>
+                            <td class="col-fokk"><span class="check-yes">Integrated</span></td>
+                            <td><span class="cross-no">None</span></td>
+                            <td>Via Addons</td>
+                            <td><span class="cross-no">None</span></td>
+                            <td><span class="cross-no">None</span></td>
+                        </tr>
+                        <tr>
+                            <td>Private Profile Isolation</td>
+                            <td class="col-fokk"><span class="check-yes">Physical Directory Sandbox</span></td>
+                            <td>Shared Process</td>
+                            <td>Session Cache</td>
+                            <td>Shared Process</td>
+                            <td>Shared Process</td>
+                        </tr>
+                        <tr>
+                            <td>Command Bar</td>
+                            <td class="col-fokk"><span class="check-yes">Bottom Fluid Animated Bar</span></td>
+                            <td>Fixed Bar</td>
+                            <td>Top Bar</td>
+                            <td>Fixed Bar</td>
+                            <td>Fixed Bar</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- 3. Multi-Layer Defense -->
+        <!-- 3. 5-Layer Defense & Media Architecture -->
         <div class="editorial-section">
             <div class="section-header">
-                <span class="section-tag">Defense</span>
-                <h2 class="section-title">4-Layer Protection Model</h2>
+                <span class="section-tag">Defense &amp; Engine</span>
+                <h2 class="section-title">5-Pillar Protection Model</h2>
             </div>
             <div class="defense-steps">
                 <div class="defense-step-row">
                     <div class="step-num">1</div>
                     <div class="step-body">
-                        <div class="step-title">Network DNS &amp; Host Interceptor</div>
-                        <div class="step-desc">Blocks ad networks, tracking telemetry, and malicious domains before network connections are ever established.</div>
+                        <div class="step-title">Document-Start JSON Sanitizer (YouTube &amp; Instagram)</div>
+                        <div class="step-desc">Hooks YouTube initial player data and Instagram GraphQL connections at document start, deleting ad metadata before the player can initialize. Zero black screen delays and zero anti-adblock detection.</div>
                     </div>
                 </div>
                 <div class="defense-step-row">
                     <div class="step-num">2</div>
                     <div class="step-body">
-                        <div class="step-title">Cookie Consent &amp; Anti-App-Nag Engine</div>
-                        <div class="step-desc">Automatically suppresses annoying cookie consent dialogs and "Open in App" intrusive banners across the web.</div>
+                        <div class="step-title">On-Device Local Domain Blocklist</div>
+                        <div class="step-desc">Intercepts ad networks, tracking telemetry, and malicious analytics on-device without shipping your browsing requests to remote filter clouds.</div>
                     </div>
                 </div>
                 <div class="defense-step-row">
                     <div class="step-num">3</div>
                     <div class="step-body">
-                        <div class="step-title">Cosmetic DOM Sanitization &amp; AI Slop Blocker</div>
-                        <div class="step-desc">Removes sponsored posts, video ad interruptions, AI Overviews, and Gemini slop on search engines.</div>
+                        <div class="step-title">Built-in WebTorrent &amp; Paywall Mirror Engine</div>
+                        <div class="step-desc">Click any magnet link or .torrent file to stream media directly in your tab at full internet speed. Tap the command bar mirror button to bypass paywalls on news articles instantly.</div>
                     </div>
                 </div>
                 <div class="defense-step-row">
                     <div class="step-num">4</div>
                     <div class="step-body">
-                        <div class="step-title">Isolated Biometric Ghost Container</div>
-                        <div class="step-desc">Dedicated profile with hardware-backed sandbox isolation, zero retained cookies, and optional fingerprint authentication.</div>
+                        <div class="step-title">Dual-Deck Split Viewport &amp; Cyber Reader</div>
+                        <div class="step-desc">Multitask with two active independent web pages stacked horizontally on mobile. Activate Cyber Reader for clean, high-contrast, distraction-free reading.</div>
+                    </div>
+                </div>
+                <div class="defense-step-row">
+                    <div class="step-num">5</div>
+                    <div class="step-body">
+                        <div class="step-title">Physically Isolated Ghost Profile (fokk_private)</div>
+                        <div class="step-desc">Private tabs operate in an entirely segregated OS directory and process. Storage, indexedDB, and cookies are physically walled off from normal tabs and wiped with zero residuals on exit.</div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- 4. Security Truth: Why No Fake "Free VPN" -->
+        <div class="editorial-section">
+            <div class="section-header">
+                <span class="section-tag">Security Truth</span>
+                <h2 class="section-title">Why No Fake "Free VPN"?</h2>
+            </div>
+            <p class="paragraph">
+                Browsers like Opera advertise a "free VPN," but in reality it is an <strong>unencrypted HTTP proxy</strong> that routes your data through their servers. Operating global proxy servers costs millions, which free proxies monetize by <strong>logging your browsing data and tracking traffic</strong>, while causing Cloudflare CAPTCHAs and throttling speeds.
+            </p>
+            <p class="paragraph" style="margin-bottom: 0;">
+                <strong>Fokk Shield protects you honestly:</strong> We integrate directly with audited, zero-log Encrypted Private DNS (AdGuard, Mullvad, Cloudflare, Control D) to shield your queries from your ISP, perform 100% of ad neutralization on your device, and allow unthrottled line-speed P2P torrent streaming. If you need a full IP tunnel, Fokk Shield works seamlessly with real OS-level VPNs (WireGuard, Mullvad).
+            </p>
         </div>
 
         <!-- 4. Search Engine Philosophy -->

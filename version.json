@@ -1,6 +1,6 @@
 {
-  "versionCode": 60,
-  "versionName": "1.0.60",
+  "versionCode": 61,
+  "versionName": "1.0.61",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Realistic Lifetime Shield Defense Metrics: Genuine real-time counting of filtered ads and accurate data savings without hardcoded mock figures.\n- Advanced News Article Shield: Expanded ad-filtering engine blocking Google AdManager, Taboola, Outbrain, Criteo, Amazon AdSystem, Prebid, PubMatic, sticky banners, and native sponsored cards.\n- Document-Start Execution & Pre-Emptive Player Cleanser: Fully eliminates YouTube ad pauses and Instagram feed sponsor cards."
+  "changelog": "- YouTube Black Screen Glitch Fix: Removed ytInitialData property hook which was breaking YouTube page render cycle causing 5-10s black flash. Only ytInitialPlayerResponse is now hooked for ad stripping.\n- YouTube Safe Resource Guard: Added explicit guard preventing misblocking of YouTube player infrastructure (googlevideo.com, ytimg.com, gstatic.com) even when ad patterns partially match URL strings.\n- CSS Scope Fix: Generic ad class selectors (.ad-container, .ad-banner) no longer match YouTube player container elements.\n- scrubNewsAds: Now skips youtube.com completely to prevent accidental player container removal.\n- Precision Ad Skip: playbackRate 16x and ended event now only fire on short/blocked ad streams, never on regular content videos."
 }

@@ -22,15 +22,6 @@
         } catch (e) {}
     }
 
-    function sanitizeYtData(obj) {
-        if (!obj || typeof obj !== 'object') return;
-        try {
-            if (obj.adPlacements) delete obj.adPlacements;
-            if (obj.playerAds) delete obj.playerAds;
-            if (obj.adSlots) delete obj.adSlots;
-        } catch (e) {}
-    }
-
     // Hook ytInitialPlayerResponse so initial inline page data is sanitized before player boots
     let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
     if (_ytInitialPlayerResponse) sanitizeYtPlayerResponse(_ytInitialPlayerResponse);
@@ -45,18 +36,7 @@
         });
     } catch (e) {}
 
-    let _ytInitialData = window.ytInitialData;
-    if (_ytInitialData) sanitizeYtData(_ytInitialData);
-    try {
-        Object.defineProperty(window, 'ytInitialData', {
-            get: function() { return _ytInitialData; },
-            set: function(val) {
-                sanitizeYtData(val);
-                _ytInitialData = val;
-            },
-            configurable: true
-        });
-    } catch (e) {}
+    // ytInitialData hook intentionally removed: hooking it breaks YouTube page rendering and causes 5-10s black screen glitch.
 
     // Instagram response scrubber
     function sanitizeInstagramData(data) {
@@ -260,20 +240,17 @@
         div[id*="ezoic"],
         div[class*="ezoic"],
 
-        /* Generic ad slots & banners */
-        ins.adsbygoogle,
-        .adsbygoogle,
+        /* Generic ad slots & banners (scoped to exclude YouTube to prevent player element collisions) */
+        body:not([class*="ytm"]):not([id*="yt"]) ins.adsbygoogle,
+        body:not([class*="ytm"]):not([id*="yt"]) .adsbygoogle,
         iframe[src*="doubleclick"],
         iframe[src*="googlesyndication"],
         iframe[src*="googleadservices"],
-        [data-ad-slot],
-        [data-ad-unit],
-        [data-ad-client],
+        [data-ad-slot]:not([class*="ytp"]):not([class*="ytm"]),
+        [data-ad-unit]:not([class*="ytp"]):not([class*="ytm"]),
+        [data-ad-client]:not([class*="ytp"]):not([class*="ytm"]),
         [id^="div-gpt-ad"],
-        [id*="-ad-slot"],
-        .ad-container,
-        .ad-banner,
-        .advertisement,
+        [id*="-ad-slot"]:not([class*="ytp"]),
         #tads,
         #tadsb,
 
@@ -500,12 +477,17 @@
                         video.muted = true;
                         adWasMutedByShield = true;
                     }
-                    video.playbackRate = 16.0;
+                    // Only accelerate if video is short (likely an ad) or duration unknown
+                    const isLikelyAdVideo = isNaN(video.duration) || video.duration === 0 || video.duration < 60;
+                    if (isLikelyAdVideo) video.playbackRate = 16.0;
                     if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
                         video.currentTime = Math.max(0, video.duration - 0.05);
                     } else {
                         // Dead/blocked ad stream (paused at 0:00 or duration is 0/NaN): trigger ended to release player
-                        video.dispatchEvent(new Event('ended'));
+                        // Only dispatch 'ended' if video src looks like an ad (short/blocked streams)
+                        if (video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || (!video.src.includes('googlevideo') && video.duration === 0))) {
+                            video.dispatchEvent(new Event('ended'));
+                        }
                     }
                     if (video.paused) {
                         video.play().catch(function() {});
@@ -591,6 +573,10 @@
     // News & Content Site Ad Container & Sponsored Widget Scrubber
     // =========================================================================
     function scrubNewsAds() {
+        // Never run on YouTube - YouTube uses class names like ad-container for player elements
+        const host = window.location.hostname;
+        if (host.includes('youtube.com') || host.includes('youtu.be')) return;
+
         const adSelectors = [
             'div[id*="google_ads"]', 'div[id*="div-gpt-ad"]', 'div[id*="dfp-ad"]',
             'div[class*="ad-slot"]', 'div[class*="ad-container"]', 'div[class*="advertisement"]',

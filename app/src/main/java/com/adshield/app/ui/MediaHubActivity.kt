@@ -1964,7 +1964,8 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 val urlStr = request.url.toString().lowercase()
                 val isAdScript = urlStr.contains("/pagead/") ||
-                        urlStr.contains("adsbygoogle") ||
+                        urlStr.contains("adsbygoogle.js") ||
+                        urlStr.contains("/adsbygoogle/") ||
                         urlStr.contains("googletagservices.com") ||
                         urlStr.contains("googleadservices.com") ||
                         urlStr.contains("/gpt.js") ||
@@ -1992,7 +1993,15 @@ open class MediaHubActivity : AppCompatActivity() {
                         urlStr.contains("scorecardresearch.com") ||
                         urlStr.contains("quantserve.com")
 
-                if (isAdScript) {
+                // Never block YouTube video streaming or player infrastructure
+                val isYouTubePage = pageHost?.contains("youtube.com") == true || pageHost?.contains("youtu.be") == true
+                val isSafeYtResource = isYouTubePage && (
+                    host.contains("googlevideo.com") || host.contains("ytimg.com") ||
+                    host.contains("youtube.com") || host.contains("ggpht.com") ||
+                    host.contains("gstatic.com") || host.contains("googleapis.com")
+                )
+
+                if (isAdScript && !isSafeYtResource) {
                     recordFilteredRequest(view, host)
                     val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
                     val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")

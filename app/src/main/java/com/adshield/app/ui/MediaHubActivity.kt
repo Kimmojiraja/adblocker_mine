@@ -2014,13 +2014,6 @@ open class MediaHubActivity : AppCompatActivity() {
                     host.contains("pixel.wp.com")
                 )
 
-                val isAdScript = urlStr.contains("/pagead/") ||
-                        urlStr.contains("adsbygoogle.js") ||
-                        urlStr.contains("googletagservices.com") ||
-                        urlStr.contains("googleadservices.com") ||
-                        urlStr.contains("/gpt.js") ||
-                        urlStr.contains("adservice.google.")
-
                 if (isSocialTracker || (isStrictAdblock && (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))) {
                     recordFilteredRequest(view, host)
                     val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")

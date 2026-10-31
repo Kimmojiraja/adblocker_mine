@@ -222,6 +222,44 @@
         .ytp-ad-module,
         div[class*="ad-showing"] .ytp-ad-text,
 
+        /* News & Media Article Ad Units, Sponsored Boxes & Overlays */
+        div[id*="google_ads"],
+        div[id*="div-gpt-ad"],
+        div[id*="dfp-ad"],
+        div[class*="ad-slot"],
+        div[class*="ad-container"],
+        div[class*="ad_wrapper"],
+        div[class*="ad-wrapper"],
+        div[class*="ad_container"],
+        div[class*="advertisement"],
+        div[class*="sponsored-post"],
+        div[class*="sponsored-content"],
+        div[class*="sponsored-stories"],
+        div[class*="taboola"],
+        div[id*="taboola"],
+        div[class*="outbrain"],
+        div[id*="outbrain"],
+        .trc_related_container,
+        .trc_rbox_div,
+        .OUTBRAIN,
+        div[data-ad-placeholder],
+        div[data-ad-unit-path],
+        aside[class*="ad"],
+        div[class*="sticky-ad"],
+        div[class*="bottom-ad"],
+        div[class*="floating-ad"],
+        div[class*="banner-ad"],
+        div[class*="native-ad"],
+        div[class*="ad-banner"],
+        div[aria-label*="advertisement" i],
+        div[aria-label*="sponsored" i],
+        #google_vignette,
+        div[id*="google-vignette"],
+        div[class*="adthrive"],
+        div[class*="mediavine"],
+        div[id*="ezoic"],
+        div[class*="ezoic"],
+
         /* Generic ad slots & banners */
         ins.adsbygoogle,
         .adsbygoogle,
@@ -548,6 +586,31 @@
         setInterval(scrubInstagramAds, 300);
     }
 
+
+    // =========================================================================
+    // News & Content Site Ad Container & Sponsored Widget Scrubber
+    // =========================================================================
+    function scrubNewsAds() {
+        const adSelectors = [
+            'div[id*="google_ads"]', 'div[id*="div-gpt-ad"]', 'div[id*="dfp-ad"]',
+            'div[class*="ad-slot"]', 'div[class*="ad-container"]', 'div[class*="advertisement"]',
+            'div[class*="taboola"]', 'div[id*="taboola"]', 'div[class*="outbrain"]', 'div[id*="outbrain"]',
+            '.trc_related_container', '.OUTBRAIN', 'aside[class*="ad"]', 'div[class*="sticky-ad"]',
+            'div[class*="native-ad"]', 'div[class*="ad-banner"]', '#google_vignette',
+            'div[class*="sponsored-post"]', 'div[class*="sponsored-content"]'
+        ];
+        try {
+            document.querySelectorAll(adSelectors.join(',')).forEach(function(el) {
+                try {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('height', '0px', 'important');
+                    el.style.setProperty('min-height', '0px', 'important');
+                    el.remove();
+                } catch (e) {}
+            });
+        } catch (e) {}
+    }
+
     // =========================================================================
     // Anti-App-Nag: In-page app upsell & "Open App" header scrubber
     // =========================================================================
@@ -719,6 +782,7 @@
                     if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
                     if (host.includes('youtube.com')) runYouTubeAdSkipper();
                     if (host.includes('instagram.com')) scrubInstagramAds();
+                    scrubNewsAds();
                     scrubAppPromos();
                     scrubCookieBanners();
                     document.querySelectorAll('video').forEach(hookVideoPlayback);
@@ -735,6 +799,7 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             scrubAiContent();
+            scrubNewsAds();
             scrubAppPromos();
             scrubCookieBanners();
             runYouTubeAdSkipper();
@@ -743,6 +808,7 @@
         });
     } else {
         scrubAiContent();
+        scrubNewsAds();
         scrubAppPromos();
         scrubCookieBanners();
         runYouTubeAdSkipper();

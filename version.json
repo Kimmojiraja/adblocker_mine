@@ -1,6 +1,6 @@
 {
-  "versionCode": 59,
-  "versionName": "1.0.59",
+  "versionCode": 60,
+  "versionName": "1.0.60",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Native Document-Start Script Execution: Injected adshield engine via WebViewCompat.addDocumentStartJavaScript before any page script executes.\n- Pre-Emptive YouTube Player Cleanser: Sanitizes window.ytInitialPlayerResponse and /youtubei/v1/player JSON to eliminate 'Sponsored 1 of 2 0:00' ad screens.\n- Instagram Feed & GraphQL Ad Filter: Dynamic GraphQL query filtering removing sponsored media and paid partnerships before timeline rendering.\n- Full-Bleed Floating Command Bar: Fullscreen viewport with zero dead space and smart idle auto-reappearance."
+  "changelog": "- Realistic Lifetime Shield Defense Metrics: Genuine real-time counting of filtered ads and accurate data savings without hardcoded mock figures.\n- Advanced News Article Shield: Expanded ad-filtering engine blocking Google AdManager, Taboola, Outbrain, Criteo, Amazon AdSystem, Prebid, PubMatic, sticky banners, and native sponsored cards.\n- Document-Start Execution & Pre-Emptive Player Cleanser: Fully eliminates YouTube ad pauses and Instagram feed sponsor cards."
 }

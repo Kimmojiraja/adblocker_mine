@@ -280,7 +280,7 @@
                             android:id="@+id/statTotalBlocked"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="2,840"
+                            android:text="0"
                             android:textColor="#C084FC"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -305,7 +305,7 @@
                             android:id="@+id/statDataSaved"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="148 MB"
+                            android:text="0 MB"
                             android:textColor="#38BDF8"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -330,7 +330,7 @@
                             android:id="@+id/statShieldHealth"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="100%"
+                            android:text="Active"
                             android:textColor="#34D399"
                             android:textSize="16sp"
                             android:textStyle="bold" />

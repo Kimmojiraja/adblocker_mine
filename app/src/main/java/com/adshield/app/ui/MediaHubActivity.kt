@@ -1964,13 +1964,33 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 val urlStr = request.url.toString().lowercase()
                 val isAdScript = urlStr.contains("/pagead/") ||
-                        urlStr.contains("adsbygoogle.js") ||
+                        urlStr.contains("adsbygoogle") ||
                         urlStr.contains("googletagservices.com") ||
                         urlStr.contains("googleadservices.com") ||
                         urlStr.contains("/gpt.js") ||
                         urlStr.contains("adservice.google.") ||
                         urlStr.contains("/api/stats/ads") ||
-                        urlStr.contains("/youtubei/v1/player/ad_break")
+                        urlStr.contains("/youtubei/v1/player/ad_break") ||
+                        urlStr.contains("taboola.com") ||
+                        urlStr.contains("outbrain.com") ||
+                        urlStr.contains("criteo.") ||
+                        urlStr.contains("amazon-adsystem.com") ||
+                        urlStr.contains("prebid") ||
+                        urlStr.contains("pubmatic.com") ||
+                        urlStr.contains("rubiconproject.com") ||
+                        urlStr.contains("openx.net") ||
+                        urlStr.contains("adnxs.com") ||
+                        urlStr.contains("casalemedia.com") ||
+                        urlStr.contains("smartadserver.com") ||
+                        urlStr.contains("yieldmo.com") ||
+                        urlStr.contains("revcontent.com") ||
+                        urlStr.contains("mgid.com") ||
+                        urlStr.contains("media.net") ||
+                        urlStr.contains("ezoic.net") ||
+                        urlStr.contains("mediavine.com") ||
+                        urlStr.contains("adthrive.com") ||
+                        urlStr.contains("scorecardresearch.com") ||
+                        urlStr.contains("quantserve.com")
 
                 if (isAdScript) {
                     recordFilteredRequest(view, host)
@@ -4877,11 +4897,19 @@ open class MediaHubActivity : AppCompatActivity() {
             showPrivateDnsHubDialog()
         }
 
-        val totalBlocked = tabs.sumOf { it.filteredRequests } + (localPrefs.getInt("lifetime_blocked_ads", 3420))
-        val dataSavedMb = (totalBlocked * 0.08).toInt().coerceAtLeast(15)
-        sheetBinding.statTotalBlocked.text = String.format("%,d", totalBlocked)
-        sheetBinding.statDataSaved.text = "$dataSavedMb MB"
-        sheetBinding.statShieldHealth.text = "100%"
+        val actualLifetime = AdShieldApp.instance.getBlockedAdsCount()
+        val currentSessionBlocked = tabs.sumOf { it.filteredRequests }.toLong()
+        val totalBlocked = maxOf(actualLifetime, currentSessionBlocked)
+        val dataSavedMb = totalBlocked * 0.12 // Average mobile ad asset is ~120 KB
+        val dataSavedFormatted = when {
+            totalBlocked == 0L -> "0 MB"
+            dataSavedMb < 1.0 -> String.format(Locale.US, "%.1f MB", dataSavedMb)
+            dataSavedMb >= 1024.0 -> String.format(Locale.US, "%.2f GB", dataSavedMb / 1024.0)
+            else -> String.format(Locale.US, "%.1f MB", dataSavedMb)
+        }
+        sheetBinding.statTotalBlocked.text = String.format(Locale.US, "%,d", totalBlocked)
+        sheetBinding.statDataSaved.text = dataSavedFormatted
+        sheetBinding.statShieldHealth.text = if (isShieldEnabled) "Active" else "Paused"
 
         sheetBinding.btnExportVault.setOnClickListener {
             exportVaultBackup()

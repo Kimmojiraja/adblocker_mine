@@ -21,6 +21,9 @@ import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.view.HapticFeedbackConstants
+import java.io.FileOutputStream
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -338,24 +341,77 @@ open class MediaHubActivity : AppCompatActivity() {
         return list
     }
 
+    fun getCustomWallpaperDataUri(): String {
+        return try {
+            val file = File(filesDir, "custom_wallpaper.jpg")
+            if (file.exists() && file.length() > 0) {
+                val bytes = file.readBytes()
+                val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                "data:image/jpeg;base64,$b64"
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
     private val wallpaperPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val uri = result.data?.data ?: return@registerForActivityResult
-            try {
-                contentResolver.openInputStream(uri)?.use { stream ->
-                    val bytes = stream.readBytes()
-                    val mime = contentResolver.getType(uri) ?: "image/jpeg"
-                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                    val dataUri = "data:$mime;base64,$base64"
-                    activeWebView?.post {
-                        activeWebView?.evaluateJavascript("if (typeof applyCustomWallpaper === 'function') applyCustomWallpaper('$dataUri');", null)
+            Thread {
+                try {
+                    val maxDim = 1920
+                    var sampleSize = 1
+
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        val options = BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                        BitmapFactory.decodeStream(inputStream, null, options)
+                        val maxActual = maxOf(options.outWidth, options.outHeight)
+                        if (maxActual > maxDim) {
+                            sampleSize = (maxActual / maxDim.toFloat()).toInt().coerceAtLeast(1)
+                        }
+                    }
+
+                    contentResolver.openInputStream(uri)?.use { stream2 ->
+                        val decodeOpts = BitmapFactory.Options().apply {
+                            inSampleSize = sampleSize
+                        }
+                        val bitmap = BitmapFactory.decodeStream(stream2, null, decodeOpts)
+                        if (bitmap != null) {
+                            val wpFile = File(filesDir, "custom_wallpaper.jpg")
+                            FileOutputStream(wpFile).use { fos ->
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, fos)
+                                fos.flush()
+                            }
+                            bitmap.recycle()
+
+                            val bytes = wpFile.readBytes()
+                            val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                            val dataUri = "data:image/jpeg;base64,$b64"
+
+                            runOnUiThread {
+                                prefs.edit().putString(PREF_ACTIVE_THEME, "custom").apply()
+                                tabs.forEach { tab ->
+                                    tab.webView?.evaluateJavascript(
+                                        "if (typeof applyThemeFromNative === 'function') applyThemeFromNative('custom', '$dataUri');",
+                                        null
+                                    )
+                                }
+                                Toast.makeText(this, "Wallpaper updated for all tabs", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        Toast.makeText(this, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
-            } catch (e: Exception) {
-                Toast.makeText(this, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+            }.start()
         }
     }
 
@@ -672,16 +728,9 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun setupRefreshControl() {
         binding.swipeRefreshLayout.setColorSchemeResources(R.color.fokk_cyan)
-        binding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
-            activeWebView?.let { it.scrollY > 0 || it.canScrollVertically(-1) } ?: false
-        }
+        binding.swipeRefreshLayout.isEnabled = false
         binding.swipeRefreshLayout.setOnRefreshListener {
-            val webView = activeWebView
-            if (webView == null) {
-                binding.swipeRefreshLayout.isRefreshing = false
-            } else {
-                webView.reload()
-            }
+            binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
@@ -824,6 +873,37 @@ open class MediaHubActivity : AppCompatActivity() {
             activity.runOnUiThread {
                 activity.openWallpaperGalleryPicker()
             }
+        }
+
+        @JavascriptInterface
+        fun triggerWallpaperPicker() {
+            activity.runOnUiThread {
+                activity.openWallpaperGalleryPicker()
+            }
+        }
+
+        @JavascriptInterface
+        fun setGlobalTheme(theme: String) {
+            activity.runOnUiThread {
+                activity.prefs.edit().putString(PREF_ACTIVE_THEME, theme).apply()
+                val customData = if (theme == "custom") activity.getCustomWallpaperDataUri() else ""
+                activity.tabs.forEach { tab ->
+                    tab.webView?.evaluateJavascript(
+                        "if (typeof applyThemeFromNative === 'function') applyThemeFromNative('$theme', '$customData');",
+                        null
+                    )
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun getGlobalTheme(): String {
+            return activity.prefs.getString(PREF_ACTIVE_THEME, "default") ?: "default"
+        }
+
+        @JavascriptInterface
+        fun getCustomWallpaperData(): String {
+            return activity.getCustomWallpaperDataUri()
         }
 
         @JavascriptInterface
@@ -1588,6 +1668,12 @@ open class MediaHubActivity : AppCompatActivity() {
                         loadedTab?.url = loadedUrl
                         if (loadedUrl.contains("fokk_start.html")) {
                             loadedTab?.title = "New Tab"
+                            val theme = prefs.getString(PREF_ACTIVE_THEME, "default") ?: "default"
+                            val customData = if (theme == "custom") getCustomWallpaperDataUri() else ""
+                            view?.evaluateJavascript(
+                                "if (typeof applyThemeFromNative === 'function') applyThemeFromNative('$theme', '$customData');",
+                                null
+                            )
                         } else if (loadedTab != null) {
                             recordHistory(view?.title ?: loadedUrl, loadedUrl, loadedTab.isPrivate)
                         }
@@ -2281,7 +2367,53 @@ open class MediaHubActivity : AppCompatActivity() {
         return STREAMING_MEDIA_DOMAINS.any { lower == it || lower.endsWith(".$it") }
     }
 
+    private fun setupQuickEngineSwitcher() {
+        val pairs = listOf(
+            binding.btnQuickEngineEcosia to SearchEngine.ECOSIA,
+            binding.btnQuickEngineGoogle to SearchEngine.GOOGLE,
+            binding.btnQuickEngineDuckDuckGo to SearchEngine.DUCKDUCKGO,
+            binding.btnQuickEngineBrave to SearchEngine.BRAVE,
+            binding.btnQuickEngineStartpage to SearchEngine.STARTPAGE
+        )
+
+        for ((btn, engine) in pairs) {
+            btn.setOnClickListener {
+                it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                applySearchEngine(engine)
+                updateQuickEngineSwitcherUI()
+
+                val query = binding.urlInput.text.toString().trim()
+                if (query.isNotEmpty() && !query.startsWith("http://") && !query.startsWith("https://") && !query.startsWith("file://") && (!query.contains(".") || query.contains(" "))) {
+                    binding.cardSuggestions.visibility = View.GONE
+                    binding.urlInput.clearFocus()
+                    val target = engine.searchUrl + Uri.encode(query)
+                    loadUrlInActiveWebView(target)
+                    recordHistory(query, target)
+                }
+            }
+        }
+        updateQuickEngineSwitcherUI()
+    }
+
+    private fun updateQuickEngineSwitcherUI() {
+        val mapping = listOf(
+            binding.btnQuickEngineEcosia to SearchEngine.ECOSIA,
+            binding.btnQuickEngineGoogle to SearchEngine.GOOGLE,
+            binding.btnQuickEngineDuckDuckGo to SearchEngine.DUCKDUCKGO,
+            binding.btnQuickEngineBrave to SearchEngine.BRAVE,
+            binding.btnQuickEngineStartpage to SearchEngine.STARTPAGE
+        )
+        for ((btn, engine) in mapping) {
+            if (currentSearchEngine == engine) {
+                btn.setBackgroundResource(R.drawable.bg_quick_engine_active)
+            } else {
+                btn.setBackgroundResource(android.R.drawable.list_selector_background)
+            }
+        }
+    }
+
     private fun setupControls() {
+        setupQuickEngineSwitcher()
         binding.imgEngineIcon.setOnClickListener {
             showSearchEngineDialog()
         }
@@ -2433,11 +2565,12 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun displaySuggestions(list: List<HistorySuggestion>) {
-        if (list.isEmpty() || !binding.urlInput.hasFocus()) {
+        if (!binding.urlInput.hasFocus()) {
             binding.cardSuggestions.visibility = View.GONE
             return
         }
 
+        updateQuickEngineSwitcherUI()
         binding.layoutSuggestionsList.removeAllViews()
         val density = resources.displayMetrics.density
 
@@ -4263,6 +4396,7 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
         private const val PREF_HTTPS_ONLY = "fokk_https_only_enabled"
         private const val PREF_FOKKO_AI = "fokk_fokko_ai_enabled"
+        private const val PREF_ACTIVE_THEME = "fokk_active_theme"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,

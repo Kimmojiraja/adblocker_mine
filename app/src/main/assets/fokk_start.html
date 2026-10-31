@@ -375,13 +375,13 @@
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.80);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 10000;
             padding: 16px;
         }
 
@@ -519,46 +519,33 @@
             padding: 0 4px;
         }
 
-        .hero-privacy-btn {
+        .hero-privacy-btn, .hero-livepulse-btn {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 7px 14px;
-            color: var(--text-secondary);
-            font-size: 12px;
+            gap: 8px;
+            background: rgba(12, 17, 29, 0.85) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 9999px;
+            padding: 8px 16px;
+            color: #FFFFFF !important;
+            font-size: 12.5px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.18s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .hero-privacy-btn:hover, .hero-privacy-btn:active {
-            transform: scale(0.97);
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
+        .hero-privacy-btn svg, .hero-livepulse-btn svg {
+            color: #FFFFFF !important;
+            stroke: #FFFFFF !important;
         }
 
-        .hero-livepulse-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 7px 14px;
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.18s ease;
-        }
-
-        .hero-livepulse-btn:hover, .hero-livepulse-btn:active {
-            transform: scale(0.97);
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
+        .hero-privacy-btn:active, .hero-livepulse-btn:active {
+            transform: scale(0.95);
+            background: rgba(20, 27, 45, 0.95) !important;
+            border-color: var(--fokk-cyan) !important;
         }
 
         /* LIVE PULSE HUB CARD BUTTON ON HOMESCREEN */
@@ -766,51 +753,103 @@
         }
 
         .pulse-weather-card {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(91, 72, 238, 0.1));
-            border: 1px solid rgba(245, 158, 11, 0.25);
-            border-radius: 16px;
-            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(0, 229, 255, 0.08));
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .weather-meta-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
+        }
+
+        .weather-city-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .weather-city-badge svg {
+            color: var(--fokk-cyan);
+            stroke: var(--fokk-cyan);
+        }
+
+        .weather-edit-btn {
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 9999px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--fokk-cyan);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .weather-edit-btn:active {
+            transform: scale(0.95);
+            background: rgba(0, 229, 255, 0.25);
+        }
+
+        .weather-main-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
         }
 
         .weather-temp {
-            font-size: 26px;
+            font-size: 32px;
             font-weight: 800;
-            color: var(--text-primary);
+            color: #FFFFFF;
             line-height: 1;
         }
 
         .weather-cond {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 700;
             color: #F59E0B;
-            margin-top: 3px;
+            margin-top: 4px;
+        }
+
+        .weather-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            width: 100%;
         }
 
         .weather-sub {
-            font-size: 11px;
+            font-size: 11.5px;
             color: var(--text-secondary);
-            margin-top: 4px;
+            line-height: 1.4;
         }
 
         .pulse-section-header {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 800;
-            color: var(--text-primary);
+            color: #FFFFFF;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
         .pulse-header-sub {
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 700;
-            color: var(--fokk-purple);
+            color: var(--fokk-cyan);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .pulse-ticker-scroll {
@@ -818,7 +857,7 @@
             gap: 10px;
             overflow-x: auto;
             scrollbar-width: none;
-            padding-bottom: 2px;
+            padding-bottom: 4px;
         }
 
         .pulse-ticker-scroll::-webkit-scrollbar {
@@ -826,77 +865,81 @@
         }
 
         .ticker-pill {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 9px 12px;
+            background: #141B2D;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            padding: 10px 14px;
             display: flex;
             flex-direction: column;
-            min-width: 95px;
+            min-width: 110px;
             cursor: pointer;
             flex-shrink: 0;
-            transition: all 0.15s ease;
+            transition: all 0.18s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
         }
 
         .ticker-pill:active {
             transform: scale(0.96);
-            background: rgba(91, 72, 238, 0.15);
+            border-color: var(--fokk-cyan);
+            background: rgba(0, 229, 255, 0.12);
         }
 
         .ticker-symbol {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
-            color: var(--text-secondary);
-            letter-spacing: 0.4px;
+            color: var(--fokk-cyan);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .ticker-val {
-            font-size: 13.5px;
+            font-size: 15px;
             font-weight: 800;
-            color: var(--text-primary);
-            margin-top: 2px;
+            color: #FFFFFF;
+            margin-top: 3px;
         }
 
         .ticker-change.up {
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 700;
             color: #10B981;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .ticker-change.down {
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 700;
-            color: #EF4444;
-            margin-top: 2px;
+            color: #F87171;
+            margin-top: 3px;
         }
 
+        /* Modern Unboxed Editorial News Feed */
         .pulse-news-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 0;
         }
 
         .pulse-news-card {
             display: flex;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 10px;
+            gap: 14px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0;
+            padding: 14px 0;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: background 0.15s ease;
         }
 
         .pulse-news-card:active {
-            transform: scale(0.98);
-            background: rgba(91, 72, 238, 0.12);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .pulse-news-img {
-            width: 74px;
-            height: 74px;
-            border-radius: 10px;
+            width: 100px;
+            height: 76px;
+            border-radius: 12px;
             object-fit: cover;
             flex-shrink: 0;
             background: #11131C;
@@ -907,13 +950,33 @@
             flex-direction: column;
             justify-content: space-between;
             flex: 1;
+            gap: 6px;
         }
 
         .pulse-news-title {
-            font-size: 12.5px;
+            font-size: 13.5px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #FFFFFF;
             line-height: 1.35;
+        }
+
+        .pulse-news-footer {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .pulse-news-tag {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--fokk-cyan);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .pulse-news-footer {
@@ -1060,11 +1123,11 @@
         </div>
 
         <div class="pulse-scroll-content">
-            <!-- Weather Widget Card with Location Customization -->
+            <!-- Weather Widget Card with Clean Non-Overlapping Layout -->
             <div class="pulse-weather-card">
                 <div class="weather-meta-row">
                     <div class="weather-city-badge">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span id="weatherCityName">New York, US</span>
                     </div>
                     <button class="weather-edit-btn" onclick="openCityPickerModal()">Change City</button>
@@ -1075,7 +1138,7 @@
                         <div class="weather-cond" id="weatherCondText">Sunny &bull; Clear Skies</div>
                     </div>
                     <div class="weather-icon-disc">
-                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -1088,15 +1151,19 @@
                         </svg>
                     </div>
                 </div>
+                <div class="weather-divider"></div>
                 <div class="weather-sub" id="weatherSubDetails">Humidity 42% &bull; Wind 11 km/h &bull; Air Quality: Good (AQI 24)</div>
             </div>
 
-            <!-- Segment Switcher -->
+            <!-- News & Content Category Selector -->
             <div class="pulse-segments">
-                <button class="pulse-seg-btn active" id="segAll" onclick="switchPulseTab('all')">All</button>
-                <button class="pulse-seg-btn" id="segNews" onclick="switchPulseTab('news')">News</button>
-                <button class="pulse-seg-btn" id="segMarkets" onclick="switchPulseTab('markets')">Markets</button>
-                <button class="pulse-seg-btn" id="segSports" onclick="switchPulseTab('sports')">Sports</button>
+                <button class="pulse-seg-btn active" id="catAll" onclick="selectNewsCategory('all')">All</button>
+                <button class="pulse-seg-btn" id="catTech" onclick="selectNewsCategory('tech')">Tech &amp; AI</button>
+                <button class="pulse-seg-btn" id="catBusiness" onclick="selectNewsCategory('business')">Markets &amp; Finance</button>
+                <button class="pulse-seg-btn" id="catWorld" onclick="selectNewsCategory('world')">World News</button>
+                <button class="pulse-seg-btn" id="catScience" onclick="selectNewsCategory('science')">Science &amp; Space</button>
+                <button class="pulse-seg-btn" id="catSports" onclick="selectNewsCategory('sports')">Sports</button>
+                <button class="pulse-seg-btn" id="catCulture" onclick="selectNewsCategory('culture')">Entertainment</button>
             </div>
 
             <!-- Markets & Currencies -->
@@ -1456,25 +1523,102 @@
             }
         }
 
-        function setWallpaper(type) {
+        // WALLPAPER & MULTI-TAB THEME ENGINE
+        function triggerCustomWallpaperUpload() {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.triggerWallpaperPicker === 'function') {
+                window.FokkShieldBridge.triggerWallpaperPicker();
+            } else {
+                const input = document.getElementById('wallpaperFileInput');
+                if (input) input.click();
+            }
+        }
+
+        function handleWallpaperFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_DIM = 1920;
+                    let w = img.width, h = img.height;
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        if (w > h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+                        else { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    const compressedUri = canvas.toDataURL('image/jpeg', 0.85);
+                    applyThemeFromNative('custom', compressedUri);
+                    try {
+                        localStorage.setItem('fokk_custom_wallpaper', compressedUri);
+                        localStorage.setItem('fokk_global_theme', 'custom');
+                    } catch(err) {}
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setGlobalTheme === 'function') {
+                        window.FokkShieldBridge.setGlobalTheme('custom');
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.applyThemeFromNative = function(themeType, customData) {
             const body = document.getElementById('pageBody');
+            if (!body) return;
             body.classList.remove('has-custom-wp');
-            if (type === 'default') {
-                body.style.backgroundImage = 'none';
-                body.style.backgroundColor = 'var(--bg-color)';
-            } else if (type === 'pure_obsidian') {
+            body.style.backgroundAttachment = '';
+            body.style.backgroundSize = '';
+            body.style.backgroundPosition = '';
+            body.style.backgroundRepeat = '';
+
+            if (themeType === 'custom') {
+                let data = customData;
+                if (!data && window.FokkShieldBridge && typeof window.FokkShieldBridge.getCustomWallpaperData === 'function') {
+                    data = window.FokkShieldBridge.getCustomWallpaperData();
+                }
+                if (!data) {
+                    try { data = localStorage.getItem('fokk_custom_wallpaper'); } catch(e){}
+                }
+                if (data) {
+                    body.classList.add('has-custom-wp');
+                    body.style.backgroundImage = `url("${data}")`;
+                    body.style.backgroundSize = 'cover';
+                    body.style.backgroundPosition = 'center';
+                    body.style.backgroundAttachment = 'fixed';
+                    body.style.backgroundRepeat = 'no-repeat';
+                }
+            } else if (themeType === 'pure_obsidian') {
                 body.style.backgroundImage = 'none';
                 body.style.backgroundColor = '#11131C';
-            } else if (type === 'twilight_ocean') {
+            } else if (themeType === 'twilight_ocean') {
                 body.classList.add('has-custom-wp');
                 body.style.backgroundImage = "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85')";
-            } else if (type === 'aurora') {
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+            } else if (themeType === 'aurora') {
                 body.classList.add('has-custom-wp');
                 body.style.backgroundImage = "url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1200&q=85')";
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+            } else {
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = 'var(--bg-color)';
             }
+            try { localStorage.setItem('fokk_global_theme', themeType); } catch(e){}
             document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));
-            const matched = document.querySelector(`.wallpaper-card[onclick*="'${type}'"]`);
+            const matched = document.querySelector(`.wallpaper-card[onclick*="'${themeType}'"]`);
             if (matched) matched.classList.add('active');
+        };
+
+        function setWallpaper(type) {
+            window.applyThemeFromNative(type, '');
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setGlobalTheme === 'function') {
+                window.FokkShieldBridge.setGlobalTheme(type);
+            }
         }
 
         function openShieldDashboard() {
@@ -1564,11 +1708,195 @@
             if (modal) modal.classList.remove('active');
         }
 
-        // REGION & WEATHER DATA STORE
-        
-        // REGION & WEATHER DATA STORE
+        // REGION & WEATHER DATA STORE WITH RICH MULTI-CATEGORY EDITORIAL FEED
         let currentCountry = localStorage.getItem('fokk_pulse_country') || 'global';
         let currentCity = localStorage.getItem('fokk_pulse_city') || 'New York, US';
+        let currentNewsCategory = 'all';
+
+        const richEditorialArticles = [
+            // TECH & AI
+            {
+                title: "Next-Gen Autonomous AI Agents Redefining Full-Stack Software Engineering",
+                category: "tech",
+                tag: "Tech & AI",
+                source: "Ars Technica",
+                time: "15m ago",
+                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=360&q=80",
+                query: "Next-gen AI autonomous coding agents software developments"
+            },
+            {
+                title: "Open-Weights Reasoning Models Challenge Proprietary Frontier AI Frontiers",
+                category: "tech",
+                tag: "AI Research",
+                source: "MIT Tech Review",
+                time: "42m ago",
+                img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=360&q=80",
+                query: "Open weights reasoning models frontier artificial intelligence"
+            },
+            {
+                title: "Silicon Photonics Breakthrough Accelerates Ultra-Low Latency Data Centers",
+                category: "tech",
+                tag: "Hardware",
+                source: "TechCrunch",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=360&q=80",
+                query: "Silicon photonics breakthrough optical computing interconnects"
+            },
+            {
+                title: "End-to-End Encrypted Protocols Deployed Across 3 Billion Mobile Devices",
+                category: "tech",
+                tag: "Privacy",
+                source: "Wired",
+                time: "2h ago",
+                img: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=360&q=80",
+                query: "Post quantum cryptography mobile end to end encryption"
+            },
+
+            // MARKETS & FINANCE
+            {
+                title: "Bitcoin Surges Past $68,000 as Institutional Spot ETF Inflows Reach All-Time High",
+                category: "business",
+                tag: "Crypto",
+                source: "Bloomberg",
+                time: "25m ago",
+                img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=360&q=80",
+                query: "Bitcoin ETF inflows crypto market rally today"
+            },
+            {
+                title: "Global Central Banks Signal Coordinated Easing Cycle Amid Soft Landing Signals",
+                category: "business",
+                tag: "Economy",
+                source: "Financial Times",
+                time: "55m ago",
+                img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=360&q=80",
+                query: "Federal Reserve interest rate cuts global markets economy"
+            },
+            {
+                title: "Semiconductor Fabrication Investments Expand with $120B in Next-Gen Foundries",
+                category: "business",
+                tag: "Industry",
+                source: "Wall Street Journal",
+                time: "2h ago",
+                img: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=360&q=80",
+                query: "Global semiconductor foundries investment expansion 2026"
+            },
+
+            // WORLD NEWS
+            {
+                title: "International Renewable Energy Accord Targets 11,000 GW Tripling Milestone",
+                category: "world",
+                tag: "Global Accord",
+                source: "Reuters",
+                time: "35m ago",
+                img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=360&q=80",
+                query: "International renewable energy expansion summit accord"
+            },
+            {
+                title: "High-Speed Trans-Continental Rail Network Completes Phase 1 Tunnel Breakthrough",
+                category: "world",
+                tag: "Infrastructure",
+                source: "BBC News",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=360&q=80",
+                query: "High speed rail megaproject construction transit"
+            },
+            {
+                title: "Global Digital Sovereignty Framework Protects Consumer Data Mobility",
+                category: "world",
+                tag: "Policy",
+                source: "The Guardian",
+                time: "3h ago",
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=360&q=80",
+                query: "Digital sovereignty consumer data privacy regulations"
+            },
+
+            // SCIENCE & SPACE
+            {
+                title: "James Webb Telescope Discovers Atmospheres on Habitable-Zone Earth Cousins",
+                category: "science",
+                tag: "Deep Space",
+                source: "Nature",
+                time: "30m ago",
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=360&q=80",
+                query: "James Webb telescope exoplanet atmosphere biosignature discovery"
+            },
+            {
+                title: "Starship Flight 7 Achieves Full Reusability Milestone in Orbital Catch Test",
+                category: "science",
+                tag: "Aerospace",
+                source: "SpaceNews",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=360&q=80",
+                query: "SpaceX Starship orbital catch booster flight test"
+            },
+            {
+                title: "Solid-State Battery Energy Density Doubled in Commercial Manufacturing Trials",
+                category: "science",
+                tag: "Clean Tech",
+                source: "Science Magazine",
+                time: "4h ago",
+                img: "https://images.unsplash.com/photo-1558441719-8d48980f89a6?auto=format&fit=crop&w=360&q=80",
+                query: "Solid state battery commercial manufacturing electric vehicles"
+            },
+
+            // SPORTS
+            {
+                title: "Champions League Quarterfinals: Dramatic Stoppage Time Thriller Seals Semifinal Spot",
+                category: "sports",
+                tag: "Football",
+                source: "ESPN",
+                time: "40m ago",
+                img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=360&q=80",
+                query: "Champions league football quarterfinal match highlights"
+            },
+            {
+                title: "Formula 1 Grand Prix: Next-Gen Ground-Effect Aerodynamics Showcase Record Overtakes",
+                category: "sports",
+                tag: "Motorsport",
+                source: "Motorsport.com",
+                time: "2h ago",
+                img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=360&q=80",
+                query: "Formula 1 grand prix race results standings"
+            },
+            {
+                title: "NBA Playoffs: 50-Point Masterclass Propels Championship Contender to Lead",
+                category: "sports",
+                tag: "Basketball",
+                source: "The Athletic",
+                time: "3h ago",
+                img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=360&q=80",
+                query: "NBA playoffs scores highlights basketball standings"
+            },
+
+            // ENTERTAINMENT
+            {
+                title: "Dune-Scale Sci-Fi Epic Shatters Global Box Office Records with $240M Debut",
+                category: "culture",
+                tag: "Cinema",
+                source: "Variety",
+                time: "50m ago",
+                img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=360&q=80",
+                query: "Global box office new movie release premiere"
+            },
+            {
+                title: "Next-Gen Unreal Engine 6 Announced with Photorealistic Real-Time Neural Radiance",
+                category: "culture",
+                tag: "Gaming",
+                source: "IGN",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=360&q=80",
+                query: "Unreal Engine next gen gaming neural rendering graphics"
+            },
+            {
+                title: "Grammy Winners Announced Celebrating Global Indie & Spatial Audio Innovations",
+                category: "culture",
+                tag: "Music",
+                source: "Rolling Stone",
+                time: "3h ago",
+                img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=360&q=80",
+                query: "Music industry awards spatial audio album releases"
+            }
+        ];
 
         const regionalData = {
             global: {
@@ -1577,47 +1905,14 @@
                 cond: "Sunny • Clear Skies",
                 sub: "Humidity 42% • Wind 11 km/h • AQI 24 (Good)",
                 tag: "Global Ticker",
-                newsTag: "Global Feed",
+                newsTag: "Global Editorial",
                 tickers: [
-                    { symbol: "BTC", val: "$67,850", change: "+3.4%", up: true, query: "Bitcoin price today" },
-                    { symbol: "ETH", val: "$3,560", change: "+2.8%", up: true, query: "Ethereum price today" },
-                    { symbol: "S&P 500", val: "5,488", change: "+0.9%", up: true, query: "S&P 500 stock index" },
-                    { symbol: "GOLD", val: "$2,382", change: "+0.7%", up: true, query: "Gold price per ounce" },
-                    { symbol: "EUR/USD", val: "1.087", change: "-0.12%", up: false, query: "EUR USD exchange rate" }
-                ],
-                news: [
-                    {
-                        title: "Next-Gen Autonomous AI Agents Redefining Software Engineering",
-                        tag: "Tech & AI",
-                        source: "TechPulse",
-                        time: "20m ago",
-                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-                        query: "Next-gen AI autonomous agents software developments"
-                    },
-                    {
-                        title: "Deep Space Telescope Detects Unprecedented Exoplanet Atmosphere Signatures",
-                        tag: "Space",
-                        source: "AeroSphere",
-                        time: "1h ago",
-                        img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=300&q=80",
-                        query: "Deep space telescope exoplanet discovery news"
-                    },
-                    {
-                        title: "Global Cybersecurity Frameworks Mandate On-Device Hardware Isolation",
-                        tag: "Privacy",
-                        source: "CyberWire",
-                        time: "2h ago",
-                        img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=300&q=80",
-                        query: "Cybersecurity hardware isolation privacy regulations"
-                    },
-                    {
-                        title: "Clean Energy Transition Achieves Record Global Battery Storage Installations",
-                        tag: "Energy",
-                        source: "EcoReport",
-                        time: "3h ago",
-                        img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=300&q=80",
-                        query: "Renewable energy battery storage installations record"
-                    }
+                    { symbol: "BTC", val: "$68,450", change: "+3.6%", up: true, query: "Bitcoin price today" },
+                    { symbol: "ETH", val: "$3,590", change: "+2.9%", up: true, query: "Ethereum price today" },
+                    { symbol: "S&P 500", val: "5,492", change: "+0.85%", up: true, query: "S&P 500 stock index" },
+                    { symbol: "NVDA", val: "$128.40", change: "+4.2%", up: true, query: "NVIDIA stock price" },
+                    { symbol: "GOLD", val: "$2,385", change: "+0.7%", up: true, query: "Gold price per ounce" },
+                    { symbol: "EUR/USD", val: "1.088", change: "-0.1%", up: false, query: "EUR USD exchange rate" }
                 ]
             },
             us: {
@@ -1628,28 +1923,11 @@
                 tag: "US Markets",
                 newsTag: "US Headlines",
                 tickers: [
-                    { symbol: "DOW", val: "39,127", change: "+0.6%", up: true, query: "Dow Jones industrial average" },
-                    { symbol: "NASDAQ", val: "17,732", change: "+1.2%", up: true, query: "Nasdaq composite index" },
-                    { symbol: "S&P 500", val: "5,488", change: "+0.9%", up: true, query: "S&P 500 stock index" },
-                    { symbol: "10Y YIELD", val: "4.28%", change: "-0.04", up: false, query: "10 year treasury yield" }
-                ],
-                news: [
-                    {
-                        title: "Domestic Tech Infrastructure Expands With Major Federal Clean Power Grants",
-                        tag: "Economy",
-                        source: "CapitolWire",
-                        time: "25m ago",
-                        img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=300&q=80",
-                        query: "Federal clean power infrastructure tech developments"
-                    },
-                    {
-                        title: "Commercial Aerospace Mission Prepares For Historic Lunar Flyby",
-                        tag: "Aerospace",
-                        source: "US Space Review",
-                        time: "2h ago",
-                        img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=300&q=80",
-                        query: "Commercial aerospace lunar mission news"
-                    }
+                    { symbol: "DOW", val: "39,180", change: "+0.65%", up: true, query: "Dow Jones industrial average" },
+                    { symbol: "NASDAQ", val: "17,760", change: "+1.25%", up: true, query: "Nasdaq composite index" },
+                    { symbol: "S&P 500", val: "5,492", change: "+0.85%", up: true, query: "S&P 500 stock index" },
+                    { symbol: "AAPL", val: "$214.20", change: "+1.8%", up: true, query: "Apple stock price" },
+                    { symbol: "TSLA", val: "$248.60", change: "+3.1%", up: true, query: "Tesla stock price" }
                 ]
             },
             uk: {
@@ -1657,52 +1935,121 @@
                 temp: "18°C",
                 cond: "Partly Cloudy",
                 sub: "Humidity 68% • Wind 15 km/h • AQI 18",
-                tag: "UK Markets",
+                tag: "UK & European Markets",
                 newsTag: "UK & Europe",
                 tickers: [
-                    { symbol: "FTSE 100", val: "8,245", change: "+0.45%", up: true, query: "FTSE 100 index today" },
-                    { symbol: "GBP/USD", val: "1.284", change: "+0.18%", up: true, query: "GBP to USD exchange rate" },
-                    { symbol: "BRENT CRUDE", val: "$84.20", change: "-0.6%", up: false, query: "Brent crude oil price" }
-                ],
-                news: [
-                    {
-                        title: "Tech Innovation Hubs Expand Across Northern England With Digital Grants",
-                        tag: "Business",
-                        source: "London Herald",
-                        time: "40m ago",
-                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-                        query: "UK technology innovation economy news"
-                    }
+                    { symbol: "FTSE 100", val: "8,272", change: "+0.45%", up: true, query: "FTSE 100 index today" },
+                    { symbol: "GBP/USD", val: "1.282", change: "+0.2%", up: true, query: "GBP USD exchange rate" },
+                    { symbol: "BRENT", val: "$84.20", change: "-0.6%", up: false, query: "Brent crude oil price" }
                 ]
             },
             in: {
                 city: "New Delhi, IN",
                 temp: "31°C",
                 cond: "Hazy Sunshine",
-                sub: "Humidity 54% • Wind 8 km/h • AQI 142",
-                tag: "Indian Markets",
-                newsTag: "India Headlines",
+                sub: "Humidity 54% • Wind 8 km/h • AQI 88",
+                tag: "India Indices",
+                newsTag: "India Highlights",
                 tickers: [
-                    { symbol: "NIFTY 50", val: "24,320", change: "+0.85%", up: true, query: "NIFTY 50 stock index" },
-                    { symbol: "SENSEX", val: "79,890", change: "+0.78%", up: true, query: "BSE SENSEX index" },
-                    { symbol: "USD/INR", val: "83.52", change: "+0.02%", up: true, query: "USD to INR exchange rate" }
-                ],
-                news: [
-                    {
-                        title: "Semiconductor Fabrication Facilities Accelerate Construction Across Western States",
-                        tag: "Industry",
-                        source: "Deccan Express",
-                        time: "30m ago",
-                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-                        query: "India semiconductor fabrication manufacturing news"
-                    }
+                    { symbol: "NIFTY 50", val: "24,310", change: "+0.92%", up: true, query: "Nifty 50 share price today" },
+                    { symbol: "SENSEX", val: "79,980", change: "+0.88%", up: true, query: "BSE Sensex today" },
+                    { symbol: "INR/USD", val: "83.52", change: "+0.05%", up: true, query: "USD INR exchange rate" }
+                ]
+            },
+            ca: {
+                city: "Toronto, CA",
+                temp: "19°C",
+                cond: "Mild Breeze",
+                sub: "Humidity 48% • Wind 12 km/h • AQI 20",
+                tag: "TSX & Commodities",
+                newsTag: "Canada Updates",
+                tickers: [
+                    { symbol: "TSX", val: "22,580", change: "+0.55%", up: true, query: "TSX composite index" },
+                    { symbol: "CAD/USD", val: "0.732", change: "-0.15%", up: false, query: "CAD USD exchange rate" }
+                ]
+            },
+            de: {
+                city: "Berlin, DE",
+                temp: "21°C",
+                cond: "Clear",
+                sub: "Humidity 50% • Wind 10 km/h • AQI 19",
+                tag: "DAX Performance",
+                newsTag: "Germany & EU",
+                tickers: [
+                    { symbol: "DAX", val: "18,450", change: "+0.72%", up: true, query: "DAX index Germany" },
+                    { symbol: "EUR/USD", val: "1.088", change: "-0.1%", up: false, query: "EUR USD exchange rate" }
+                ]
+            },
+            au: {
+                city: "Sydney, AU",
+                temp: "23°C",
+                cond: "Pleasant",
+                sub: "Humidity 55% • Wind 14 km/h • AQI 15",
+                tag: "ASX 200",
+                newsTag: "Australia & Pacific",
+                tickers: [
+                    { symbol: "ASX 200", val: "7,820", change: "+0.48%", up: true, query: "ASX 200 index Australia" },
+                    { symbol: "AUD/USD", val: "0.668", change: "+0.3%", up: true, query: "AUD USD exchange rate" }
                 ]
             }
         };
 
+        function selectNewsCategory(cat) {
+            currentNewsCategory = cat;
+            document.querySelectorAll('.pulse-seg-btn').forEach(btn => btn.classList.remove('active'));
+            const catMap = {
+                all: 'catAll',
+                tech: 'catTech',
+                business: 'catBusiness',
+                world: 'catWorld',
+                science: 'catScience',
+                sports: 'catSports',
+                culture: 'catCulture'
+            };
+            const btn = document.getElementById(catMap[cat]);
+            if (btn) btn.classList.add('active');
+            renderFilteredNews();
+        }
+
+        function renderFilteredNews() {
+            const newsList = document.getElementById('pulseNewsList');
+            if (!newsList) return;
+            newsList.innerHTML = '';
+
+            const filtered = richEditorialArticles.filter(item => {
+                if (currentNewsCategory === 'all') return true;
+                return item.category === currentNewsCategory;
+            });
+
+            if (filtered.length === 0) {
+                newsList.innerHTML = '<div style="padding: 24px 0; text-align: center; color: var(--text-secondary); font-size: 13px;">No stories found in this category.</div>';
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'pulse-news-card';
+                card.onclick = () => openPulseQuery(item.query || item.title);
+                card.innerHTML = `
+                    <img src="${item.img}" alt="News" class="pulse-news-img" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=360&q=80'">
+                    <div class="pulse-news-body">
+                        <div class="pulse-news-title">${item.title}</div>
+                        <div class="pulse-news-footer">
+                            <span class="pulse-news-tag">${item.tag}</span>
+                            <span>&bull;</span>
+                            <span>${item.source}</span>
+                            <span>&bull;</span>
+                            <span>${item.time}</span>
+                        </div>
+                    </div>
+                `;
+                newsList.appendChild(card);
+            });
+        }
+
         function onCountryChanged(country) {
             currentCountry = country;
-            localStorage.setItem('fokk_pulse_country', country);
+            try { localStorage.setItem('fokk_pulse_country', country); } catch(e){}
             renderPulseData();
         }
 
@@ -1716,10 +2063,12 @@
 
         function selectQuickCity(name, temp, cond, sub) {
             currentCity = name;
-            localStorage.setItem('fokk_pulse_city', name);
-            localStorage.setItem('fokk_pulse_temp', temp);
-            localStorage.setItem('fokk_pulse_cond', cond);
-            localStorage.setItem('fokk_pulse_sub', sub);
+            try {
+                localStorage.setItem('fokk_pulse_city', name);
+                localStorage.setItem('fokk_pulse_temp', temp);
+                localStorage.setItem('fokk_pulse_cond', cond);
+                localStorage.setItem('fokk_pulse_sub', sub);
+            } catch(e){}
             closeCityPickerModal();
             renderPulseData();
         }
@@ -1790,35 +2139,13 @@
                 });
             }
 
-            // Render News
-            const newsList = document.getElementById('pulseNewsList');
-            if (newsList) {
-                newsList.innerHTML = '';
-                (data.news || []).forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'pulse-news-card';
-                    card.onclick = () => openPulseQuery(item.query || item.title);
-                    card.innerHTML = `
-                        <img src="${item.img}" alt="News" class="pulse-news-img" onerror="this.style.display='none'">
-                        <div class="pulse-news-body">
-                            <div class="pulse-news-title">${item.title}</div>
-                            <div class="pulse-news-footer">
-                                <span class="pulse-news-tag">${item.tag}</span>
-                                <span>&bull;</span>
-                                <span>${item.source}</span>
-                                <span>&bull;</span>
-                                <span>${item.time}</span>
-                            </div>
-                        </div>
-                    `;
-                    newsList.appendChild(card);
-                });
-            }
-
-            renderPulseSports();
+            // Render News by Category
+            renderFilteredNews();
         }
 
-        
+        function switchPulseTab(tab) {
+            selectNewsCategory(tab === 'sports' ? 'sports' : tab === 'markets' ? 'business' : 'all');
+        }
 
         function openPulseQuery(query) {
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.search === 'function') {

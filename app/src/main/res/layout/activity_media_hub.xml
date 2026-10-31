@@ -153,11 +153,150 @@
         app:strokeWidth="1dp">
 
         <LinearLayout
-            android:id="@+id/layoutSuggestionsList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp" />
+            android:orientation="vertical">
+
+            <!-- Firefox-Style Search Engine Quick Switcher Strip -->
+            <LinearLayout
+                android:id="@+id/layoutEngineQuickSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SEARCH WITH"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Ecosia -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineEcosia"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with Ecosia">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineEcosia"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_ecosia" />
+                    </FrameLayout>
+
+                    <!-- Google -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineGoogle"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with Google">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineGoogle"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_google" />
+                    </FrameLayout>
+
+                    <!-- DuckDuckGo -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineDuckDuckGo"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with DuckDuckGo">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineDuckDuckGo"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_duckduckgo" />
+                    </FrameLayout>
+
+                    <!-- Brave -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineBrave"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with Brave">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineBrave"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_brave" />
+                    </FrameLayout>
+
+                    <!-- Startpage -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineStartpage"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with Startpage">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineStartpage"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_startpage" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#24344D" />
+
+            <LinearLayout
+                android:id="@+id/layoutSuggestionsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp" />
+        </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Fullscreen Video Container -->

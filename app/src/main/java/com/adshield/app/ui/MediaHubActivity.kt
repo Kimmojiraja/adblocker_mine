@@ -3732,7 +3732,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 text = bullet
                 setTextColor(android.graphics.Color.parseColor("#CBD5E1"))
                 textSize = 13.5f
-                lineSpacingMultiplier = 1.25f
+                setLineSpacing(0f, 1.25f)
             }
             bulletRow.addView(dot)
             bulletRow.addView(bulletText)
@@ -3929,26 +3929,6 @@ open class MediaHubActivity : AppCompatActivity() {
             clearPrivateProfileData()
         }
         super.onDestroy()
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
-            for (tab in tabs) {
-                if (tab !== activeTab) {
-                    tab.webView?.onPause()
-                    tab.webView?.clearCache(false)
-                }
-            }
-        }
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
-            for (tab in tabs) {
-                if (tab !== activeTab) {
-                    tab.webView?.clearCache(false)
-                }
-            }
-            activeWebView?.clearCache(false)
-        }
     }
 
     override fun onLowMemory() {

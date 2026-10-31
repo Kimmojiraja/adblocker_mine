@@ -1,5 +1,9 @@
 # Fokk Shield
 
+
+
+<img width="1254" height="1254" alt="WhatsApp Image 2026-10-31 at 19 50 33" src="https://github.com/user-attachments/assets/70e9a0ca-0f16-46ad-ae70-c9cf176e186e" />
+
 Fokk Shield is an Android browser with a built-in, on-device filter for known ad and tracker domains, plus a small set of cosmetic filters. Protection can be turned off for an individual site from the browser menu. Same-site requests are left alone to reduce breakage. Third-party cookies are blocked by default, with compatibility exceptions for supported media services; first-party cookies remain available for sign-in and site features. The browser supports pull-to-refresh and collapses its address bar while scrolling.
 
 ## Scope
@@ -14,4 +18,4 @@ The filter is a lightweight domain and cosmetic filter, not a full implementatio
 ## Build
 
 Open this Android project in Android Studio and build the `app` module with a compatible Android Gradle Plugin installation.
-![Uploading WhatsApp Image 2026-10-31 at 19.50.33.jpeg…]()
+<img width="1254" height="1254" alt="WhatsApp Image 2026-10-31 at 19 50 33" src="https://github.com/user-attachments/assets/e06705e6-01ac-458c-b52f-2416689ba081" />

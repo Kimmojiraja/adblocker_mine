@@ -18,4 +18,3 @@ The filter is a lightweight domain and cosmetic filter, not a full implementatio
 ## Build
 
 Open this Android project in Android Studio and build the `app` module with a compatible Android Gradle Plugin installation.
-<img width="1254" height="1254" alt="WhatsApp Image 2026-10-31 at 19 50 33" src="https://github.com/user-attachments/assets/e06705e6-01ac-458c-b52f-2416689ba081" />

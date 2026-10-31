@@ -564,9 +564,14 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun applySearchEngine(engine: SearchEngine) {
         currentSearchEngine = engine
         prefs.edit().putString(PREF_SEARCH_ENGINE, engine.name).apply()
+        binding.imgEngineIcon.imageTintList = null
         binding.imgEngineIcon.setImageResource(engine.iconRes)
         if (binding.urlInput.text.isEmpty() || activeWebView?.url?.contains("fokk_start.html") == true) {
-            binding.urlInput.hint = "Search with ${engine.displayName} or enter address"
+            binding.urlInput.hint = if (activeTab?.isPrivate == true || isIsolatedPrivateProfile) {
+                "Ghost Mode • Search with ${engine.displayName}"
+            } else {
+                "Search with ${engine.displayName} or enter address"
+            }
         }
         val currentUrl = activeWebView?.url.orEmpty()
         val query = extractSearchQuery(currentUrl)
@@ -990,6 +995,18 @@ open class MediaHubActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+
+        @JavascriptInterface
+        fun toggleGhostMode() {
+            activity.runOnUiThread {
+                activity.toggleGhostModeState()
+            }
+        }
+
+        @JavascriptInterface
+        fun isGhostModeActive(): Boolean {
+            return activity.isIsolatedPrivateProfile || (activity.activeTab?.isPrivate == true)
         }
 
         @JavascriptInterface
@@ -2110,6 +2127,26 @@ open class MediaHubActivity : AppCompatActivity() {
         return safeName.ifBlank { "download" }
     }
 
+    fun toggleGhostModeState() {
+        if (isIsolatedPrivateProfile) {
+            Toast.makeText(this, "Ghost Mode: OFF • Normal browsing restored", Toast.LENGTH_SHORT).show()
+            finish()
+        } else if (activeTab?.isPrivate == true) {
+            val normalTabIdx = tabs.indexOfFirst { !it.isPrivate }
+            if (normalTabIdx != -1) {
+                switchToTab(normalTabIdx)
+            } else {
+                addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
+            }
+            Toast.makeText(this, "Ghost Mode: OFF • Normal browsing restored", Toast.LENGTH_SHORT).show()
+        } else {
+            authenticateForPrivateTabs {
+                Toast.makeText(this, "Ghost Mode: ON • Zero cookies & history saved", Toast.LENGTH_SHORT).show()
+                openIsolatedPrivateBrowser("file:///android_asset/fokk_start.html")
+            }
+        }
+    }
+
     private fun openIsolatedPrivateBrowser(url: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             Toast.makeText(this, "Private tabs with isolated site data require Android 9 or newer", Toast.LENGTH_LONG).show()
@@ -2185,16 +2222,14 @@ open class MediaHubActivity : AppCompatActivity() {
         updateUrlBar(current.url, current.title)
 
         // Apply Private Tab styling if active
+        binding.imgEngineIcon.imageTintList = null
+        binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
         if (current.isPrivate) {
             binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#1B1229"))
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#120A1C"))
-            binding.imgEngineIcon.setImageResource(R.drawable.ic_lock)
-            binding.imgEngineIcon.imageTintList = ColorStateList.valueOf(android.graphics.Color.parseColor("#C084FC"))
         } else {
             binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#F0090D14"))
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#0C101A"))
-            binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
-            binding.imgEngineIcon.imageTintList = null
         }
 
         updateTabCounter()
@@ -2742,9 +2777,14 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun updateUrlBar(url: String?, title: String?) {
         if (binding.urlInput.hasFocus()) return
+        binding.imgEngineIcon.imageTintList = null
         if (url == null || url.contains("fokk_start.html")) {
             binding.urlInput.setText("")
-            binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter address"
+            binding.urlInput.hint = if (activeTab?.isPrivate == true || isIsolatedPrivateProfile) {
+                "Ghost Mode • Search with ${currentSearchEngine.displayName}"
+            } else {
+                "Search with ${currentSearchEngine.displayName} or enter address"
+            }
             binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
         } else if (url.contains("fokk_about.html")) {
             binding.urlInput.setText("fokk://about")
@@ -2855,6 +2895,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 val textDesc = row.findViewById<TextView>(R.id.textEngineDesc)
                 val radioBtn = row.findViewById<RadioButton>(R.id.radioEngineSelected)
 
+                imgLogo.imageTintList = null
                 imgLogo.setImageResource(engine.iconRes)
                 textName.text = engine.displayName
                 textDesc.text = when (engine) {
@@ -3506,6 +3547,12 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
+        // 2b. Quick Refresh button on navigation bar
+        sheetBinding.btnMenuRefresh.setOnClickListener {
+            activeWebView?.reload()
+            dialog.dismiss()
+        }
+
         // 3. Home button
         sheetBinding.btnMenuHome.alpha = if (isStartPage) 0.45f else 1.0f
         sheetBinding.btnMenuHome.setOnClickListener {
@@ -3806,7 +3853,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.rowSettings.setOnClickListener {
             dialog.dismiss()
-            showExtensionsManagerDialog()
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         sheetBinding.rowDesktopSite.setOnClickListener {

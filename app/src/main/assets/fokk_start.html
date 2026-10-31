@@ -537,6 +537,17 @@
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .hero-privacy-btn.ghost-mode-active {
+            border-color: #C084FC !important;
+            background: rgba(192, 132, 252, 0.22) !important;
+            color: #E9D5FF !important;
+            box-shadow: 0 0 16px rgba(192, 132, 252, 0.35);
+        }
+        .hero-privacy-btn.ghost-mode-active svg {
+            color: #C084FC !important;
+            stroke: #C084FC !important;
+        }
+
         .hero-privacy-btn svg, .hero-livepulse-btn svg {
             color: #FFFFFF !important;
             stroke: #FFFFFF !important;
@@ -1045,12 +1056,12 @@
     <div class="main-container">
         <!-- TOP QUICK BAR: Privacy / Ghost Mode & Live Pulse Trigger -->
         <div class="hero-top-bar">
-            <button class="hero-privacy-btn" onclick="openPrivateMode()" title="Ghost Mode">
+            <button class="hero-privacy-btn" id="heroGhostBtn" onclick="toggleGhostMode()" title="Toggle Ghost Mode">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     <circle cx="12" cy="12" r="2.5"/>
                 </svg>
-                <span>Ghost Mode</span>
+                <span id="heroGhostText">Ghost Mode</span>
             </button>
 
             <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Live Pulse Hub">
@@ -1672,24 +1683,38 @@
         }
 
         
-        // GHOST / PRIVATE MODE HANDLER
-        function openPrivateMode() {
+        // GHOST / PRIVATE MODE HANDLER (TOGGLE ON/OFF)
+        function updateGhostModeStatus() {
+            try {
+                const isGhost = window.FokkShieldBridge && typeof window.FokkShieldBridge.isGhostModeActive === 'function' ?
+                    window.FokkShieldBridge.isGhostModeActive() : false;
+                const btn = document.getElementById('heroGhostBtn');
+                const txt = document.getElementById('heroGhostText');
+                if (btn && txt) {
+                    if (isGhost) {
+                        txt.textContent = "Ghost Mode: ON";
+                        btn.classList.add('ghost-mode-active');
+                    } else {
+                        txt.textContent = "Ghost Mode: OFF";
+                        btn.classList.remove('ghost-mode-active');
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function toggleGhostMode() {
             if (navigator.vibrate) {
                 try { navigator.vibrate(25); } catch (e) {}
             }
-            const btn = document.querySelector('.hero-privacy-btn');
+            const btn = document.getElementById('heroGhostBtn');
             if (btn) {
                 btn.style.transform = 'scale(0.92)';
-                btn.style.borderColor = 'var(--fokk-cyan)';
-                setTimeout(() => {
-                    btn.style.transform = '';
-                    btn.style.borderColor = '';
-                }, 180);
+                setTimeout(() => { btn.style.transform = ''; }, 180);
             }
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openPrivateTabs === 'function') {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.toggleGhostMode === 'function') {
+                window.FokkShieldBridge.toggleGhostMode();
+            } else if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openPrivateTabs === 'function') {
                 window.FokkShieldBridge.openPrivateTabs();
-            } else {
-                window.location.href = "https://www.ecosia.org";
             }
         }
 
@@ -2265,6 +2290,7 @@
 
         loadSpeedDials();
         loadTrendingTopics();
+        updateGhostModeStatus();
 
         // Sync Live Stats from Android Bridge
         try {

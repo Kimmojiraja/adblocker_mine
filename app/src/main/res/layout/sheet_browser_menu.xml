@@ -52,6 +52,16 @@
                 android:contentDescription="Go Forward" />
 
             <ImageButton
+                android:id="@+id/btnMenuRefresh"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_refresh"
+                app:tint="@color/text_primary"
+                android:contentDescription="Refresh Page" />
+
+            <ImageButton
                 android:id="@+id/btnMenuHome"
                 android:layout_width="0dp"
                 android:layout_height="40dp"

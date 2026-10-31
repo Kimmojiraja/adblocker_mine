@@ -71,10 +71,7 @@
         ytd-banner-promo-renderer,
         ytd-ad-slot-renderer,
         ytd-in-feed-ad-layout-renderer,
-        #player-ads,
-        .ytp-ad-module,
         .ytp-ad-overlay-container,
-        .video-ads,
         ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
 
         /* YouTube Mobile Topbar Open App Button & Promos */
@@ -181,14 +178,14 @@
     }
 
     // =========================================================================
-    // YouTube Web Video Ad Auto-Skipper (Zero-Stall, Audio-Safe)
+    // YouTube Web Video Ad Auto-Skipper (Zero-Blank-Screen Instant Skip Engine)
     // =========================================================================
     let adWasMutedByShield = false;
 
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        // 1. Trigger YouTube player API skip if available
+        // 1. Trigger YouTube internal player API skip if available
         try {
             const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
             if (player && typeof player.skipAd === 'function') {
@@ -196,60 +193,65 @@
             }
         } catch (e) {}
 
-        // 2. Click any visible skip button
+        // 2. Programmatically click all modern YouTube skip buttons
         const skipButtons = [
             '.ytp-ad-skip-button',
             '.ytp-ad-skip-button-modern',
             '.ytp-skip-ad-button',
             '.videoAdUiSkipButton',
             'button.ytp-ad-skip-button',
-            '.ytp-ad-overlay-close-button'
+            'button.ytp-ad-skip-button-modern',
+            '.ytp-ad-overlay-close-button',
+            'button[class*="skip-button"]',
+            '.ytp-ad-skip-button-container button',
+            '.ytp-ad-skip-button-slot button'
         ];
         for (let i = 0; i < skipButtons.length; i++) {
             const btn = document.querySelector(skipButtons[i]);
             if (btn && typeof btn.click === 'function') {
-                btn.click();
-                break;
+                try {
+                    btn.click();
+                    break;
+                } catch (e) {}
             }
         }
 
-        // 3. Fast-forward video ad without black-screen pause stall
+        // 3. Detect ad state and accelerate video to end (Zero Waiting / Zero Blank Screen)
         const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
-        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting') || (player && player.classList.contains('ad-showing'));
-        const video = document.querySelector('video');
+        const isAdShowing = (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) ||
+                            !!document.querySelector('.ad-showing, .ad-interrupting');
+        const video = document.querySelector('video.html5-main-video, video');
 
-        if (isAdShowing) {
-            if (video) {
-                // Video ads are short clips (<= 75 seconds). NEVER seek if duration > 75s
-                // because that means it is the main user video!
-                if (!isNaN(video.duration) && video.duration > 0 && video.duration <= 75 && !video.ended) {
-                    if (!video.muted) {
-                        video.muted = true;
-                        adWasMutedByShield = true;
-                    }
-                    video.playbackRate = 16.0;
-                    video.currentTime = Math.max(0, video.duration - 0.1);
+        if (isAdShowing && video) {
+            try {
+                if (!video.muted) {
+                    video.muted = true;
+                    adWasMutedByShield = true;
+                }
+                video.playbackRate = 16.0;
+                if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
+                    video.currentTime = Math.max(0, video.duration - 0.05);
                 }
                 if (video.paused) {
                     video.play().catch(function() {});
                 }
+            } catch (e) {}
+        } else if (video) {
+            // Content video active: restore 1.0x speed and audio
+            if (video.playbackRate > 1.0) {
+                video.playbackRate = 1.0;
             }
-        } else {
-            // Main video is active: restore normal audio and normal 1.0x playback speed!
-            if (video) {
-                if (video.playbackRate > 1.0) {
-                    video.playbackRate = 1.0;
-                }
-                if (adWasMutedByShield || (video.muted && video.currentTime > 0.5)) {
-                    video.muted = false;
-                    adWasMutedByShield = false;
-                }
+            if (adWasMutedByShield) {
+                video.muted = false;
+                adWasMutedByShield = false;
             }
         }
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(runYouTubeAdSkipper, 300);
+        setInterval(runYouTubeAdSkipper, 100);
+        document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
+        document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
     }
 
     // =========================================================================

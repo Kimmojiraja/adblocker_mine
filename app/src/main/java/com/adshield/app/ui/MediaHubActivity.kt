@@ -884,6 +884,13 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun openAboutPage() {
+            activity.runOnUiThread {
+                activity.openAboutPage()
+            }
+        }
+
+        @JavascriptInterface
         fun search(query: String) {
             activity.runOnUiThread {
                 val url = activity.currentSearchEngine.searchUrl + Uri.encode(query)
@@ -2328,6 +2335,10 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.cardSuggestions.visibility = View.GONE
             if (query.isNotEmpty()) {
                 val rawTarget = when {
+                    query.equals("fokk://home", ignoreCase = true) || query.equals("fokk://start", ignoreCase = true) ->
+                        "file:///android_asset/fokk_start.html"
+                    query.equals("fokk://about", ignoreCase = true) || query.equals("fokk://info", ignoreCase = true) ->
+                        "file:///android_asset/fokk_about.html"
                     query.startsWith("http://") || query.startsWith("https://") || query.startsWith("file://") -> query
                     query.contains(".") && !query.contains(" ") -> "https://$query"
                     else -> currentSearchEngine.searchUrl + Uri.encode(query)
@@ -2500,7 +2511,12 @@ open class MediaHubActivity : AppCompatActivity() {
         if (url == null || url.contains("fokk_start.html")) {
             binding.urlInput.setText("")
             binding.urlInput.hint = "Search with ${currentSearchEngine.displayName} or enter address"
+            binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
+        } else if (url.contains("fokk_about.html")) {
+            binding.urlInput.setText("fokk://about")
+            binding.imgEngineIcon.setImageResource(R.drawable.ic_info)
         } else {
+            binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
             try {
                 val host = Uri.parse(url).host ?: url
                 binding.urlInput.setText(host.removePrefix("www."))
@@ -2587,6 +2603,11 @@ open class MediaHubActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please set Fokk as default browser in Android Settings", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun openAboutPage(anchor: String? = null) {
+        val url = "file:///android_asset/fokk_about.html" + if (!anchor.isNullOrEmpty()) "#$anchor" else ""
+        addNewTab(url, isPrivate = false)
     }
 
     private fun showSearchEngineDialog() {
@@ -2747,6 +2768,12 @@ open class MediaHubActivity : AppCompatActivity() {
         val lowerUrl = tab.url.lowercase()
 
         when {
+            lowerUrl.contains("fokk_about.html") -> {
+                cardBinding.imgTabIcon.setImageResource(R.drawable.ic_info)
+                cardBinding.textTabTitle.text = "About Fokk Shield"
+                cardBinding.textTabUrl.text = "fokk://about"
+                cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_shield_check)
+            }
             lowerUrl.contains("fokk_start.html") -> {
                 cardBinding.imgTabIcon.setImageResource(R.drawable.ic_home)
                 cardBinding.textTabTitle.text = "New Tab"
@@ -3514,8 +3541,48 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         sheetBinding.rowSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
             dialog.dismiss()
+            showExtensionsManagerDialog()
+        }
+
+        sheetBinding.rowDesktopSite.setOnClickListener {
+            val isNowDesktop = !(activeTab?.isDesktop ?: false)
+            activeTab?.let { tab ->
+                tab.isDesktop = isNowDesktop
+                tab.webView?.let { webView ->
+                    applyDesktopMode(webView, tab.isDesktop)
+                    webView.reload()
+                }
+            }
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowDarkMode.setOnClickListener {
+            isDarkMode = !isDarkMode
+            if (!isThirdPartyMediaService(activeWebView?.url)) {
+                injectDarkModeScript(activeWebView, isDarkMode)
+            }
+            dialog.dismiss()
+        }
+
+        sheetBinding.rowAboutBrowser.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage()
+        }
+
+        sheetBinding.rowFundraising.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage("fundraising")
+        }
+
+        sheetBinding.rowPrivacyPolicy.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage("privacy")
+        }
+
+        sheetBinding.rowDisclaimer.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage("disclaimer")
         }
 
         dialog.show()

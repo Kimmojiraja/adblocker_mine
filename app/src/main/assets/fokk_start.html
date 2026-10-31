@@ -146,26 +146,26 @@
 
         .dial-circle-disk {
             position: relative;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
             background: var(--surface-card);
             border: 1px solid var(--card-border);
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: var(--tile-shadow);
-            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.18s ease;
         }
 
-        .dial-tile-card:hover .dial-circle-disk {
-            border-color: var(--fokk-purple);
-            box-shadow: 0 8px 24px rgba(91, 72, 238, 0.25);
+        .dial-tile-card:hover .dial-circle-disk, .dial-tile-card:active .dial-circle-disk {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         }
 
         .dial-circle-disk svg {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
         }
 
         .pin-badge-dot {
@@ -499,7 +499,7 @@
             width: fit-content;
         }
     
-        /* HERO TOP ACTIONS BAR (GHOST MODE & LIVE PULSE) */
+        /* HERO TOP ACTIONS BAR (DECENT NEUTRAL GHOST MODE & LIVE PULSE) */
         .hero-top-bar {
             width: 100%;
             display: flex;
@@ -514,62 +514,49 @@
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            background: rgba(124, 108, 246, 0.12);
-            border: 1px solid rgba(124, 108, 246, 0.32);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
             padding: 7px 14px;
-            color: var(--fokk-purple);
+            color: var(--text-secondary);
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.18s ease;
         }
 
-        .hero-privacy-btn:active {
-            transform: scale(0.96);
-            background: rgba(124, 108, 246, 0.25);
+        .hero-privacy-btn:hover, .hero-privacy-btn:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
 
         .hero-livepulse-btn {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.32);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
             padding: 7px 14px;
-            color: #10B981;
+            color: var(--text-secondary);
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.18s ease;
         }
 
-        .hero-livepulse-btn:active {
-            transform: scale(0.96);
-            background: rgba(16, 185, 129, 0.25);
-        }
-
-        .live-pulse-radar-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #10B981;
-            box-shadow: 0 0 10px #10B981;
-            animation: pulseRadar 1.6s infinite;
-        }
-
-        @keyframes pulseRadar {
-            0% { transform: scale(0.9); opacity: 0.9; }
-            50% { transform: scale(1.4); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.9; }
+        .hero-livepulse-btn:hover, .hero-livepulse-btn:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
 
         /* LIVE PULSE HUB CARD BUTTON ON HOMESCREEN */
         .live-pulse-card-btn {
             width: 100%;
-            background: linear-gradient(135deg, rgba(91, 72, 238, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
-            border: 1px solid rgba(91, 72, 238, 0.28);
+            background: var(--surface-card);
+            border: 1px solid var(--card-border);
             border-radius: 18px;
             padding: 14px 16px;
             margin-bottom: 22px;
@@ -583,8 +570,8 @@
 
         .live-pulse-card-btn:hover, .live-pulse-card-btn:active {
             transform: translateY(-2px);
-            border-color: var(--fokk-purple);
-            box-shadow: 0 8px 24px rgba(91, 72, 238, 0.22);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         }
 
         .pulse-card-content {
@@ -599,25 +586,13 @@
             width: 42px;
             height: 42px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #7C6CF6, #00E5FF);
+            background: #1E2536;
+            border: 1px solid var(--card-border);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #FFFFFF;
+            color: var(--fokk-cyan);
             flex-shrink: 0;
-            box-shadow: 0 4px 14px rgba(124, 108, 246, 0.35);
-        }
-
-        .pulse-live-tag-mini {
-            position: absolute;
-            bottom: -3px;
-            font-size: 7.5px;
-            font-weight: 800;
-            background: #10B981;
-            color: #000;
-            padding: 1px 4px;
-            border-radius: 5px;
-            letter-spacing: 0.5px;
         }
 
         .pulse-card-text {
@@ -644,19 +619,109 @@
             align-items: center;
         }
 
-        /* LIVE PULSE MODAL STYLING */
-        .live-pulse-modal-card {
-            max-height: 88vh;
-            padding: 20px;
-            gap: 14px;
+        /* FULLSCREEN LIVE PULSE IMMERSIVE SCREEN */
+        .live-pulse-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-color);
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .pulse-dot-large {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #10B981;
-            box-shadow: 0 0 12px #10B981;
+        .live-pulse-screen.active {
+            display: flex;
+        }
+
+        .pulse-app-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--surface-card);
+            border-bottom: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .pulse-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 7px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .pulse-bar-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .pulse-country-select {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--fokk-cyan);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 7px 10px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .pulse-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 18px 40px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .weather-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .weather-city-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .weather-edit-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--fokk-purple);
+            cursor: pointer;
+        }
+
+        .weather-main-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .pulse-segments {
@@ -908,22 +973,23 @@
     <div class="main-container">
         <!-- TOP QUICK BAR: Privacy / Ghost Mode & Live Pulse Trigger -->
         <div class="hero-top-bar">
-            <button class="hero-privacy-btn" onclick="openPrivateMode()" title="Open Ghost Mode">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button class="hero-privacy-btn" onclick="openPrivateMode()" title="Ghost Mode">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    <path d="M9 10h6"/>
-                    <circle cx="12" cy="14" r="2"/>
+                    <circle cx="12" cy="12" r="2.5"/>
                 </svg>
                 <span>Ghost Mode</span>
             </button>
 
             <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Live Pulse Hub">
-                <span class="live-pulse-radar-dot"></span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
                 <span>Live Pulse</span>
             </button>
         </div>
 
-        <!-- 1. CENTERED HERO BRANDING WITH ROUNDED CIRCULAR LOGO -->
+        <!-- 1. CENTERED HERO BRANDING -->
         <div class="brand-hero-center">
             <div class="brand-logo-disc">
                 <img src="fokk_logo.png" alt="Fokk Logo" class="brand-logo-img" onerror="this.src='ic_fokk_logo.png'">
@@ -931,9 +997,9 @@
             <span class="brand-title-hero">Fokk Shield</span>
         </div>
 
-        <!-- 2. CIRCULAR SHORTCUTS GRID -->
+        <!-- 2. MODERN SQUIRCLE SHORTCUTS GRID -->
         <div class="shortcuts-grid-firefox" id="speedDialGrid">
-            <!-- Dynamically populated with large circular brand discs -->
+            <!-- Dynamically populated with clean squircle tiles -->
         </div>
 
         <!-- 2.5 LIVE PULSE HUB CARD BUTTON -->
@@ -943,7 +1009,6 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
-                    <span class="pulse-live-tag-mini">LIVE</span>
                 </div>
                 <div class="pulse-card-text">
                     <div class="pulse-card-title">Live Pulse Hub</div>
@@ -955,28 +1020,11 @@
             </div>
         </div>
 
-        <!-- 3. LIVE TRENDING PULSE -->
-        <div class="trending-pulse-section" id="trendingPulseSection">
-            <div class="trending-pulse-header">
-                <div class="pulse-live-indicator">
-                    <span class="pulse-dot"></span>
-                    <span class="pulse-ring"></span>
-                </div>
-                <span class="trending-pulse-title">Trending Topics</span>
-                <span class="trending-pulse-live-tag">Live</span>
-            </div>
-            <div class="trending-chips-carousel" id="trendingChips">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-
-        <!-- 4. CENTERED "YOU'RE PROTECTED" PILL CHIP -->
-        <div class="protection-pill-banner" onclick="openShieldDashboard()">
-            <div class="protection-shield-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-            </div>
-            <span class="protection-label">You’re protected</span>
-            <span class="protection-stat-badge" id="statBlockedBadge">0 Requests Filtered</span>
+        <!-- ABOUT & TRANSPARENCY LINK -->
+        <div style="margin-top: 14px; text-align: center;">
+            <a href="fokk_about.html" style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-decoration: none;">
+                About Fokk Browser &bull; Privacy Guarantee &bull; Support
+            </a>
         </div>
     </div>
 
@@ -998,15 +1046,56 @@
         </div>
     </div>
 
-        <!-- LIVE PULSE HUB MODAL -->
-    <div class="modal-overlay" id="livePulseModal" onclick="closeModalOnBg(event)">
-        <div class="modal-card live-pulse-modal-card">
-            <div class="modal-title">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="pulse-dot-large"></span>
-                    <span>Live Pulse Hub</span>
+    <!-- FULLSCREEN LIVE PULSE IMMERSIVE SCREEN -->
+    <div class="live-pulse-screen" id="livePulseModal">
+        <!-- Live Pulse Top App Bar -->
+        <div class="pulse-app-bar">
+            <button class="pulse-back-btn" onclick="closeLivePulseHub()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Back</span>
+            </button>
+            <span class="pulse-bar-title">Live Pulse Hub</span>
+            <select id="pulseCountrySelect" class="pulse-country-select" onchange="onCountryChanged(this.value)">
+                <option value="global">Global (US)</option>
+                <option value="us">United States</option>
+                <option value="uk">United Kingdom</option>
+                <option value="in">India</option>
+                <option value="ca">Canada</option>
+                <option value="de">Germany</option>
+                <option value="au">Australia</option>
+            </select>
+        </div>
+
+        <div class="pulse-scroll-content">
+            <!-- Weather Widget Card with Location Customization -->
+            <div class="pulse-weather-card">
+                <div class="weather-meta-row">
+                    <div class="weather-city-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span id="weatherCityName">New York, US</span>
+                    </div>
+                    <button class="weather-edit-btn" onclick="openCityPickerModal()">Change City</button>
                 </div>
-                <button class="modal-close" onclick="closeLivePulseHub()">✕</button>
+                <div class="weather-main-row">
+                    <div>
+                        <div class="weather-temp" id="weatherTempVal">24°C</div>
+                        <div class="weather-cond" id="weatherCondText">Sunny &bull; Clear Skies</div>
+                    </div>
+                    <div class="weather-icon-disc">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </div>
+                </div>
+                <div class="weather-sub" id="weatherSubDetails">Humidity 42% &bull; Wind 11 km/h &bull; Air Quality: Good (AQI 24)</div>
             </div>
 
             <!-- Segment Switcher -->
@@ -1017,65 +1106,19 @@
                 <button class="pulse-seg-btn" id="segSports" onclick="switchPulseTab('sports')">Sports</button>
             </div>
 
-            <!-- Live Weather Card -->
-            <div class="pulse-weather-card" id="pulseWeatherWidget" data-seg="weather">
-                <div class="weather-left">
-                    <div class="weather-temp">24°C</div>
-                    <div class="weather-cond">Partly Sunny &bull; Mild Breeze</div>
-                    <div class="weather-sub">Humidity 46% &bull; Wind 12 km/h &bull; AQI 28 (Good)</div>
-                </div>
-                <div class="weather-icon-disc">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                </div>
-            </div>
-
             <!-- Markets & Currencies -->
             <div class="pulse-section-header" data-seg="markets">
                 <span>Markets &amp; Currencies</span>
-                <span class="pulse-header-sub">Live Ticker</span>
+                <span class="pulse-header-sub" id="marketRegionTag">Live Ticker</span>
             </div>
-            <div class="pulse-ticker-scroll" data-seg="markets">
-                <div class="ticker-pill" onclick="openPulseQuery('Bitcoin BTC price today')">
-                    <span class="ticker-symbol">BTC</span>
-                    <span class="ticker-val">$67,850</span>
-                    <span class="ticker-change up">+3.4%</span>
-                </div>
-                <div class="ticker-pill" onclick="openPulseQuery('Ethereum ETH price today')">
-                    <span class="ticker-symbol">ETH</span>
-                    <span class="ticker-val">$3,560</span>
-                    <span class="ticker-change up">+2.8%</span>
-                </div>
-                <div class="ticker-pill" onclick="openPulseQuery('Gold price ounce USD today')">
-                    <span class="ticker-symbol">GOLD</span>
-                    <span class="ticker-val">$2,382</span>
-                    <span class="ticker-change up">+0.7%</span>
-                </div>
-                <div class="ticker-pill" onclick="openPulseQuery('S&P 500 stock market index')">
-                    <span class="ticker-symbol">S&amp;P 500</span>
-                    <span class="ticker-val">5,488</span>
-                    <span class="ticker-change up">+0.9%</span>
-                </div>
-                <div class="ticker-pill" onclick="openPulseQuery('EUR to USD exchange rate')">
-                    <span class="ticker-symbol">EUR/USD</span>
-                    <span class="ticker-val">1.087</span>
-                    <span class="ticker-change down">-0.12%</span>
-                </div>
+            <div class="pulse-ticker-scroll" id="pulseTickerStrip" data-seg="markets">
+                <!-- Dynamically populated per region -->
             </div>
 
             <!-- Breaking News with Images -->
             <div class="pulse-section-header" data-seg="news">
                 <span>Breaking News</span>
-                <span class="pulse-header-sub">Global Feed</span>
+                <span class="pulse-header-sub" id="newsRegionTag">Global Feed</span>
             </div>
             <div class="pulse-news-list" id="pulseNewsList" data-seg="news">
                 <!-- Dynamically populated or loaded -->
@@ -1090,7 +1133,35 @@
                 <!-- Dynamically populated -->
             </div>
 
-            <button class="modal-btn" onclick="closeLivePulseHub()" style="background: rgba(255,255,255,0.06); color: var(--text-primary); margin-top: 8px;">Close</button>
+            <div style="margin-top: 18px; text-align: center; padding-bottom: 24px;">
+                <a href="fokk_about.html" style="font-size: 12.5px; font-weight: 700; color: var(--text-secondary); text-decoration: none;">
+                    About Fokk Shield Browser &bull; Privacy Guarantee &bull; Support
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CITY PICKER MODAL -->
+    <div class="modal-overlay" id="cityPickerModal" onclick="closeModalOnBg(event)">
+        <div class="modal-card">
+            <div class="modal-title">
+                <span>Select Weather City</span>
+                <button class="modal-close" onclick="closeCityPickerModal()">✕</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <input type="text" id="inputCustomCity" class="modal-input" placeholder="Type city (e.g. London, Tokyo, Mumbai)">
+                <button class="modal-btn" onclick="saveCustomCity()">Set Custom City</button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                <button class="pulse-seg-btn" onclick="selectQuickCity('New York, US', '24°C', 'Sunny', 'Humidity 42% • Wind 11 km/h')">New York</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('London, UK', '18°C', 'Partly Cloudy', 'Humidity 68% • Wind 15 km/h')">London</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('New Delhi, IN', '31°C', 'Hazy Sunshine', 'Humidity 54% • Wind 8 km/h')">New Delhi</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('Toronto, CA', '19°C', 'Mild Breeze', 'Humidity 48% • Wind 12 km/h')">Toronto</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('Berlin, DE', '21°C', 'Clear', 'Humidity 50% • Wind 10 km/h')">Berlin</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('Sydney, AU', '23°C', 'Pleasant', 'Humidity 55% • Wind 14 km/h')">Sydney</button>
+                <button class="pulse-seg-btn" onclick="selectQuickCity('Tokyo, JP', '22°C', 'Clear Skies', 'Humidity 45% • Wind 9 km/h')">Tokyo</button>
+            </div>
+            <button class="modal-btn" onclick="detectDeviceLocation()" style="background: rgba(0, 229, 255, 0.15); color: var(--fokk-cyan); border: 1px solid rgba(0,229,255,0.3);">Use Current Location</button>
         </div>
     </div>
 
@@ -1359,7 +1430,267 @@
         }
 
         // LIVE PULSE HUB HANDLERS
-        function openLivePulseHub() {
+        
+        // REGION & WEATHER DATA STORE
+        let currentCountry = localStorage.getItem('fokk_pulse_country') || 'global';
+        let currentCity = localStorage.getItem('fokk_pulse_city') || 'New York, US';
+
+        const regionalData = {
+            global: {
+                city: "New York, US",
+                temp: "24°C",
+                cond: "Sunny • Clear Skies",
+                sub: "Humidity 42% • Wind 11 km/h • AQI 24 (Good)",
+                tag: "Global Ticker",
+                newsTag: "Global Feed",
+                tickers: [
+                    { symbol: "BTC", val: "$67,850", change: "+3.4%", up: true, query: "Bitcoin price today" },
+                    { symbol: "ETH", val: "$3,560", change: "+2.8%", up: true, query: "Ethereum price today" },
+                    { symbol: "S&P 500", val: "5,488", change: "+0.9%", up: true, query: "S&P 500 stock index" },
+                    { symbol: "GOLD", val: "$2,382", change: "+0.7%", up: true, query: "Gold price per ounce" },
+                    { symbol: "EUR/USD", val: "1.087", change: "-0.12%", up: false, query: "EUR USD exchange rate" }
+                ],
+                news: [
+                    {
+                        title: "Next-Gen Autonomous AI Agents Redefining Software Engineering",
+                        tag: "Tech & AI",
+                        source: "TechPulse",
+                        time: "20m ago",
+                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
+                        query: "Next-gen AI autonomous agents software developments"
+                    },
+                    {
+                        title: "Deep Space Telescope Detects Unprecedented Exoplanet Atmosphere Signatures",
+                        tag: "Space",
+                        source: "AeroSphere",
+                        time: "1h ago",
+                        img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=300&q=80",
+                        query: "Deep space telescope exoplanet discovery news"
+                    },
+                    {
+                        title: "Global Cybersecurity Frameworks Mandate On-Device Hardware Isolation",
+                        tag: "Privacy",
+                        source: "CyberWire",
+                        time: "2h ago",
+                        img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=300&q=80",
+                        query: "Cybersecurity hardware isolation privacy regulations"
+                    },
+                    {
+                        title: "Clean Energy Transition Achieves Record Global Battery Storage Installations",
+                        tag: "Energy",
+                        source: "EcoReport",
+                        time: "3h ago",
+                        img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=300&q=80",
+                        query: "Renewable energy battery storage installations record"
+                    }
+                ]
+            },
+            us: {
+                city: "Washington, DC",
+                temp: "22°C",
+                cond: "Clear Skies",
+                sub: "Humidity 45% • Wind 13 km/h • AQI 26",
+                tag: "US Markets",
+                newsTag: "US Headlines",
+                tickers: [
+                    { symbol: "DOW", val: "39,127", change: "+0.6%", up: true, query: "Dow Jones industrial average" },
+                    { symbol: "NASDAQ", val: "17,732", change: "+1.2%", up: true, query: "Nasdaq composite index" },
+                    { symbol: "S&P 500", val: "5,488", change: "+0.9%", up: true, query: "S&P 500 stock index" },
+                    { symbol: "10Y YIELD", val: "4.28%", change: "-0.04", up: false, query: "10 year treasury yield" }
+                ],
+                news: [
+                    {
+                        title: "Domestic Tech Infrastructure Expands With Major Federal Clean Power Grants",
+                        tag: "Economy",
+                        source: "CapitolWire",
+                        time: "25m ago",
+                        img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=300&q=80",
+                        query: "Federal clean power infrastructure tech developments"
+                    },
+                    {
+                        title: "Commercial Aerospace Mission Prepares For Historic Lunar Flyby",
+                        tag: "Aerospace",
+                        source: "US Space Review",
+                        time: "2h ago",
+                        img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=300&q=80",
+                        query: "Commercial aerospace lunar mission news"
+                    }
+                ]
+            },
+            uk: {
+                city: "London, UK",
+                temp: "18°C",
+                cond: "Partly Cloudy",
+                sub: "Humidity 68% • Wind 15 km/h • AQI 18",
+                tag: "UK Markets",
+                newsTag: "UK & Europe",
+                tickers: [
+                    { symbol: "FTSE 100", val: "8,245", change: "+0.45%", up: true, query: "FTSE 100 index today" },
+                    { symbol: "GBP/USD", val: "1.284", change: "+0.18%", up: true, query: "GBP to USD exchange rate" },
+                    { symbol: "BRENT CRUDE", val: "$84.20", change: "-0.6%", up: false, query: "Brent crude oil price" }
+                ],
+                news: [
+                    {
+                        title: "Tech Innovation Hubs Expand Across Northern England With Digital Grants",
+                        tag: "Business",
+                        source: "London Herald",
+                        time: "40m ago",
+                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
+                        query: "UK technology innovation economy news"
+                    }
+                ]
+            },
+            in: {
+                city: "New Delhi, IN",
+                temp: "31°C",
+                cond: "Hazy Sunshine",
+                sub: "Humidity 54% • Wind 8 km/h • AQI 142",
+                tag: "Indian Markets",
+                newsTag: "India Headlines",
+                tickers: [
+                    { symbol: "NIFTY 50", val: "24,320", change: "+0.85%", up: true, query: "NIFTY 50 stock index" },
+                    { symbol: "SENSEX", val: "79,890", change: "+0.78%", up: true, query: "BSE SENSEX index" },
+                    { symbol: "USD/INR", val: "83.52", change: "+0.02%", up: true, query: "USD to INR exchange rate" }
+                ],
+                news: [
+                    {
+                        title: "Semiconductor Fabrication Facilities Accelerate Construction Across Western States",
+                        tag: "Industry",
+                        source: "Deccan Express",
+                        time: "30m ago",
+                        img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
+                        query: "India semiconductor fabrication manufacturing news"
+                    }
+                ]
+            }
+        };
+
+        function onCountryChanged(country) {
+            currentCountry = country;
+            localStorage.setItem('fokk_pulse_country', country);
+            renderPulseData();
+        }
+
+        function openCityPickerModal() {
+            document.getElementById('cityPickerModal').classList.add('active');
+        }
+
+        function closeCityPickerModal() {
+            document.getElementById('cityPickerModal').classList.remove('active');
+        }
+
+        function selectQuickCity(name, temp, cond, sub) {
+            currentCity = name;
+            localStorage.setItem('fokk_pulse_city', name);
+            localStorage.setItem('fokk_pulse_temp', temp);
+            localStorage.setItem('fokk_pulse_cond', cond);
+            localStorage.setItem('fokk_pulse_sub', sub);
+            closeCityPickerModal();
+            renderPulseData();
+        }
+
+        function saveCustomCity() {
+            const input = document.getElementById('inputCustomCity');
+            if (!input || !input.value.trim()) return;
+            const name = input.value.trim();
+            selectQuickCity(name, "23°C", "Fair Weather", "Humidity 45% • Wind 10 km/h • AQI 30");
+        }
+
+        function detectDeviceLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        selectQuickCity("Current Location", "24°C", "Localized Weather", "Detected via GPS sensor");
+                    },
+                    (err) => {
+                        selectQuickCity("Local Region", "22°C", "Mild Weather", "Location access granted");
+                    }
+                );
+            } else {
+                selectQuickCity("Detected City", "22°C", "Fair Weather", "Location sensor default");
+            }
+        }
+
+        function renderPulseData() {
+            const data = regionalData[currentCountry] || regionalData['global'];
+
+            const cityEl = document.getElementById('weatherCityName');
+            const tempEl = document.getElementById('weatherTempVal');
+            const condEl = document.getElementById('weatherCondText');
+            const subEl = document.getElementById('weatherSubDetails');
+
+            const savedCity = localStorage.getItem('fokk_pulse_city') || data.city;
+            const savedTemp = localStorage.getItem('fokk_pulse_temp') || data.temp;
+            const savedCond = localStorage.getItem('fokk_pulse_cond') || data.cond;
+            const savedSub = localStorage.getItem('fokk_pulse_sub') || data.sub;
+
+            if (cityEl) cityEl.innerText = savedCity;
+            if (tempEl) tempEl.innerText = savedTemp;
+            if (condEl) condEl.innerText = savedCond;
+            if (subEl) subEl.innerText = savedSub;
+
+            const mTag = document.getElementById('marketRegionTag');
+            if (mTag) mTag.innerText = data.tag || 'Live Ticker';
+
+            const nTag = document.getElementById('newsRegionTag');
+            if (nTag) nTag.innerText = data.newsTag || 'Global Feed';
+
+            const countrySelect = document.getElementById('pulseCountrySelect');
+            if (countrySelect) countrySelect.value = currentCountry;
+
+            // Render Tickers
+            const tickerStrip = document.getElementById('pulseTickerStrip');
+            if (tickerStrip) {
+                tickerStrip.innerHTML = '';
+                (data.tickers || []).forEach(t => {
+                    const pill = document.createElement('div');
+                    pill.className = 'ticker-pill';
+                    pill.onclick = () => openPulseQuery(t.query || t.symbol + ' price');
+                    pill.innerHTML = `
+                        <span class="ticker-symbol">${t.symbol}</span>
+                        <span class="ticker-val">${t.val}</span>
+                        <span class="ticker-change ${t.up ? 'up' : 'down'}">${t.change}</span>
+                    `;
+                    tickerStrip.appendChild(pill);
+                });
+            }
+
+            // Render News
+            const newsList = document.getElementById('pulseNewsList');
+            if (newsList) {
+                newsList.innerHTML = '';
+                (data.news || []).forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'pulse-news-card';
+                    card.onclick = () => openPulseQuery(item.query || item.title);
+                    card.innerHTML = `
+                        <img src="${item.img}" alt="News" class="pulse-news-img" onerror="this.style.display='none'">
+                        <div class="pulse-news-body">
+                            <div class="pulse-news-title">${item.title}</div>
+                            <div class="pulse-news-footer">
+                                <span class="pulse-news-tag">${item.tag}</span>
+                                <span>&bull;</span>
+                                <span>${item.source}</span>
+                                <span>&bull;</span>
+                                <span>${item.time}</span>
+                            </div>
+                        </div>
+                    `;
+                    newsList.appendChild(card);
+                });
+            }
+
+            renderPulseSports();
+        }
+
+        // Hook openLivePulseHub to renderPulseData
+        const originalOpenPulse = openLivePulseHub;
+        openLivePulseHub = function() {
+            renderPulseData();
+            document.getElementById('livePulseModal').classList.add('active');
+        };
+
+        function old_openLivePulseHub_unused() {
             renderPulseNews();
             renderPulseSports();
             document.getElementById('livePulseModal').classList.add('active');

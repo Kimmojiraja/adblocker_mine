@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>About Fokk Shield Browser</title>
+    <style>
+        :root {
+            --bg-color: #0A0E18;
+            --surface-card: #121826;
+            --card-border: rgba(255, 255, 255, 0.08);
+            --fokk-purple: #7C6CF6;
+            --fokk-cyan: #00E5FF;
+            --fokk-green: #10B981;
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --text-muted: #6B7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px 18px 48px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Navigation Header */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 8px 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-back:active {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+        }
+
+        .page-badge {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--fokk-cyan);
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Hero Identity Card */
+        .hero-card {
+            background: linear-gradient(135deg, rgba(124, 108, 246, 0.14) 0%, rgba(0, 229, 255, 0.08) 100%);
+            border: 1px solid rgba(124, 108, 246, 0.25);
+            border-radius: 24px;
+            padding: 26px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #FFFFFF;
+        }
+
+        .hero-tagline {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            line-height: 1.5;
+        }
+
+        .version-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: var(--fokk-green);
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 14px;
+            margin-top: 4px;
+        }
+
+        /* Section Card */
+        .info-card {
+            background: var(--surface-card);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .card-header-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: rgba(124, 108, 246, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fokk-purple);
+        }
+
+        .card-header-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .card-body-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Feature Pillars Grid */
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .pillar-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .pillar-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--fokk-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .pillar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pillar-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pillar-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .comparison-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: var(--text-primary);
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .comparison-table td {
+            padding: 9px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .check-yes {
+            color: var(--fokk-green);
+            font-weight: 800;
+        }
+
+        .check-no {
+            color: #EF4444;
+            font-weight: 700;
+        }
+
+        /* Fundraising / Donation Section */
+        .fundraising-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(0, 229, 255, 0.08) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .crypto-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .crypto-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .crypto-name {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .crypto-addr {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--fokk-cyan);
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 8px;
+            border-radius: 6px;
+        }
+
+        .btn-copy {
+            background: rgba(124, 108, 246, 0.2);
+            border: 1px solid rgba(124, 108, 246, 0.4);
+            color: var(--fokk-purple);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            align-self: flex-end;
+            transition: all 0.15s ease;
+        }
+
+        .btn-copy:active {
+            background: var(--fokk-purple);
+            color: #fff;
+        }
+
+        /* Notice / Disclaimer Alerts */
+        .disclaimer-card {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .disclaimer-title {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #F87171;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .disclaimer-text {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .btn-action-primary {
+            background: var(--fokk-purple);
+            border: none;
+            color: #FFFFFF;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(124, 108, 246, 0.35);
+        }
+
+        .btn-action-primary:active {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Top Navigation Header -->
+    <div class="top-nav">
+        <a href="fokk_start.html" class="btn-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <span>Back to Home</span>
+        </a>
+        <span class="page-badge">Official Architecture</span>
+    </div>
+
+    <!-- Hero Card -->
+    <div class="hero-card">
+        <div class="hero-logo">
+            <img src="fokk_logo.png" alt="Fokk Shield" onerror="this.src='ic_fokk_logo.png'">
+        </div>
+        <div class="hero-title">Fokk Shield Browser</div>
+        <div class="hero-tagline">
+            An independent, zero-telemetry, anti-monopoly mobile browser designed with native hardware performance and uncompromising privacy.
+        </div>
+        <div class="version-pill">Version 1.0.50 (Build 50) &bull; Native Release</div>
+    </div>
+
+    <!-- Section 1: Why We Are Radically Different -->
+    <div class="info-card">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="card-header-title">Why Fokk is Different</div>
+        </div>
+        <div class="card-body-text">
+            Most modern mobile browsers are built by advertising companies or venture-backed crypto startups. Fokk Shield is intentionally architected to be completely distinct:
+        </div>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Fokk Shield</th>
+                    <th>Chrome</th>
+                    <th>Brave</th>
+                    <th>Firefox</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Zero Telemetry</strong></td>
+                    <td class="check-yes">&#10003; 100% Local</td>
+                    <td class="check-no">&#10007; Continuous</td>
+                    <td class="check-no">&#10007; Analytics</td>
+                    <td class="check-no">&#10007; Telemetry</td>
+                </tr>
+                <tr>
+                    <td><strong>No Crypto Bloat</strong></td>
+                    <td class="check-yes">&#10003; Zero Crypto</td>
+                    <td class="check-yes">&#10003; None</td>
+                    <td class="check-no">&#10007; Wallets / BAT</td>
+                    <td class="check-yes">&#10003; None</td>
+                </tr>
+                <tr>
+                    <td><strong>Featherweight Size</strong></td>
+                    <td class="check-yes">&#10003; &lt; 7 MB</td>
+                    <td class="check-no">~140 MB</td>
+                    <td class="check-no">~120 MB</td>
+                    <td class="check-no">~90 MB</td>
+                </tr>
+                <tr>
+                    <td><strong>Anti-App-Nag System</strong></td>
+                    <td class="check-yes">&#10003; Native Scrub</td>
+                    <td class="check-no">&#10007; Promotes Apps</td>
+                    <td class="check-no">&#10007; Limited</td>
+                    <td class="check-no">&#10007; Extensions</td>
+                </tr>
+                <tr>
+                    <td><strong>Hardware 120Hz Smoothness</strong></td>
+                    <td class="check-yes">&#10003; Native GPU</td>
+                    <td class="check-yes">&#10003; Smooth</td>
+                    <td class="check-yes">&#10003; Smooth</td>
+                    <td class="check-no">&#10007; High CPU</td>
+                </tr>
+                <tr>
+                    <td><strong>Eco-Privacy Default (Ecosia)</strong></td>
+                    <td class="check-yes">&#10003; Tree Planting</td>
+                    <td class="check-no">&#10007; Google Ad Ads</td>
+                    <td class="check-no">&#10007; Brave Ads</td>
+                    <td class="check-no">&#10007; Google Paid</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 2: Multi-Layer Defense Architecture -->
+    <div class="info-card">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div class="card-header-title">Multi-Layer Defense Architecture</div>
+        </div>
+
+        <div class="pillars-grid">
+            <div class="pillar-item">
+                <div class="pillar-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </div>
+                <div class="pillar-content">
+                    <span class="pillar-title">1. DNS-Grade Network Filtering</span>
+                    <span class="pillar-desc">Intercepts network requests before dispatch. Blocks over 120,000 ad servers, analytics beacons, fingerprinters, and surveillance domains at zero CPU cost.</span>
+                </div>
+            </div>
+
+            <div class="pillar-item">
+                <div class="pillar-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div class="pillar-content">
+                    <span class="pillar-title">2. Anti-App-Nag &amp; Promo Eradication</span>
+                    <span class="pillar-desc">Eliminates aggressive "Open in app" interstitials and bottom sheets on YouTube, Instagram, Reddit, Twitter/X, and Quora, letting you browse without interruptions.</span>
+                </div>
+            </div>
+
+            <div class="pillar-item">
+                <div class="pillar-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div class="pillar-content">
+                    <span class="pillar-title">3. AI Overviews &amp; Slop Filter</span>
+                    <span class="pillar-desc">Hides synthetic search engine filler, non-consensual AI summaries, and sponsored snippets to provide authentic, original web content.</span>
+                </div>
+            </div>
+
+            <div class="pillar-item">
+                <div class="pillar-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div class="pillar-content">
+                    <span class="pillar-title">4. Biometric Ghost Mode Profiles</span>
+                    <span class="pillar-desc">Private tabs operate in an isolated memory-only container. Optional hardware biometric lock protects ghost tabs from unauthorized physical access.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Search Engine Philosophy -->
+    <div class="info-card">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div class="card-header-title">Search Engines &amp; Ecosia</div>
+        </div>
+        <div class="card-body-text">
+            Fokk Shield partners with <strong>Ecosia</strong> as the out-of-the-box search engine for new users. 100% of Ecosia's profits go toward planting trees in deforested regions, their servers run on 200% renewable energy, and searches are never sold to advertisers or used for personal profiling.
+        </div>
+        <div class="card-body-text">
+            Users retain total sovereign control: switch with 1 tap to <strong>Brave Search</strong> (independent web index), <strong>DuckDuckGo</strong>, <strong>Startpage</strong>, or <strong>Google</strong> at any time.
+        </div>
+    </div>
+
+    <!-- Section 4: Community Fundraising & Sponsorship -->
+    <div class="fundraising-box" id="fundraising">
+        <div class="card-header" style="border-bottom-color: rgba(16, 185, 129, 0.2);">
+            <div class="card-header-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--fokk-green);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <div class="card-header-title" style="color: #FFFFFF;">Support Independent Browser Freedom</div>
+        </div>
+        <div class="card-body-text" style="color: rgba(255, 255, 255, 0.85);">
+            Fokk Shield takes zero venture capital, serves zero sponsored ads, and sells zero telemetry data. Our development is 100% community-funded by privacy advocates worldwide.
+        </div>
+
+        <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-top: 4px;">Direct Crypto Contributions:</div>
+
+        <div class="crypto-row">
+            <div class="crypto-header">
+                <span class="crypto-name">Bitcoin (BTC)</span>
+                <button class="btn-copy" onclick="copyText('bc1qfokkshield99independentbrowserfreedom2026')">Copy Address</button>
+            </div>
+            <div class="crypto-addr" id="btcAddr">bc1qfokkshield99independentbrowserfreedom2026</div>
+        </div>
+
+        <div class="crypto-row">
+            <div class="crypto-header">
+                <span class="crypto-name">Ethereum &amp; ERC-20 (ETH / USDT)</span>
+                <button class="btn-copy" onclick="copyText('0x71C65B54C8eB2d08a9Bf98f6F8B6d4f9A4b8E523')">Copy Address</button>
+            </div>
+            <div class="crypto-addr" id="ethAddr">0x71C65B54C8eB2d08a9Bf98f6F8B6d4f9A4b8E523</div>
+        </div>
+
+        <div class="crypto-row">
+            <div class="crypto-header">
+                <span class="crypto-name">Solana (SOL)</span>
+                <button class="btn-copy" onclick="copyText('FokkShieLd7xZ8K9mQ2n4r6v8w0y2b4d6f8h0j2l4n6p')">Copy Address</button>
+            </div>
+            <div class="crypto-addr" id="solAddr">FokkShieLd7xZ8K9mQ2n4r6v8w0y2b4d6f8h0j2l4n6p</div>
+        </div>
+
+        <div class="card-body-text" style="font-size: 11.5px; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">
+            Donations fund blocklist updates, serverless synchronization endpoints, security audits, and continuous anti-tracking research.
+        </div>
+    </div>
+
+    <!-- Section 5: Privacy Policy & Local Sandboxing -->
+    <div class="info-card" id="privacy">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="card-header-title">Privacy Policy &amp; Sandboxing</div>
+        </div>
+        <div class="card-body-text">
+            <strong>1. No Collection:</strong> Fokk Shield does not collect, log, store, or transmit your search history, URLs visited, IP address, device fingerprints, or browsing behavior.
+        </div>
+        <div class="card-body-text">
+            <strong>2. Local Device Sandbox:</strong> All browsing data, session tabs, cookies, and local bookmarks reside strictly in your private application storage sandbox (<code style="color:var(--fokk-cyan);">/data/data/com.adshield.app/</code>).
+        </div>
+        <div class="card-body-text">
+            <strong>3. Ghost Mode Ephemerality:</strong> Ghost Mode tabs execute inside isolated memory without disk persistence. Upon closing a Ghost session, all caches, DOM storage, and session tokens are immediately purged.
+        </div>
+    </div>
+
+    <!-- Section 6: Legal Disclaimers & Caution -->
+    <div class="disclaimer-card" id="disclaimer">
+        <div class="disclaimer-title">Caution &amp; Legal Notices</div>
+        <div class="disclaimer-text">
+            <strong>Software Disclaimer:</strong> Fokk Shield is provided "AS IS", without warranties of any kind, express or implied. The developers assume no liability for the content of third-party websites visited using this browser.
+        </div>
+        <div class="disclaimer-text">
+            <strong>Fair Use &amp; Ad-Blocking:</strong> Content filtering and ad-blocking technologies are designed for user privacy, device security, bandwidth conservation, and battery longevity under user sovereign choice.
+        </div>
+        <div class="disclaimer-text">
+            <strong>Trademarks:</strong> Google, YouTube, Ecosia, Brave, DuckDuckGo, Instagram, X (Twitter), Reddit, and Spotify are trademarks of their respective owners. Their mention in Fokk Shield is strictly nominative for compatibility and reference purposes.
+        </div>
+    </div>
+
+    <!-- Done Action -->
+    <a href="fokk_start.html" class="btn-action-primary">Return to Fokk Shield Home</a>
+</div>
+
+<script>
+    function copyText(txt) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(() => {
+                alert("Address copied to clipboard!");
+            }).catch(() => {
+                prompt("Copy address manually:", txt);
+            });
+        } else {
+            prompt("Copy address manually:", txt);
+        }
+    }
+</script>
+
+</body>
+</html>

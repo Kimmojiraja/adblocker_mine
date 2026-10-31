@@ -1,6 +1,6 @@
 {
-  "versionCode": 47,
-  "versionName": "1.0.47",
+  "versionCode": 48,
+  "versionName": "1.0.48",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- YouTube video audio fix: restored auto-unmute and 1.0x playback speed when main video plays, guarded ad skipper against fast-forwarding videos > 75s, and eliminated blank sponsored ad placeholders.\n- X (Twitter) login fix: enabled cross-domain cookie handling between x.com and api.twitter.com, permitted OAuth sign-in popups in onCreateWindow, and prevented content scripts from interfering with auth flows."
+  "changelog": "- Performance overhaul: eliminated Google AI chat & long session lag by domain-gating content scripts and removing reflow-inducing DOM scans.\n- Live Trending Pulse: real-time trending news & topics directly on homepage with 1-tap instant search.\n- Smart AI Page Summary: on-device private takeaways, bullet points, and read time estimation.\n- Search Engine upgrade: added Ecosia eco-friendly privacy search engine.\n- Security: added HTTPS-Only Mode toggle and strict SSL upgrade enforcement.\n- Memory hygiene: added proactive RAM trimming and tab pausing on background memory pressure."
 }

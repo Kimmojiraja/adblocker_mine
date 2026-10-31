@@ -254,6 +254,114 @@
             border-radius: 6px;
         }
 
+        /* LIVE TRENDING PULSE */
+        .trending-pulse-section {
+            width: 100%;
+            margin-bottom: 24px;
+            background: var(--surface-card);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 14px 16px;
+            box-shadow: var(--tile-shadow);
+            transition: all 0.2s ease;
+        }
+
+        .trending-pulse-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .pulse-live-indicator {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+            animation: pulseRing 1.8s infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        .trending-pulse-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+            flex: 1;
+        }
+
+        .trending-pulse-live-tag {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        .trending-chips-carousel {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .trending-chips-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .trending-chip {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(91, 72, 238, 0.08);
+            border: 1px solid rgba(91, 72, 238, 0.18);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .trending-chip:active {
+            transform: scale(0.96);
+            background: rgba(91, 72, 238, 0.22);
+        }
+
+        .trending-chip-tag {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--fokk-purple);
+        }
+
         /* Modals */
         .modal-overlay {
             position: fixed;
@@ -408,7 +516,22 @@
             <!-- Dynamically populated with large circular brand discs -->
         </div>
 
-        <!-- 3. CENTERED "YOU'RE PROTECTED" PILL CHIP -->
+        <!-- 3. LIVE TRENDING PULSE -->
+        <div class="trending-pulse-section" id="trendingPulseSection">
+            <div class="trending-pulse-header">
+                <div class="pulse-live-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="pulse-ring"></span>
+                </div>
+                <span class="trending-pulse-title">Trending Topics</span>
+                <span class="trending-pulse-live-tag">Live</span>
+            </div>
+            <div class="trending-chips-carousel" id="trendingChips">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- 4. CENTERED "YOU'RE PROTECTED" PILL CHIP -->
         <div class="protection-pill-banner" onclick="openShieldDashboard()">
             <div class="protection-shield-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -642,7 +765,52 @@
             }
         }
 
+        function loadTrendingTopics() {
+            let topics = [
+                { title: "OpenAI & Next-Gen AI", query: "Artificial intelligence news and developments", tag: "AI" },
+                { title: "SpaceX Starship", query: "SpaceX Starship rocket missions news", tag: "Space" },
+                { title: "Tech Innovations 2026", query: "Latest technology breakthroughs 2026", tag: "Tech" },
+                { title: "Global Privacy & Cyber", query: "Cybersecurity and digital privacy news", tag: "Privacy" },
+                { title: "Global Markets & Economy", query: "Global stock markets today", tag: "Markets" },
+                { title: "New Cinema & Streaming", query: "New movie releases streaming this week", tag: "Culture" }
+            ];
+
+            try {
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getTrendingTopics === 'function') {
+                    const raw = window.FokkShieldBridge.getTrendingTopics();
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            topics = parsed;
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            const container = document.getElementById('trendingChips');
+            if (!container) return;
+            container.innerHTML = '';
+
+            topics.forEach(t => {
+                const chip = document.createElement('div');
+                chip.className = 'trending-chip';
+                chip.onclick = () => {
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.search === 'function') {
+                        window.FokkShieldBridge.search(t.query || t.title);
+                    } else {
+                        window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(t.query || t.title);
+                    }
+                };
+                chip.innerHTML = `
+                    <span class="trending-chip-tag">${t.tag || 'Trend'}</span>
+                    <span>${t.title}</span>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
         loadSpeedDials();
+        loadTrendingTopics();
 
         // Sync Live Stats from Android Bridge
         try {

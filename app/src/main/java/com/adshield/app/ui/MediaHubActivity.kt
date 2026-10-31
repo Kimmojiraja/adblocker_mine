@@ -89,6 +89,7 @@ open class MediaHubActivity : AppCompatActivity() {
         GOOGLE("Google", "https://www.google.com/search?q=", R.drawable.ic_engine_google),
         BRAVE("Brave Search", "https://search.brave.com/search?q=", R.drawable.ic_engine_brave),
         DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=", R.drawable.ic_engine_duckduckgo),
+        ECOSIA("Ecosia", "https://www.ecosia.org/search?q=", R.drawable.ic_engine_ecosia),
         STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query=", R.drawable.ic_engine_startpage)
     }
 
@@ -415,12 +416,60 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private var currentSearchEngine: SearchEngine = SearchEngine.GOOGLE
 
+    private var cachedTrendingTopicsJson: String = """
+        [
+            {"title": "OpenAI & Next-Gen AI", "query": "Artificial intelligence news and developments", "tag": "AI"},
+            {"title": "Tech Innovations 2026", "query": "Latest technology breakthroughs 2026", "tag": "Tech"},
+            {"title": "SpaceX & Aerospace", "query": "Space exploration and rocket missions", "tag": "Space"},
+            {"title": "Global Cyber & Privacy", "query": "Cybersecurity news and data privacy", "tag": "Privacy"},
+            {"title": "Scientific Discoveries", "query": "Scientific discoveries latest research", "tag": "Science"},
+            {"title": "World Economy & Markets", "query": "Global economic news today", "tag": "Markets"},
+            {"title": "Cinema & Streaming Releases", "query": "Top movies and streaming releases this week", "tag": "Culture"}
+        ]
+    """.trimIndent()
+
+    private fun fetchLiveTrendingTopics() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val url = URL("https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 4000
+                conn.readTimeout = 4000
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+                if (conn.responseCode == 200) {
+                    val stream = conn.inputStream
+                    val reader = BufferedReader(InputStreamReader(stream))
+                    val fullXml = reader.readText()
+                    reader.close()
+                    val titleRegex = Regex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>|<title>(.*?)</title>")
+                    val matches = titleRegex.findAll(fullXml).map { it.groupValues[1].ifEmpty { it.groupValues[2] } }
+                        .filter { it.isNotBlank() && !it.contains("Google News", ignoreCase = true) }
+                        .take(8)
+                        .toList()
+                    if (matches.isNotEmpty()) {
+                        val array = JSONArray()
+                        matches.forEach { title ->
+                            val cleanTitle = title.replace("&amp;", "&").replace("&quot;", "\"").replace("&#39;", "'").trim()
+                            val cleanQuery = cleanTitle.substringBefore(" - ")
+                            val obj = JSONObject()
+                            obj.put("title", cleanTitle)
+                            obj.put("query", cleanQuery)
+                            obj.put("tag", "Live")
+                            array.put(obj)
+                        }
+                        cachedTrendingTopicsJson = array.toString()
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun extractSearchQuery(url: String?): String? {
         if (url == null) return null
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return null
         val host = uri.host?.lowercase(Locale.ROOT) ?: return null
         val isSearchHost = host.contains("google.") || host.contains("duckduckgo.com") ||
-            host.contains("brave.com") || host.contains("startpage.com") || host.contains("bing.com")
+            host.contains("brave.com") || host.contains("startpage.com") || host.contains("bing.com") || host.contains("ecosia.org")
         if (!isSearchHost) return null
         return uri.getQueryParameter("q") ?: uri.getQueryParameter("query")
     }
@@ -541,6 +590,7 @@ open class MediaHubActivity : AppCompatActivity() {
         loadInjectionScript()
         setupControls()
         setupRefreshControl()
+        fetchLiveTrendingTopics()
 
         val initialUrl = incomingWebUrl(intent)
         if (isIsolatedPrivateProfile) {
@@ -790,6 +840,26 @@ open class MediaHubActivity : AppCompatActivity() {
         fun getSearchEngine(): String {
             return activity.currentSearchEngine.name
         }
+
+        @JavascriptInterface
+        fun getTrendingTopics(): String {
+            return activity.cachedTrendingTopicsJson
+        }
+
+        @JavascriptInterface
+        fun search(query: String) {
+            activity.runOnUiThread {
+                val url = activity.currentSearchEngine.searchUrl + Uri.encode(query)
+                activity.loadUrlInActiveWebView(url)
+            }
+        }
+
+        @JavascriptInterface
+        fun openShieldDashboard() {
+            activity.runOnUiThread {
+                activity.openShieldDashboard()
+            }
+        }
     }
 
     /** Minimal, read-only playback bridge exposed to pages so native PiP starts only for media. */
@@ -942,8 +1012,11 @@ open class MediaHubActivity : AppCompatActivity() {
         when (uri.scheme?.lowercase(Locale.ROOT)) {
             "http", "https" -> {
                 val cleanedUrl = stripTrackingParameters(rawUrl)
-                if (cleanedUrl != rawUrl && webView != null) {
-                    loadUrlInWebView(webView, cleanedUrl)
+                val httpsOnly = prefs.getBoolean(PREF_HTTPS_ONLY, true)
+                val shouldUpgrade = httpsOnly && cleanedUrl.startsWith("http://") && uri.host != null && !uri.host!!.endsWith(".local") && !uri.host!!.equals("localhost") && !uri.host!!.equals("127.0.0.1")
+                val finalTargetUrl = if (shouldUpgrade) "https://" + cleanedUrl.substring(7) else cleanedUrl
+                if (finalTargetUrl != rawUrl && webView != null) {
+                    loadUrlInWebView(webView, finalTargetUrl)
                     return true
                 }
                 webView?.let {
@@ -1150,7 +1223,14 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun loadUrlInWebView(webView: WebView?, url: String) {
         if (webView == null) return
-        val targetUrl = stripTrackingParameters(url)
+        var targetUrl = stripTrackingParameters(url)
+        val httpsOnly = prefs.getBoolean(PREF_HTTPS_ONLY, true)
+        if (httpsOnly && targetUrl.startsWith("http://")) {
+            val uri = runCatching { Uri.parse(targetUrl) }.getOrNull()
+            if (uri != null && uri.host != null && !uri.host!!.endsWith(".local") && !uri.host!!.equals("localhost") && !uri.host!!.equals("127.0.0.1")) {
+                targetUrl = "https://" + targetUrl.substring(7)
+            }
+        }
         val tab = tabs.firstOrNull { it.webView === webView }
         tab?.isOfflineReader = false
         val tabIsPrivate = tab?.isPrivate == true
@@ -3134,6 +3214,14 @@ open class MediaHubActivity : AppCompatActivity() {
             sheetBinding.switchAiFilter.isChecked = !sheetBinding.switchAiFilter.isChecked
         }
 
+        val isHttpsOnly = prefs.getBoolean(PREF_HTTPS_ONLY, true)
+        sheetBinding.switchHttpsOnly.isChecked = isHttpsOnly
+        sheetBinding.switchHttpsOnly.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(PREF_HTTPS_ONLY, isChecked).apply()
+            val msg = if (isChecked) "HTTPS-Only Mode Enabled" else "HTTPS-Only Mode Disabled"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
         sheetBinding.switchMenuShield.setOnCheckedChangeListener { _, isChecked ->
             if (isThirdPartyMediaService(activeWebView?.url)) {
                 sheetBinding.switchMenuShield.isChecked = false
@@ -3206,6 +3294,11 @@ open class MediaHubActivity : AppCompatActivity() {
         sheetBinding.rowReaderMode.setOnClickListener {
             dialog.dismiss()
             openReaderView()
+        }
+
+        sheetBinding.rowSmartSummary.setOnClickListener {
+            dialog.dismiss()
+            showSmartPageSummaryDialog()
         }
 
         sheetBinding.rowSearchEngine.setOnClickListener {
@@ -3454,6 +3547,239 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun showSmartPageSummaryDialog() {
+        val webView = activeWebView
+        val url = webView?.url
+        if (webView == null || url.isNullOrBlank() || url.contains("fokk_start.html")) {
+            Toast.makeText(this, "Open an article or web page first to generate a summary", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Toast.makeText(this, "Analyzing article and extracting key insights...", Toast.LENGTH_SHORT).show()
+
+        val script = """
+            (function() {
+                try {
+                    var title = (document.querySelector('h1') || {}).innerText || document.title || '';
+                    var metaDesc = (document.querySelector('meta[name="description"]') || {}).content ||
+                                   (document.querySelector('meta[property="og:description"]') || {}).content || '';
+                    var host = window.location.hostname || '';
+                    var paras = [];
+                    var nodes = document.querySelectorAll('article p, main p, [role="main"] p, p');
+                    for (var i = 0; i < nodes.length; i++) {
+                        var txt = (nodes[i].innerText || '').trim();
+                        if (txt.length > 50 &&
+                            !txt.toLowerCase().includes('cookie') &&
+                            !txt.toLowerCase().includes('subscribe') &&
+                            !txt.toLowerCase().includes('sign in') &&
+                            !txt.toLowerCase().includes('all rights reserved')) {
+                            paras.push(txt);
+                            if (paras.length >= 8) break;
+                        }
+                    }
+                    return JSON.stringify({
+                        title: title.trim(),
+                        desc: metaDesc.trim(),
+                        host: host,
+                        paragraphs: paras
+                    });
+                } catch(e) {
+                    return JSON.stringify({ title: document.title || '', desc: '', host: '', paragraphs: [] });
+                }
+            })();
+        """.trimIndent()
+
+        webView.evaluateJavascript(script) { resultJson ->
+            runOnUiThread {
+                displaySummaryBottomSheet(resultJson, url)
+            }
+        }
+    }
+
+    private fun displaySummaryBottomSheet(rawJson: String?, pageUrl: String) {
+        if (rawJson.isNullOrBlank() || rawJson == "null") {
+            Toast.makeText(this, "Could not extract summary from this page", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val parsed = try {
+            val unquoted = if (rawJson.startsWith("\"") && rawJson.endsWith("\"")) {
+                org.json.JSONTokener(rawJson).nextValue().toString()
+            } else {
+                rawJson
+            }
+            org.json.JSONObject(unquoted)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Unable to parse article summary", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val title = parsed.optString("title").ifEmpty { "Article Summary" }
+        val desc = parsed.optString("desc")
+        val host = parsed.optString("host")
+        val jsonParas = parsed.optJSONArray("paragraphs")
+        val paras = mutableListOf<String>()
+        if (jsonParas != null) {
+            for (i in 0 until jsonParas.length()) {
+                val p = jsonParas.optString(i)
+                if (p.isNotBlank()) paras.add(p)
+            }
+        }
+
+        if (paras.isEmpty() && desc.isBlank()) {
+            Toast.makeText(this, "This page does not contain enough text content to summarize", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val fullTextBuilder = StringBuilder()
+        if (desc.isNotBlank()) fullTextBuilder.append(desc).append(" ")
+        paras.forEach { fullTextBuilder.append(it).append(" ") }
+        val fullText = fullTextBuilder.toString()
+        val wordCount = fullText.split("\\s+".toRegex()).filter { it.isNotBlank() }.size
+        val readTimeMinutes = (wordCount / 200).coerceAtLeast(1)
+
+        val bullets = mutableListOf<String>()
+        if (desc.isNotBlank() && desc.length > 30) {
+            bullets.add(desc)
+        }
+        for (p in paras) {
+            if (bullets.size >= 5) break
+            val sentences = p.split(". ").filter { it.trim().length > 25 }
+            if (sentences.isNotEmpty()) {
+                bullets.add(sentences.first().trim().removeSuffix(".") + ".")
+            } else {
+                bullets.add(p)
+            }
+        }
+
+        val dialog = BottomSheetDialog(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 40, 48, 48)
+            setBackgroundColor(android.graphics.Color.parseColor("#0F141F"))
+        }
+
+        val headerRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val headerTitle = TextView(this).apply {
+            text = "Smart AI Page Summary"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 17f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val privacyBadge = TextView(this).apply {
+            text = "On-Device · Private"
+            setTextColor(android.graphics.Color.parseColor("#00E5FF"))
+            textSize = 11f
+            setBackgroundResource(R.drawable.bg_status_badge)
+            setPadding(16, 6, 16, 6)
+        }
+        headerRow.addView(headerTitle)
+        headerRow.addView(privacyBadge)
+        container.addView(headerRow)
+
+        val articleTitleView = TextView(this).apply {
+            text = title
+            setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
+            textSize = 15f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, 20, 0, 8)
+        }
+        container.addView(articleTitleView)
+
+        val statsView = TextView(this).apply {
+            text = "Estimated ~${readTimeMinutes} min read · $wordCount words ${if (host.isNotBlank()) "· $host" else ""}"
+            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            textSize = 12f
+            setPadding(0, 0, 0, 18)
+        }
+        container.addView(statsView)
+
+        val divider = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2)
+            setBackgroundColor(android.graphics.Color.parseColor("#1E293B"))
+        }
+        container.addView(divider)
+
+        val scroll = androidx.core.widget.NestedScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f).apply {
+                topMargin = 16
+                bottomMargin = 20
+            }
+        }
+        val bulletsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        val summaryCopyText = StringBuilder()
+        summaryCopyText.append("Summary: ").append(title).append("\n\n")
+
+        for (bullet in bullets) {
+            val bulletRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(0, 8, 0, 8)
+            }
+            val dot = TextView(this).apply {
+                text = "• "
+                setTextColor(android.graphics.Color.parseColor("#00E5FF"))
+                textSize = 16f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            val bulletText = TextView(this).apply {
+                text = bullet
+                setTextColor(android.graphics.Color.parseColor("#CBD5E1"))
+                textSize = 13.5f
+                lineSpacingMultiplier = 1.25f
+            }
+            bulletRow.addView(dot)
+            bulletRow.addView(bulletText)
+            bulletsContainer.addView(bulletRow)
+
+            summaryCopyText.append("• ").append(bullet).append("\n")
+        }
+        scroll.addView(bulletsContainer)
+        container.addView(scroll)
+
+        val actionsRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.END
+        }
+        val btnCopy = com.google.android.material.button.MaterialButton(this).apply {
+            text = "Copy"
+            setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.parseColor("#1E293B"))
+            cornerRadius = 24
+            setOnClickListener {
+                val clip = ClipData.newPlainText("Article Summary", summaryCopyText.toString())
+                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+                Toast.makeText(this@MediaHubActivity, "Summary copied to clipboard", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                rightMargin = 14
+            }
+        }
+        val btnReader = com.google.android.material.button.MaterialButton(this).apply {
+            text = "Reader View"
+            setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.parseColor("#5B48EE"))
+            cornerRadius = 24
+            setOnClickListener {
+                dialog.dismiss()
+                openReaderView()
+            }
+        }
+        actionsRow.addView(btnCopy)
+        actionsRow.addView(btnReader)
+        container.addView(actionsRow)
+
+        dialog.setContentView(container)
+        dialog.show()
+    }
+
     private fun reportBrokenSite() {
         val url = activeWebView?.url ?: activeTab?.url ?: return
         val details = "Fokk Browser broken-site report\nURL: $url\nShield: ${if (isShieldEnabledFor(url)) "on" else "off"}\nAndroid: ${Build.VERSION.RELEASE}\nApp: ${AppUpdateManager.getCurrentVersionName(this)}\n\nDescribe what did not work:"
@@ -3605,6 +3931,36 @@ open class MediaHubActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
+            for (tab in tabs) {
+                if (tab !== activeTab) {
+                    tab.webView?.onPause()
+                    tab.webView?.clearCache(false)
+                }
+            }
+        }
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            for (tab in tabs) {
+                if (tab !== activeTab) {
+                    tab.webView?.clearCache(false)
+                }
+            }
+            activeWebView?.clearCache(false)
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        for (tab in tabs) {
+            if (tab !== activeTab) {
+                tab.webView?.clearCache(false)
+            }
+        }
+        activeWebView?.clearCache(false)
+    }
+
     companion object {
         private val THIRD_PARTY_MEDIA_SERVICE_DOMAINS = setOf(
             "youtube.com", "youtube-nocookie.com", "youtu.be",
@@ -3673,6 +4029,7 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_SHOW_HOMEPAGE_SHORTCUTS = "fokk_show_shortcuts"
         private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
         private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
+        private const val PREF_HTTPS_ONLY = "fokk_https_only_enabled"
         private const val PREF_FOKKO_AI = "fokk_fokko_ai_enabled"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,

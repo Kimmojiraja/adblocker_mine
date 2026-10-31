@@ -175,17 +175,21 @@
     // =========================================================================
     function scrubAppPromos() {
         const host = window.location.hostname;
+        const isAppNagHost = host.includes('youtube.com') || host.includes('spotify.com') ||
+            host.includes('reddit.com') || host.includes('instagram.com') || host.includes('quora.com');
+        if (!isAppNagHost) return;
 
-        // Strip any header or floating button explicitly prompting "Open App"
-        document.querySelectorAll('ytm-open-app-button, a, button, div[role="button"]').forEach(function(el) {
-            const text = (el.innerText || el.textContent || '').trim().toLowerCase();
-            if (text === 'open app' || text === 'get app' || text === 'install app' || text === 'use app' || text === 'open in app') {
-                const target = el.closest('ytm-open-app-button, .mobile-topbar-header-endpoint') || el;
-                target.style.setProperty('display', 'none', 'important');
-            }
-        });
-
-        if (host.includes('spotify.com')) {
+        if (host.includes('youtube.com')) {
+            document.querySelectorAll('ytm-open-app-button, .mobile-topbar-header-endpoint, [aria-label*="Open App"], [aria-label*="open app"]').forEach(function(el) {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-promoted-sparkles-web-renderer, ytm-ad-slot-renderer').forEach(function(el) {
+                try {
+                    const parent = el.closest('ytm-item-section-renderer, ytm-compact-promoted-item-renderer') || el;
+                    parent.remove();
+                } catch (e) {}
+            });
+        } else if (host.includes('spotify.com')) {
             try {
                 Object.defineProperty(navigator, 'platform', {
                     get: function() { return 'Linux x86_64'; },
@@ -195,21 +199,12 @@
             document.querySelectorAll('div[data-testid="upsell-banner"], div[class*="MobileAppBanner"], a[href*="spotify.com/download"]').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
-        }
-        if (host.includes('reddit.com')) {
+        } else if (host.includes('reddit.com')) {
             document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"]').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
             if (document.documentElement) document.documentElement.style.overflow = 'auto';
             if (document.body) document.body.style.overflow = 'auto';
-        }
-        if (host.includes('youtube.com')) {
-            document.querySelectorAll('ytm-mealbar-promo-renderer, ytm-open-app-button, ytm-promoted-sparkles-web-renderer, ytm-ad-slot-renderer').forEach(function(el) {
-                try {
-                    const parent = el.closest('ytm-item-section-renderer, ytm-compact-promoted-item-renderer') || el;
-                    parent.remove();
-                } catch (e) {}
-            });
         }
     }
 
@@ -308,31 +303,28 @@
     // MutationObserver for cosmetic cleanup & active checks
     // =========================================================================
     try {
-        let pendingSweep = false;
-        const addedNodes = [];
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                mutation.addedNodes.forEach(function(node) { addedNodes.push(node); });
+        const host = window.location.hostname;
+        const needsObserver = host.includes('youtube.com') || host.includes('spotify.com') ||
+            host.includes('reddit.com') || host.includes('google.') || host.includes('bing.com');
+
+        if (needsObserver) {
+            let pendingSweep = false;
+            const observer = new MutationObserver(function() {
+                if (pendingSweep) return;
+                pendingSweep = true;
+                setTimeout(function() {
+                    pendingSweep = false;
+                    if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
+                    if (host.includes('youtube.com')) runYouTubeAdSkipper();
+                    scrubAppPromos();
+                    document.querySelectorAll('video').forEach(hookVideoPlayback);
+                }, 400);
             });
-            if (pendingSweep) return;
-            pendingSweep = true;
-            setTimeout(function() {
-                pendingSweep = false;
-                scrubAiContent();
-                scrubAppPromos();
-                runYouTubeAdSkipper();
-                while (addedNodes.length) {
-                    const node = addedNodes.pop();
-                    if (!(node instanceof Element)) continue;
-                    if (node.matches('video')) hookVideoPlayback(node);
-                    node.querySelectorAll('video').forEach(hookVideoPlayback);
-                }
-            }, 300);
-        });
-        observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true
-        });
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true
+            });
+        }
     } catch (e) {}
 
     // Initial pass on DOMContentLoaded

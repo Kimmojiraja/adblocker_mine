@@ -800,35 +800,43 @@
 
   // Init
   setupFloatingBubble();
-  injectXButtons();
-  injectRedditButtons();
-  injectThreadsButtons();
-  injectBlueskyButtons();
-  injectLinkedInButtons();
-  injectYouTubeButtons();
 
-  // Throttled MutationObserver with requestAnimationFrame (prevents Twitter scroll lag)
-  let scanScheduled = false;
-  function scheduleScan() {
-    if (scanScheduled) return;
-    scanScheduled = true;
-    requestAnimationFrame(() => {
-      injectXButtons();
-      injectRedditButtons();
-      injectThreadsButtons();
-      injectBlueskyButtons();
-      injectLinkedInButtons();
-      injectYouTubeButtons();
-      scanScheduled = false;
+  const host = window.location.hostname;
+  const isSocialPlatform = host.includes("twitter.com") || host.includes("x.com") ||
+      host.includes("reddit.com") || host.includes("threads.net") ||
+      host.includes("bsky.app") || host.includes("linkedin.com") ||
+      host.includes("youtube.com");
+
+  // Only run social post button injectors and their observer on supported platforms
+  if (isSocialPlatform) {
+    function runActiveInjector() {
+      if (host.includes("twitter.com") || host.includes("x.com")) injectXButtons();
+      else if (host.includes("reddit.com")) injectRedditButtons();
+      else if (host.includes("threads.net")) injectThreadsButtons();
+      else if (host.includes("bsky.app")) injectBlueskyButtons();
+      else if (host.includes("linkedin.com")) injectLinkedInButtons();
+      else if (host.includes("youtube.com")) injectYouTubeButtons();
+    }
+
+    runActiveInjector();
+
+    let scanScheduled = false;
+    function scheduleScan() {
+      if (scanScheduled) return;
+      scanScheduled = true;
+      requestAnimationFrame(() => {
+        runActiveInjector();
+        scanScheduled = false;
+      });
+    }
+
+    const observer = new MutationObserver(() => {
+      scheduleScan();
     });
-  }
 
-  const observer = new MutationObserver(() => {
-    scheduleScan();
-  });
-
-  const targetNode = document.body || document.documentElement;
-  if (targetNode) {
-    observer.observe(targetNode, { childList: true, subtree: true });
+    const targetNode = document.body || document.documentElement;
+    if (targetNode) {
+      observer.observe(targetNode, { childList: true, subtree: true });
+    }
   }
 })();

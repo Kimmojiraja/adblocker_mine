@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Green Circular Background -->
+    <path
+        android:fillColor="#009688"
+        android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z" />
+    <!-- White Plant / Tree Canopy -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,6 C10.1,6 8.5,7.3 8.1,9 C7.5,9.1 7,9.6 7,10.3 C7,11.1 7.6,11.7 8.4,11.8 C8.7,13.1 9.8,14.1 11.2,14.3 L11.2,18 L12.8,18 L12.8,14.3 C14.2,14.1 15.3,13.1 15.6,11.8 C16.4,11.7 17,11.1 17,10.3 C17,9.6 16.5,9.1 15.9,9 C15.5,7.3 13.9,6 12,6 Z" />
+</vector>

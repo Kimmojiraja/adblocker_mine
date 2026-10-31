@@ -22,7 +22,7 @@ class OfflinePageStore(
     )
 
     @Synchronized
-    fun save(title: String, url: String, text: String): SavedPage {
+    fun save(title: String, url: String, text: String, archiveSourceFile: File? = null): SavedPage {
         val safeUrl = url.trim()
         require(safeUrl.length <= MAX_URL_LENGTH) { "The saved page URL is too long" }
         require(isSafeWebUrl(safeUrl)) { "Only valid HTTP or HTTPS pages can be saved offline" }
@@ -41,6 +41,11 @@ class OfflinePageStore(
             temporary.delete()
         }
 
+        if (archiveSourceFile != null && archiveSourceFile.isFile) {
+            val targetMhtml = File(directory, "$id.mhtml")
+            runCatching { archiveSourceFile.copyTo(targetMhtml, overwrite = true) }
+        }
+
         val previous = readMetadata()
         val savedAt = System.currentTimeMillis()
         val next = JSONArray()
@@ -55,12 +60,13 @@ class OfflinePageStore(
         val metadataSaved = preferences.edit().putString(PREF_SAVED_PAGES, next.toString()).commit()
         if (!metadataSaved) {
             target.delete()
+            File(directory, "$id.mhtml").delete()
             error("Could not save offline page index")
         }
 
         directory.listFiles()?.forEach { file ->
-            val fileId = file.name.removeSuffix(".txt")
-            if (file.extension == "tmp" || (file.extension == "txt" && fileId !in keptIds)) file.delete()
+            val fileId = file.name.substringBeforeLast('.')
+            if (file.extension == "tmp" || ((file.extension == "txt" || file.extension == "mhtml") && fileId !in keptIds)) file.delete()
         }
         return SavedPage(id, safeTitle, safeUrl, savedAt)
     }
@@ -79,6 +85,7 @@ class OfflinePageStore(
         if (metadataSaved) {
             page.id?.takeIf(ID_PATTERN::matches)?.let { id ->
                 File(File(filesDir, DIRECTORY_NAME), "$id.txt").delete()
+                File(File(filesDir, DIRECTORY_NAME), "$id.mhtml").delete()
             }
         }
         return metadataSaved
@@ -102,6 +109,17 @@ class OfflinePageStore(
     @Synchronized
     fun hasOfflineCopy(id: String): Boolean =
         ID_PATTERN.matches(id) && File(File(filesDir, DIRECTORY_NAME), "$id.txt").isFile
+
+    @Synchronized
+    fun hasOfflineArchive(id: String): Boolean =
+        ID_PATTERN.matches(id) && File(File(filesDir, DIRECTORY_NAME), "$id.mhtml").isFile
+
+    @Synchronized
+    fun getArchiveFile(id: String): File? {
+        if (!ID_PATTERN.matches(id)) return null
+        val file = File(File(filesDir, DIRECTORY_NAME), "$id.mhtml")
+        return file.takeIf { it.isFile }
+    }
 
     @Synchronized
     fun readText(id: String): String? {

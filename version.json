@@ -1,6 +1,6 @@
 {
-  "versionCode": 55,
-  "versionName": "1.0.55",
+  "versionCode": 56,
+  "versionName": "1.0.56",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Top-line Quick Refresh Button: One-tap reload button integrated on the quick navigation bar directly beside Back, Forward, and Home.\n- Zero-Blank-Screen YouTube Ad Skipper: Completely resolved the 5-10 second blank screen stall on YouTube video ads by accelerating playback to 16x and seeking directly to duration without hiding the player container.\n- Authentic Multi-Colored Search Engine Logos: Cleared purple silhouette tint filter from address bar so Google, DuckDuckGo, Brave, Ecosia, and Startpage display in their full authentic brand colors.\n- Seamless Ghost Mode Toggle: Instant ON/OFF toggle right on the homepage hero bar with live status indicators and zero accidental search redirects.\n- Clean 3-Dot Menu Hierarchy: Streamlined daily tools at the top with long-term configurations and browser info routed to dedicated Settings and About pages."
+  "changelog": "- Hardware-Accelerated AMOLED Pure-Black Engine: True OLED #000000 dark mode with smart media protection preventing photo, video, and SVG color inversion.\n- Single-File Complete Visual Web Archive (.mhtml): Full-fidelity page snapshots capturing layout, CSS typography, and pictures for 100% offline viewing.\n- Smart Magnet & Torrent Handler with WebTorrent: Native P2P in-browser video streaming for magnet: and .torrent links without third-party apps."
 }

@@ -45,6 +45,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.webkit.*
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -1225,6 +1227,10 @@ open class MediaHubActivity : AppCompatActivity() {
         when (uri.scheme?.lowercase(Locale.ROOT)) {
             "http", "https" -> {
                 val cleanedUrl = stripTrackingParameters(rawUrl)
+                if (cleanedUrl.endsWith(".torrent", ignoreCase = true) || cleanedUrl.contains(".torrent?")) {
+                    handleMagnetUri(cleanedUrl)
+                    return true
+                }
                 val httpsOnly = prefs.getBoolean(PREF_HTTPS_ONLY, true)
                 val shouldUpgrade = httpsOnly && cleanedUrl.startsWith("http://") && uri.host != null && !uri.host!!.endsWith(".local") && !uri.host!!.equals("localhost") && !uri.host!!.equals("127.0.0.1")
                 val finalTargetUrl = if (shouldUpgrade) "https://" + cleanedUrl.substring(7) else cleanedUrl
@@ -1237,6 +1243,10 @@ open class MediaHubActivity : AppCompatActivity() {
                     setBridgeEnabled(it, rawUrl)
                 }
                 return false
+            }
+            "magnet" -> {
+                handleMagnetUri(rawUrl)
+                return true
             }
             "intent" -> {
                 val parsedIntent = runCatching { Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME) }.getOrNull()
@@ -1265,6 +1275,55 @@ open class MediaHubActivity : AppCompatActivity() {
                 return true
             }
         }
+    }
+
+    private fun handleMagnetUri(magnetUrl: String) {
+        val uri = runCatching { Uri.parse(magnetUrl) }.getOrNull()
+        val displayName = uri?.getQueryParameter("dn")?.takeIf { it.isNotBlank() }
+            ?: run {
+                val lastPath = uri?.lastPathSegment
+                if (lastPath?.endsWith(".torrent", ignoreCase = true) == true) {
+                    lastPath.removeSuffix(".torrent")
+                } else {
+                    "P2P Torrent Stream"
+                }
+            }
+        val exactTopic = uri?.getQueryParameter("xt")?.removePrefix("urn:btih:") ?: (uri?.host ?: "Active InfoHash")
+
+        val dialog = BottomSheetDialog(this)
+        val sheetView = layoutInflater.inflate(R.layout.sheet_magnet_handler, null)
+        dialog.setContentView(sheetView)
+
+        sheetView.findViewById<TextView>(R.id.textMagnetName)?.text = displayName
+        sheetView.findViewById<TextView>(R.id.textMagnetHash)?.text = "Hash: ${exactTopic.take(24)}..."
+
+        sheetView.findViewById<View>(R.id.btnStreamTorrent)?.setOnClickListener {
+            dialog.dismiss()
+            val streamUrl = "file:///android_asset/fokk_webtorrent.html#" + Uri.encode(magnetUrl)
+            addNewTab(streamUrl, isPrivate = false)
+            Toast.makeText(this, "Connecting WebTorrent player...", Toast.LENGTH_SHORT).show()
+        }
+
+        sheetView.findViewById<View>(R.id.btnOpenExternalTorrent)?.setOnClickListener {
+            dialog.dismiss()
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(magnetUrl)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "No external torrent client found. Use In-Browser Streaming!", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        sheetView.findViewById<View>(R.id.btnCopyMagnet)?.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("Magnet URI", magnetUrl))
+            Toast.makeText(this, "Magnet link copied to clipboard", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun getWebOrigin(rawUrl: String?): String? = runCatching {
@@ -2466,10 +2525,66 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun injectDarkModeScript(webView: WebView?, enable: Boolean) {
         if (webView == null) return
         if (isThirdPartyMediaService(webView.url)) return
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                WebSettingsCompat.setForceDark(
+                    webView.settings,
+                    if (enable) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF
+                )
+            }
+            if (enable && WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+                WebSettingsCompat.setForceDarkStrategy(
+                    webView.settings,
+                    WebSettingsCompat.DARK_STRATEGY_USER_AGENT_DARKENING_ONLY
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "AMOLED Force Dark setup error", e)
+        }
+
         val js = if (enable) {
-            "javascript:(function(){let d=document.getElementById('__fokk_dark');if(!d){let s=document.createElement('style');s.id='__fokk_dark';s.innerHTML='html { filter: invert(90%) hue-rotate(180deg) !important; background: #111 !important; } img, video, iframe, canvas { filter: invert(100%) hue-rotate(180deg) !important; }';document.head.appendChild(s);}})();"
+            """javascript:(function(){
+                let d = document.getElementById('__fokk_amoled');
+                let legacy = document.getElementById('__fokk_dark');
+                if (legacy) legacy.remove();
+                if (!d) {
+                    let s = document.createElement('style');
+                    s.id = '__fokk_amoled';
+                    s.innerHTML = `
+                        html, body {
+                            background-color: #000000 !important;
+                            color: #E2E8F0 !important;
+                        }
+                        article, section, main, header, footer, nav, aside {
+                            background-color: transparent !important;
+                            border-color: #1E293B !important;
+                        }
+                        input, textarea, select {
+                            background-color: #0F172A !important;
+                            color: #F8FAFC !important;
+                            border-color: #334155 !important;
+                        }
+                        h1, h2, h3, h4, h5, h6, p, span, li, dt, dd {
+                            color: inherit;
+                        }
+                        a { color: #38BDF8 !important; }
+                        a:visited { color: #A78BFA !important; }
+                        /* Media Protection: NEVER invert or wash out photos, videos, canvas, or svgs */
+                        img, video, canvas, svg, picture, [role="img"], iframe, [style*="background-image"] {
+                            filter: none !important;
+                            opacity: 1.0 !important;
+                        }
+                    `;
+                    (document.head || document.documentElement).appendChild(s);
+                }
+            })();""".trimIndent()
         } else {
-            "javascript:(function(){let d=document.getElementById('__fokk_dark');if(d)d.remove();})();"
+            """javascript:(function(){
+                let d = document.getElementById('__fokk_amoled');
+                if (d) d.remove();
+                let legacy = document.getElementById('__fokk_dark');
+                if (legacy) legacy.remove();
+            })();""".trimIndent()
         }
         webView.evaluateJavascript(js, null)
     }
@@ -3311,36 +3426,44 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
         val currentTitle = webView.title?.ifBlank { currentUrl } ?: currentUrl
-        val extractScript = """(function(){
-            var root=document.querySelector('article')||document.querySelector('main')||document.body;
-            var text=(root.innerText||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim().slice(0,200000);
-            return JSON.stringify({title:document.title||'',text:text});
-        })()""".trimIndent()
-        webView.evaluateJavascript(extractScript) { result ->
-            if (activeTab !== currentTab || currentTab.webView !== webView || webView.url != currentUrl) {
-                Toast.makeText(this, "Page changed before it could be saved. Try again.", Toast.LENGTH_SHORT).show()
-                return@evaluateJavascript
-            }
-            val extracted = runCatching {
-                val encoded = org.json.JSONTokener(result ?: "null").nextValue() as? String
-                    ?: throw IllegalArgumentException("No article content")
-                JSONObject(encoded)
-            }.getOrNull()
-            val text = extracted?.optString("text")?.trim().orEmpty()
-            if (text.isBlank()) {
-                Toast.makeText(this, "This page has no readable text to save", Toast.LENGTH_LONG).show()
-                return@evaluateJavascript
-            }
 
-            val title = extracted?.optString("title")?.ifBlank { currentTitle } ?: currentTitle
-            lifecycleScope.launch {
-                val saved = runCatching {
-                    withContext(Dispatchers.IO) { offlinePageStore.save(title, currentUrl, text) }
+        Toast.makeText(this, "Saving visual offline archive...", Toast.LENGTH_SHORT).show()
+
+        val tempArchiveDir = File(cacheDir, "temp_archives").apply { mkdirs() }
+        val tempArchiveFile = File(tempArchiveDir, "page_${System.currentTimeMillis()}.mhtml")
+
+        webView.saveWebArchive(tempArchiveFile.absolutePath, false) { savedPath ->
+            val capturedFile = if (savedPath != null) File(savedPath) else null
+
+            val extractScript = """(function(){
+                var root=document.querySelector('article')||document.querySelector('main')||document.body;
+                var text=(root.innerText||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim().slice(0,200000);
+                return JSON.stringify({title:document.title||'',text:text});
+            })()""".trimIndent()
+            webView.evaluateJavascript(extractScript) { result ->
+                if (activeTab !== currentTab || currentTab.webView !== webView || webView.url != currentUrl) {
+                    Toast.makeText(this, "Page changed before it could be saved. Try again.", Toast.LENGTH_SHORT).show()
+                    tempArchiveFile.delete()
+                    return@evaluateJavascript
+                }
+                val extracted = runCatching {
+                    val encoded = org.json.JSONTokener(result ?: "null").nextValue() as? String
+                        ?: throw IllegalArgumentException("No article content")
+                    JSONObject(encoded)
                 }.getOrNull()
-                if (saved != null) {
-                    Toast.makeText(this@MediaHubActivity, "Readable page saved for offline use", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MediaHubActivity, "Could not save this page", Toast.LENGTH_LONG).show()
+                val text = extracted?.optString("text")?.trim().orEmpty().ifBlank { currentTitle }
+                val title = extracted?.optString("title")?.ifBlank { currentTitle } ?: currentTitle
+
+                lifecycleScope.launch {
+                    val saved = runCatching {
+                        withContext(Dispatchers.IO) { offlinePageStore.save(title, currentUrl, text, capturedFile) }
+                    }.getOrNull()
+                    tempArchiveFile.delete()
+                    if (saved != null) {
+                        Toast.makeText(this@MediaHubActivity, "Saved full visual archive for offline use!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@MediaHubActivity, "Could not save this page", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
@@ -3376,9 +3499,11 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
                 val horizontalPadding = (12 * resources.displayMetrics.density).toInt()
                 pages.forEach { page ->
-                    val hasOfflineCopy = page.id?.let(offlinePageStore::hasOfflineCopy) == true
+                    val hasVisualArchive = page.id?.let(offlinePageStore::hasOfflineArchive) == true
+                    val hasOfflineCopy = hasVisualArchive || (page.id?.let(offlinePageStore::hasOfflineCopy) == true)
+                    val formatBadge = if (hasVisualArchive) " [Visual Archive]" else if (hasOfflineCopy) " [Text]" else ""
                     val row = TextView(this).apply {
-                        text = "${page.title}${if (hasOfflineCopy) "" else " · online link only"}\n${Uri.parse(page.url).host ?: page.url}"
+                        text = "${page.title}$formatBadge\n${Uri.parse(page.url).host ?: page.url}"
                         setTextColor(ContextCompat.getColor(this@MediaHubActivity, R.color.text_primary))
                         textSize = 14f
                         maxLines = 2
@@ -3402,7 +3527,7 @@ open class MediaHubActivity : AppCompatActivity() {
                                         val deleted = withContext(Dispatchers.IO) { offlinePageStore.delete(page) }
                                         val query = searchInput.text.toString()
                                         val updated = withContext(Dispatchers.IO) {
-                                            offlinePageStore.search(query)
+                                             offlinePageStore.search(query)
                                         }
                                         if (dialog.isShowing) {
                                             renderPages(updated, query)
@@ -3473,6 +3598,16 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
         lifecycleScope.launch {
+            val archiveFile = withContext(Dispatchers.IO) { offlinePageStore.getArchiveFile(id) }
+            if (archiveFile != null && archiveFile.isFile) {
+                targetTab.url = "file://${archiveFile.absolutePath}"
+                targetTab.title = page.title
+                targetTab.isOfflineReader = true
+                updateUrlBar(page.url, page.title)
+                targetWebView.loadUrl("file://${archiveFile.absolutePath}")
+                return@launch
+            }
+
             val articleText = withContext(Dispatchers.IO) { offlinePageStore.readText(id) }
             if (articleText.isNullOrBlank()) {
                 Toast.makeText(this@MediaHubActivity, "The offline copy is missing. Opening the site online.", Toast.LENGTH_LONG).show()

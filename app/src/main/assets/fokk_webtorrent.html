@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fokk Torrent Streamer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #000000;
+            color: #E2E8F0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #1E293B;
+            margin-bottom: 16px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #7C3AED, #06B6D4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 16px;
+            color: #FFFFFF;
+        }
+        .title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: 0.3px;
+        }
+        .subtitle {
+            font-size: 11px;
+            color: #94A3B8;
+        }
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #0A0E18;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000000;
+        }
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 14, 24, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid #1E293B;
+            border-top-color: #38BDF8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .stats-card {
+            background: #0F172A;
+            border: 1px solid #1E293B;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .stat-item {
+            background: #0A0E18;
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid #1E2A3E;
+        }
+        .stat-label {
+            font-size: 10.5sp;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .stat-val {
+            font-size: 14px;
+            font-weight: 700;
+            color: #38BDF8;
+            font-family: monospace;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #1E293B;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7C3AED, #38BDF8);
+            transition: width 0.3s ease;
+        }
+        .torrent-name {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #F8FAFC;
+            word-break: break-all;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">
+            <div class="logo-badge">F</div>
+            <div>
+                <div class="title">Fokk Torrent Streamer</div>
+                <div class="subtitle">Direct P2P In-Browser WebTorrent Player</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="video-container">
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <div id="loadingStatus" style="font-size: 13px; font-weight: 600; color: #F8FAFC;">Connecting to P2P Swarm...</div>
+            <div id="loadingSub" style="font-size: 11px; color: #94A3B8; margin-top: 4px;">Discovering web seeds & peers</div>
+        </div>
+        <video id="player" controls playsinline autoplay></video>
+    </div>
+
+    <div class="stats-card">
+        <div class="torrent-name" id="torrentName">Parsing Magnet Link...</div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Download Speed</div>
+                <div class="stat-val" id="statSpeed">0.0 MB/s</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Connected Peers</div>
+                <div class="stat-val" id="statPeers">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Progress</div>
+                <div class="stat-val" id="statProgress">0.0%</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Downloaded</div>
+                <div class="stat-val" id="statDownloaded">0.0 MB</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const magnetHash = decodeURIComponent(window.location.hash.substring(1));
+        const statusEl = document.getElementById('loadingStatus');
+        const subEl = document.getElementById('loadingSub');
+        const nameEl = document.getElementById('torrentName');
+        const speedEl = document.getElementById('statSpeed');
+        const peersEl = document.getElementById('statPeers');
+        const progressEl = document.getElementById('statProgress');
+        const downloadedEl = document.getElementById('statDownloaded');
+        const progressFill = document.getElementById('progressFill');
+        const overlay = document.getElementById('loadingOverlay');
+
+        if (!magnetHash || !magnetHash.startsWith('magnet:')) {
+            statusEl.textContent = 'Invalid Magnet URI';
+            subEl.textContent = 'Please provide a valid magnet:?xt= link';
+        } else {
+            try {
+                const client = new WebTorrent();
+
+                client.on('error', function (err) {
+                    statusEl.textContent = 'Torrent Engine Error';
+                    subEl.textContent = err.message;
+                });
+
+                client.add(magnetHash, function (torrent) {
+                    nameEl.textContent = torrent.name || 'Active Video Stream';
+                    statusEl.textContent = 'Buffering Stream...';
+                    subEl.textContent = 'Located media files in torrent swarm';
+
+                    // Find video file
+                    const file = torrent.files.find(f => {
+                        return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv') || f.name.endsWith('.m4v');
+                    }) || torrent.files[0];
+
+                    if (file) {
+                        file.renderTo('video#player', { autoplay: true }, function (err, elem) {
+                            if (err) {
+                                statusEl.textContent = 'Playback Notice';
+                                subEl.textContent = 'Rendering stream... tap play on video controls';
+                            } else {
+                                overlay.style.display = 'none';
+                            }
+                        });
+                    }
+
+                    torrent.on('download', function () {
+                        const speed = (torrent.downloadSpeed / (1024 * 1024)).toFixed(1);
+                        const progress = (torrent.progress * 100).toFixed(1);
+                        const downloaded = (torrent.downloaded / (1024 * 1024)).toFixed(1);
+
+                        speedEl.textContent = speed + ' MB/s';
+                        peersEl.textContent = torrent.numPeers;
+                        progressEl.textContent = progress + '%';
+                        downloadedEl.textContent = downloaded + ' MB';
+                        progressFill.style.width = progress + '%';
+
+                        if (torrent.downloaded > 1024 * 512) {
+                            overlay.style.display = 'none';
+                        }
+                    });
+                });
+            } catch (e) {
+                statusEl.textContent = 'WebTorrent Startup Failed';
+                subEl.textContent = e.toString();
+            }
+        }
+    </script>
+</body>
+</html>

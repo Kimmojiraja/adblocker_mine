@@ -44,6 +44,13 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.transition.TransitionManager
+import android.transition.TransitionSet
+import android.transition.ChangeBounds
+import android.transition.Fade
+import android.transition.Slide
+import android.view.animation.PathInterpolator
 import android.webkit.*
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewCompat
@@ -1699,7 +1706,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         } else {
-            if (browserChromeHidden) return
+            if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
             binding.topBar.animate().cancel()
             binding.topBar.animate()
@@ -1714,7 +1721,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     private fun createTab(url: String, isPrivate: Boolean = false): BrowserTab {
         val webView = WebView(this)
         webView.layoutParams = FrameLayout.LayoutParams(
@@ -1739,6 +1746,16 @@ open class MediaHubActivity : AppCompatActivity() {
         val barInset = (70 * resources.displayMetrics.density).toInt()
         webView.setPadding(0, 0, 0, barInset)
         webView.clipToPadding = false
+
+        webView.setOnTouchListener { _, _ ->
+            if (binding.urlInput.hasFocus()) {
+                binding.urlInput.clearFocus()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(binding.urlInput.windowToken, 0)
+                binding.cardSuggestions.visibility = View.GONE
+            }
+            false
+        }
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
@@ -2452,10 +2469,10 @@ open class MediaHubActivity : AppCompatActivity() {
         binding.imgEngineIcon.imageTintList = null
         binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
         if (current.isPrivate) {
-            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#1B1229"))
+            binding.topBar.setBackgroundResource(R.drawable.bg_floating_command_bar_private)
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#120A1C"))
         } else {
-            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#F0090D14"))
+            binding.topBar.setBackgroundResource(R.drawable.bg_floating_command_bar)
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#0C101A"))
         }
 
@@ -2847,6 +2864,19 @@ open class MediaHubActivity : AppCompatActivity() {
             showBrowserMenuDialog()
         }
 
+        binding.layoutUrlInput.setOnClickListener {
+            binding.urlInput.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(binding.urlInput, InputMethodManager.SHOW_IMPLICIT)
+        }
+
+        binding.urlInput.setOnClickListener {
+            if (!isCommandBarExpanded) {
+                binding.urlInput.requestFocus()
+                setCommandBarExpanded(true)
+            }
+        }
+
         binding.urlInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -2860,6 +2890,7 @@ open class MediaHubActivity : AppCompatActivity() {
         })
 
         binding.urlInput.setOnFocusChangeListener { _, hasFocus ->
+            setCommandBarExpanded(hasFocus)
             if (hasFocus) {
                 setBrowserChromeVisible(true)
                 val currentUrl = activeWebView?.url ?: ""
@@ -2910,6 +2941,27 @@ open class MediaHubActivity : AppCompatActivity() {
                 false
             }
         }
+    }
+
+    private var isCommandBarExpanded = false
+
+    private fun setCommandBarExpanded(expanded: Boolean) {
+        if (isCommandBarExpanded == expanded) return
+        isCommandBarExpanded = expanded
+
+        val actions = binding.layoutBarActions ?: return
+
+        val transition = TransitionSet().apply {
+            ordering = TransitionSet.ORDERING_TOGETHER
+            addTransition(ChangeBounds())
+            addTransition(Fade())
+            addTransition(Slide(Gravity.END))
+            duration = 240
+            interpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
+        }
+        TransitionManager.beginDelayedTransition(binding.topBar, transition)
+
+        actions.visibility = if (expanded) View.GONE else View.VISIBLE
     }
 
     private fun showRecentHistoryOrSuggestions(query: String) {
@@ -4744,6 +4796,13 @@ open class MediaHubActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (binding.urlInput.hasFocus()) {
+            binding.urlInput.clearFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(binding.urlInput.windowToken, 0)
+            binding.cardSuggestions.visibility = View.GONE
+            return
+        }
         if (binding.cardSuggestions.visibility == View.VISIBLE) {
             binding.cardSuggestions.visibility = View.GONE
             return

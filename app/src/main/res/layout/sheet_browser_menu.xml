@@ -1176,7 +1176,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="About Fokk Shield Browser"
+                            android:text="About Fokk Browser"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp" />
 

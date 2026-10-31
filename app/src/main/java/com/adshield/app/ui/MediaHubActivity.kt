@@ -101,7 +101,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     data class BrowserTab(
         val id: String = UUID.randomUUID().toString(),
-        var title: String = "Fokk Browser",
+        var title: String = "Fokk",
         var url: String = "file:///android_asset/fokk_start.html",
         var filteredRequests: Int = 0,
         val filteredRequestHosts: MutableMap<String, Int> = mutableMapOf(),
@@ -2792,7 +2792,7 @@ open class MediaHubActivity : AppCompatActivity() {
         when {
             lowerUrl.contains("fokk_about.html") -> {
                 cardBinding.imgTabIcon.setImageResource(R.drawable.ic_info)
-                cardBinding.textTabTitle.text = "About Fokk Shield"
+                cardBinding.textTabTitle.text = "About Fokk"
                 cardBinding.textTabUrl.text = "fokk://about"
                 cardBinding.imgPreviewLogo.setImageResource(R.drawable.ic_shield_check)
             }

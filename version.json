@@ -1,6 +1,6 @@
 {
-  "versionCode": 51,
-  "versionName": "1.0.51",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/FokkShield.apk",
-  "changelog": "- Cookie Consent Banner Neutralizer: Added web-wide cosmetic blocking and auto-dismissal for cookie prompts across search engines (especially Ecosia search results, Google, OneTrust, Cookiebot, etc.).\n- Start Page Cleanup: Removed middle Live Pulse card and bottom footer buttons for a clean, distraction-free home screen.\n- Live Pulse & Ghost Mode Fix: Removed lightning logo from Live Pulse button and resolved JS ReferenceError; added tactile haptic feel and instant status toast for Ghost Mode.\n- Custom Shortcuts & Official Logos: Full shortcut management with official SVG brand logos (Google, Instagram, YouTube, X, Reddit, Wikipedia, Spotify, GitHub, Netflix, Amazon), pin/unpin prioritization, and custom URL adding.\n- Direct Theme Upload: Added direct user image/theme upload with persistent local storage.\n- Unboxed About Page: Redesigned fokk://about into a sleek, borderless, ultra-professional modern editorial layout.\n- Search Engine Logos: Upgraded search engine selector dialog to display authentic full-color logos for Ecosia, DuckDuckGo, Brave, Google, and Startpage.\n- AI Slop Filter: Restored visible AI Overviews & Slop Filter toggle in Defense & Privacy menu."
+  "versionCode": 52,
+  "versionName": "1.0.52",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
+  "changelog": "- Rebranded to Fokk: Streamlined the browser identity from 'Fokk Shield' to 'Fokk' across the home screen, app launcher, system settings, recents, and about hub.\n- Sora Bold Typography: Upgraded brand title typography to high-tech geometric Sora Bold (bundled locally for 100% offline instant rendering).\n- Clean Title & Identity: Redesigned the start page header with prominent Sora Bold 'Fokk' title, sleek proportions, and minimalist obsidian styling."
 }

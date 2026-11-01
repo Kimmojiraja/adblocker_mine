@@ -2132,7 +2132,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
                 if (!isSafeYtResource) {
-                    val acceptHeader = request.requestHeaders?.get("Accept")
+                    val acceptHeader = request?.requestHeaders?.get("Accept")
                     val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
                         url = requestUrl ?: "",
                         sourceUrl = pageUrl ?: "",

@@ -59,7 +59,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fokk Privacy Vault · 1-Click AdGuard DNS"
+                    android:text="Fokk Privacy Vault · Advanced AdShield &amp; DNS Hub"
                     android:textColor="#38BDF8"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -186,13 +186,32 @@
                             android:layout_marginStart="12dp"
                             android:orientation="vertical">
 
-                            <TextView
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Fokk Shield for this site"
-                                android:textColor="@color/text_primary"
-                                android:textSize="14.5sp"
-                                android:textStyle="bold" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Fokk Shield for this site"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="14.5sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:background="@drawable/bg_stat_chip"
+                                    android:paddingHorizontal="6dp"
+                                    android:paddingVertical="1dp"
+                                    android:text="BRAVE RUST"
+                                    android:textColor="#34D399"
+                                    android:textSize="9sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/textMenuBlockedInfo"

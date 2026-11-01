@@ -411,3 +411,147 @@ g2.gumgum.com
 g.ezoic.net
 raptive.com
 pixel.quantserve.com
+
+# ==============================================================================
+# Comprehensive Adult, Popunder, Streaming & Piracy Ad Network Blocklist
+# ==============================================================================
+
+# ExoClick & Subsidiaries
+exoclick.com
+syndication.exoclick.com
+main.exoclick.com
+ads.exoclick.com
+s.exoclick.com
+static.exoclick.com
+exdynsrv.com
+realsrv.com
+syndication.realsrv.com
+tsyndicate.com
+ad-delivery.net
+ad-score.com
+engine.phn.doublepimp.com
+
+# TrafficJunky & MindGeek Ad Delivery
+trafficjunky.com
+trafficjunky.net
+ads.trafficjunky.net
+static.trafficjunky.com
+media.trafficjunky.net
+delivery.trafficjunky.net
+admin.trafficjunky.com
+api.trafficjunky.com
+
+# JuicyAds
+juicyads.com
+adserver.juicyads.com
+js.juicyads.com
+poweredby.juicyads.com
+delivery.juicyads.com
+
+# PopAds & PopCash Networks
+popads.net
+serve.popads.net
+c1.popads.net
+c2.popads.net
+popcash.net
+syndication.popcash.net
+my.popcash.net
+
+# PropellerAds & Monetag
+propellerads.com
+monetag.com
+proparm.com
+ad.propellerads.com
+syndication.propellerads.com
+al5sm.com
+whocallme.com
+
+# Adsterra & Clickadu
+adsterra.com
+serve.adsterra.com
+lead-adsterra.com
+clickadu.com
+track.clickadu.com
+xml.clickadu.com
+
+# HilltopAds & AdMaven
+hilltopads.com
+hilltopads.net
+admaven.com
+ad-maven.com
+pushmaster.com
+
+# TrafficFactory & Ero-Advertising
+trafficfactory.biz
+as.trafficfactory.biz
+ero-advertising.com
+eroadvertising.com
+static.ero-advertising.com
+
+# PlugRush, TwinRed, TrafficStars & Clickaine
+plugrush.com
+pr-cy.ru
+twinred.com
+doublepimp.com
+trafficstars.com
+creative.trafficstars.com
+clickaine.com
+bidgear.com
+galaksion.com
+runative.com
+runative-syndicate.com
+pushground.com
+rollerads.com
+evadav.com
+adoperator.com
+
+# Adult Cam & Affiliate Redirect Networks
+affiliates.bongacams.com
+affiliates.chaturbate.com
+affiliates.stripchat.com
+affiliates.streamate.com
+cam4affiliates.com
+camsodaaffiliates.com
+livejasminaffiliates.com
+flirt4freeaffiliates.com
+
+# Malicious Popunder & Clickjacking Redirect Rotators
+onclickads.net
+onclickmega.com
+onclickperformance.com
+directrev.com
+yllix.com
+adsession.com
+adskeeper.co.uk
+adskeeper.com
+adtrue.com
+airpush.com
+bidvertiser.com
+clksite.com
+coinhive.com
+coin-have.com
+crypto-loot.com
+zeroredirect1.com
+zeroredirect2.com
+redirectingat.com
+revenuehits.com
+surfe.be
+traffichaus.com
+vrtcal.com
+histats.com
+whos.amung.us
+wpadmngr.com
+ad-balancer.net
+voluumtrk.com
+bebi.com
+adxadserv.com
+onclickalgo.com
+ads.gamovideo.com
+ads.streamtape.com
+ads.voe.sx
+ads.doodstream.com
+ads.upstream.to
+ads.mixdrop.co
+ads.filelions.com
+ads.supervideo.tv
+ads.streamwish.to

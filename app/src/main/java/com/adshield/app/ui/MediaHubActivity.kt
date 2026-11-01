@@ -431,32 +431,8 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private val eliteDnsCache = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
-    private val pendingEliteDnsQueries = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
-
     private fun isEliteDnsBlocked(host: String): Boolean {
-        val cached = eliteDnsCache[host]
-        if (cached != null) return cached
-        if (pendingEliteDnsQueries.add(host)) {
-            Thread {
-                try {
-                    val url = java.net.URL("https://dns.adguard-dns.com/resolve?name=" + java.net.URLEncoder.encode(host, "UTF-8") + "&type=A")
-                    val conn = url.openConnection() as java.net.HttpURLConnection
-                    conn.connectTimeout = 1200
-                    conn.readTimeout = 1200
-                    conn.setRequestProperty("Accept", "application/dns-json")
-                    if (conn.responseCode == 200) {
-                        val body = conn.inputStream.bufferedReader().use { it.readText() }
-                        val isBlocked = body.contains("0.0.0.0") || body.contains("\"Status\": 3") || body.contains("\"Status\":3")
-                        eliteDnsCache[host] = isBlocked
-                    }
-                } catch (_: Exception) {
-                } finally {
-                    pendingEliteDnsQueries.remove(host)
-                }
-            }.start()
-        }
-        return false
+        return AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)
     }
 
     private val wallpaperPickerLauncher = registerForActivityResult(
@@ -1310,6 +1286,25 @@ open class MediaHubActivity : AppCompatActivity() {
 
         when (uri.scheme?.lowercase(Locale.ROOT)) {
             "http", "https" -> {
+                val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
+                if (targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
+                    val isBlockedByBrave = AdShieldApp.instance.braveEngine.checkNetworkRequest(rawUrl, webView?.url ?: "", "document").matched
+                    if (isBlockedByBrave || AdShieldApp.instance.blocklistEngine.isDomainBlocked(targetHost)) {
+                        recordFilteredRequest(webView, targetHost)
+                        runOnUiThread {
+                            Toast.makeText(this, "🛡️ Fokk Shield blocked redirect: $targetHost", Toast.LENGTH_SHORT).show()
+                            val tab = tabs.firstOrNull { it.webView === webView }
+                            if (tab != null && (tab.url == "about:blank" || webView?.copyBackForwardList()?.size ?: 0 <= 1)) {
+                                val tabIdx = tabs.indexOf(tab)
+                                if (tabs.size > 1 && tabIdx >= 0) {
+                                    closeTab(tabIdx)
+                                }
+                            }
+                        }
+                        return true
+                    }
+                }
+
                 val cleanedUrl = stripTrackingParameters(rawUrl)
                 if (cleanedUrl.endsWith(".torrent", ignoreCase = true) || cleanedUrl.contains(".torrent?")) {
                     handleMagnetUri(cleanedUrl)
@@ -1684,8 +1679,98 @@ open class MediaHubActivity : AppCompatActivity() {
         callback?.onCustomViewHidden()
     }
 
+    private var commandBarCollapsed = false
+
+    private fun collapseCommandBar(animated: Boolean = true) {
+        if (commandBarCollapsed) return
+        commandBarCollapsed = true
+        browserChromeHidden = false
+
+        val currentUrl = activeWebView?.url.orEmpty()
+        val displayHost = runCatching { Uri.parse(currentUrl).host?.removePrefix("www.") }.getOrNull()
+        binding.textCollapsedDomain.text = when {
+            displayHost.isNullOrBlank() || currentUrl.contains("fokk_start.html") -> "Fokk"
+            else -> displayHost
+        }
+
+        binding.cardSuggestions.visibility = View.GONE
+        binding.urlInput.clearFocus()
+
+        if (animated) {
+            binding.topBar.animate().cancel()
+            binding.topBar.animate()
+                .scaleX(0.7f)
+                .scaleY(0.7f)
+                .alpha(0f)
+                .setDuration(180)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .withEndAction {
+                    binding.topBar.visibility = View.GONE
+                    binding.layoutCollapsedBar.visibility = View.VISIBLE
+                    binding.layoutCollapsedBar.alpha = 0f
+                    binding.layoutCollapsedBar.scaleX = 0.7f
+                    binding.layoutCollapsedBar.scaleY = 0.7f
+                    binding.layoutCollapsedBar.translationY = 0f
+                    binding.layoutCollapsedBar.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(180)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
+                }
+                .start()
+        } else {
+            binding.topBar.visibility = View.GONE
+            binding.layoutCollapsedBar.visibility = View.VISIBLE
+            binding.layoutCollapsedBar.alpha = 1f
+            binding.layoutCollapsedBar.scaleX = 1f
+            binding.layoutCollapsedBar.scaleY = 1f
+            binding.layoutCollapsedBar.translationY = 0f
+        }
+    }
+
+    private fun expandCommandBar(animated: Boolean = true) {
+        if (!commandBarCollapsed) return
+        commandBarCollapsed = false
+        browserChromeHidden = false
+
+        if (animated) {
+            binding.layoutCollapsedBar.animate().cancel()
+            binding.layoutCollapsedBar.animate()
+                .scaleX(0.7f)
+                .scaleY(0.7f)
+                .alpha(0f)
+                .setDuration(150)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .withEndAction {
+                    binding.layoutCollapsedBar.visibility = View.GONE
+                    binding.topBar.visibility = View.VISIBLE
+                    binding.topBar.alpha = 0f
+                    binding.topBar.scaleX = 0.85f
+                    binding.topBar.scaleY = 0.85f
+                    binding.topBar.translationY = 0f
+                    binding.topBar.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
+                }
+                .start()
+        } else {
+            binding.layoutCollapsedBar.visibility = View.GONE
+            binding.topBar.visibility = View.VISIBLE
+            binding.topBar.alpha = 1f
+            binding.topBar.scaleX = 1f
+            binding.topBar.scaleY = 1f
+            binding.topBar.translationY = 0f
+        }
+    }
+
     private val showChromeOnIdleRunnable = Runnable {
-        if (browserChromeHidden && customView == null) {
+        if (browserChromeHidden && customView == null && !commandBarCollapsed) {
             setBrowserChromeVisible(true)
         }
     }
@@ -1694,6 +1779,25 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
+
+        if (commandBarCollapsed) {
+            val targetView = binding.layoutCollapsedBar
+            if (visible) {
+                targetView.animate().cancel()
+                targetView.visibility = View.VISIBLE
+                targetView.animate().alpha(1f).translationY(0f).setDuration(180).start()
+            } else {
+                targetView.animate().cancel()
+                targetView.animate()
+                    .alpha(0f)
+                    .translationY(if (isTop) -slideDistance else slideDistance)
+                    .setDuration(180)
+                    .withEndAction { targetView.visibility = View.GONE }
+                    .start()
+            }
+            return
+        }
+
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
@@ -1743,8 +1847,16 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        val barInset = (70 * resources.displayMetrics.density).toInt()
-        webView.setPadding(0, 0, 0, barInset)
+        val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
+        val density = resources.displayMetrics.density
+        val barInset = (70 * density).toInt()
+        if (isTop) {
+            val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
+            val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
+            webView.setPadding(0, barInset + statusBarHeight, 0, 0)
+        } else {
+            webView.setPadding(0, 0, 0, barInset)
+        }
         webView.clipToPadding = false
 
         webView.setOnTouchListener { _, _ ->
@@ -2018,25 +2130,27 @@ open class MediaHubActivity : AppCompatActivity() {
                     host.contains("gstatic.com") || host.contains("googleapis.com")
                 )
 
+                // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
+                if (!isSafeYtResource) {
+                    val acceptHeader = request.requestHeaders?.get("Accept")
+                    val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
+                        url = requestUrl ?: "",
+                        sourceUrl = pageUrl ?: "",
+                        mimeOrType = acceptHeader
+                    )
+                    if (braveDecision.matched) {
+                        recordFilteredRequest(view, host)
+                        if (braveDecision.redirect != null) {
+                            val redirectRes = createRedirectResponse(braveDecision.redirect)
+                            if (redirectRes != null) return redirectRes
+                        }
+                        return createBlockedResourceResponse(urlStr)
+                    }
+                }
+
                 if (isAdScript && !isSafeYtResource) {
                     recordFilteredRequest(view, host)
-                    val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
-                    val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")
-                    val mimeType = when {
-                        isJson -> "application/json"
-                        isJs -> "application/javascript"
-                        else -> "text/plain"
-                    }
-                    val emptyPayload = when {
-                        isJson -> "{}"
-                        isJs -> "/* blocked by fokk shield */"
-                        else -> ""
-                    }
-                    return WebResourceResponse(
-                        mimeType,
-                        "UTF-8",
-                        ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
-                    )
+                    return createBlockedResourceResponse(urlStr)
                 }
 
                 if (pageHost != null && !isCrossSiteRequest) {
@@ -2062,26 +2176,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 if (isSocialTracker || (isStrictAdblock && (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))) {
                     recordFilteredRequest(view, host)
-                    val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
-                    val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")
-                    val mimeType = when {
-                        isJson -> "application/json"
-                        isJs -> "application/javascript"
-                        else -> "text/plain"
-                    }
-                    val emptyPayload = when {
-                        isJson -> "{}"
-                        isJs -> "/* blocked by fokk shield */"
-                        else -> ""
-                    }
-                    return WebResourceResponse(
-                        mimeType,
-                        "UTF-8",
-                        200,
-                        "OK",
-                        mapOf("Cache-Control" to "no-store"),
-                        ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
-                    )
+                    return createBlockedResourceResponse(urlStr)
                 }
 
                 return super.shouldInterceptRequest(view, request)
@@ -2200,6 +2295,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 )
                 binding.fullscreenContainer.visibility = View.VISIBLE
                 binding.mainContentLayout.visibility = View.GONE
+                binding.topBar.visibility = View.GONE
+                binding.layoutCollapsedBar.visibility = View.GONE
             }
 
             override fun onHideCustomView() {
@@ -2208,7 +2305,7 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Dual Scroll Auto-Hide Toolbar mechanics with smart idle reappear
+        // Dual Scroll Auto-Hide Toolbar mechanics without aggressive idle timers
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
@@ -2218,13 +2315,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (dy > 18 && scrollY > 100) {
                     setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
-                    binding.topBar.postDelayed(showChromeOnIdleRunnable, 1600)
                 } else if (dy < -18 || scrollY < 25) {
                     setBrowserChromeVisible(true)
-                } else {
-                    if (browserChromeHidden) {
-                        binding.topBar.postDelayed(showChromeOnIdleRunnable, 1400)
-                    }
                 }
             }
         }
@@ -2643,9 +2735,85 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun isRestorableSessionUrl(url: String): Boolean =
         isWebUrl(url) || url.startsWith("file:///android_asset/")
 
+    private fun createRedirectResponse(dataUri: String): WebResourceResponse? {
+        return try {
+            if (!dataUri.startsWith("data:")) return null
+            val commaIndex = dataUri.indexOf(',')
+            if (commaIndex == -1) return null
+            val header = dataUri.substring(5, commaIndex)
+            val payload = dataUri.substring(commaIndex + 1)
+            val isBase64 = header.contains(";base64")
+            val mimeType = header.substringBefore(';').ifEmpty { "text/plain" }
+            val bytes = if (isBase64) {
+                Base64.decode(payload, Base64.DEFAULT)
+            } else {
+                java.net.URLDecoder.decode(payload, "UTF-8").toByteArray(Charsets.UTF_8)
+            }
+            WebResourceResponse(
+                mimeType,
+                "UTF-8",
+                200,
+                "OK",
+                mapOf("Cache-Control" to "no-store", "Access-Control-Allow-Origin" to "*"),
+                ByteArrayInputStream(bytes)
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun createBlockedResourceResponse(urlStr: String): WebResourceResponse {
+        val isJson = urlStr.contains("/youtubei/") || urlStr.contains("/api/stats/ads") || urlStr.contains(".json")
+        val isJs = urlStr.endsWith(".js") || urlStr.contains(".js?")
+        val mimeType = when {
+            isJson -> "application/json"
+            isJs -> "application/javascript"
+            else -> "text/plain"
+        }
+        val emptyPayload = when {
+            isJson -> "{}"
+            isJs -> "/* blocked by fokk brave-shield */"
+            else -> ""
+        }
+        return WebResourceResponse(
+            mimeType,
+            "UTF-8",
+            200,
+            "OK",
+            mapOf("Cache-Control" to "no-store", "Access-Control-Allow-Origin" to "*"),
+            ByteArrayInputStream(emptyPayload.toByteArray(Charsets.UTF_8))
+        )
+    }
+
     private fun injectAdblockScript(webView: WebView?, pageUrl: String? = webView?.url) {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
+
+        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets
+        if (pageUrl != null && !pageUrl.startsWith("file:///android_asset/")) {
+            val cosmetic = AdShieldApp.instance.braveEngine.getCosmeticResources(pageUrl)
+            if (cosmetic != null) {
+                if (cosmetic.selectors.isNotEmpty()) {
+                    val cssRules = cosmetic.css().replace("\\", "\\\\").replace("`", "\\`")
+                    val cosmeticJs = """
+                        (function() {
+                            var el = document.getElementById('fokk-brave-cosmetic');
+                            if (!el) {
+                                el = document.createElement('style');
+                                el.id = 'fokk-brave-cosmetic';
+                                (document.head || document.documentElement).appendChild(el);
+                            }
+                            el.textContent = `$cssRules`;
+                        })();
+                    """.trimIndent()
+                    webView.evaluateJavascript(cosmeticJs, null)
+                }
+                if (cosmetic.js.isNotEmpty()) {
+                    webView.evaluateJavascript(cosmetic.js, null)
+                }
+            }
+        }
+
         if (injectionScript.isNotEmpty()) {
             webView.evaluateJavascript(injectionScript, null)
             if (readerScript.isNotEmpty()) {
@@ -2862,6 +3030,14 @@ open class MediaHubActivity : AppCompatActivity() {
 
         binding.btnNavMenu.setOnClickListener {
             showBrowserMenuDialog()
+        }
+
+        binding.btnCollapseBar.setOnClickListener {
+            collapseCommandBar(animated = true)
+        }
+
+        binding.layoutCollapsedBar.setOnClickListener {
+            expandCommandBar(animated = true)
         }
 
         binding.layoutUrlInput.setOnClickListener {
@@ -3161,25 +3337,49 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun applyToolbarPosition(position: String) {
         val isTop = position.equals("top", ignoreCase = true)
         val lp = binding.topBar.layoutParams as? RelativeLayout.LayoutParams ?: return
+        val collapsedLp = binding.layoutCollapsedBar.layoutParams as? RelativeLayout.LayoutParams
         val density = resources.displayMetrics.density
+        val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
+        val barInset = (70 * density).toInt()
+
         if (isTop) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-            lp.topMargin = (10 * density).toInt()
+            lp.topMargin = statusBarHeight + (6 * density).toInt()
             lp.bottomMargin = 0
+
+            collapsedLp?.let {
+                it.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                it.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                it.topMargin = statusBarHeight + (6 * density).toInt()
+                it.bottomMargin = 0
+                binding.layoutCollapsedBar.layoutParams = it
+            }
+
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                cardLp.topMargin = (72 * density).toInt()
+                cardLp.topMargin = statusBarHeight + (68 * density).toInt()
                 cardLp.bottomMargin = 0
                 binding.cardSuggestions.layoutParams = cardLp
             }
+            tabs.forEach { it.webView?.setPadding(0, barInset + statusBarHeight, 0, 0) }
         } else {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.topMargin = 0
             lp.bottomMargin = (12 * density).toInt()
+
+            collapsedLp?.let {
+                it.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
+                it.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                it.topMargin = 0
+                it.bottomMargin = (12 * density).toInt()
+                binding.layoutCollapsedBar.layoutParams = it
+            }
+
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
@@ -3188,6 +3388,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.bottomMargin = (76 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, barInset) }
         }
         binding.topBar.layoutParams = lp
     }
@@ -4703,7 +4904,13 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
         if (!inPip) {
-            binding.topBar.visibility = View.VISIBLE
+            if (commandBarCollapsed) {
+                binding.layoutCollapsedBar.visibility = View.VISIBLE
+                binding.topBar.visibility = View.GONE
+            } else {
+                binding.topBar.visibility = View.VISIBLE
+                binding.layoutCollapsedBar.visibility = View.GONE
+            }
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) activeWebView?.evaluateJavascript(
                 """(function() {
@@ -4714,6 +4921,13 @@ open class MediaHubActivity : AppCompatActivity() {
                 null
             )
             activeWebView?.requestLayout()
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            collapseCommandBar(animated = true)
         }
     }
 
@@ -4942,21 +5156,21 @@ open class MediaHubActivity : AppCompatActivity() {
         val isEliteDns = prefs.getBoolean(PREF_ELITE_DNS_FILTER, true)
         sheetBinding.switchEliteDns.isChecked = isEliteDns
         sheetBinding.textEliteDnsStatus.text = if (isEliteDns) {
-            "Active • Drops ad networks before network handshakes"
+            "Active • Zero-latency in-memory blocking for 600+ ad networks"
         } else {
-            "Disabled • Falling back to standard filter rules"
+            "Disabled • Falling back to basic filter rules"
         }
 
         sheetBinding.switchEliteDns.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean(PREF_ELITE_DNS_FILTER, isChecked).apply()
             sheetBinding.textEliteDnsStatus.text = if (isChecked) {
-                "Active • Drops ad networks before network handshakes"
+                "Active • Zero-latency in-memory blocking for 600+ ad networks"
             } else {
-                "Disabled • Falling back to standard filter rules"
+                "Disabled • Falling back to basic filter rules"
             }
             Toast.makeText(
                 this,
-                if (isChecked) "AdGuard DNS Adblock Engine Enabled" else "AdGuard DNS Filter Disabled",
+                if (isChecked) "AdGuard & OISD Advanced Ad Engine Enabled" else "Advanced Ad Filter Disabled",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -4977,7 +5191,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         sheetBinding.statTotalBlocked.text = String.format(Locale.US, "%,d", totalBlocked)
         sheetBinding.statDataSaved.text = dataSavedFormatted
-        sheetBinding.statShieldHealth.text = if (isShieldEnabled) "Active" else "Paused"
+        sheetBinding.statShieldHealth.text = if (isShieldEnabled) (if (AdShieldApp.instance.braveEngine.isEngineReady()) "Brave Rust" else "Active") else "Paused"
 
         sheetBinding.btnExportVault.setOnClickListener {
             exportVaultBackup()

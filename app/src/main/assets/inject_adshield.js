@@ -4,6 +4,36 @@
     if (window.__fokkshield_loaded) return;
     window.__fokkshield_loaded = true;
 
+    const currentHost = (window.location && window.location.hostname) || '';
+    if (currentHost.includes('webxprt') || currentHost.includes('principledtechnologies') || currentHost.includes('browserbench')) {
+        return; // Zero overhead on performance benchmarking suites!
+    }
+
+    // =========================================================================
+    // 0. Intelligent Popunder & Malicious window.open Defuser
+    // =========================================================================
+    try {
+        const origWindowOpen = window.open;
+        window.open = function(url, target, features) {
+            if (url && typeof url === 'string') {
+                const u = url.toLowerCase();
+                if (u.includes('exoclick') || u.includes('trafficjunky') || u.includes('juicyads') ||
+                    u.includes('popads') || u.includes('popcash') || u.includes('propellerads') ||
+                    u.includes('adsterra') || u.includes('clickadu') || u.includes('hilltopads') ||
+                    u.includes('monetag') || u.includes('syndicate') || u.includes('onclick') ||
+                    u.includes('directrev') || u.includes('cam4') || u.includes('camsoda') ||
+                    u.includes('chaturbate') || u.includes('stripchat') || u.includes('bongacams') ||
+                    u.includes('admaven') || u.includes('twinred') || u.includes('trafficstars') ||
+                    u.includes('trafficfactory') || u.includes('ero-advertising') || u.includes('livejasmin') ||
+                    u.includes('doublepimp') || u.includes('ad-score')) {
+                    console.warn('[Fokk Shield] Disarmed popunder window.open to ad:', url);
+                    return null;
+                }
+            }
+            return origWindowOpen.apply(this, arguments);
+        };
+    } catch(e) {}
+
     // =========================================================================
     // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
     // =========================================================================
@@ -239,6 +269,56 @@
         div[class*="mediavine"],
         div[id*="ezoic"],
         div[class*="ezoic"],
+
+        /* Adult Ad Networks, Floating Cam Teasers & Video Overlays */
+        div[id*="exoclick"],
+        div[class*="exoclick"],
+        iframe[src*="exoclick"],
+        iframe[src*="syndication.exoclick"],
+        iframe[src*="realsrv"],
+        iframe[src*="tsyndicate"],
+        iframe[src*="trafficjunky"],
+        iframe[src*="juicyads"],
+        iframe[src*="ero-advertising"],
+        div[class*="trafficjunky"],
+        div[id*="trafficjunky"],
+        div[class*="juicyads"],
+        div[id*="juicyads"],
+        div[class*="popcash"],
+        div[class*="popads"],
+        div[id*="adsterra"],
+        div[class*="adsterra"],
+        iframe[src*="adsterra"],
+        div[class*="cam-box"],
+        div[class*="chaturbate"],
+        div[class*="stripchat"],
+        div[class*="bongacams"],
+        div[class*="floating-cam"],
+        div[id*="floating-cam"],
+        div[class*="ad-under-player"],
+        div[class*="player-ad-overlay"],
+        div[class*="ad-floating-bottom"],
+        div[class*="adult-ad"],
+
+        /* Anti-Adblock Walls & Sticky Blur Overlays */
+        div[class*="adblock-modal"],
+        div[id*="adblock-modal"],
+        div[class*="adblock-dialog"],
+        div[id*="adblock-dialog"],
+        div[class*="adblock-overlay"],
+        div[id*="adblock-overlay"],
+        div[class*="adb-overlay"],
+        div[class*="ab-wrap"],
+        div[class*="ab-overlay"],
+        div[class*="anti-adblock"],
+        div[id*="anti-adblock"],
+        div[class*="ad-blocker-message"],
+        div[id*="ad-blocker-message"],
+        .adblock-warning,
+        .adblock-gate,
+        .adblocker-modal,
+        #adblock-gate,
+        #adblock-notice,
 
         /* Generic ad slots & banners (scoped to exclude YouTube to prevent player element collisions) */
         body:not([class*="ytm"]):not([id*="yt"]) ins.adsbygoogle,
@@ -747,38 +827,104 @@
         }
     }
 
-    document.querySelectorAll('video').forEach(hookVideoPlayback);
+    // =========================================================================
+    // Heuristic AI Blocker: Dynamic Pattern & Overlay Trap Buster
+    // =========================================================================
+    function defuseClickjackingOverlays() {
+        try {
+            const vw = window.innerWidth || document.documentElement.clientWidth;
+            const vh = window.innerHeight || document.documentElement.clientHeight;
+            if (!vw || !vh) return;
+            const elements = document.querySelectorAll('div, a, section, span');
+            elements.forEach(function(el) {
+                if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.id === 'main' || el.id === 'app' || el.id === 'player') return;
+                const style = window.getComputedStyle(el);
+                if (style.position === 'fixed' || style.position === 'absolute') {
+                    const zIndex = parseInt(style.zIndex, 10);
+                    if (zIndex > 50) {
+                        const rect = el.getBoundingClientRect();
+                        const coversScreen = rect.width >= vw * 0.75 && rect.height >= vh * 0.75;
+                        const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
+                        if (coversScreen && isTransparent) {
+                            if (el.tagName === 'A' || el.getAttribute('onclick') || style.cursor === 'pointer' ||
+                                el.className.includes('overlay') || el.className.includes('backdrop') || el.id.includes('overlay') ||
+                                el.className.includes('pop') || el.id.includes('pop') || el.className.includes('trap')) {
+                                el.remove();
+                            }
+                        }
+                    }
+                }
+            });
+        } catch(e) {}
+    }
+
+    function defuseAntiAdblockModals() {
+        try {
+            const adblockKeywords = ['ad blocker', 'adblock', 'disable your ad', 'turn off your ad', 'whitelist us', 'disable adblocker', 'bloqueur de publicité'];
+            const modals = document.querySelectorAll('div[role="dialog"], div[class*="modal"], div[class*="dialog"], div[class*="popup"], div[class*="overlay"], div[id*="modal"], div[id*="popup"]');
+            modals.forEach(function(modal) {
+                const text = (modal.innerText || modal.textContent || '').toLowerCase();
+                if (adblockKeywords.some(function(k) { return text.includes(k); })) {
+                    modal.style.setProperty('display', 'none', 'important');
+                    modal.remove();
+                    // Restore page scrolling that the anti-adblock script locked
+                    if (document.documentElement) document.documentElement.style.setProperty('overflow', 'auto', 'important');
+                    if (document.body) document.body.style.setProperty('overflow', 'auto', 'important');
+                }
+            });
+        } catch(e) {}
+    }
+
+    function defuseDeceptiveButtons() {
+        try {
+            const badTargets = ['exoclick', 'adsterra', 'clickadu', 'trafficjunky', 'propellerads', 'directrev', 'syndicate', 'monetag', 'hilltopads', 'juicyads', 'admaven'];
+            const anchors = document.querySelectorAll('a[href], button[onclick]');
+            anchors.forEach(function(a) {
+                const href = (a.href || a.getAttribute('onclick') || '').toLowerCase();
+                if (badTargets.some(function(b) { return href.includes(b); })) {
+                    a.style.setProperty('display', 'none', 'important');
+                }
+            });
+        } catch(e) {}
+    }
+
+    function scrubAdultAndStreamingAds() {
+        try {
+            defuseClickjackingOverlays();
+            defuseAntiAdblockModals();
+            defuseDeceptiveButtons();
+            // Disarm floating cam boxes, sticky video banners and deceptive overlays
+            document.querySelectorAll('[class*="cam-box"], [class*="exoclick"], [class*="trafficjunky"], [class*="floating-cam"], [id*="floating-cam"], [class*="juicyads"], [id*="juicyads"], iframe[src*="exoclick"], iframe[src*="syndication"], iframe[src*="realsrv"], iframe[src*="trafficjunky"]').forEach(function(el) {
+                el.style.setProperty('display', 'none', 'important');
+            });
+        } catch(e) {}
+    }
 
     // =========================================================================
     // MutationObserver for cosmetic cleanup & active checks
     // =========================================================================
     try {
         const host = window.location.hostname;
-        const needsObserver = host.includes('ecosia.org') || host.includes('youtube.com') || host.includes('spotify.com') ||
-            host.includes('reddit.com') || host.includes('google.') || host.includes('bing.com') ||
-            host.includes('instagram.com');
-
-        if (needsObserver) {
-            let pendingSweep = false;
-            const observer = new MutationObserver(function() {
-                if (pendingSweep) return;
-                pendingSweep = true;
-                setTimeout(function() {
-                    pendingSweep = false;
-                    if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
-                    if (host.includes('youtube.com')) runYouTubeAdSkipper();
-                    if (host.includes('instagram.com')) scrubInstagramAds();
-                    scrubNewsAds();
-                    scrubAppPromos();
-                    scrubCookieBanners();
-                    document.querySelectorAll('video').forEach(hookVideoPlayback);
-                }, 400);
-            });
-            observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true
-            });
-        }
+        let pendingSweep = false;
+        const observer = new MutationObserver(function() {
+            if (pendingSweep) return;
+            pendingSweep = true;
+            setTimeout(function() {
+                pendingSweep = false;
+                if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
+                if (host.includes('youtube.com')) runYouTubeAdSkipper();
+                if (host.includes('instagram.com')) scrubInstagramAds();
+                scrubNewsAds();
+                scrubAppPromos();
+                scrubCookieBanners();
+                scrubAdultAndStreamingAds();
+                document.querySelectorAll('video').forEach(hookVideoPlayback);
+            }, 350);
+        });
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+        });
     } catch (e) {}
 
     // Initial pass on DOMContentLoaded
@@ -788,6 +934,7 @@
             scrubNewsAds();
             scrubAppPromos();
             scrubCookieBanners();
+            scrubAdultAndStreamingAds();
             runYouTubeAdSkipper();
             scrubInstagramAds();
             document.querySelectorAll('video').forEach(hookVideoPlayback);
@@ -797,6 +944,7 @@
         scrubNewsAds();
         scrubAppPromos();
         scrubCookieBanners();
+        scrubAdultAndStreamingAds();
         runYouTubeAdSkipper();
         scrubInstagramAds();
         document.querySelectorAll('video').forEach(hookVideoPlayback);

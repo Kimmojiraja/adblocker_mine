@@ -10,3 +10,7 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# Keep Brave adblock-rust JNI classes and native bindings
+-keep class org.mlm.adblock.** { *; }
+-keepclassmembers class org.mlm.adblock.** { *; }

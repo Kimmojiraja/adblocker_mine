@@ -18,6 +18,9 @@ class AdShieldApp : Application() {
     lateinit var blocklistEngine: BlocklistEngine
         private set
 
+    lateinit var braveEngine: com.adshield.app.model.BraveAdblockEngine
+        private set
+
     lateinit var prefs: SharedPreferences
         private set
 
@@ -28,10 +31,12 @@ class AdShieldApp : Application() {
 
         createNotificationChannels()
 
-        // Initialize Blocklist Engine asynchronously
+        // Initialize engines asynchronously on background IO
         blocklistEngine = BlocklistEngine(this)
+        braveEngine = com.adshield.app.model.BraveAdblockEngine(this)
         applicationScope.launch {
             blocklistEngine.initialize()
+            braveEngine.initialize()
         }
     }
 

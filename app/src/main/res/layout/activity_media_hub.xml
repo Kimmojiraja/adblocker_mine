@@ -209,7 +209,60 @@
                 android:src="@drawable/ic_more_vert"
                 app:tint="@color/text_primary"
                 android:contentDescription="Browser menu" />
+
+            <ImageButton
+                android:id="@+id/btnCollapseBar"
+                android:layout_width="34dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_collapse"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Collapse command bar" />
         </LinearLayout>
+    </LinearLayout>
+
+    <!-- Ultra-Sleek Collapsed Micro-Pill Floating Control -->
+    <LinearLayout
+        android:id="@+id/layoutCollapsedBar"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_collapsed_micro_pill"
+        android:elevation="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_shield_check"
+            app:tint="@color/fokk_cyan" />
+
+        <TextView
+            android:id="@+id/textCollapsedDomain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="Fokk"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="6dp"
+            android:src="@drawable/ic_expand"
+            app:tint="@color/text_secondary" />
     </LinearLayout>
 
     <LinearLayout

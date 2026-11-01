@@ -195,7 +195,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="1-Click AdGuard DNS Engine"
+                            android:text="AdGuard &amp; OISD Advanced Ad Engine"
                             android:textColor="@color/text_primary"
                             android:textSize="14.5sp"
                             android:textStyle="bold" />
@@ -205,7 +205,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
-                            android:text="Active • Drops ad networks before network handshakes"
+                            android:text="Active • Zero-latency in-memory blocking for 600+ ad networks"
                             android:textColor="#34D399"
                             android:textSize="11.5sp" />
                     </LinearLayout>
@@ -229,7 +229,7 @@
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
-                    android:text="Configure System-Wide Mobile Private DNS →"
+                    android:text="📱 Setup System-Wide Private DNS (Protects all apps) →"
                     android:textColor="@color/fokk_cyan"
                     android:textSize="12sp"
                     android:textStyle="bold" />

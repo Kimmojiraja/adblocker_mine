@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.adshield.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 62
         versionName = "1.0.62"
@@ -58,6 +58,8 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.webkit:webkit:1.10.0")
     implementation("androidx.biometric:biometric:1.1.0")
+    // Brave adblock-rust Native JNI Content Blocker
+    implementation("io.github.mlm-games:adblock:0.1.3")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

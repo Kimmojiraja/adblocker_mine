@@ -23,7 +23,17 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --stacktrace 2>&1 | tee build.log
+
+      - name: Log Build Failure
+        if: failure()
+        run: |
+          echo "### Build Failure Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -n 120 build.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4

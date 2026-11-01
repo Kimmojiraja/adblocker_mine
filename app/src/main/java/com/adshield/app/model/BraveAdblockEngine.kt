@@ -62,13 +62,11 @@ class BraveAdblockEngine(private val context: Context) {
                     try {
                         context.assets.open("adblock_rules_curated.txt").use { input ->
                             BufferedReader(InputStreamReader(input, Charsets.UTF_8)).use { reader ->
-                                var line: String? = reader.readLine()
-                                while (line != null) {
+                                reader.forEachLine { line ->
                                     val trimmed = line.trim()
                                     if (trimmed.isNotEmpty() && !trimmed.startsWith("!")) {
                                         rulesBuilder.append(trimmed).append('\n')
                                     }
-                                    line = reader.readLine()
                                 }
                             }
                         }
@@ -80,14 +78,12 @@ class BraveAdblockEngine(private val context: Context) {
                     try {
                         context.assets.open("blocklist_core.txt").use { input ->
                             BufferedReader(InputStreamReader(input, Charsets.UTF_8)).use { reader ->
-                                var line: String? = reader.readLine()
-                                while (line != null) {
+                                reader.forEachLine { line ->
                                     val trimmed = line.trim()
                                     if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("!")) {
                                         // Convert domain to standard ABP network rule
                                         rulesBuilder.append("||").append(trimmed).append("^\n")
                                     }
-                                    line = reader.readLine()
                                 }
                             }
                         }

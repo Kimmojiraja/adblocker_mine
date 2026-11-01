@@ -2140,8 +2140,9 @@ open class MediaHubActivity : AppCompatActivity() {
                     )
                     if (braveDecision.matched) {
                         recordFilteredRequest(view, host)
-                        if (braveDecision.redirect != null) {
-                            val redirectRes = createRedirectResponse(braveDecision.redirect)
+                        val redirectUrl = braveDecision.redirect
+                        if (redirectUrl != null) {
+                            val redirectRes = createRedirectResponse(redirectUrl)
                             if (redirectRes != null) return redirectRes
                         }
                         return createBlockedResourceResponse(urlStr)

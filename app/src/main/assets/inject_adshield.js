@@ -830,31 +830,73 @@
     // =========================================================================
     // Heuristic AI Blocker: Dynamic Pattern & Overlay Trap Buster
     // =========================================================================
+    function unlockPageScrolling() {
+        try {
+            const docEl = document.documentElement;
+            const body = document.body;
+            if (!docEl || !body) return;
+
+            // Check if page scrolling has been frozen by anti-adblock or third party modal scripts
+            const docOverflow = docEl.style.overflow;
+            const bodyOverflow = body.style.overflow;
+            if (docOverflow === 'hidden' || docOverflow === 'clip') {
+                docEl.style.setProperty('overflow', 'auto', 'important');
+                docEl.style.setProperty('overflow-y', 'auto', 'important');
+            }
+            if (bodyOverflow === 'hidden' || bodyOverflow === 'clip') {
+                body.style.setProperty('overflow', 'auto', 'important');
+                body.style.setProperty('overflow-y', 'auto', 'important');
+            }
+            if (body.style.position === 'fixed') {
+                body.style.setProperty('position', 'static', 'important');
+            }
+            // Strip common anti-scroll lock classes from body
+            if (body.classList.contains('modal-open') || body.classList.contains('no-scroll') ||
+                body.classList.contains('overflow-hidden') || body.classList.contains('disable-scroll')) {
+                body.classList.remove('modal-open', 'no-scroll', 'overflow-hidden', 'disable-scroll');
+            }
+        } catch(e) {}
+    }
+
     function defuseClickjackingOverlays() {
         try {
+            unlockPageScrolling();
             const vw = window.innerWidth || document.documentElement.clientWidth;
             const vh = window.innerHeight || document.documentElement.clientHeight;
-            if (!vw || !vh) return;
-            const elements = document.querySelectorAll('div, a, section, span');
-            elements.forEach(function(el) {
-                if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.id === 'main' || el.id === 'app' || el.id === 'player') return;
-                const style = window.getComputedStyle(el);
-                if (style.position === 'fixed' || style.position === 'absolute') {
-                    const zIndex = parseInt(style.zIndex, 10);
-                    if (zIndex > 50) {
-                        const rect = el.getBoundingClientRect();
-                        const coversScreen = rect.width >= vw * 0.75 && rect.height >= vh * 0.75;
-                        const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
-                        if (coversScreen && isTransparent) {
-                            if (el.tagName === 'A' || el.getAttribute('onclick') || style.cursor === 'pointer' ||
-                                el.className.includes('overlay') || el.className.includes('backdrop') || el.id.includes('overlay') ||
-                                el.className.includes('pop') || el.id.includes('pop') || el.className.includes('trap')) {
+            if (!vw || !vh || !document.body) return;
+
+            // Lightweight: Only inspect top-level body children (max 25)
+            // NEVER run querySelectorAll on the entire DOM to avoid freezing the JS main thread!
+            const children = document.body.children;
+            const limit = Math.min(children.length, 25);
+            for (let i = 0; i < limit; i++) {
+                const el = children[i];
+                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
+
+                // Fast attribute / class check before computedStyle
+                const styleAttr = el.getAttribute('style') || '';
+                const isFixed = styleAttr.includes('fixed') || styleAttr.includes('absolute');
+                const cName = typeof el.className === 'string' ? el.className.toLowerCase() : '';
+                const idName = typeof el.id === 'string' ? el.id.toLowerCase() : '';
+                const isOverlaySuspect = cName.includes('overlay') || cName.includes('backdrop') || cName.includes('trap') ||
+                                         idName.includes('overlay') || idName.includes('backdrop') || idName.includes('trap');
+
+                if (isFixed || isOverlaySuspect) {
+                    const style = window.getComputedStyle(el);
+                    if (style.position === 'fixed' || style.position === 'absolute') {
+                        const zIndex = parseInt(style.zIndex, 10);
+                        if (zIndex > 50) {
+                            const rect = el.getBoundingClientRect();
+                            const coversScreen = rect.width >= vw * 0.75 && rect.height >= vh * 0.75;
+                            const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
+                            if (coversScreen && isTransparent) {
                                 el.remove();
+                                unlockPageScrolling();
                             }
                         }
                     }
                 }
-            });
+            }
         } catch(e) {}
     }
 
@@ -867,9 +909,7 @@
                 if (adblockKeywords.some(function(k) { return text.includes(k); })) {
                     modal.style.setProperty('display', 'none', 'important');
                     modal.remove();
-                    // Restore page scrolling that the anti-adblock script locked
-                    if (document.documentElement) document.documentElement.style.setProperty('overflow', 'auto', 'important');
-                    if (document.body) document.body.style.setProperty('overflow', 'auto', 'important');
+                    unlockPageScrolling();
                 }
             });
         } catch(e) {}
@@ -901,7 +941,7 @@
     }
 
     // =========================================================================
-    // MutationObserver for cosmetic cleanup & active checks
+    // MutationObserver for cosmetic cleanup & active checks (debounced to 500ms)
     // =========================================================================
     try {
         const host = window.location.hostname;
@@ -918,8 +958,9 @@
                 scrubAppPromos();
                 scrubCookieBanners();
                 scrubAdultAndStreamingAds();
+                unlockPageScrolling();
                 document.querySelectorAll('video').forEach(hookVideoPlayback);
-            }, 350);
+            }, 500);
         });
         observer.observe(document.documentElement, {
             childList: true,
@@ -1008,27 +1049,199 @@
     } catch(e) {}
 
     // =========================================================================
-    // 3. PAYWALL & RESTRICTIVE OVERLAY DETECTOR
-    // Detects paywalls and notifies native UI to show 1-tap "Mirror View" badge
+    // 4. SYNTHETIC GHOST FINGERPRINT CLOAKER
+    // Injects imperceptible mathematical micro-noise into Canvas, WebGL, and AudioContext
     // =========================================================================
-    try {
-        function detectPaywall() {
-            const paywallSelectors = [
-                '[class*="paywall"]', '[id*="paywall"]', '.subscription-wall',
-                '[class*="article-gate"]', '[id*="article-gate"]', '.metered-paywall',
-                'div[data-component="paywall"]', '#piano-id', '.piano-container'
-            ];
-            for (let sel of paywallSelectors) {
-                const el = document.querySelector(sel);
-                if (el && el.offsetParent !== null) {
-                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.onPaywallDetected === 'function') {
-                        window.FokkShieldBridge.onPaywallDetected(window.location.href);
+    (function installSyntheticGhostCloaker() {
+        if (window.__fokk_ghost_cloaker_active) return;
+        window.__fokk_ghost_cloaker_active = true;
+
+        const sessionNoise = (Math.random() * 0.004) - 0.002;
+
+        // 1. Canvas Fingerprint Cloaking (Subtle micro-noise on 2D canvas reads)
+        try {
+            if (window.CanvasRenderingContext2D) {
+                const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+                CanvasRenderingContext2D.prototype.getImageData = function(x, y, w, h) {
+                    const imageData = origGetImageData.apply(this, arguments);
+                    const data = imageData.data;
+                    for (let i = 0; i < data.length; i += 48) {
+                        if (data[i + 3] > 10) {
+                            data[i] = Math.min(255, Math.max(0, data[i] + (i % 3 === 0 ? 1 : -1)));
+                        }
                     }
-                    break;
-                }
+                    return imageData;
+                };
+
+                const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+                HTMLCanvasElement.prototype.toDataURL = function(type) {
+                    if (this.width > 0 && this.height > 0 && this.width <= 300 && this.height <= 150) {
+                        try {
+                            const ctx = this.getContext('2d');
+                            if (ctx) {
+                                const imgData = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
+                                imgData.data[0] = Math.min(255, imgData.data[0] ^ 1);
+                                ctx.putImageData(imgData, 0, 0);
+                            }
+                        } catch(e) {}
+                    }
+                    return origToDataURL.apply(this, arguments);
+                };
+            }
+        } catch(e) {}
+
+        // 2. WebGL Fingerprint Cloaking (Spoofs GPU parameters & unmasked vendor)
+        try {
+            if (window.WebGLRenderingContext) {
+                const origGetParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(param) {
+                    // UNMASKED_VENDOR_WEBGL = 37445, UNMASKED_RENDERER_WEBGL = 37446
+                    if (param === 37445) return 'Intel Inc.';
+                    if (param === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                    return origGetParameter.apply(this, arguments);
+                };
+            }
+            if (window.WebGL2RenderingContext) {
+                const origGetParameter2 = WebGL2RenderingContext.prototype.getParameter;
+                WebGL2RenderingContext.prototype.getParameter = function(param) {
+                    if (param === 37445) return 'Intel Inc.';
+                    if (param === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                    return origGetParameter2.apply(this, arguments);
+                };
+            }
+        } catch(e) {}
+
+        // 3. AudioContext Frequency Cloaking
+        try {
+            if (window.AnalyserNode) {
+                const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
+                AnalyserNode.prototype.getFloatFrequencyData = function(array) {
+                    origGetFloatFreq.apply(this, arguments);
+                    for (let i = 0; i < array.length; i += 8) {
+                        array[i] += sessionNoise;
+                    }
+                };
+            }
+        } catch(e) {}
+    })();
+
+    // =========================================================================
+    // 5. UNIVERSAL VIDEO STREAM SNIFFER
+    // Detects HTML5 video streams, HLS .m3u8, MP4, and notifies Android host
+    // =========================================================================
+    (function installUniversalVideoSniffer() {
+        const sniffedUrls = new Set();
+
+        function reportVideoUrl(url) {
+            if (!url || typeof url !== 'string') return;
+            const cleanUrl = url.trim();
+            if (!cleanUrl.startsWith('http') || sniffedUrls.has(cleanUrl)) return;
+            if (cleanUrl.includes('googleads') || cleanUrl.includes('doubleclick') || cleanUrl.includes('stats/ads')) return;
+
+            const isMedia = cleanUrl.includes('.mp4') || cleanUrl.includes('.m3u8') ||
+                            cleanUrl.includes('.webm') || cleanUrl.includes('.mpd') ||
+                            cleanUrl.includes('videoplayback') || cleanUrl.includes('/video/');
+
+            if (isMedia) {
+                sniffedUrls.add(cleanUrl);
+                try {
+                    if (window.FokkVideoBridge && typeof window.FokkVideoBridge.onVideoFound === 'function') {
+                        window.FokkVideoBridge.onVideoFound(cleanUrl, document.title || 'Video Stream');
+                    }
+                } catch(e) {}
             }
         }
-        setTimeout(detectPaywall, 2000);
-    } catch(e) {}
+
+        try {
+            const desc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
+            if (desc && desc.set) {
+                const origSet = desc.set;
+                desc.set = function(val) {
+                    reportVideoUrl(val);
+                    return origSet.call(this, val);
+                };
+                Object.defineProperty(HTMLMediaElement.prototype, 'src', desc);
+            }
+        } catch(e) {}
+
+        function scanVideos() {
+            document.querySelectorAll('video').forEach(function(v) {
+                if (v.src) reportVideoUrl(v.src);
+                v.querySelectorAll('source').forEach(function(s) {
+                    if (s.src) reportVideoUrl(s.src);
+                });
+            });
+        }
+
+        setInterval(scanVideos, 3000);
+        setTimeout(scanVideos, 1200);
+    })();
+
+    // =========================================================================
+    // 6. MX-PLAYER FULLSCREEN WEB VIDEO GESTURES
+    // Swipe left 45% = Brightness, Swipe right 45% = Volume, Double-tap = Seek
+    // =========================================================================
+    (function installVideoGestures() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTapTime = 0;
+        let activeGestureVideo = null;
+
+        document.addEventListener('touchstart', function(e) {
+            const video = e.target.closest('video');
+            if (!video) {
+                activeGestureVideo = null;
+                return;
+            }
+            activeGestureVideo = video;
+            if (e.touches && e.touches.length === 1) {
+                const t = e.touches[0];
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+
+                const now = Date.now();
+                if (now - lastTapTime < 320) {
+                    const rect = video.getBoundingClientRect();
+                    const relX = (t.clientX - rect.left) / (rect.width || 1);
+                    if (relX < 0.35) {
+                        video.currentTime = Math.max(0, video.currentTime - 10);
+                        if (window.FokkVideoBridge && typeof window.FokkVideoBridge.onSeekFeedback === 'function') {
+                            window.FokkVideoBridge.onSeekFeedback(-10);
+                        }
+                    } else if (relX > 0.65) {
+                        video.currentTime = Math.min(video.duration || 99999, video.currentTime + 10);
+                        if (window.FokkVideoBridge && typeof window.FokkVideoBridge.onSeekFeedback === 'function') {
+                            window.FokkVideoBridge.onSeekFeedback(10);
+                        }
+                    }
+                }
+                lastTapTime = now;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!activeGestureVideo || !e.touches || e.touches.length !== 1) return;
+            const t = e.touches[0];
+            const dy = touchStartY - t.clientY;
+            const dx = t.clientX - touchStartX;
+
+            if (Math.abs(dy) > 25 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+                const rect = activeGestureVideo.getBoundingClientRect();
+                const relX = (touchStartX - rect.left) / (rect.width || 1);
+                const deltaPercent = (dy / (rect.height || 300)) * 100;
+                touchStartY = t.clientY;
+
+                if (relX < 0.45) {
+                    if (window.FokkVideoBridge && typeof window.FokkVideoBridge.adjustBrightness === 'function') {
+                        window.FokkVideoBridge.adjustBrightness(deltaPercent);
+                    }
+                } else if (relX > 0.55) {
+                    if (window.FokkVideoBridge && typeof window.FokkVideoBridge.adjustVolume === 'function') {
+                        window.FokkVideoBridge.adjustVolume(deltaPercent);
+                    }
+                }
+            }
+        }, { passive: true });
+    })();
 
 })();

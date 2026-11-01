@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#090D14"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Top Spacer / App bar -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Calculator"
+        android:textColor="#64748B"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Output Display Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="bottom|end"
+        android:orientation="vertical"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/textCalcExpression"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#64748B"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/textCalcDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="52sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="start" />
+    </LinearLayout>
+
+    <!-- Keypad Grid -->
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:stretchColumns="*"
+        android:layout_marginBottom="24dp">
+
+        <!-- Row 1: AC, +/-, %, ÷ -->
+        <TableRow android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnCalcAC"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_special"
+                android:text="AC"
+                android:textColor="#38BDF8"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+            <Button
+                android:id="@+id/btnCalcSign"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_special"
+                android:text="+/-"
+                android:textColor="#E2E8F0"
+                android:textSize="20sp" />
+            <Button
+                android:id="@+id/btnCalcPercent"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_special"
+                android:text="%"
+                android:textColor="#E2E8F0"
+                android:textSize="20sp" />
+            <Button
+                android:id="@+id/btnCalcDiv"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_op"
+                android:text="÷"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+        </TableRow>
+
+        <!-- Row 2: 7, 8, 9, × -->
+        <TableRow android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnCalc7"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="7"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc8"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="8"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc9"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="9"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalcMul"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_op"
+                android:text="×"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+        </TableRow>
+
+        <!-- Row 3: 4, 5, 6, - -->
+        <TableRow android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnCalc4"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="4"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc5"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="5"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc6"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="6"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalcSub"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_op"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+        </TableRow>
+
+        <!-- Row 4: 1, 2, 3, + -->
+        <TableRow android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnCalc1"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="1"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc2"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="2"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalc3"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="3"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalcAdd"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_op"
+                android:text="+"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+        </TableRow>
+
+        <!-- Row 5: 0, ., = -->
+        <TableRow>
+            <Button
+                android:id="@+id/btnCalc0"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_span="2"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalcDot"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_digit"
+                android:text="."
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+            <Button
+                android:id="@+id/btnCalcEquals"
+                android:layout_width="0dp"
+                android:layout_height="70dp"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_calc_btn_op"
+                android:text="="
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+        </TableRow>
+    </TableLayout>
+</LinearLayout>

@@ -82,6 +82,13 @@ import com.adshield.app.databinding.SheetExtensionsManagerBinding
 import com.adshield.app.databinding.SheetHistoryBinding
 import com.adshield.app.databinding.SheetPrivacyAccountBinding
 import com.adshield.app.databinding.SheetTabSwitcherBinding
+import com.adshield.app.databinding.SheetGeneralSettingsBinding
+import com.adshield.app.databinding.SheetShieldSettingsBinding
+import com.adshield.app.databinding.SheetMediaHubSettingsBinding
+import com.adshield.app.databinding.SheetVaultSettingsBinding
+import com.adshield.app.databinding.SheetAboutCommunityBinding
+import com.adshield.app.model.DnsOverHttpsEngine
+import android.media.AudioManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
@@ -215,6 +222,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var showingPrivateTabs = false
     private var isMediaPlaying = false
     private var isBiometricAuthenticatedForSession = false
+    private var isDecoyUnlockedThisSession = false
 
     private var lastMediaPlayingTime = 0L
 
@@ -1146,6 +1154,53 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (isPlaying || hasActiveVideo) {
                     activity.lastMediaPlayingTime = System.currentTimeMillis()
                 }
+            }
+        }
+    }
+
+    data class DetectedVideoStream(val url: String, val title: String)
+    private var currentDetectedVideoStream: DetectedVideoStream? = null
+
+    class FokkVideoBridge(private val activity: MediaHubActivity) {
+        @JavascriptInterface
+        fun onVideoFound(url: String, title: String) {
+            if (url.isBlank()) return
+            activity.runOnUiThread {
+                activity.currentDetectedVideoStream = DetectedVideoStream(url, title)
+                activity.binding.chipMediaDetected.visibility = View.VISIBLE
+                val cleanTitle = title.takeIf { it.isNotBlank() } ?: "Video"
+                val display = if (cleanTitle.length > 12) cleanTitle.take(10) + "…" else cleanTitle
+                activity.binding.textMediaDetectedTitle.text = display
+            }
+        }
+
+        @JavascriptInterface
+        fun adjustBrightness(deltaPercent: Float) {
+            activity.runOnUiThread {
+                val lp = activity.window.attributes
+                var current = lp.screenBrightness
+                if (current < 0f) current = 0.5f
+                lp.screenBrightness = (current + (deltaPercent / 100f)).coerceIn(0.05f, 1.0f)
+                activity.window.attributes = lp
+            }
+        }
+
+        @JavascriptInterface
+        fun adjustVolume(deltaPercent: Float) {
+            activity.runOnUiThread {
+                val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return@runOnUiThread
+                val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                val step = if (deltaPercent > 0) 1 else -1
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (currentVol + step).coerceIn(0, maxVol), 0)
+            }
+        }
+
+        @JavascriptInterface
+        fun onSeekFeedback(seekSeconds: Int) {
+            activity.runOnUiThread {
+                val label = if (seekSeconds > 0) "+${seekSeconds}s" else "${seekSeconds}s"
+                Toast.makeText(activity, label, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -2868,8 +2923,13 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         webView.removeJavascriptInterface("FokkShieldBridge")
         webView.removeJavascriptInterface("FokkMediaBridge")
+        webView.removeJavascriptInterface("FokkVideoBridge")
         if (url?.startsWith(OFFLINE_PAGE_BASE_URL) != true) {
             webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
+            val isSnifferEnabled = prefs.getBoolean(PREF_VIDEO_SNIFFER, true)
+            if (isSnifferEnabled) {
+                webView.addJavascriptInterface(FokkVideoBridge(this), "FokkVideoBridge")
+            }
         }
         if (url?.startsWith("file:///android_asset/") == true) {
             webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
@@ -3059,6 +3119,7 @@ open class MediaHubActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val text = s?.toString()?.trim() ?: ""
                 binding.btnClearUrl.visibility = if (text.isNotEmpty() && binding.urlInput.hasFocus()) View.VISIBLE else View.GONE
+                binding.btnSearchGo.visibility = if (text.isNotEmpty() || binding.urlInput.hasFocus()) View.VISIBLE else View.GONE
                 if (binding.urlInput.hasFocus()) {
                     showRecentHistoryOrSuggestions(text)
                 }
@@ -3076,10 +3137,12 @@ open class MediaHubActivity : AppCompatActivity() {
                     binding.urlInput.selectAll()
                 }
                 binding.btnClearUrl.visibility = if (binding.urlInput.text.isNotEmpty()) View.VISIBLE else View.GONE
+                binding.btnSearchGo.visibility = View.VISIBLE
                 showRecentHistoryOrSuggestions(binding.urlInput.text.toString().trim())
             } else {
                 binding.cardSuggestions.visibility = View.GONE
                 binding.btnClearUrl.visibility = View.GONE
+                binding.btnSearchGo.visibility = View.GONE
                 updateUrlBar(activeWebView?.url, activeWebView?.title)
             }
         }
@@ -3105,6 +3168,26 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadUrlInActiveWebView(rawTarget)
                 recordHistory(query, rawTarget)
                 binding.urlInput.clearFocus()
+            }
+        }
+
+        binding.btnSearchGo.setOnClickListener {
+            navigateOrSearch()
+        }
+
+        binding.chipMediaDetected.setOnClickListener {
+            val stream = currentDetectedVideoStream
+            if (stream != null) {
+                val tabIsPrivate = activeTab?.isPrivate == true
+                showDownloadOptions(
+                    downloadUrl = stream.url,
+                    userAgent = cleanMobileUa,
+                    contentDisposition = null,
+                    mimeType = "video/*",
+                    isPrivate = tabIsPrivate,
+                    sourceUrl = activeWebView?.url.orEmpty(),
+                    allowThirdPartyCookies = true
+                )
             }
         }
 
@@ -4466,6 +4549,307 @@ open class MediaHubActivity : AppCompatActivity() {
             openAboutPage("disclaimer")
         }
 
+        sheetBinding.rowNavGeneral.setOnClickListener {
+            dialog.dismiss()
+            showGeneralSettingsDialog()
+        }
+
+        sheetBinding.rowNavShield.setOnClickListener {
+            dialog.dismiss()
+            showShieldSettingsDialog()
+        }
+
+        sheetBinding.rowNavMedia.setOnClickListener {
+            dialog.dismiss()
+            showMediaSettingsDialog()
+        }
+
+        sheetBinding.rowNavVault.setOnClickListener {
+            dialog.dismiss()
+            showVaultSettingsDialog()
+        }
+
+        sheetBinding.rowNavExtensions.setOnClickListener {
+            dialog.dismiss()
+            showExtensionsManagerDialog()
+        }
+
+        sheetBinding.rowNavAbout.setOnClickListener {
+            dialog.dismiss()
+            showAboutCommunityDialog()
+        }
+
+        dialog.show()
+    }
+
+    private fun showGeneralSettingsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetGeneralSettingsBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseGeneralSettings.setOnClickListener { dialog.dismiss() }
+
+        b.cardSetDefaultBrowser.setOnClickListener {
+            dialog.dismiss()
+            openSetDefaultBrowserDialog()
+        }
+
+        fun updateEngineRadios(selected: SearchEngine) {
+            b.radioEngineEcosia.isChecked = selected == SearchEngine.ECOSIA
+            b.radioEngineDdg.isChecked = selected == SearchEngine.DUCKDUCKGO
+            b.radioEngineBrave.isChecked = selected == SearchEngine.BRAVE
+            b.radioEngineGoogle.isChecked = selected == SearchEngine.GOOGLE
+            b.radioEngineStartpage.isChecked = selected == SearchEngine.STARTPAGE
+        }
+        updateEngineRadios(currentSearchEngine)
+
+        val selectEngine: (SearchEngine) -> Unit = { engine ->
+            currentSearchEngine = engine
+            prefs.edit().putString(PREF_SEARCH_ENGINE, engine.name).apply()
+            applySearchEngine(engine)
+            updateEngineRadios(engine)
+            Toast.makeText(this, "Search engine set to ${engine.displayName}", Toast.LENGTH_SHORT).show()
+        }
+
+        b.rowEngineEcosia.setOnClickListener { selectEngine(SearchEngine.ECOSIA) }
+        b.rowEngineDdg.setOnClickListener { selectEngine(SearchEngine.DUCKDUCKGO) }
+        b.rowEngineBrave.setOnClickListener { selectEngine(SearchEngine.BRAVE) }
+        b.rowEngineGoogle.setOnClickListener { selectEngine(SearchEngine.GOOGLE) }
+        b.rowEngineStartpage.setOnClickListener { selectEngine(SearchEngine.STARTPAGE) }
+
+        val currentToolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+        val isTop = currentToolbarPos.equals("top", ignoreCase = true)
+        b.switchToolbarPosition.isChecked = isTop
+        b.textToolbarPosLabel.text = if (isTop) "Top (Classic address bar)" else "Bottom (Thumb-friendly reach)"
+
+        b.switchToolbarPosition.setOnCheckedChangeListener { _, checked ->
+            val newPos = if (checked) "top" else "bottom"
+            prefs.edit().putString(PREF_TOOLBAR_POSITION, newPos).apply()
+            applyToolbarPosition(newPos)
+            b.textToolbarPosLabel.text = if (checked) "Top (Classic address bar)" else "Bottom (Thumb-friendly reach)"
+            Toast.makeText(this, "Toolbar position set to ${if (checked) "Top" else "Bottom"}", Toast.LENGTH_SHORT).show()
+        }
+
+        b.switchHttpsOnly.isChecked = prefs.getBoolean(PREF_HTTPS_ONLY, true)
+        b.switchHttpsOnly.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_HTTPS_ONLY, checked).apply()
+            Toast.makeText(this, if (checked) "HTTPS-Only Mode Enabled" else "HTTPS-Only Mode Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showShieldSettingsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetShieldSettingsBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseShieldSettings.setOnClickListener { dialog.dismiss() }
+
+        val isReady = AdShieldApp.instance.braveEngine.isEngineReady()
+        b.badgeRustStatus.text = if (isReady) "JNI ACTIVE (102K RULES)" else "INITIALIZING..."
+
+        b.switchGhostCloaker.isChecked = prefs.getBoolean(PREF_GHOST_CLOAKER, true)
+        b.switchGhostCloaker.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_GHOST_CLOAKER, checked).apply()
+            Toast.makeText(this, if (checked) "Synthetic Ghost Cloaking Enabled" else "Ghost Cloaking Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        b.switchDohTunnel.isChecked = prefs.getBoolean(PREF_DOH_TUNNEL, true)
+        b.switchDohTunnel.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_DOH_TUNNEL, checked).apply()
+            AdShieldApp.instance.dohEngine.isEnabled = checked
+            Toast.makeText(this, if (checked) "Encrypted DoH DNS Enabled" else "DoH DNS Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        val providerName = prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_CLOUDFLARE) ?: DnsOverHttpsEngine.PROVIDER_CLOUDFLARE
+        b.textDohProviderName.text = providerName
+
+        b.rowDohProvider.setOnClickListener {
+            val providers = arrayOf(
+                DnsOverHttpsEngine.PROVIDER_CLOUDFLARE,
+                DnsOverHttpsEngine.PROVIDER_QUAD9,
+                DnsOverHttpsEngine.PROVIDER_GOOGLE
+            )
+            val selectedIndex = when (prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_CLOUDFLARE)) {
+                DnsOverHttpsEngine.PROVIDER_QUAD9 -> 1
+                DnsOverHttpsEngine.PROVIDER_GOOGLE -> 2
+                else -> 0
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Select DoH DNS Provider")
+                .setSingleChoiceItems(providers, selectedIndex) { d, which ->
+                    val chosen = providers[which]
+                    prefs.edit().putString(PREF_DOH_PROVIDER, chosen).apply()
+                    b.textDohProviderName.text = chosen
+                    AdShieldApp.instance.dohEngine.currentProvider = when (which) {
+                        1 -> DnsOverHttpsEngine.Provider.QUAD9
+                        2 -> DnsOverHttpsEngine.Provider.GOOGLE
+                        else -> DnsOverHttpsEngine.Provider.CLOUDFLARE
+                    }
+                    AdShieldApp.instance.dohEngine.clearCache()
+                    Toast.makeText(this, "DoH Provider set to $chosen", Toast.LENGTH_SHORT).show()
+                    d.dismiss()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        b.switchPopunderDefuser.isChecked = prefs.getBoolean(PREF_POPUNDER_DEFUSER, true)
+        b.switchPopunderDefuser.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_POPUNDER_DEFUSER, checked).apply()
+            Toast.makeText(this, if (checked) "Popunder & Tab Hijack Immunity Active" else "Popunder Immunity Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showMediaSettingsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetMediaHubSettingsBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseMediaSettings.setOnClickListener { dialog.dismiss() }
+
+        b.switchVideoSniffer.isChecked = prefs.getBoolean(PREF_VIDEO_SNIFFER, true)
+        b.switchVideoSniffer.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_VIDEO_SNIFFER, checked).apply()
+            if (!checked) {
+                binding.chipMediaDetected.visibility = View.GONE
+            }
+            Toast.makeText(this, if (checked) "Video Sniffer Enabled" else "Video Sniffer Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        b.switchMxGestures.isChecked = prefs.getBoolean(PREF_MX_GESTURES, true)
+        b.switchMxGestures.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_MX_GESTURES, checked).apply()
+            Toast.makeText(this, if (checked) "MX-Player Video Gestures Enabled" else "Video Gestures Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        b.switchBackgroundAudio.isChecked = prefs.getBoolean("fokk_background_audio", true)
+        b.switchBackgroundAudio.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean("fokk_background_audio", checked).apply()
+            Toast.makeText(this, if (checked) "Background Audio Enabled" else "Background Audio Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        b.switchAutoPip.isChecked = prefs.getBoolean("fokk_auto_pip", true)
+        b.switchAutoPip.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean("fokk_auto_pip", checked).apply()
+            Toast.makeText(this, if (checked) "Auto Picture-in-Picture Enabled" else "Auto PiP Disabled", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showVaultSettingsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetVaultSettingsBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseVaultSettings.setOnClickListener { dialog.dismiss() }
+
+        b.switchBiometricLock.isChecked = prefs.getBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false)
+        b.switchBiometricLock.setOnClickListener {
+            val target = b.switchBiometricLock.isChecked
+            if (target) {
+                if (!canUseBiometric()) {
+                    b.switchBiometricLock.isChecked = false
+                    Toast.makeText(this, "Set up a fingerprint or PIN in Android Settings first", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+                prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, true).apply()
+                Toast.makeText(this, "Private tabs protected by biometric lock", Toast.LENGTH_SHORT).show()
+            } else {
+                b.switchBiometricLock.isChecked = true
+                authenticateUser(
+                    title = "Disable Private Tab Lock",
+                    subtitle = "Verify fingerprint or device PIN",
+                    onSuccess = {
+                        prefs.edit().putBoolean(PREF_BIOMETRIC_PRIVATE_TABS, false).apply()
+                        b.switchBiometricLock.isChecked = false
+                        Toast.makeText(this, "Private tab lock disabled", Toast.LENGTH_SHORT).show()
+                    },
+                    onFail = {
+                        b.switchBiometricLock.isChecked = true
+                    }
+                )
+            }
+        }
+
+        b.switchDecoyCalculator.isChecked = prefs.getBoolean(PREF_DECOY_CALCULATOR, false)
+        b.switchDecoyCalculator.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_DECOY_CALCULATOR, checked).apply()
+            val msg = if (checked) "Stealth Calculator Decoy Mode Enabled" else "Decoy Calculator Disabled"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
+        val currentPin = prefs.getString(PREF_DECOY_PIN, "1337") ?: "1337"
+        b.textCurrentDecoyPin.text = "$currentPin ="
+
+        b.rowChangeDecoyPin.setOnClickListener {
+            val input = EditText(this).apply {
+                hint = "Enter 4-digit PIN (e.g. 1337)"
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                setText(prefs.getString(PREF_DECOY_PIN, "1337"))
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Secret Unlock PIN")
+                .setMessage("Enter the passcode you will type into the decoy calculator followed by '=' to unlock:")
+                .setView(input)
+                .setPositiveButton("Save") { _, _ ->
+                    val newPin = input.text.toString().trim()
+                    if (newPin.length >= 3) {
+                        prefs.edit().putString(PREF_DECOY_PIN, newPin).apply()
+                        b.textCurrentDecoyPin.text = "$newPin ="
+                        Toast.makeText(this, "Decoy PIN updated to $newPin", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "PIN must be at least 3 digits", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        b.btnBackupVault.setOnClickListener {
+            val history = localPrefs.getString(PREF_BROWSING_HISTORY, "[]") ?: "[]"
+            val file = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "fokk_vault_backup.json")
+            file.writeText(history)
+            Toast.makeText(this, "Backup exported to ${file.name}", Toast.LENGTH_LONG).show()
+        }
+
+        b.btnRestoreVault.setOnClickListener {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+            vaultRestorePickerLauncher.launch(intent)
+        }
+
+        dialog.show()
+    }
+
+    private fun showAboutCommunityDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetAboutCommunityBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseAboutCommunity.setOnClickListener { dialog.dismiss() }
+
+        b.cardCheckUpdates.setOnClickListener {
+            dialog.dismiss()
+            AppUpdateManager.checkForUpdates(this, manualCheck = true)
+        }
+
+        b.cardCommunityFundraising.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage("fundraising")
+        }
+
+        b.cardOpenSource.setOnClickListener {
+            dialog.dismiss()
+            openAboutPage("licenses")
+        }
+
         dialog.show()
     }
 
@@ -4923,6 +5307,14 @@ open class MediaHubActivity : AppCompatActivity() {
             )
             activeWebView?.requestLayout()
         }
+
+        val isDecoyEnabled = prefs.getBoolean(PREF_DECOY_CALCULATOR, false)
+        if (isDecoyEnabled && !isDecoyUnlockedThisSession && !inPip) {
+            val pin = prefs.getString(PREF_DECOY_PIN, "1337") ?: "1337"
+            DecoyCalculatorDialog(this, unlockPin = pin) {
+                isDecoyUnlockedThisSession = true
+            }.show()
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -5370,6 +5762,14 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_USER_AVATAR = "fokk_user_avatar"
         private const val PREF_USER_ALIAS = "fokk_user_alias"
         private const val PREF_ELITE_DNS_FILTER = "fokk_elite_dns_filter"
+        private const val PREF_GHOST_CLOAKER = "fokk_ghost_cloaker"
+        private const val PREF_DOH_TUNNEL = "fokk_doh_tunnel"
+        private const val PREF_DOH_PROVIDER = "fokk_doh_provider"
+        private const val PREF_POPUNDER_DEFUSER = "fokk_popunder_defuser"
+        private const val PREF_VIDEO_SNIFFER = "fokk_video_sniffer"
+        private const val PREF_MX_GESTURES = "fokk_mx_gestures"
+        private const val PREF_DECOY_CALCULATOR = "fokk_decoy_calculator"
+        private const val PREF_DECOY_PIN = "fokk_decoy_pin"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,

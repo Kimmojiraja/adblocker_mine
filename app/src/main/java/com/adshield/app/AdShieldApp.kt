@@ -21,6 +21,9 @@ class AdShieldApp : Application() {
     lateinit var braveEngine: com.adshield.app.model.BraveAdblockEngine
         private set
 
+    lateinit var dohEngine: com.adshield.app.model.DnsOverHttpsEngine
+        private set
+
     lateinit var prefs: SharedPreferences
         private set
 
@@ -34,6 +37,7 @@ class AdShieldApp : Application() {
         // Initialize engines asynchronously on background IO
         blocklistEngine = BlocklistEngine(this)
         braveEngine = com.adshield.app.model.BraveAdblockEngine(this)
+        dohEngine = com.adshield.app.model.DnsOverHttpsEngine()
         applicationScope.launch {
             blocklistEngine.initialize()
             braveEngine.initialize()

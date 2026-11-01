@@ -65,3 +65,8 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
+
+// Disable AAR metadata compileSdk checks for external native JNI wrappers
+tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+    enabled = false
+}

@@ -244,15 +244,24 @@
             return modified;
         }
 
-        // Auto-Unmute YouTube & Prevent Forced Muting
+        // Smart Auto-Unmute YouTube & Disarm Forced Startup Muting
+        let userInteractedMute = false;
         try {
+            document.addEventListener('click', function(e) {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                const muteBtn = e.target.closest('.ytp-mute-button, [aria-label*="mute" i]');
+                if (muteBtn && !muteBtn.matches('.ytp-unmute, [aria-label*="unmute" i]')) {
+                    userInteractedMute = true;
+                }
+            }, { capture: true, passive: true });
+
             const origMutedDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
             if (origMutedDescriptor && origMutedDescriptor.set) {
                 Object.defineProperty(HTMLMediaElement.prototype, 'muted', {
                     get: origMutedDescriptor.get,
                     set: function(val) {
-                        // Prevent YouTube from auto-muting videos on navigation/load
-                        if (window.location.hostname.includes('youtube.com')) {
+                        // Prevent YouTube mobile player from forcing mute on video load unless user manually tapped mute
+                        if (window.location.hostname.includes('youtube.com') && !userInteractedMute && val === true) {
                             return origMutedDescriptor.set.call(this, false);
                         }
                         return origMutedDescriptor.set.call(this, val);
@@ -264,21 +273,104 @@
 
         function unmuteYouTubeVideo() {
             if (!window.location.hostname.includes('youtube.com')) return;
-            const video = document.querySelector('video');
-            if (video) {
-                if (video.muted) video.muted = false;
-                if (video.volume < 1.0) video.volume = 1.0;
-            }
-            const unmuteBtn = document.querySelector('.ytp-unmute, [aria-label*="unmute" i], .ytm-unmute-button');
-            if (unmuteBtn && typeof unmuteBtn.click === 'function') {
-                try { unmuteBtn.click(); } catch (e) {}
-            }
+            if (userInteractedMute) return;
+            try {
+                const video = document.querySelector('video');
+                if (video) {
+                    if (video.muted) video.muted = false;
+                    if (video.defaultMuted) video.defaultMuted = false;
+                    if (video.volume < 1.0) video.volume = 1.0;
+                }
+                const player = document.getElementById('movie_player') ||
+                               document.querySelector('.html5-video-player, ytm-player');
+                if (player) {
+                    if (typeof player.unMute === 'function') {
+                        try { player.unMute(); } catch (e) {}
+                    }
+                    if (typeof player.setVolume === 'function') {
+                        try { player.setVolume(100); } catch (e) {}
+                    }
+                }
+                const unmuteBtn = document.querySelector('.ytp-unmute, [aria-label*="unmute" i], .ytm-unmute-button');
+                if (unmuteBtn && typeof unmuteBtn.click === 'function') {
+                    try { unmuteBtn.click(); } catch (e) {}
+                }
+            } catch (e) {}
         }
+        window.__fokk_unmuteYt = unmuteYouTubeVideo;
 
         if (window.location.hostname.includes('youtube.com')) {
             document.addEventListener('play', unmuteYouTubeVideo, { capture: true, passive: true });
             document.addEventListener('playing', unmuteYouTubeVideo, { capture: true, passive: true });
+            document.addEventListener('loadeddata', unmuteYouTubeVideo, { capture: true, passive: true });
+            document.addEventListener('canplay', unmuteYouTubeVideo, { capture: true, passive: true });
             window.addEventListener('yt-navigate-finish', unmuteYouTubeVideo, { capture: true, passive: true });
+
+            // Direct Clean Navigation: Bypasses YouTube's broken SPA router and ad-buffering delay.
+            // Direct navigation guarantees instant 0-buffering video start, exactly like page refresh.
+            document.addEventListener('click', function(e) {
+                let targetHref = null;
+                const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
+                if (anchor && anchor.href) {
+                    targetHref = anchor.href;
+                } else {
+                    const card = e.target.closest('ytm-video-with-context-renderer, ytm-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, [class*="video-renderer"]');
+                    if (card) {
+                        const innerAnchor = card.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
+                        if (innerAnchor && innerAnchor.href) {
+                            targetHref = innerAnchor.href;
+                        }
+                    }
+                }
+                if (!targetHref) return;
+
+                try {
+                    const targetUrl = new URL(targetHref, window.location.href);
+                    const currentV = new URLSearchParams(window.location.search).get('v');
+                    const targetV = targetUrl.searchParams.get('v');
+                    if (targetV && targetV !== currentV) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        window.location.href = targetUrl.href;
+                        return;
+                    }
+                    if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        window.location.href = targetUrl.href;
+                        return;
+                    }
+                } catch (err) {}
+            }, { capture: true });
+
+            // In-page transition hook: Handles programmatic router transitions (e.g. autoplay next video)
+            try {
+                const origPushState = history.pushState;
+                history.pushState = function(state, unused, url) {
+                    if (url && typeof url === 'string') {
+                        try {
+                            const nextUrl = new URL(url, window.location.href);
+                            const nextV = nextUrl.searchParams.get('v');
+                            const curV = new URLSearchParams(window.location.search).get('v');
+                            if (nextV && curV && nextV !== curV) {
+                                origPushState.apply(this, arguments);
+                                window.location.replace(nextUrl.href);
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+                    return origPushState.apply(this, arguments);
+                };
+            } catch (e) {}
+
+            // Screen-off background audio: Prevent YouTube from pausing when screen locks or app is minimized
+            try {
+                Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });
+                Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });
+                document.addEventListener('visibilitychange', function(e) {
+                    e.stopImmediatePropagation();
+                }, { capture: true });
+            } catch (e) {}
         }
 
         // 2. Network Hook: Fetch & XHR Interceptor (YouTube & Instagram)
@@ -787,6 +879,9 @@
         });
 
         // 4. Ensure ad elements are removed without forcing v.play() loop (which interferes with YouTube buffering)
+        if (typeof window.__fokk_unmuteYt === 'function') {
+            try { window.__fokk_unmuteYt(); } catch (e) {}
+        }
     }
 
     function scrubYouTubeSponsored() {
@@ -841,6 +936,42 @@
         window.addEventListener('yt-page-data-updated', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('spfdone', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('popstate', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+
+        // Direct navigation capture in document scope: Guarantees zero buffering on card click
+        document.addEventListener('click', function(e) {
+            let targetHref = null;
+            const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
+            if (anchor && anchor.href) {
+                targetHref = anchor.href;
+            } else {
+                const card = e.target.closest('ytm-video-with-context-renderer, ytm-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, [class*="video-renderer"]');
+                if (card) {
+                    const innerAnchor = card.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
+                    if (innerAnchor && innerAnchor.href) {
+                        targetHref = innerAnchor.href;
+                    }
+                }
+            }
+            if (!targetHref) return;
+
+            try {
+                const targetUrl = new URL(targetHref, window.location.href);
+                const currentV = new URLSearchParams(window.location.search).get('v');
+                const targetV = targetUrl.searchParams.get('v');
+                if (targetV && targetV !== currentV) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    window.location.href = targetUrl.href;
+                    return;
+                }
+                if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    window.location.href = targetUrl.href;
+                    return;
+                }
+            } catch (err) {}
+        }, { capture: true });
     }
 
     // =========================================================================

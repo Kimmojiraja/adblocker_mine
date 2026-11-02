@@ -2144,21 +2144,13 @@ open class MediaHubActivity : AppCompatActivity() {
                     host.contains("gstatic.com") || host.contains("googleapis.com")
                 )
 
-                if (isYtAdUrl) {
+                if (isYtAdUrl && !isMediaRequest) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
 
-                val isExplicitAdMedia = isAdScript ||
-                    urlStr.contains("/ad-") ||
-                    urlStr.contains("/ads/") ||
-                    urlStr.contains("/advert") ||
-                    urlStr.contains("/promo/") ||
-                    urlStr.contains("vast") ||
-                    urlStr.contains("prebid")
-
                 // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
-                if (!isSafeYtResource && (!isMediaRequest || isExplicitAdMedia)) {
+                if (!isSafeYtResource && !isMediaRequest) {
                     val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
                         url = requestUrl ?: "",
                         sourceUrl = pageUrl ?: "",
@@ -2175,7 +2167,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     }
                 }
 
-                if (isAdScript && !isSafeYtResource) {
+                if (isAdScript && !isSafeYtResource && !isMediaRequest) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
@@ -2202,7 +2194,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 )
 
                 if (isSocialTracker || (isStrictAdblock && (
-                            isAdScript ||
+                            isAdScript && !isMediaRequest ||
                             (!isMediaRequest && (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))
                         ))) {
                     recordFilteredRequest(view, host)

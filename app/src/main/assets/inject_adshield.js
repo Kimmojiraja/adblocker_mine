@@ -581,6 +581,21 @@
                 try { el.remove(); } catch (e) {}
             });
 
+            // Mute only a video explicitly marked as an ad. Do not alter the
+            // normal player timeline or playback rate.
+            const adVideo = document.querySelector('.ad-showing video, .video-ads video');
+            if (adVideo && !adVideo.muted) {
+                adVideo.muted = true;
+                adWasMutedByShield = true;
+            }
+
+        }
+        else if (adWasMutedByShield) {
+            const video = document.querySelector('video.html5-main-video, ytm-player video, video');
+            if (video && !document.querySelector('.ad-showing video, .video-ads video')) {
+                video.muted = false;
+                adWasMutedByShield = false;
+            }
         }
     }
 

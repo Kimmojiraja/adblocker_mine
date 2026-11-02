@@ -53,15 +53,14 @@
                     return;
                 }
 
-                // Defuse ad arrays and ad configs if present on this object
-                if ('adPlacements' in obj) obj.adPlacements = [];
-                if ('playerAds' in obj) obj.playerAds = [];
-                if ('adSlots' in obj) obj.adSlots = [];
-                if ('adBreaks' in obj) obj.adBreaks = [];
-                if ('adPlacementConfig' in obj) delete obj.adPlacementConfig;
-                if ('adBreakHeartbeatParams' in obj) delete obj.adBreakHeartbeatParams;
+                // Defuse ad arrays and ad configs if present on this object (uBO standard: DELETE so 'adPlacements in obj' evaluates to false)
+                delete obj.adPlacements;
+                delete obj.playerAds;
+                delete obj.adSlots;
+                delete obj.adBreaks;
+                delete obj.adPlacementConfig;
+                delete obj.adBreakHeartbeatParams;
                 if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
-                if (obj.playbackTracking && obj.playbackTracking.ptrackingUrl) delete obj.playbackTracking.ptrackingUrl;
 
                 // Recurse into known YouTube containers
                 if (obj.playerResponse) {
@@ -712,15 +711,7 @@
             try { el.remove(); } catch (e) {}
         });
 
-        // 4. Ensure real video unpauses on mobile watch page navigation
-        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay');
-        const v = document.querySelector('video');
-        if (!isAdShowing && v && v.paused && !v.ended && window.location.pathname.includes('/watch')) {
-            const playPromise = v.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(function() {});
-            }
-        }
+        // 4. Ensure ad elements are removed without forcing v.play() loop (which interferes with YouTube buffering)
     }
 
     function scrubYouTubeSponsored() {

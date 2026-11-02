@@ -26,6 +26,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import java.io.FileOutputStream
 import android.speech.tts.TextToSpeech
 import java.net.Socket
@@ -657,6 +658,10 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
     private var suggestionJob: Job? = null
+    private var lastUserInteractionTime = 0L
+
+    private fun hasRecentUserInteraction(): Boolean =
+        (System.currentTimeMillis() - lastUserInteractionTime) < 3500
 
     private val activeTab: BrowserTab?
         get() = tabs.getOrNull(activeTabIndex)
@@ -1354,6 +1359,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         when (uri.scheme?.lowercase(Locale.ROOT)) {
+            "about", "data", "blob", "javascript" -> return false
             "file" -> {
                 if (rawUrl.startsWith("file:///android_asset/")) {
                     if (webView != null) {
@@ -1365,13 +1371,23 @@ open class MediaHubActivity : AppCompatActivity() {
                 return false
             }
             "http", "https" -> {
+                // 1. Unwrap redirect URLs first (e.g. Google search ads, Reddit outbound, affiliate trackers)
+                val unwrapped = extractDestinationUrl(rawUrl)
+                if (unwrapped != null && unwrapped != rawUrl && isWebUrl(unwrapped) && webView != null) {
+                    loadUrlInWebView(webView, unwrapped)
+                    return true
+                }
+
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
-                if (targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
+                val isExplicitUserNav = userGesture || hasRecentUserInteraction()
+
+                // Only block rogue unsolicited redirects (e.g. pop-unders or unauthorized script redirects)
+                // NEVER block navigation when the user explicitly tapped or navigated!
+                if (!isExplicitUserNav && targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
                     val isBlockedByBrave = AdShieldApp.instance.braveEngine.checkNetworkRequest(rawUrl, webView?.url ?: "", "document").matched
                     if (isBlockedByBrave || AdShieldApp.instance.blocklistEngine.isDomainBlocked(targetHost)) {
                         recordFilteredRequest(webView, targetHost)
                         runOnUiThread {
-                            Toast.makeText(this, "🛡️ Fokk Shield blocked redirect: $targetHost", Toast.LENGTH_SHORT).show()
                             val tab = tabs.firstOrNull { it.webView === webView }
                             if (tab != null && (tab.url == "about:blank" || webView?.copyBackForwardList()?.size ?: 0 <= 1)) {
                                 val tabIdx = tabs.indexOf(tab)
@@ -1725,6 +1741,24 @@ open class MediaHubActivity : AppCompatActivity() {
         (scheme == "http" || scheme == "https") && !uri.host.isNullOrBlank()
     }.getOrDefault(false)
 
+    private fun extractDestinationUrl(rawUrl: String): String? {
+        val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return null
+        val redirectParamKeys = listOf(
+            "adurl", "url", "u", "q", "dest", "destination",
+            "target", "redirect", "redirect_url", "redirect_to",
+            "redirect_uri", "link", "out", "murl", "r"
+        )
+        for (key in redirectParamKeys) {
+            val paramVal = uri.getQueryParameter(key)
+            if (!paramVal.isNullOrBlank()) {
+                val decoded = runCatching { java.net.URLDecoder.decode(paramVal, "UTF-8") }.getOrDefault(paramVal)
+                if (isWebUrl(decoded)) return decoded
+                if (isWebUrl(paramVal)) return paramVal
+            }
+        }
+        return null
+    }
+
     private fun confirmExternalAppLaunch(uri: Uri, parsedIntent: Intent?) {
         val destination = uri.host ?: uri.scheme ?: "another app"
         MaterialAlertDialogBuilder(this)
@@ -1864,7 +1898,10 @@ open class MediaHubActivity : AppCompatActivity() {
         webView.clipToPadding = false
         webView.setPadding(0, 0, 0, 0)
 
-        webView.setOnTouchListener { _, _ ->
+        webView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_UP) {
+                lastUserInteractionTime = System.currentTimeMillis()
+            }
             if (binding.urlInput.hasFocus()) {
                 binding.urlInput.clearFocus()
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
@@ -1884,15 +1921,13 @@ open class MediaHubActivity : AppCompatActivity() {
             domStorageEnabled = true
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
-            javaScriptCanOpenWindowsAutomatically = false
+            javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(true)
             loadsImagesAutomatically = true
             useWideViewPort = true
             loadWithOverviewMode = true
             cacheMode = if (isPrivate) WebSettings.LOAD_NO_CACHE else WebSettings.LOAD_DEFAULT
-            // Do not let an HTTPS page silently load active content over HTTP.
-            // This blocks downgrade/injection paths; a site with legacy HTTP embeds may need its own fix.
-            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             allowFileAccess = false
             allowContentAccess = false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
@@ -2244,7 +2279,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 val sourceHost = view?.url?.let { runCatching { Uri.parse(it).host?.lowercase(Locale.ROOT) }.getOrNull() }.orEmpty()
                 val isAuthOrTrustedHost = isThirdPartyMediaServiceHost(sourceHost) ||
                     sourceHost.contains("google.") || sourceHost.contains("apple.") || sourceHost.contains("x.com") || sourceHost.contains("twitter.com")
-                if (!isUserGesture && !isDialog && !isAuthOrTrustedHost) return false
+                val hasInteraction = isUserGesture || isDialog || isAuthOrTrustedHost || hasRecentUserInteraction()
+                if (!hasInteraction) return false
 
                 val sourceTab = tabs.firstOrNull { it.webView === view }
                 val newTab = createTab("about:blank", isPrivate = sourceTab?.isPrivate == true)

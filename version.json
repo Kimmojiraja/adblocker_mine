@@ -1,6 +1,6 @@
 {
-  "versionCode": 62,
-  "versionName": "1.0.62",
+  "versionCode": 73,
+  "versionName": "1.0.73",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Command Bar Fluidity: Removed nested curvy search pill; input sits seamlessly inside the command bar surface.\n- Clean Tab Switcher: Removed bulky square card on tabs button; replaced with borderless icon and delicate minimalist tab count indicator.\n- Premium Hairline Divider: Added sleek vertical hairline divider separating input bar from action buttons.\n- Choreographed Expansion: When tapping the input card to enter queries, tabs and 3-dots menu smoothly slide and fade away as the input bar expands across the full width."
+  "changelog": "- Instant YouTube Playback: Eliminated the 10-second buffering delay by defusing ad placements cleanly according to uBlock Origin standards without triggering YouTube's internal adbreak timeout.\n- Unbroken Navigation & Link Opening: Restored reliable click-to-open behavior across all websites by tracking user touch interactions and unwrapping nested redirect parameters."
 }

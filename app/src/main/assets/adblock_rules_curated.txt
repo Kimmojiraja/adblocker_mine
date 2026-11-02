@@ -152,8 +152,6 @@
 ||youtube.com/youtubei/v1/player/ad_break^
 ||youtube.com/pagead/*
 ||youtube.com/get_midroll_info?*
-||youtube.com/ptracking?*
-||googlevideo.com/videoplayback*$ctier=A
 youtube.com##.ytp-ad-module
 youtube.com##.ytp-ad-overlay-container
 youtube.com##.ytp-ad-image-overlay

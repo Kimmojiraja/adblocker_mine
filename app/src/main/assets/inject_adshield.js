@@ -310,6 +310,7 @@
             let touchStartX = 0;
             let touchStartY = 0;
             let touchStartTime = 0;
+            let userExplicitPaused = false;
 
             document.addEventListener('pointerdown', function(e) {
                 if (!window.location.hostname.includes('youtube.com')) return;
@@ -318,6 +319,79 @@
                 touchStartTime = Date.now();
             }, { capture: true, passive: true });
 
+            document.addEventListener('click', function(e) {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                const pauseBtn = e.target.closest('.ytp-play-button[aria-label*="Pause" i], [aria-label="Pause" i]');
+                if (pauseBtn) {
+                    userExplicitPaused = true;
+                }
+                const playBtn = e.target.closest('.ytp-play-button[aria-label*="Play" i], [aria-label="Play" i], .ytp-large-play-button, .ytm-play-button');
+                if (playBtn) {
+                    userExplicitPaused = false;
+                }
+            }, { capture: true, passive: true });
+
+            // Immediate Playback & Unmute Trigger (Eliminates the "manual tap for play" requirement)
+            function triggerPlayNow() {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                if (userExplicitPaused) return;
+
+                const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
+                if (player) {
+                    if (typeof player.unMute === 'function') {
+                        try { player.unMute(); } catch (e) {}
+                    }
+                    if (typeof player.setVolume === 'function') {
+                        try { player.setVolume(100); } catch (e) {}
+                    }
+                    if (typeof player.setAutonav === 'function') {
+                        try { player.setAutonav(true); } catch (e) {}
+                    }
+                    if (typeof player.playVideo === 'function') {
+                        try { player.playVideo(); } catch (e) {}
+                    }
+                }
+
+                const video = document.querySelector('video');
+                if (video) {
+                    if (video.muted) {
+                        try { video.muted = false; } catch (e) {}
+                    }
+                    if (video.defaultMuted) {
+                        try { video.defaultMuted = false; } catch (e) {}
+                    }
+                    if (video.volume < 1.0) {
+                        try { video.volume = 1.0; } catch (e) {}
+                    }
+                    if (video.paused && !userExplicitPaused) {
+                        try { video.play(); } catch (e) {}
+                    }
+                }
+
+                // Click native play button if visible/present on mobile player overlay
+                const playButtons = [
+                    '.ytp-large-play-button',
+                    '.ytm-play-button',
+                    'button[aria-label="Play" i]',
+                    'button[aria-label*="Play" i]',
+                    '.ytp-play-button[aria-label*="Play" i]',
+                    '.ytp-c Salon-play-button'
+                ];
+                for (let i = 0; i < playButtons.length; i++) {
+                    const btn = document.querySelector(playButtons[i]);
+                    if (btn && typeof btn.click === 'function') {
+                        try { btn.click(); break; } catch (e) {}
+                    }
+                }
+
+                const unmuteBtn = document.querySelector('.ytp-unmute, [aria-label*="unmute" i], .ytm-unmute-button');
+                if (unmuteBtn && typeof unmuteBtn.click === 'function') {
+                    try { unmuteBtn.click(); } catch (e) {}
+                }
+            }
+            window.__fokk_triggerPlay = triggerPlayNow;
+
+            // 1-Tap Direct Clean Navigation: Single tap opens & auto-plays immediately
             document.addEventListener('pointerup', function(e) {
                 if (!window.location.hostname.includes('youtube.com')) return;
                 const dx = Math.abs(e.clientX - touchStartX);
@@ -325,7 +399,17 @@
                 const dt = Date.now() - touchStartTime;
                 if (dx > 12 || dy > 12 || dt > 600) return; // Ignore scrolling or long press
 
-                // Locate destination video URL on the 1st single tap
+                // In playlist panels or queues, let YouTube change the video index in-page and auto-play immediately!
+                const playlistItem = e.target.closest('ytm-playlist-panel-video-renderer, ytm-playlist-video-renderer, .playlist-items, [class*="playlist-panel"]');
+                if (playlistItem) {
+                    userExplicitPaused = false;
+                    setTimeout(triggerPlayNow, 300);
+                    setTimeout(triggerPlayNow, 800);
+                    setTimeout(triggerPlayNow, 1600);
+                    return; // DO NOT reload, let YouTube switch video smoothly and auto-play
+                }
+
+                // Locate destination video URL on the 1st single tap from feed or search
                 const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
                 let targetHref = anchor ? anchor.href : null;
                 if (!targetHref) {
@@ -343,75 +427,96 @@
                     const nextV = targetUrl.searchParams.get('v');
                     if (nextV && nextV !== curV) {
                         targetUrl.searchParams.set('autoplay', '1');
+                        userExplicitPaused = false;
                         window.location.href = targetUrl.href;
                     } else if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
+                        userExplicitPaused = false;
                         window.location.href = targetUrl.href;
                     }
                 } catch (err) {}
             }, { capture: true, passive: true });
 
-            // Continuous Song-by-Song Autoplay: Advances to next song in playlist/queue with 0 delay
-            document.addEventListener('ended', function(e) {
+            // Continuous Song-by-Song & Playlist Autoplay: Automatically advances and plays the next video
+            function advancePlaylistOrQueue() {
                 if (!window.location.hostname.includes('youtube.com')) return;
-                setTimeout(function() {
-                    const nextAnchor = document.querySelector('.ytm-autonav-endscreen-button-next, a[aria-label*="Next" i], .ytp-next-button');
-                    if (nextAnchor && nextAnchor.href) {
-                        const u = new URL(nextAnchor.href, window.location.href);
-                        u.searchParams.set('autoplay', '1');
-                        window.location.href = u.href;
-                        return;
-                    }
-                    if (nextAnchor && typeof nextAnchor.click === 'function') {
-                        try { nextAnchor.click(); return; } catch (err) {}
-                    }
-                    const nextCard = document.querySelector('ytm-video-with-context-renderer a[href*="/watch"], ytm-compact-video-renderer a[href*="/watch"]');
-                    if (nextCard && nextCard.href) {
-                        const u = new URL(nextCard.href, window.location.href);
-                        u.searchParams.set('autoplay', '1');
-                        window.location.href = u.href;
-                        return;
-                    }
-                    const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
-                    if (player && typeof player.nextVideo === 'function') {
-                        try { player.nextVideo(); } catch (err) {}
-                    }
-                }, 800);
-            }, { capture: true, passive: true });
+                userExplicitPaused = false;
 
-            // Autoplay trigger on watch page load (ensures next song plays with sound immediately)
-            function ensureYouTubeAutoplay() {
-                if (!window.location.hostname.includes('youtube.com')) return;
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const video = document.querySelector('video');
-                if (video) {
-                    if (video.muted) video.muted = false;
-                    if (video.volume < 1.0) video.volume = 1.0;
-                    if (video.paused) {
+                const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
+                const isPlaylist = window.location.search.includes('list=') ||
+                                   (player && typeof player.getPlaylist === 'function' && Array.isArray(player.getPlaylist()) && player.getPlaylist().length > 0);
+
+                if (isPlaylist) {
+                    // Inside a playlist: advance via native player API without reloading the page
+                    if (player && typeof player.nextVideo === 'function') {
                         try {
-                            const p = video.play();
-                            if (p && typeof p.catch === 'function') {
-                                p.catch(function() {
-                                    const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
-                                    if (player && typeof player.playVideo === 'function') player.playVideo();
-                                });
-                            }
+                            player.nextVideo();
+                            setTimeout(triggerPlayNow, 500);
+                            setTimeout(triggerPlayNow, 1200);
+                            return;
+                        } catch (e) {}
+                    }
+                    const nextBtn = document.querySelector('.ytp-next-button, [aria-label*="Next" i], .ytm-playlist-next-button');
+                    if (nextBtn && typeof nextBtn.click === 'function') {
+                        try {
+                            nextBtn.click();
+                            setTimeout(triggerPlayNow, 500);
+                            setTimeout(triggerPlayNow, 1200);
+                            return;
                         } catch (e) {}
                     }
                 }
+
+                // Autoplay next button or up-next queue item
+                const nextAnchor = document.querySelector('.ytm-autonav-endscreen-button-next, a[aria-label*="Next" i], .ytp-next-button');
+                if (nextAnchor && nextAnchor.href) {
+                    const u = new URL(nextAnchor.href, window.location.href);
+                    u.searchParams.set('autoplay', '1');
+                    window.location.href = u.href;
+                    return;
+                }
+                if (nextAnchor && typeof nextAnchor.click === 'function') {
+                    try { nextAnchor.click(); return; } catch (err) {}
+                }
+
+                const nextCard = document.querySelector('ytm-video-with-context-renderer a[href*="/watch"], ytm-compact-video-renderer a[href*="/watch"]');
+                if (nextCard && nextCard.href) {
+                    const u = new URL(nextCard.href, window.location.href);
+                    u.searchParams.set('autoplay', '1');
+                    window.location.href = u.href;
+                    return;
+                }
+
+                if (player && typeof player.nextVideo === 'function') {
+                    try {
+                        player.nextVideo();
+                        setTimeout(triggerPlayNow, 600);
+                    } catch (err) {}
+                }
             }
-            if (window.location.pathname.startsWith('/watch')) {
-                document.addEventListener('DOMContentLoaded', ensureYouTubeAutoplay, { passive: true });
-                window.addEventListener('load', ensureYouTubeAutoplay, { passive: true });
-                let autoplayRetries = 0;
-                const autoplayInterval = setInterval(function() {
-                    ensureYouTubeAutoplay();
-                    autoplayRetries++;
+
+            document.addEventListener('ended', function(e) {
+                setTimeout(advancePlaylistOrQueue, 600);
+            }, { capture: true, passive: true });
+
+            // Ensure playback starts automatically whenever watch page loads or updates
+            window.addEventListener('yt-navigate-finish', function() {
+                userExplicitPaused = false;
+                setTimeout(triggerPlayNow, 200);
+                setTimeout(triggerPlayNow, 600);
+                setTimeout(triggerPlayNow, 1200);
+            }, { capture: true, passive: true });
+
+            let autoplayLoopCount = 0;
+            const autoplayWatchdog = setInterval(function() {
+                if (window.location.pathname.startsWith('/watch')) {
                     const v = document.querySelector('video');
-                    if ((v && !v.paused) || autoplayRetries > 8) {
-                        clearInterval(autoplayInterval);
+                    if (v && v.paused && !userExplicitPaused) {
+                        triggerPlayNow();
                     }
-                }, 400);
-            }
+                }
+                autoplayLoopCount++;
+                if (autoplayLoopCount > 30) clearInterval(autoplayWatchdog);
+            }, 500);
 
             // Screen-off background audio: Prevent YouTube from pausing when screen locks or app is minimized
             try {
@@ -935,6 +1040,9 @@
         // 4. Ensure ad elements are removed without forcing v.play() loop (which interferes with YouTube buffering)
         if (typeof window.__fokk_unmuteYt === 'function') {
             try { window.__fokk_unmuteYt(); } catch (e) {}
+        }
+        if (typeof window.__fokk_triggerPlay === 'function') {
+            try { window.__fokk_triggerPlay(); } catch (e) {}
         }
 
         // 5. Continuous Song Autoplay: Enable autonav and advance when song finishes

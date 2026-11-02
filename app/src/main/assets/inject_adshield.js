@@ -567,23 +567,19 @@
             });
             if (playerEl) {
                 playerEl.classList.remove('ad-showing', 'ad-interrupting');
+                try {
+                    if (typeof playerEl.cancelPlayback === 'function') playerEl.cancelPlayback();
+                    if (typeof playerEl.skipAd === 'function') playerEl.skipAd();
+                } catch(e) {}
             }
             if (video) {
                 try {
-                    // Check if this video instance is actually an ad (ads have short duration, e.g. < 90s, or explicit ad indicators)
-                    const duration = video.duration;
-                    const isDefiniteAdVideo = !isNaN(duration) && duration > 0 && duration < 90;
-                    if (isDefiniteAdVideo) {
-                        if (!video.muted) {
-                            video.muted = true;
-                            adWasMutedByShield = true;
-                        }
+                    // Only accelerate and advance if it is explicitly an ad stream, never the user content
+                    const isAdStream = video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || video.src.includes('/pagead/'));
+                    if (isAdStream) {
                         video.playbackRate = 16.0;
-                        video.currentTime = Math.max(0, duration - 0.05);
-                    } else if (isNaN(duration) || duration === 0) {
-                        // Dead/blocked ad stream: gently seek or trigger next
-                        if (video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || (!video.src.includes('googlevideo')))) {
-                            video.dispatchEvent(new Event('ended'));
+                        if (!isNaN(video.duration) && video.duration > 0) {
+                            video.currentTime = video.duration;
                         }
                     }
                     if (video.paused) {
@@ -592,11 +588,10 @@
                 } catch (e) {}
             }
         } else if (video) {
-            // Main content video is active: preserve normal playback rate and volume
             if (video.playbackRate > 1.0) {
                 video.playbackRate = 1.0;
             }
-            if (adWasMutedByShield) {
+            if (video.muted && adWasMutedByShield) {
                 video.muted = false;
                 adWasMutedByShield = false;
             }

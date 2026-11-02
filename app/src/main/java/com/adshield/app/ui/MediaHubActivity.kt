@@ -1814,14 +1814,13 @@ open class MediaHubActivity : AppCompatActivity() {
                         .start()
                 }
                 .start()
-            if (isTop) {
-                binding.mainContentLayout.animate().cancel()
-                binding.mainContentLayout.animate()
-                    .translationY(0f)
-                    .setDuration(180)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator())
-                    .start()
-            }
+            val targetTranslationY = 0f
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(targetTranslationY)
+                .setDuration(180)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
         } else {
             binding.topBar.visibility = View.GONE
             binding.layoutCollapsedBar.visibility = View.VISIBLE
@@ -1829,9 +1828,7 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.layoutCollapsedBar.scaleX = 1f
             binding.layoutCollapsedBar.scaleY = 1f
             binding.layoutCollapsedBar.translationY = 0f
-            if (isTop) {
-                binding.mainContentLayout.translationY = 0f
-            }
+            binding.mainContentLayout.translationY = 0f
         }
     }
 
@@ -1841,7 +1838,7 @@ open class MediaHubActivity : AppCompatActivity() {
         browserChromeHidden = false
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
-        val commandBarOffset = 52 * density
+        val commandBarOffset = if (isTop) 52 * density else -(54 * density)
 
         if (animated) {
             binding.layoutCollapsedBar.animate().cancel()
@@ -1867,14 +1864,12 @@ open class MediaHubActivity : AppCompatActivity() {
                         .start()
                 }
                 .start()
-            if (isTop) {
-                binding.mainContentLayout.animate().cancel()
-                binding.mainContentLayout.animate()
-                    .translationY(commandBarOffset)
-                    .setDuration(220)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator())
-                    .start()
-            }
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(commandBarOffset)
+                .setDuration(220)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
         } else {
             binding.layoutCollapsedBar.visibility = View.GONE
             binding.topBar.visibility = View.VISIBLE
@@ -1882,9 +1877,7 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.topBar.scaleX = 1f
             binding.topBar.scaleY = 1f
             binding.topBar.translationY = 0f
-            if (isTop) {
-                binding.mainContentLayout.translationY = commandBarOffset
-            }
+            binding.mainContentLayout.translationY = commandBarOffset
         }
     }
 
@@ -1899,7 +1892,7 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
-        val commandBarOffset = 52 * density
+        val commandBarOffset = if (isTop) 52 * density else -(54 * density)
 
         if (commandBarCollapsed) {
             val targetView = binding.layoutCollapsedBar
@@ -1930,14 +1923,12 @@ open class MediaHubActivity : AppCompatActivity() {
                 .setDuration(200)
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
-            if (isTop) {
-                binding.mainContentLayout.animate().cancel()
-                binding.mainContentLayout.animate()
-                    .translationY(commandBarOffset)
-                    .setDuration(200)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator())
-                    .start()
-            }
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(commandBarOffset)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
         } else {
             if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
@@ -1951,14 +1942,12 @@ open class MediaHubActivity : AppCompatActivity() {
                     if (browserChromeHidden) binding.topBar.visibility = View.GONE
                 }
                 .start()
-            if (isTop) {
-                binding.mainContentLayout.animate().cancel()
-                binding.mainContentLayout.animate()
-                    .translationY(0f)
-                    .setDuration(220)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator())
-                    .start()
-            }
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(0f)
+                .setDuration(220)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
         }
     }
 
@@ -2085,7 +2074,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadingTab?.thirdPartyRequests = 0
                 loadingTab?.thirdPartyRequestHosts?.clear()
                 if (view == activeWebView) {
-                    setBrowserChromeVisible(true)
+                    checkSearchOrVideoAndAutoCollapse(pageUrl)
+                    if (!commandBarCollapsed) {
+                        setBrowserChromeVisible(true)
+                    }
                     isShieldEnabled = isShieldEnabledFor(pageUrl)
                     binding.progressBar.visibility = View.VISIBLE
                     // page reset
@@ -3207,10 +3199,6 @@ open class MediaHubActivity : AppCompatActivity() {
             showBrowserMenuDialog()
         }
 
-        binding.btnCollapseBar.setOnClickListener {
-            collapseCommandBar(animated = true)
-        }
-
         binding.layoutCollapsedBar.setOnClickListener {
             expandCommandBar(animated = true)
         }
@@ -3597,13 +3585,13 @@ open class MediaHubActivity : AppCompatActivity() {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.topMargin = 0
-            lp.bottomMargin = (10 * density).toInt()
+            lp.bottomMargin = (6 * density).toInt()
 
             collapsedLp?.let {
                 it.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 it.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 it.topMargin = 0
-                it.bottomMargin = (10 * density).toInt()
+                it.bottomMargin = (6 * density).toInt()
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
@@ -3612,23 +3600,17 @@ open class MediaHubActivity : AppCompatActivity() {
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = 0f
+            binding.mainContentLayout.translationY = if (browserChromeHidden || commandBarCollapsed) 0f else -(54 * density)
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.topMargin = 0
-                cardLp.bottomMargin = (62 * density).toInt()
+                cardLp.bottomMargin = (56 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
-            val bottomPadding = (64 * density).toInt()
-            tabs.forEach { tab ->
-                tab.webView?.let { wv ->
-                    wv.clipToPadding = false
-                    wv.setPadding(0, 0, 0, bottomPadding)
-                }
-            }
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         }
         binding.topBar.layoutParams = lp
     }

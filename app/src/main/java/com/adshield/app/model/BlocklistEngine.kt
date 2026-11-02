@@ -95,7 +95,12 @@ class BlocklistEngine(private val context: Context) {
         "razorpay.com",
         "plaid.com",
         "pay.google.com",
-        "npci.org.in"
+        "npci.org.in",
+        // Anti-Bot & Captcha Verification Providers (Prevents login breakage)
+        "challenges.cloudflare.com",
+        "cloudflare.com",
+        "hcaptcha.com",
+        "recaptcha.net"
     )
 
     fun isDomainBlocked(rawDomain: String): Boolean {

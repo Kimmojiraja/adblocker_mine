@@ -43,12 +43,7 @@
             if (obj.adPlacements) delete obj.adPlacements;
             if (obj.playerAds) delete obj.playerAds;
             if (obj.adSlots) delete obj.adSlots;
-            if (obj.playbackTracking) {
-                delete obj.playbackTracking.videostatsPlaybackUrl;
-                delete obj.playbackTracking.videostatsDelayplayUrl;
-                delete obj.playbackTracking.videostatsWatchtimeUrl;
-                delete obj.playbackTracking.videostatsPtrackingUrl;
-            }
+            if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
         } catch (e) {}
     }
 
@@ -514,10 +509,14 @@
     // =========================================================================
     // YouTube Web Video Ad Auto-Skipper & Instant Stall Bypass Engine
     // =========================================================================
+    let adWasMutedByShield = false;
+
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        // 1. Programmatically click all modern YouTube skip buttons
+        const playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+
+        // 1. Programmatically click all modern YouTube skip buttons immediately
         const skipButtons = [
             '.ytp-ad-skip-button',
             '.ytp-ad-skip-button-modern',
@@ -543,63 +542,53 @@
             }
         }
 
-        // 2. Trigger YouTube internal player API skip if available
-        try {
-            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, #player');
-            if (player && typeof player.skipAd === 'function') {
-                player.skipAd();
-            }
-        } catch (e) {}
-
-        // 3. Detect mobile YouTube sponsored ad state
-        const adBadge = document.querySelector('.ytp-ad-text, [class*="badge-and-title"], [aria-label*="Sponsored"], .ytm-ad-preview-text, .ytp-ad-preview-text');
-        const isSponsoredText = adBadge && /sponsored/i.test(adBadge.textContent || '');
-        const playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player, #player');
-        const isAdShowing = isSponsoredText ||
-                            (playerEl && (playerEl.classList.contains('ad-showing') || playerEl.classList.contains('ad-interrupting'))) ||
-                            !!document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay, [class*="ad-showing"]');
-        const video = document.querySelector('video.html5-main-video, video');
+        // 2. In-stream ad active detection strictly scoped to the video player container
+        const isAdShowing = playerEl && (playerEl.classList.contains('ad-showing') || playerEl.classList.contains('ad-interrupting'));
 
         if (isAdShowing) {
-            // Remove ad overlay containers immediately
-            document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer, [class*="ad-overlay"]').forEach(function(el) {
+            // Native YouTube player skipAd method
+            try {
+                if (typeof playerEl.skipAd === 'function') {
+                    playerEl.skipAd();
+                }
+            } catch (e) {}
+
+            // Remove visual ad overlays from DOM
+            document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
-            if (playerEl) {
-                playerEl.classList.remove('ad-showing', 'ad-interrupting');
-                try {
-                    if (typeof playerEl.cancelPlayback === 'function') playerEl.cancelPlayback();
-                    if (typeof playerEl.skipAd === 'function') playerEl.skipAd();
-                } catch(e) {}
-            }
+
+            const video = (playerEl && playerEl.querySelector('video')) || document.querySelector('video.html5-main-video, video');
             if (video) {
                 try {
-                    // Only accelerate and advance if it is explicitly an ad stream, never the user content
-                    const isAdStream = video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || video.src.includes('/pagead/'));
-                    if (isAdStream) {
-                        video.playbackRate = 16.0;
-                        if (!isNaN(video.duration) && video.duration > 0) {
-                            video.currentTime = video.duration;
-                        }
+                    // Mute and jump to end of ad stream
+                    if (!video.muted) {
+                        video.muted = true;
+                        adWasMutedByShield = true;
                     }
-                    if (video.paused) {
-                        video.play().catch(function() {});
+                    video.playbackRate = 16.0;
+                    if (!isNaN(video.duration) && video.duration > 0 && video.duration < 180) {
+                        video.currentTime = video.duration - 0.05;
                     }
                 } catch (e) {}
             }
-        } else if (video) {
-            if (video.playbackRate > 1.0) {
-                video.playbackRate = 1.0;
-            }
-            if (video.muted && adWasMutedByShield) {
-                video.muted = false;
-                adWasMutedByShield = false;
+        } else {
+            // Normal video playback: ensure standard 1.0x rate and sound are restored
+            const video = (playerEl && playerEl.querySelector('video')) || document.querySelector('video.html5-main-video, video');
+            if (video) {
+                if (video.playbackRate > 1.0) {
+                    video.playbackRate = 1.0;
+                }
+                if (video.muted && adWasMutedByShield) {
+                    video.muted = false;
+                    adWasMutedByShield = false;
+                }
             }
         }
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(runYouTubeAdSkipper, 100);
+        setInterval(runYouTubeAdSkipper, 250);
         document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
     }

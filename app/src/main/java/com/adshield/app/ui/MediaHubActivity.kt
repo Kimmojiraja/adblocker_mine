@@ -1772,117 +1772,21 @@ open class MediaHubActivity : AppCompatActivity() {
     private var commandBarCollapsed = false
 
     private fun collapseCommandBar(animated: Boolean = true) {
-        if (commandBarCollapsed) return
-        commandBarCollapsed = true
-        browserChromeHidden = false
-
-        val currentUrl = activeWebView?.url.orEmpty()
-        val displayHost = runCatching { Uri.parse(currentUrl).host?.removePrefix("www.") }.getOrNull()
-        binding.textCollapsedDomain.text = when {
-            displayHost.isNullOrBlank() || currentUrl.contains("fokk_start.html") -> "Fokk"
-            else -> displayHost
-        }
-
-        binding.cardSuggestions.visibility = View.GONE
-        binding.urlInput.clearFocus()
-
-        val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
-        val density = resources.displayMetrics.density
-        val commandBarOffset = 52 * density
-
-        if (animated) {
-            binding.topBar.animate().cancel()
-            binding.topBar.animate()
-                .scaleX(0.7f)
-                .scaleY(0.7f)
-                .alpha(0f)
-                .setDuration(180)
-                .setInterpolator(android.view.animation.AccelerateInterpolator())
-                .withEndAction {
-                    binding.topBar.visibility = View.GONE
-                    binding.layoutCollapsedBar.visibility = View.VISIBLE
-                    binding.layoutCollapsedBar.alpha = 0f
-                    binding.layoutCollapsedBar.scaleX = 0.7f
-                    binding.layoutCollapsedBar.scaleY = 0.7f
-                    binding.layoutCollapsedBar.translationY = 0f
-                    binding.layoutCollapsedBar.animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(180)
-                        .setInterpolator(android.view.animation.DecelerateInterpolator())
-                        .start()
-                }
-                .start()
-            val targetTranslationY = 0f
-            binding.mainContentLayout.animate().cancel()
-            binding.mainContentLayout.animate()
-                .translationY(targetTranslationY)
-                .setDuration(180)
-                .setInterpolator(android.view.animation.DecelerateInterpolator())
-                .start()
-        } else {
-            binding.topBar.visibility = View.GONE
-            binding.layoutCollapsedBar.visibility = View.VISIBLE
-            binding.layoutCollapsedBar.alpha = 1f
-            binding.layoutCollapsedBar.scaleX = 1f
-            binding.layoutCollapsedBar.scaleY = 1f
-            binding.layoutCollapsedBar.translationY = 0f
-            binding.mainContentLayout.translationY = 0f
-        }
+        // Disabled: The user requested only the regular command bar, no auto-minimizing micro-pill
+        binding.layoutCollapsedBar.visibility = View.GONE
+        commandBarCollapsed = false
     }
 
     private fun expandCommandBar(animated: Boolean = true) {
-        if (!commandBarCollapsed) return
+        binding.layoutCollapsedBar.visibility = View.GONE
         commandBarCollapsed = false
-        browserChromeHidden = false
-        val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
-        val density = resources.displayMetrics.density
-        val commandBarOffset = if (isTop) 52 * density else -(54 * density)
-
-        if (animated) {
-            binding.layoutCollapsedBar.animate().cancel()
-            binding.layoutCollapsedBar.animate()
-                .scaleX(0.7f)
-                .scaleY(0.7f)
-                .alpha(0f)
-                .setDuration(150)
-                .setInterpolator(android.view.animation.AccelerateInterpolator())
-                .withEndAction {
-                    binding.layoutCollapsedBar.visibility = View.GONE
-                    binding.topBar.visibility = View.VISIBLE
-                    binding.topBar.alpha = 0f
-                    binding.topBar.scaleX = 0.85f
-                    binding.topBar.scaleY = 0.85f
-                    binding.topBar.translationY = 0f
-                    binding.topBar.animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(220)
-                        .setInterpolator(android.view.animation.DecelerateInterpolator())
-                        .start()
-                }
-                .start()
-            binding.mainContentLayout.animate().cancel()
-            binding.mainContentLayout.animate()
-                .translationY(commandBarOffset)
-                .setDuration(220)
-                .setInterpolator(android.view.animation.DecelerateInterpolator())
-                .start()
-        } else {
-            binding.layoutCollapsedBar.visibility = View.GONE
-            binding.topBar.visibility = View.VISIBLE
-            binding.topBar.alpha = 1f
-            binding.topBar.scaleX = 1f
-            binding.topBar.scaleY = 1f
-            binding.topBar.translationY = 0f
-            binding.mainContentLayout.translationY = commandBarOffset
-        }
+        binding.topBar.visibility = View.VISIBLE
+        binding.topBar.alpha = 1f
+        binding.topBar.translationY = 0f
     }
 
     private val showChromeOnIdleRunnable = Runnable {
-        if (browserChromeHidden && customView == null && !isFullscreenCustomView && !commandBarCollapsed) {
+        if (browserChromeHidden && customView == null && !isFullscreenCustomView) {
             setBrowserChromeVisible(true)
         }
     }
@@ -1892,25 +1796,8 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
-        val commandBarOffset = if (isTop) 52 * density else -(54 * density)
 
-        if (commandBarCollapsed) {
-            val targetView = binding.layoutCollapsedBar
-            if (visible) {
-                targetView.animate().cancel()
-                targetView.visibility = View.VISIBLE
-                targetView.animate().alpha(1f).translationY(0f).setDuration(180).start()
-            } else {
-                targetView.animate().cancel()
-                targetView.animate()
-                    .alpha(0f)
-                    .translationY(if (isTop) -slideDistance else slideDistance)
-                    .setDuration(180)
-                    .withEndAction { targetView.visibility = View.GONE }
-                    .start()
-            }
-            return
-        }
+        binding.layoutCollapsedBar.visibility = View.GONE
 
         if (visible) {
             if (!browserChromeHidden) return
@@ -1920,12 +1807,6 @@ open class MediaHubActivity : AppCompatActivity() {
             binding.topBar.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .setDuration(200)
-                .setInterpolator(android.view.animation.DecelerateInterpolator())
-                .start()
-            binding.mainContentLayout.animate().cancel()
-            binding.mainContentLayout.animate()
-                .translationY(commandBarOffset)
                 .setDuration(200)
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
@@ -1941,12 +1822,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 .withEndAction {
                     if (browserChromeHidden) binding.topBar.visibility = View.GONE
                 }
-                .start()
-            binding.mainContentLayout.animate().cancel()
-            binding.mainContentLayout.animate()
-                .translationY(0f)
-                .setDuration(220)
-                .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         }
     }
@@ -2074,10 +1949,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadingTab?.thirdPartyRequests = 0
                 loadingTab?.thirdPartyRequestHosts?.clear()
                 if (view == activeWebView) {
-                    checkSearchOrVideoAndAutoCollapse(pageUrl)
-                    if (!commandBarCollapsed) {
-                        setBrowserChromeVisible(true)
-                    }
+                    setBrowserChromeVisible(true)
                     isShieldEnabled = isShieldEnabledFor(pageUrl)
                     binding.progressBar.visibility = View.VISIBLE
                     // page reset
@@ -2195,10 +2067,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (loadedTab?.isDesktop == true && !isThirdPartyMediaService(pageUrl)) {
                     val js = "javascript:(function(){let vp=document.querySelector('meta[name=\"viewport\"]');if(vp){vp.setAttribute('content','width=1280, initial-scale=0.85');}})();"
                     view?.evaluateJavascript(js, null)
-                }
-
-                if (view == activeWebView) {
-                    checkSearchOrVideoAndAutoCollapse(pageUrl)
                 }
             }
 
@@ -2701,7 +2569,6 @@ open class MediaHubActivity : AppCompatActivity() {
 
         updateTabCounter()
         persistSession()
-        checkSearchOrVideoAndAutoCollapse(current.url)
     }
 
     private fun closeTab(index: Int) {
@@ -2747,34 +2614,6 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun isThirdPartyMediaServiceHost(host: String): Boolean =
         THIRD_PARTY_MEDIA_SERVICE_DOMAINS.any { host == it || host.endsWith(".$it") }
-
-    /**
-     * Intelligently auto-collapses command bar during searches, video playback, and chat services.
-     */
-    private fun checkSearchOrVideoAndAutoCollapse(url: String?) {
-        if (url == null || url.contains("fokk_start.html")) {
-            if (commandBarCollapsed) expandCommandBar(animated = true)
-            return
-        }
-        val lower = url.lowercase(Locale.ROOT)
-        val isSearch = lower.contains("google.") && (lower.contains("/search") || lower.contains("q=")) ||
-                lower.contains("ecosia.org/search") ||
-                lower.contains("duckduckgo.com/?q=") || lower.contains("duckduckgo.com/html") ||
-                lower.contains("search.brave.com/search") ||
-                lower.contains("startpage.com/sp/search") || lower.contains("startpage.com/do/search") ||
-                lower.contains("bing.com/search")
-
-        val isVideoOrProxy = lower.contains("youtube.com/watch") || lower.contains("/shorts/") ||
-                lower.contains("youtu.be/") || lower.contains("vimeo.com") || lower.contains("twitch.tv") ||
-                lower.contains("tiktok.com") || isThirdPartyMediaService(url)
-
-        val isChatService = lower.contains("chatgpt.com") || lower.contains("claude.ai") ||
-                lower.contains("discord.com/app") || lower.contains("web.whatsapp.com")
-
-        if (isSearch || isVideoOrProxy || isChatService) {
-            collapseCommandBar(animated = true)
-        }
-    }
 
     /** Standard protection leaves same-site requests alone to reduce breakage. */
     private fun isSameSite(firstHost: String, secondHost: String): Boolean =
@@ -3548,8 +3387,9 @@ open class MediaHubActivity : AppCompatActivity() {
         val collapsedLp = binding.layoutCollapsedBar.layoutParams as? RelativeLayout.LayoutParams
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
         val density = resources.displayMetrics.density
-        val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
+
+        binding.layoutCollapsedBar.visibility = View.GONE
+        commandBarCollapsed = false
 
         if (isTop) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -3566,11 +3406,11 @@ open class MediaHubActivity : AppCompatActivity() {
             }
 
             containerLp?.let {
-                it.topMargin = 0
+                it.topMargin = (56 * density).toInt()
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = if (browserChromeHidden || commandBarCollapsed) 0f else (54 * density)
+            binding.mainContentLayout.translationY = 0f
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
@@ -3597,10 +3437,10 @@ open class MediaHubActivity : AppCompatActivity() {
 
             containerLp?.let {
                 it.topMargin = 0
-                it.bottomMargin = 0
+                it.bottomMargin = (56 * density).toInt()
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = if (browserChromeHidden || commandBarCollapsed) 0f else -(54 * density)
+            binding.mainContentLayout.translationY = 0f
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
@@ -5497,13 +5337,8 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
         if (!inPip) {
-            if (commandBarCollapsed) {
-                binding.layoutCollapsedBar.visibility = View.VISIBLE
-                binding.topBar.visibility = View.GONE
-            } else {
-                binding.topBar.visibility = View.VISIBLE
-                binding.layoutCollapsedBar.visibility = View.GONE
-            }
+            binding.topBar.visibility = View.VISIBLE
+            binding.layoutCollapsedBar.visibility = View.GONE
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) activeWebView?.evaluateJavascript(
                 """(function() {
@@ -5601,13 +5436,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
             }
         } else {
-            if (commandBarCollapsed) {
-                binding.layoutCollapsedBar.visibility = View.VISIBLE
-                binding.topBar.visibility = View.GONE
-            } else {
-                binding.topBar.visibility = View.VISIBLE
-                binding.layoutCollapsedBar.visibility = View.GONE
-            }
+            binding.topBar.visibility = View.VISIBLE
+            binding.layoutCollapsedBar.visibility = View.GONE
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)

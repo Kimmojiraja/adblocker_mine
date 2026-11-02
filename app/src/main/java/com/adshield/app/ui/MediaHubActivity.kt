@@ -444,7 +444,9 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun isEliteDnsBlocked(host: String): Boolean {
-        return AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)
+        if (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) return true
+        if (AdShieldApp.instance.dohEngine.isKnownBlockedHost(host)) return true
+        return false
     }
 
     private val wallpaperPickerLauncher = registerForActivityResult(
@@ -4726,31 +4728,20 @@ open class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, if (checked) "Encrypted DoH DNS Enabled" else "DoH DNS Disabled", Toast.LENGTH_SHORT).show()
         }
 
-        val providerName = prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_CLOUDFLARE) ?: DnsOverHttpsEngine.PROVIDER_CLOUDFLARE
+        val providerName = prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_ADGUARD) ?: DnsOverHttpsEngine.PROVIDER_ADGUARD
         b.textDohProviderName.text = providerName
 
         b.rowDohProvider.setOnClickListener {
-            val providers = arrayOf(
-                DnsOverHttpsEngine.PROVIDER_CLOUDFLARE,
-                DnsOverHttpsEngine.PROVIDER_QUAD9,
-                DnsOverHttpsEngine.PROVIDER_GOOGLE
-            )
-            val selectedIndex = when (prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_CLOUDFLARE)) {
-                DnsOverHttpsEngine.PROVIDER_QUAD9 -> 1
-                DnsOverHttpsEngine.PROVIDER_GOOGLE -> 2
-                else -> 0
-            }
+            val providers = DnsOverHttpsEngine.ALL_PROVIDERS
+            val current = prefs.getString(PREF_DOH_PROVIDER, DnsOverHttpsEngine.PROVIDER_ADGUARD)
+            val selectedIndex = providers.indexOf(current).coerceAtLeast(0)
             MaterialAlertDialogBuilder(this)
-                .setTitle("Select DoH DNS Provider")
+                .setTitle("Select Encrypted DoH Provider")
                 .setSingleChoiceItems(providers, selectedIndex) { d, which ->
                     val chosen = providers[which]
                     prefs.edit().putString(PREF_DOH_PROVIDER, chosen).apply()
                     b.textDohProviderName.text = chosen
-                    AdShieldApp.instance.dohEngine.currentProvider = when (which) {
-                        1 -> DnsOverHttpsEngine.Provider.QUAD9
-                        2 -> DnsOverHttpsEngine.Provider.GOOGLE
-                        else -> DnsOverHttpsEngine.Provider.CLOUDFLARE
-                    }
+                    AdShieldApp.instance.dohEngine.currentProvider = DnsOverHttpsEngine.getProviderByName(chosen)
                     AdShieldApp.instance.dohEngine.clearCache()
                     Toast.makeText(this, "DoH Provider set to $chosen", Toast.LENGTH_SHORT).show()
                     d.dismiss()

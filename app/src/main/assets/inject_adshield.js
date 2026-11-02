@@ -10,251 +10,244 @@
     }
 
     // =========================================================================
-    // 0. Intelligent Popunder & Malicious window.open Defuser
+    // Main World Defusers: Hooks prototypes (Response.prototype.json, JSON.parse,
+    // window.open, XMLHttpRequest) inside the page's actual V8 execution context.
     // =========================================================================
-    try {
-        const origWindowOpen = window.open;
-        window.open = function(url, target, features) {
-            if (url && typeof url === 'string') {
-                const u = url.toLowerCase();
-                if (u.includes('exoclick') || u.includes('trafficjunky') || u.includes('juicyads') ||
-                    u.includes('popads') || u.includes('popcash') || u.includes('propellerads') ||
-                    u.includes('adsterra') || u.includes('clickadu') || u.includes('hilltopads') ||
-                    u.includes('monetag') || u.includes('syndicate') || u.includes('onclick') ||
-                    u.includes('directrev') || u.includes('cam4') || u.includes('camsoda') ||
-                    u.includes('chaturbate') || u.includes('stripchat') || u.includes('bongacams') ||
-                    u.includes('admaven') || u.includes('twinred') || u.includes('trafficstars') ||
-                    u.includes('trafficfactory') || u.includes('ero-advertising') || u.includes('livejasmin') ||
-                    u.includes('doublepimp') || u.includes('ad-score')) {
-                    console.warn('[Fokk Shield] Disarmed popunder window.open to ad:', url);
-                    return null;
-                }
-            }
-            return origWindowOpen.apply(this, arguments);
-        };
-    } catch(e) {}
+    function installMainWorldDefusers() {
+        if (window.__fokk_main_defused) return;
+        window.__fokk_main_defused = true;
 
-    // =========================================================================
-    // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
-    // =========================================================================
-    function sanitizeYtPlayerResponse(obj, depth) {
-        if (!obj || typeof obj !== 'object') return;
-        if (!depth) depth = 0;
-        if (depth > 6) return;
+        // 0. Intelligent Popunder & Malicious window.open Defuser
         try {
-            if (Array.isArray(obj)) {
-                for (let i = 0; i < obj.length; i++) {
-                    sanitizeYtPlayerResponse(obj[i], depth + 1);
+            const origWindowOpen = window.open;
+            window.open = function(url, target, features) {
+                if (url && typeof url === 'string') {
+                    const u = url.toLowerCase();
+                    if (u.includes('exoclick') || u.includes('trafficjunky') || u.includes('juicyads') ||
+                        u.includes('popads') || u.includes('popcash') || u.includes('propellerads') ||
+                        u.includes('adsterra') || u.includes('clickadu') || u.includes('hilltopads') ||
+                        u.includes('monetag') || u.includes('syndicate') || u.includes('onclick') ||
+                        u.includes('directrev') || u.includes('cam4') || u.includes('camsoda') ||
+                        u.includes('chaturbate') || u.includes('stripchat') || u.includes('bongacams') ||
+                        u.includes('admaven') || u.includes('twinred') || u.includes('trafficstars') ||
+                        u.includes('trafficfactory') || u.includes('ero-advertising') || u.includes('livejasmin') ||
+                        u.includes('doublepimp') || u.includes('ad-score')) {
+                        console.warn('[Fokk Shield] Disarmed popunder window.open to ad:', url);
+                        return null;
+                    }
                 }
-                return;
-            }
+                return origWindowOpen.apply(this, arguments);
+            };
+        } catch(e) {}
 
-            // Defuse ad arrays and ad configs if present on this object
-            if ('adPlacements' in obj) obj.adPlacements = [];
-            if ('playerAds' in obj) obj.playerAds = [];
-            if ('adSlots' in obj) obj.adSlots = [];
-            if ('adBreaks' in obj) obj.adBreaks = [];
-            if ('adPlacementConfig' in obj) delete obj.adPlacementConfig;
-            if ('adBreakHeartbeatParams' in obj) delete obj.adBreakHeartbeatParams;
-            if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
-            if (obj.playbackTracking && obj.playbackTracking.ptrackingUrl) delete obj.playbackTracking.ptrackingUrl;
-
-            // Recurse into known YouTube containers
-            if (obj.playerResponse) {
-                if (typeof obj.playerResponse === 'object') {
-                    sanitizeYtPlayerResponse(obj.playerResponse, depth + 1);
-                } else if (typeof obj.playerResponse === 'string') {
-                    try {
-                        const parsed = JSON.parse(obj.playerResponse);
-                        sanitizeYtPlayerResponse(parsed, depth + 1);
-                        obj.playerResponse = JSON.stringify(parsed);
-                    } catch (e) {}
+        // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
+        function sanitizeYtPlayerResponse(obj, depth) {
+            if (!obj || typeof obj !== 'object') return;
+            if (!depth) depth = 0;
+            if (depth > 6) return;
+            try {
+                if (Array.isArray(obj)) {
+                    for (let i = 0; i < obj.length; i++) {
+                        sanitizeYtPlayerResponse(obj[i], depth + 1);
+                    }
+                    return;
                 }
-            }
 
-            // Mobile YouTube prefetch & watch endpoints (resolve_url, get_watch, next)
-            if (obj.endpoint && obj.endpoint.watchEndpoint) {
-                sanitizeYtPlayerResponse(obj.endpoint.watchEndpoint, depth + 1);
-            }
-            if (obj.watchEndpoint) {
-                if (obj.watchEndpoint.unserializedPrefetchData) {
-                    sanitizeYtPlayerResponse(obj.watchEndpoint.unserializedPrefetchData, depth + 1);
+                // Defuse ad arrays and ad configs if present on this object
+                if ('adPlacements' in obj) obj.adPlacements = [];
+                if ('playerAds' in obj) obj.playerAds = [];
+                if ('adSlots' in obj) obj.adSlots = [];
+                if ('adBreaks' in obj) obj.adBreaks = [];
+                if ('adPlacementConfig' in obj) delete obj.adPlacementConfig;
+                if ('adBreakHeartbeatParams' in obj) delete obj.adBreakHeartbeatParams;
+                if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
+                if (obj.playbackTracking && obj.playbackTracking.ptrackingUrl) delete obj.playbackTracking.ptrackingUrl;
+
+                // Recurse into known YouTube containers
+                if (obj.playerResponse) {
+                    if (typeof obj.playerResponse === 'object') {
+                        sanitizeYtPlayerResponse(obj.playerResponse, depth + 1);
+                    } else if (typeof obj.playerResponse === 'string') {
+                        try {
+                            const parsed = JSON.parse(obj.playerResponse);
+                            sanitizeYtPlayerResponse(parsed, depth + 1);
+                            obj.playerResponse = JSON.stringify(parsed);
+                        } catch (e) {}
+                    }
                 }
-            }
-            if (obj.unserializedPrefetchData) {
-                sanitizeYtPlayerResponse(obj.unserializedPrefetchData, depth + 1);
-            }
-            if (obj.actions && Array.isArray(obj.actions)) {
-                sanitizeYtPlayerResponse(obj.actions, depth + 1);
-            }
+
+                // Mobile YouTube prefetch & watch endpoints (resolve_url, get_watch, next)
+                if (obj.endpoint && obj.endpoint.watchEndpoint) {
+                    sanitizeYtPlayerResponse(obj.endpoint.watchEndpoint, depth + 1);
+                }
+                if (obj.watchEndpoint) {
+                    if (obj.watchEndpoint.unserializedPrefetchData) {
+                        sanitizeYtPlayerResponse(obj.watchEndpoint.unserializedPrefetchData, depth + 1);
+                    }
+                }
+                if (obj.unserializedPrefetchData) {
+                    sanitizeYtPlayerResponse(obj.unserializedPrefetchData, depth + 1);
+                }
+                if (obj.actions && Array.isArray(obj.actions)) {
+                    sanitizeYtPlayerResponse(obj.actions, depth + 1);
+                }
+            } catch (e) {}
+        }
+
+        // Hook ytInitialPlayerResponse so initial inline page data is sanitized before player boots
+        let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
+        if (_ytInitialPlayerResponse) sanitizeYtPlayerResponse(_ytInitialPlayerResponse);
+        try {
+            Object.defineProperty(window, 'ytInitialPlayerResponse', {
+                get: function() { return _ytInitialPlayerResponse; },
+                set: function(val) {
+                    sanitizeYtPlayerResponse(val);
+                    _ytInitialPlayerResponse = val;
+                },
+                configurable: true
+            });
         } catch (e) {}
-    }
 
-    // Hook ytInitialPlayerResponse so initial inline page data is sanitized before player boots
-    let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
-    if (_ytInitialPlayerResponse) sanitizeYtPlayerResponse(_ytInitialPlayerResponse);
-    try {
-        Object.defineProperty(window, 'ytInitialPlayerResponse', {
-            get: function() { return _ytInitialPlayerResponse; },
-            set: function(val) {
-                sanitizeYtPlayerResponse(val);
-                _ytInitialPlayerResponse = val;
-            },
-            configurable: true
-        });
-    } catch (e) {}
-
-    // uBlock Origin standard: Defuses YouTube ad data across ALL response parsing methods:
-    // 1. window.JSON.parse
-    try {
-        const origJSONParse = JSON.parse;
-        JSON.parse = function(text, reviver) {
-            const data = origJSONParse.apply(this, arguments);
-            if (data && typeof data === 'object') {
-                sanitizeYtPlayerResponse(data);
-            }
-            return data;
-        };
-    } catch (e) {}
-
-    // 2. Response.prototype.json (Critical for Chromium / Android WebView — Response.json does NOT call window.JSON.parse)
-    try {
-        if (window.Response && Response.prototype && Response.prototype.json) {
-            const origResponseJson = Response.prototype.json;
-            Response.prototype.json = async function() {
-                const data = await origResponseJson.apply(this, arguments);
+        // uBlock Origin standard: Defuses YouTube ad data across ALL response parsing methods:
+        // 1. window.JSON.parse
+        try {
+            const origJSONParse = JSON.parse;
+            JSON.parse = function(text, reviver) {
+                const data = origJSONParse.apply(this, arguments);
                 if (data && typeof data === 'object') {
                     sanitizeYtPlayerResponse(data);
                 }
                 return data;
             };
-        }
-    } catch (e) {}
+        } catch (e) {}
 
-    // 3. XMLHttpRequest.prototype.response getter (for responseType === 'json')
-    try {
-        if (window.XMLHttpRequest && XMLHttpRequest.prototype) {
-            const origXhrGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
-            if (origXhrGetter) {
-                Object.defineProperty(XMLHttpRequest.prototype, 'response', {
-                    get: function() {
-                        const res = origXhrGetter.apply(this);
-                        if (this.responseType === 'json' && res && typeof res === 'object') {
-                            sanitizeYtPlayerResponse(res);
-                        }
-                        return res;
-                    },
-                    configurable: true
-                });
-            }
-        }
-    } catch (e) {}
-
-    // ytInitialData hook intentionally removed: hooking it breaks YouTube page rendering and causes 5-10s black screen glitch.
-
-    // Instagram response scrubber
-    function sanitizeInstagramData(data) {
-        if (!data || typeof data !== 'object') return false;
-        let modified = false;
+        // 2. Response.prototype.json (Critical for Chromium / Android WebView — Response.json does NOT call window.JSON.parse)
         try {
-            // GraphQL timeline connection
-            if (data.data && data.data.xdt_api__v1__feed__timeline__connection) {
-                const conn = data.data.xdt_api__v1__feed__timeline__connection;
-                if (Array.isArray(conn.edges)) {
-                    conn.edges = conn.edges.filter(function(edge) {
-                        const node = edge && edge.node;
-                        if (!node) return true;
-                        if (node.__typename === 'XDTFeedItem' && node.media_or_ad) {
-                            return !node.media_or_ad.ad_id && !node.media_or_ad.is_paid_partnership && !node.media_or_ad.sponsored_data;
-                        }
-                        if (node.is_ad || node.is_sponsored || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
-                        return true;
-                    });
-                    modified = true;
-                }
-            }
-
-            // GraphQL stories/reels connection
-            if (data.data && data.data.xdt_api__v1__feed__reels_tray__connection) {
-                const conn = data.data.xdt_api__v1__feed__reels_tray__connection;
-                if (Array.isArray(conn.edges)) {
-                    conn.edges = conn.edges.filter(function(edge) {
-                        const node = edge && edge.node;
-                        if (!node) return true;
-                        if (node.is_ad || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
-                        return true;
-                    });
-                    modified = true;
-                }
-            }
-
-            // REST timeline feed items
-            if (Array.isArray(data.feed_items)) {
-                data.feed_items = data.feed_items.filter(function(item) {
-                    if (item.ad_id || item.is_sponsored || item.sponsored_data) return false;
-                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership)) return false;
-                    return true;
-                });
-                modified = true;
-            }
-
-            // REST general items
-            if (Array.isArray(data.items)) {
-                data.items = data.items.filter(function(item) {
-                    if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
-                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership || item.media_or_ad.ad_type)) return false;
-                    return true;
-                });
-                modified = true;
-            }
-
-            // Injected items (newer Instagram API wraps ads inside injected_items)
-            if (Array.isArray(data.injected_items)) {
-                data.injected_items = data.injected_items.filter(function(item) {
-                    if (!item) return true;
-                    // All injected items with ad content types
-                    if (item.item_type && item.item_type !== 'media') return false;
-                    if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
-                    return true;
-                });
-                modified = true;
-            }
-
-            // Top-level response with embedded edge containers
-            if (data.data) {
-                ['user', 'xdt_api__v1__media__shortcode__web_info', 'xdt_api__v1__media__media_aware_shortcode'].forEach(function(key) {
-                    const container = data.data[key];
-                    if (container && container.edge_web_feed_timeline) {
-                        const edges = container.edge_web_feed_timeline.edges;
-                        if (Array.isArray(edges)) {
-                            container.edge_web_feed_timeline.edges = edges.filter(function(edge) {
-                                const node = edge && edge.node;
-                                if (!node) return true;
-                                if (node.__typename === 'GraphSponsoredUser' || node.__typename === 'XDTAdMedia') return false;
-                                if (node.is_promoted) return false;
-                                if (node.media_or_ad && (node.media_or_ad.ad_id || node.media_or_ad.is_paid_partnership)) return false;
-                                return true;
-                            });
-                            modified = true;
-                        }
+            if (window.Response && Response.prototype && Response.prototype.json) {
+                const origResponseJson = Response.prototype.json;
+                Response.prototype.json = async function() {
+                    const data = await origResponseJson.apply(this, arguments);
+                    if (data && typeof data === 'object') {
+                        sanitizeYtPlayerResponse(data);
                     }
-                });
+                    return data;
+                };
             }
         } catch (e) {}
-        return modified;
-    }
 
-    // =========================================================================
-    // 2. Network Hook: Fetch & XHR Interceptor (YouTube + Instagram)
-    // =========================================================================
-    (function installNetworkInterceptor() {
-        if (window.__fokk_net_hooked) return;
-        window.__fokk_net_hooked = true;
+        // 3. XMLHttpRequest.prototype.response getter (for responseType === 'json')
+        try {
+            if (window.XMLHttpRequest && XMLHttpRequest.prototype) {
+                const origXhrGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
+                if (origXhrGetter) {
+                    Object.defineProperty(XMLHttpRequest.prototype, 'response', {
+                        get: function() {
+                            const res = origXhrGetter.apply(this);
+                            if (this.responseType === 'json' && res && typeof res === 'object') {
+                                sanitizeYtPlayerResponse(res);
+                            }
+                            return res;
+                        },
+                        configurable: true
+                    });
+                }
+            }
+        } catch (e) {}
 
+        // Instagram response scrubber
+        function sanitizeInstagramData(data) {
+            if (!data || typeof data !== 'object') return false;
+            let modified = false;
+            try {
+                // GraphQL timeline connection
+                if (data.data && data.data.xdt_api__v1__feed__timeline__connection) {
+                    const conn = data.data.xdt_api__v1__feed__timeline__connection;
+                    if (Array.isArray(conn.edges)) {
+                        conn.edges = conn.edges.filter(function(edge) {
+                            const node = edge && edge.node;
+                            if (!node) return true;
+                            if (node.__typename === 'XDTFeedItem' && node.media_or_ad) {
+                                return !node.media_or_ad.ad_id && !node.media_or_ad.is_paid_partnership && !node.media_or_ad.sponsored_data;
+                            }
+                            if (node.is_ad || node.is_sponsored || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
+                            return true;
+                        });
+                        modified = true;
+                    }
+                }
+
+                // GraphQL stories/reels connection
+                if (data.data && data.data.xdt_api__v1__feed__reels_tray__connection) {
+                    const conn = data.data.xdt_api__v1__feed__reels_tray__connection;
+                    if (Array.isArray(conn.edges)) {
+                        conn.edges = conn.edges.filter(function(edge) {
+                            const node = edge && edge.node;
+                            if (!node) return true;
+                            if (node.is_ad || (node.media_or_ad && node.media_or_ad.ad_id)) return false;
+                            return true;
+                        });
+                        modified = true;
+                    }
+                }
+
+                // REST timeline feed items
+                if (Array.isArray(data.feed_items)) {
+                    data.feed_items = data.feed_items.filter(function(item) {
+                        if (item.ad_id || item.is_sponsored || item.sponsored_data) return false;
+                        if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership)) return false;
+                        return true;
+                    });
+                    modified = true;
+                }
+
+                // REST general items
+                if (Array.isArray(data.items)) {
+                    data.items = data.items.filter(function(item) {
+                        if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
+                        if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership || item.media_or_ad.ad_type)) return false;
+                        return true;
+                    });
+                    modified = true;
+                }
+
+                // Injected items (newer Instagram API wraps ads inside injected_items)
+                if (Array.isArray(data.injected_items)) {
+                    data.injected_items = data.injected_items.filter(function(item) {
+                        if (!item) return true;
+                        if (item.item_type && item.item_type !== 'media') return false;
+                        if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
+                        return true;
+                    });
+                    modified = true;
+                }
+
+                // Top-level response with embedded edge containers
+                if (data.data) {
+                    ['user', 'xdt_api__v1__media__shortcode__web_info', 'xdt_api__v1__media__media_aware_shortcode'].forEach(function(key) {
+                        const container = data.data[key];
+                        if (container && container.edge_web_feed_timeline) {
+                            const edges = container.edge_web_feed_timeline.edges;
+                            if (Array.isArray(edges)) {
+                                container.edge_web_feed_timeline.edges = edges.filter(function(edge) {
+                                    const node = edge && edge.node;
+                                    if (!node) return true;
+                                    if (node.__typename === 'GraphSponsoredUser' || node.__typename === 'XDTAdMedia') return false;
+                                    if (node.is_promoted) return false;
+                                    if (node.media_or_ad && (node.media_or_ad.ad_id || node.media_or_ad.is_paid_partnership)) return false;
+                                    return true;
+                                });
+                                modified = true;
+                            }
+                        }
+                    });
+                }
+            } catch (e) {}
+            return modified;
+        }
+
+        // 2. Network Hook: Fetch & XHR Interceptor (Instagram)
         if (window.fetch) {
             const origFetch = window.fetch;
-
-            // Build safe headers for a modified JSON response.
             function makeSafeHeaders(originalHeaders) {
                 const safe = {};
                 try {
@@ -272,12 +265,6 @@
                 const response = await origFetch.apply(this, args);
                 try {
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
-
-                    // YouTube: do NOT intercept fetch responses — re-creating Response objects
-                    // breaks YouTube's internal player pipeline causing black screen on SPA navigation.
-                    // YouTube ad blocking is handled natively by shouldInterceptRequest in MediaHubActivity.
-
-                    // Instagram feed & GraphQL data
                     if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') ||
                         url.includes('/api/v1/feed/reels_tray/') || url.includes('/api/v1/discover/') ||
                         url.includes('/api/v1/igtv/') || url.includes('/api/v1/clips/') ||
@@ -306,7 +293,6 @@
             };
             XMLHttpRequest.prototype.send = function(body) {
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
-                    // Instagram only — YouTube XHR interception removed to prevent black screen
                     const isIg = this._fokkTargetUrl.includes('/graphql/query') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/timeline/') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/') ||
@@ -339,7 +325,31 @@
                 return origSend.apply(this, arguments);
             };
         }
-    })();
+    }
+
+    // Execute directly in current world
+    try { installMainWorldDefusers(); } catch (e) {}
+
+    // Bridge into the page's Main World if running in an Isolated World (e.g. Android addDocumentStartJavaScript)
+    try {
+        const bridgeScript = document.createElement('script');
+        bridgeScript.textContent = '(' + installMainWorldDefusers.toString() + ')();';
+        const docRoot = document.head || document.documentElement;
+        if (docRoot) {
+            docRoot.appendChild(bridgeScript);
+            bridgeScript.remove();
+        } else {
+            const bridgeObserver = new MutationObserver(function() {
+                const root = document.head || document.documentElement;
+                if (root) {
+                    bridgeObserver.disconnect();
+                    root.appendChild(bridgeScript);
+                    bridgeScript.remove();
+                }
+            });
+            bridgeObserver.observe(document, { childList: true, subtree: true });
+        }
+    } catch (e) {}
 
     const cosmeticCss = `
         /* Instagram Sponsored & App Promo Hiding */
@@ -701,6 +711,27 @@
         document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
             try { el.remove(); } catch (e) {}
         });
+
+        // 4. Handle mobile unskippable ad video if present
+        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay');
+        const v = document.querySelector('video');
+        if (isAdShowing && v) {
+            v.muted = true;
+            v.playbackRate = 16.0;
+            if (isFinite(v.duration) && v.duration > 0) {
+                v.currentTime = v.duration;
+            }
+        } else if (v && v.playbackRate > 1.0) {
+            v.playbackRate = 1.0;
+        }
+
+        // 5. Ensure real video unpauses on mobile watch page navigation
+        if (!isAdShowing && v && v.paused && !v.ended && window.location.pathname.includes('/watch')) {
+            const playPromise = v.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function() {});
+            }
+        }
     }
 
     function scrubYouTubeSponsored() {

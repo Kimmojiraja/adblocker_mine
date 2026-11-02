@@ -2100,6 +2100,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
                     acceptHeader.contains("audio/") ||
+                    host.contains("googlevideo.com") ||
+                    urlStr.contains("/videoplayback") ||
                     listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
                         .any { urlStr.substringBefore('?').endsWith(it) }
                 val isAdScript = urlStr.contains("/pagead/") ||

@@ -712,20 +712,9 @@
             try { el.remove(); } catch (e) {}
         });
 
-        // 4. Handle mobile unskippable ad video if present
+        // 4. Ensure real video unpauses on mobile watch page navigation
         const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay');
         const v = document.querySelector('video');
-        if (isAdShowing && v) {
-            v.muted = true;
-            v.playbackRate = 16.0;
-            if (isFinite(v.duration) && v.duration > 0) {
-                v.currentTime = v.duration;
-            }
-        } else if (v && v.playbackRate > 1.0) {
-            v.playbackRate = 1.0;
-        }
-
-        // 5. Ensure real video unpauses on mobile watch page navigation
         if (!isAdShowing && v && v.paused && !v.ended && window.location.pathname.includes('/watch')) {
             const playPromise = v.play();
             if (playPromise !== undefined) {

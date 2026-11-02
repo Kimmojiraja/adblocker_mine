@@ -321,17 +321,35 @@
 
             document.addEventListener('click', function(e) {
                 if (!window.location.hostname.includes('youtube.com')) return;
-                const pauseBtn = e.target.closest('.ytp-play-button[aria-label*="Pause" i], [aria-label="Pause" i]');
+                const pauseBtn = e.target.closest('.ytp-play-button[aria-label*="Pause" i], [aria-label="Pause" i], .ytp-play-button[data-title-no-tooltip="Pause"]');
                 if (pauseBtn) {
                     userExplicitPaused = true;
+                    return;
                 }
                 const playBtn = e.target.closest('.ytp-play-button[aria-label*="Play" i], [aria-label="Play" i], .ytp-large-play-button, .ytm-play-button');
                 if (playBtn) {
                     userExplicitPaused = false;
+                    return;
                 }
             }, { capture: true, passive: true });
 
-            // Immediate Playback & Unmute Trigger (Eliminates the "manual tap for play" requirement)
+            document.addEventListener('pause', function(e) {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                if (e.target && e.target.tagName === 'VIDEO') {
+                    if (e.target.currentTime > 0.5 && !e.target.ended) {
+                        userExplicitPaused = true;
+                    }
+                }
+            }, { capture: true, passive: true });
+
+            document.addEventListener('play', function(e) {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                if (e.target && e.target.tagName === 'VIDEO') {
+                    userExplicitPaused = false;
+                }
+            }, { capture: true, passive: true });
+
+            // Immediate Playback & Unmute Trigger (Clean & Non-fighting: No button toggling loops)
             function triggerPlayNow() {
                 if (!window.location.hostname.includes('youtube.com')) return;
                 if (userExplicitPaused) return;
@@ -364,32 +382,33 @@
                         try { video.volume = 1.0; } catch (e) {}
                     }
                     if (video.paused && !userExplicitPaused) {
-                        try { video.play(); } catch (e) {}
+                        try {
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(function() {});
+                            }
+                        } catch (e) {}
                     }
-                }
-
-                // Click native play button if visible/present on mobile player overlay
-                const playButtons = [
-                    '.ytp-large-play-button',
-                    '.ytm-play-button',
-                    'button[aria-label="Play" i]',
-                    'button[aria-label*="Play" i]',
-                    '.ytp-play-button[aria-label*="Play" i]',
-                    '.ytp-c Salon-play-button'
-                ];
-                for (let i = 0; i < playButtons.length; i++) {
-                    const btn = document.querySelector(playButtons[i]);
-                    if (btn && typeof btn.click === 'function') {
-                        try { btn.click(); break; } catch (e) {}
-                    }
-                }
-
-                const unmuteBtn = document.querySelector('.ytp-unmute, [aria-label*="unmute" i], .ytm-unmute-button');
-                if (unmuteBtn && typeof unmuteBtn.click === 'function') {
-                    try { unmuteBtn.click(); } catch (e) {}
                 }
             }
             window.__fokk_triggerPlay = triggerPlayNow;
+            window.__fokk_mediaPlay = function() {
+                userExplicitPaused = false;
+                triggerPlayNow();
+            };
+            window.__fokk_mediaPause = function() {
+                userExplicitPaused = true;
+                const v = document.querySelector('video');
+                if (v) try { v.pause(); } catch (e) {}
+                const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+                if (player && typeof player.pauseVideo === 'function') try { player.pauseVideo(); } catch (e) {}
+            };
+            window.__fokk_mediaSeek = function(sec) {
+                const v = document.querySelector('video');
+                if (v) {
+                    try { v.currentTime = Math.max(0, v.currentTime + sec); } catch (e) {}
+                }
+            };
 
             // 1-Tap Direct Clean Navigation: Single tap opens & auto-plays immediately
             document.addEventListener('pointerup', function(e) {
@@ -405,7 +424,6 @@
                     userExplicitPaused = false;
                     setTimeout(triggerPlayNow, 300);
                     setTimeout(triggerPlayNow, 800);
-                    setTimeout(triggerPlayNow, 1600);
                     return; // DO NOT reload, let YouTube switch video smoothly and auto-play
                 }
 
@@ -451,7 +469,6 @@
                         try {
                             player.nextVideo();
                             setTimeout(triggerPlayNow, 500);
-                            setTimeout(triggerPlayNow, 1200);
                             return;
                         } catch (e) {}
                     }
@@ -460,7 +477,6 @@
                         try {
                             nextBtn.click();
                             setTimeout(triggerPlayNow, 500);
-                            setTimeout(triggerPlayNow, 1200);
                             return;
                         } catch (e) {}
                     }
@@ -489,10 +505,11 @@
                 if (player && typeof player.nextVideo === 'function') {
                     try {
                         player.nextVideo();
-                        setTimeout(triggerPlayNow, 600);
+                        setTimeout(triggerPlayNow, 500);
                     } catch (err) {}
                 }
             }
+            window.__fokk_advancePlaylistOrQueue = advancePlaylistOrQueue;
 
             document.addEventListener('ended', function(e) {
                 setTimeout(advancePlaylistOrQueue, 600);
@@ -501,22 +518,9 @@
             // Ensure playback starts automatically whenever watch page loads or updates
             window.addEventListener('yt-navigate-finish', function() {
                 userExplicitPaused = false;
-                setTimeout(triggerPlayNow, 200);
-                setTimeout(triggerPlayNow, 600);
-                setTimeout(triggerPlayNow, 1200);
+                setTimeout(triggerPlayNow, 300);
+                setTimeout(triggerPlayNow, 800);
             }, { capture: true, passive: true });
-
-            let autoplayLoopCount = 0;
-            const autoplayWatchdog = setInterval(function() {
-                if (window.location.pathname.startsWith('/watch')) {
-                    const v = document.querySelector('video');
-                    if (v && v.paused && !userExplicitPaused) {
-                        triggerPlayNow();
-                    }
-                }
-                autoplayLoopCount++;
-                if (autoplayLoopCount > 30) clearInterval(autoplayWatchdog);
-            }, 500);
 
             // Screen-off background audio: Prevent YouTube from pausing when screen locks or app is minimized
             try {
@@ -545,6 +549,18 @@
             }
 
             window.fetch = async function(...args) {
+                try {
+                    if (args[1]) {
+                        if (!args[1].headers) args[1].headers = {};
+                        if (args[1].headers instanceof Headers) {
+                            if (!args[1].headers.has('X-Forwarded-For')) args[1].headers.set('X-Forwarded-For', '104.28.19.1');
+                            if (!args[1].headers.has('Client-IP')) args[1].headers.set('Client-IP', '104.28.19.1');
+                        } else if (typeof args[1].headers === 'object') {
+                            if (!args[1].headers['X-Forwarded-For']) args[1].headers['X-Forwarded-For'] = '104.28.19.1';
+                            if (!args[1].headers['Client-IP']) args[1].headers['Client-IP'] = '104.28.19.1';
+                        }
+                    }
+                } catch (e) {}
                 const response = await origFetch.apply(this, args);
                 try {
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
@@ -587,6 +603,10 @@
                 return origOpen.apply(this, arguments);
             };
             XMLHttpRequest.prototype.send = function(body) {
+                try {
+                    this.setRequestHeader('X-Forwarded-For', '104.28.19.1');
+                    this.setRequestHeader('Client-IP', '104.28.19.1');
+                } catch (e) {}
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
                     const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') ||
                                  this._fokkTargetUrl.includes('/youtubei/v1/next') ||
@@ -1327,8 +1347,17 @@
 
     function notifyNativePlayback(isPlaying, hasActiveVideo) {
         try {
-            if (window.FokkMediaBridge && typeof window.FokkMediaBridge.onMediaPlaybackChanged === 'function') {
-                window.FokkMediaBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
+            let title = document.title || '';
+            const ytTitle = document.querySelector('h1.title, .slim-video-information-title, ytm-slim-video-metadata-renderer .title');
+            if (ytTitle && ytTitle.textContent) {
+                title = ytTitle.textContent.trim();
+            }
+            if (window.FokkMediaBridge) {
+                if (typeof window.FokkMediaBridge.reportMediaPlayback === 'function') {
+                    window.FokkMediaBridge.reportMediaPlayback(isPlaying, hasActiveVideo, title);
+                } else if (typeof window.FokkMediaBridge.onMediaPlaybackChanged === 'function') {
+                    window.FokkMediaBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
+                }
             }
         } catch (e) {}
     }

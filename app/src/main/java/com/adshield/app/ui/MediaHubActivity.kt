@@ -7,6 +7,9 @@ import android.widget.RelativeLayout
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
+import android.os.PowerManager
 import android.util.Base64
 import androidx.activity.result.contract.ActivityResultContracts
 import android.speech.RecognizerIntent
@@ -225,6 +228,9 @@ open class MediaHubActivity : AppCompatActivity() {
     private var isDarkMode = false
     private var showingPrivateTabs = false
     private var isMediaPlaying = false
+    private var mediaSession: MediaSession? = null
+    private var mediaWakeLock: PowerManager.WakeLock? = null
+    private var currentMediaTitle: String = ""
     private var isBiometricAuthenticatedForSession = false
     private var isDecoyUnlockedThisSession = false
 
@@ -769,6 +775,7 @@ open class MediaHubActivity : AppCompatActivity() {
         loadInjectionScript()
         setupControls()
         setupRefreshControl()
+        initMediaSession()
         fetchLiveTrendingTopics()
 
         val initialUrl = incomingWebUrl(intent)
@@ -797,9 +804,27 @@ open class MediaHubActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent?.action == ACTION_WIPE_GHOST_SESSION) {
-            wipeAllPrivateTabsAndSession()
-            return
+        when (intent?.action) {
+            ACTION_WIPE_GHOST_SESSION -> {
+                wipeAllPrivateTabsAndSession()
+                return
+            }
+            ACTION_MEDIA_TOGGLE -> {
+                toggleMediaPlayPause()
+                return
+            }
+            ACTION_MEDIA_REWIND_10 -> {
+                rewindMedia10()
+                return
+            }
+            ACTION_MEDIA_FORWARD_10 -> {
+                forwardMedia10()
+                return
+            }
+            ACTION_MEDIA_NEXT -> {
+                nextMediaTrack()
+                return
+            }
         }
         handleOpenAction(intent)
         val incomingUrl = incomingWebUrl(intent)
@@ -1043,25 +1068,13 @@ open class MediaHubActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun onMediaPlaybackChanged(isPlaying: Boolean, hasActiveVideo: Boolean) {
+            reportMediaPlayback(isPlaying, hasActiveVideo, "")
+        }
+
+        @JavascriptInterface
+        fun reportMediaPlayback(isPlaying: Boolean, hasActiveVideo: Boolean, title: String) {
             activity.runOnUiThread {
-                activity.isMediaPlaying = isPlaying
-                if (isPlaying || hasActiveVideo) {
-                    activity.lastMediaPlayingTime = System.currentTimeMillis()
-                    if (hasActiveVideo) {
-                        activity.collapseCommandBar(animated = true)
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val isStartPage = activity.activeTab?.url?.contains("fokk_start.html") == true
-                    val canAutoPip = (isPlaying || hasActiveVideo) && !isStartPage
-                    try {
-                        val builder = PictureInPictureParams.Builder()
-                            .setAspectRatio(Rational(16, 9))
-                            .setAutoEnterEnabled(canAutoPip)
-                            .setSeamlessResizeEnabled(true)
-                        activity.setPictureInPictureParams(builder.build())
-                    } catch (e: Exception) {}
-                }
+                activity.onMediaPlaybackUpdated(isPlaying, hasActiveVideo, title)
             }
         }
 
@@ -2350,7 +2363,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 binding.fullscreenContainer.addView(
                     view,
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -4220,6 +4233,11 @@ open class MediaHubActivity : AppCompatActivity() {
             showPrivacyAccountDialog()
         }
 
+        sheetBinding.rowBurnSession.setOnClickListener {
+            dialog.dismiss()
+            burnSession()
+        }
+
         val isStartPage = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
         val isPrivateProfile = isIsolatedPrivateProfile
 
@@ -5470,12 +5488,21 @@ open class MediaHubActivity : AppCompatActivity() {
             activeWebView?.onResume()
             return
         }
+        if (isMediaPlaying) {
+            activeWebView?.resumeTimers()
+            if (mediaWakeLock?.isHeld == false) {
+                try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
+            }
+        }
         CookieManager.getInstance().flush()
     }
 
     override fun onStop() {
         super.onStop()
         updateGhostModeNotification()
+        if (isMediaPlaying) {
+            activeWebView?.resumeTimers()
+        }
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -5630,6 +5657,12 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         textToSpeech?.stop()
         textToSpeech?.shutdown()
+        if (mediaWakeLock?.isHeld == true) {
+            try { mediaWakeLock?.release() } catch (e: Exception) {}
+        }
+        try { mediaSession?.release() } catch (e: Exception) {}
+        mediaSession = null
+        (getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.cancel(NOTIFICATION_ID_MEDIA_PLAYBACK)
         super.onDestroy()
     }
 
@@ -5868,6 +5901,220 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun initMediaSession() {
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+            mediaWakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FokkShield:MediaAudioWakeLock")
+
+            mediaSession = MediaSession(this, "FokkMediaSession").apply {
+                setCallback(object : MediaSession.Callback() {
+                    override fun onPlay() {
+                        toggleMediaPlayPause(forcePlay = true)
+                    }
+
+                    override fun onPause() {
+                        toggleMediaPlayPause(forcePause = true)
+                    }
+
+                    override fun onSkipToNext() {
+                        nextMediaTrack()
+                    }
+
+                    override fun onSkipToPrevious() {
+                        rewindMedia10()
+                    }
+
+                    override fun onFastForward() {
+                        forwardMedia10()
+                    }
+
+                    override fun onRewind() {
+                        rewindMedia10()
+                    }
+
+                    override fun onSeekTo(pos: Long) {
+                        val sec = pos / 1000.0
+                        activeWebView?.evaluateJavascript("var v = document.querySelector('video'); if (v) v.currentTime = $sec;", null)
+                    }
+                })
+                setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize MediaSession", e)
+        }
+    }
+
+    fun onMediaPlaybackUpdated(isPlaying: Boolean, hasActiveVideo: Boolean, title: String? = null) {
+        isMediaPlaying = isPlaying
+        if (!title.isNullOrBlank()) {
+            currentMediaTitle = title
+        }
+        if (isPlaying || hasActiveVideo) {
+            lastMediaPlayingTime = System.currentTimeMillis()
+            if (hasActiveVideo) {
+                collapseCommandBar(animated = true)
+            }
+            if (mediaWakeLock?.isHeld == false) {
+                try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
+            }
+            updateMediaSessionPlaybackState(isPlaying = isPlaying)
+            updateMediaPlaybackNotification(isPlaying = isPlaying, title = currentMediaTitle)
+        } else {
+            if (mediaWakeLock?.isHeld == true) {
+                try { mediaWakeLock?.release() } catch (e: Exception) {}
+            }
+            updateMediaSessionPlaybackState(isPlaying = false)
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.cancel(NOTIFICATION_ID_MEDIA_PLAYBACK)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
+            val canAutoPip = (isPlaying || hasActiveVideo) && !isStartPage
+            try {
+                val builder = PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .setAutoEnterEnabled(canAutoPip)
+                    .setSeamlessResizeEnabled(true)
+                setPictureInPictureParams(builder.build())
+            } catch (e: Exception) {}
+        }
+    }
+
+    private fun updateMediaSessionPlaybackState(isPlaying: Boolean) {
+        try {
+            val stateBuilder = PlaybackState.Builder()
+                .setActions(
+                    PlaybackState.ACTION_PLAY or
+                    PlaybackState.ACTION_PAUSE or
+                    PlaybackState.ACTION_PLAY_PAUSE or
+                    PlaybackState.ACTION_SKIP_TO_NEXT or
+                    PlaybackState.ACTION_SKIP_TO_PREVIOUS or
+                    PlaybackState.ACTION_FAST_FORWARD or
+                    PlaybackState.ACTION_REWIND
+                )
+                .setState(
+                    if (isPlaying) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED,
+                    PlaybackState.PLAYBACK_POSITION_UNKNOWN,
+                    1.0f
+                )
+            mediaSession?.setPlaybackState(stateBuilder.build())
+            mediaSession?.isActive = isPlaying
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating MediaSession state", e)
+        }
+    }
+
+    private fun updateMediaPlaybackNotification(isPlaying: Boolean, title: String) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+
+        val playIntent = Intent(this, MediaHubActivity::class.java).apply {
+            action = ACTION_MEDIA_TOGGLE
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val rewIntent = Intent(this, MediaHubActivity::class.java).apply {
+            action = ACTION_MEDIA_REWIND_10
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val fwdIntent = Intent(this, MediaHubActivity::class.java).apply {
+            action = ACTION_MEDIA_FORWARD_10
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val contentIntent = Intent(this, MediaHubActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        val pPlay = PendingIntent.getActivity(this, 101, playIntent, flags)
+        val pRew = PendingIntent.getActivity(this, 102, rewIntent, flags)
+        val pFwd = PendingIntent.getActivity(this, 103, fwdIntent, flags)
+        val pContent = PendingIntent.getActivity(this, 100, contentIntent, flags)
+
+        val host = activeTab?.url?.let { runCatching { Uri.parse(it).host }.getOrNull() } ?: "Fokk Shield"
+        val displayTitle = if (title.isNotBlank()) title else "Media Playing"
+
+        val notifBuilder = NotificationCompat.Builder(this, AdShieldApp.CHANNEL_ID_MEDIA_PLAYBACK)
+            .setSmallIcon(if (isPlaying) R.drawable.ic_media_play else R.drawable.ic_media_pause)
+            .setContentTitle(displayTitle)
+            .setContentText(host)
+            .setSubText("Background Audio")
+            .setContentIntent(pContent)
+            .setOngoing(isPlaying)
+            .setAutoCancel(!isPlaying)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .addAction(R.drawable.ic_media_rewind_10, "-10s", pRew)
+            .addAction(
+                if (isPlaying) R.drawable.ic_media_pause else R.drawable.ic_media_play,
+                if (isPlaying) "Pause" else "Play",
+                pPlay
+            )
+            .addAction(R.drawable.ic_media_forward_10, "+10s", pFwd)
+
+        try {
+            notificationManager.notify(NOTIFICATION_ID_MEDIA_PLAYBACK, notifBuilder.build())
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Notification permission missing", e)
+        }
+    }
+
+    private fun toggleMediaPlayPause(forcePlay: Boolean = false, forcePause: Boolean = false) {
+        val shouldPlay = if (forcePlay) true else if (forcePause) false else !isMediaPlaying
+        if (shouldPlay) {
+            activeWebView?.evaluateJavascript(
+                "if (typeof window.__fokk_mediaPlay === 'function') { window.__fokk_mediaPlay(); } else { var v = document.querySelector('video'); if (v) v.play(); }", null
+            )
+        } else {
+            activeWebView?.evaluateJavascript(
+                "if (typeof window.__fokk_mediaPause === 'function') { window.__fokk_mediaPause(); } else { var v = document.querySelector('video'); if (v) v.pause(); }", null
+            )
+        }
+    }
+
+    private fun rewindMedia10() {
+        activeWebView?.evaluateJavascript(
+            "if (typeof window.__fokk_mediaSeek === 'function') { window.__fokk_mediaSeek(-10); } else { var v = document.querySelector('video'); if (v) v.currentTime = Math.max(0, v.currentTime - 10); }", null
+        )
+    }
+
+    private fun forwardMedia10() {
+        activeWebView?.evaluateJavascript(
+            "if (typeof window.__fokk_mediaSeek === 'function') { window.__fokk_mediaSeek(10); } else { var v = document.querySelector('video'); if (v) v.currentTime += 10; }", null
+        )
+    }
+
+    private fun nextMediaTrack() {
+        activeWebView?.evaluateJavascript(
+            "if (typeof window.__fokk_advancePlaylistOrQueue === 'function') { window.__fokk_advancePlaylistOrQueue(); } else { var v = document.querySelector('video'); if (v) v.currentTime += 10; }", null
+        )
+    }
+
+    private fun burnSession() {
+        try {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+            WebStorage.getInstance().deleteAllData()
+            activeWebView?.clearCache(true)
+            activeWebView?.clearHistory()
+
+            tabs.clear()
+            val startTab = BrowserTab(
+                id = UUID.randomUUID().toString(),
+                title = "Fokk Start",
+                url = "file:///android_asset/fokk_start.html",
+                isPrivate = false
+            )
+            tabs.add(startTab)
+            activeTabIndex = 0
+            activeWebView?.loadUrl("file:///android_asset/fokk_start.html")
+            updateTabCounter()
+            setBrowserChromeVisible(true)
+            Toast.makeText(this, "🔥 Session burned. All history, cache & tabs purged.", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error burning session", e)
+        }
+    }
+
     companion object {
         private val THIRD_PARTY_MEDIA_SERVICE_DOMAINS = setOf(
             "youtube.com", "youtube-nocookie.com", "youtu.be",
@@ -5917,6 +6164,11 @@ open class MediaHubActivity : AppCompatActivity() {
         const val EXTRA_OPEN_ACTION = "extra_open_action"
         const val ACTION_WIPE_GHOST_SESSION = "com.adshield.app.ACTION_WIPE_GHOST_SESSION"
         private const val NOTIFICATION_ID_GHOST_MODE = 9001
+        private const val NOTIFICATION_ID_MEDIA_PLAYBACK = 9002
+        const val ACTION_MEDIA_TOGGLE = "com.adshield.app.ACTION_MEDIA_TOGGLE"
+        const val ACTION_MEDIA_REWIND_10 = "com.adshield.app.ACTION_MEDIA_REWIND_10"
+        const val ACTION_MEDIA_FORWARD_10 = "com.adshield.app.ACTION_MEDIA_FORWARD_10"
+        const val ACTION_MEDIA_NEXT = "com.adshield.app.ACTION_MEDIA_NEXT"
         private const val TAG = "FokkBrowser"
         private const val PREFS_NAME = "fokk_browser_settings_v2"
         private const val LEGACY_PREFS_NAME = "fokk_browser_prefs"

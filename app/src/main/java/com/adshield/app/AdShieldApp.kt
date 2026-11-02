@@ -67,9 +67,19 @@ class AdShieldApp : Application() {
                 setShowBadge(true)
             }
 
+            val mediaChannel = NotificationChannel(
+                CHANNEL_ID_MEDIA_PLAYBACK,
+                "Media Playback & Lockscreen Controls",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Controls background audio playback and lockscreen media"
+                setShowBadge(false)
+            }
+
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager?.createNotificationChannel(channel)
             notificationManager?.createNotificationChannel(ghostChannel)
+            notificationManager?.createNotificationChannel(mediaChannel)
         }
     }
 
@@ -83,6 +93,7 @@ class AdShieldApp : Application() {
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"
         const val CHANNEL_ID_GHOST_MODE = "fokk_ghost_mode_channel"
+        const val CHANNEL_ID_MEDIA_PLAYBACK = "fokk_media_playback_channel"
         const val PREFS_NAME = "adshield_prefs"
         const val KEY_BLOCKED_ADS = "key_blocked_ads_count"
         const val KEY_VPN_ENABLED = "key_vpn_enabled"

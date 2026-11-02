@@ -1,6 +1,6 @@
 {
-  "versionCode": 75,
-  "versionName": "1.0.75",
+  "versionCode": 80,
+  "versionName": "1.0.80",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Instant SPA Video Starts: Hooked YouTube's internal dynamic player fetch/XHR endpoints so clicking any video loads instantly without needing a page refresh.\n- Auto-Mute Neutralized: Disarmed YouTube mobile's automatic muting on page loads and transitions so sound plays clearly and unmuted every time."
+  "changelog": "- Orientation Snapping Fixed: Fullscreen custom view no longer forces sensor landscape rotation.\n- Play/Pause Twitch Loop Fixed: Removed polling watchdog and button toggle collisions; playback automation is clean, smooth, and respects user pause.\n- Lockscreen Media Controls & MediaSession: Lockscreen card and notification with Play/Pause, Skip ±10s, and track title.\n- Screen-Off Audio Playback: Audio continues playing when the screen is locked or turned off with CPU wake lock.\n- 1-Tap Burn Session: Instantly purge all cookies, site data, cache, and open tabs with a single tap.\n- Geo-Unblocker Headers: Automatic X-Forwarded-For & Client-IP header injection to bypass location blocks without a system VPN."
 }

@@ -272,6 +272,22 @@ m.youtube.com##.ad-interrupting
 ##iframe[src*="popads.net"]
 ##iframe[src*="adsterra.com"]
 ##iframe[src*="monetag.com"]
+instagram.com##article:has(a[href*="/about/ads"])
+instagram.com##div:has(> a[href*="/about/ads"])
+instagram.com##div[data-testid="banner-mobile-app"]
+||graph.instagram.com/logging_client_events^$third-party
+||instagram.com/api/v1/ads/^
+||instagram.com/api/v1/feed/reels_tray/*$xhr
+||x.instagram.com^$third-party
+##.smartbanner
+##.app-banner
+##[class*="smartbanner"]
+##[class*="open-in-app"]
+##[class*="openInApp"]
+##[id*="open-in-app"]
+##div[data-testid="upsell-banner"]
+##xpromo-app-selector
+##shreddit-async-loader[bundlename="bottom_sheet"]
 
 ! [Section 8: Scriptlets & Anti-Circumvention Defusers]
 ##+js(set, canRunAds, true)

@@ -1040,6 +1040,9 @@ open class MediaHubActivity : AppCompatActivity() {
                 activity.isMediaPlaying = isPlaying
                 if (isPlaying || hasActiveVideo) {
                     activity.lastMediaPlayingTime = System.currentTimeMillis()
+                    if (hasActiveVideo) {
+                        activity.collapseCommandBar(animated = true)
+                    }
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val isStartPage = activity.activeTab?.url?.contains("fokk_start.html") == true
@@ -1349,6 +1352,16 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         when (uri.scheme?.lowercase(Locale.ROOT)) {
+            "file" -> {
+                if (rawUrl.startsWith("file:///android_asset/")) {
+                    if (webView != null) {
+                        loadUrlInWebView(webView, rawUrl)
+                        return true
+                    }
+                    return false
+                }
+                return false
+            }
             "http", "https" -> {
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
                 if (targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
@@ -1391,6 +1404,15 @@ open class MediaHubActivity : AppCompatActivity() {
                 handleMagnetUri(rawUrl)
                 return true
             }
+            "market" -> {
+                // Zero-Nag: Block attempts to force user to Play Store
+                val playUrl = uri.getQueryParameter("id")?.let { "https://play.google.com/store/apps/details?id=$it" }
+                if (playUrl != null && webView != null) {
+                    Toast.makeText(this, "🛡️ Zero-Nag prevented Play Store redirect", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+                return true
+            }
             "intent" -> {
                 val parsedIntent = runCatching { Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME) }.getOrNull()
                 if (parsedIntent == null) {
@@ -1402,8 +1424,12 @@ open class MediaHubActivity : AppCompatActivity() {
                     loadUrlInWebView(webView, fallbackUrl)
                     return true
                 }
+                val pkg = parsedIntent.`package`
+                if (pkg != null && (pkg.contains("android.apps") || pkg.contains("instagram") || pkg.contains("reddit") || pkg.contains("youtube") || pkg.contains("quora") || pkg.contains("spotify") || pkg.contains("twitter") || pkg.contains("tiktok"))) {
+                    // Suppress invasive auto app switch nag
+                    return true
+                }
                 if (!userGesture) {
-                    Toast.makeText(this, "Blocked a page that tried to open another app automatically", Toast.LENGTH_LONG).show()
                     return true
                 }
                 confirmExternalAppLaunch(uri, parsedIntent)
@@ -1411,7 +1437,6 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             else -> {
                 if (!userGesture) {
-                    Toast.makeText(this, "Blocked a page that tried to open another app automatically", Toast.LENGTH_LONG).show()
                     return true
                 }
                 confirmExternalAppLaunch(uri, null)
@@ -2179,6 +2204,10 @@ open class MediaHubActivity : AppCompatActivity() {
                     val js = "javascript:(function(){let vp=document.querySelector('meta[name=\"viewport\"]');if(vp){vp.setAttribute('content','width=1280, initial-scale=0.85');}})();"
                     view?.evaluateJavascript(js, null)
                 }
+
+                if (view == activeWebView) {
+                    checkSearchOrVideoAndAutoCollapse(pageUrl)
+                }
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
@@ -2680,6 +2709,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         updateTabCounter()
         persistSession()
+        checkSearchOrVideoAndAutoCollapse(current.url)
     }
 
     private fun closeTab(index: Int) {
@@ -2725,6 +2755,34 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun isThirdPartyMediaServiceHost(host: String): Boolean =
         THIRD_PARTY_MEDIA_SERVICE_DOMAINS.any { host == it || host.endsWith(".$it") }
+
+    /**
+     * Intelligently auto-collapses command bar during searches, video playback, and chat services.
+     */
+    private fun checkSearchOrVideoAndAutoCollapse(url: String?) {
+        if (url == null || url.contains("fokk_start.html")) {
+            if (commandBarCollapsed) expandCommandBar(animated = true)
+            return
+        }
+        val lower = url.lowercase(Locale.ROOT)
+        val isSearch = lower.contains("google.") && (lower.contains("/search") || lower.contains("q=")) ||
+                lower.contains("ecosia.org/search") ||
+                lower.contains("duckduckgo.com/?q=") || lower.contains("duckduckgo.com/html") ||
+                lower.contains("search.brave.com/search") ||
+                lower.contains("startpage.com/sp/search") || lower.contains("startpage.com/do/search") ||
+                lower.contains("bing.com/search")
+
+        val isVideoOrProxy = lower.contains("youtube.com/watch") || lower.contains("/shorts/") ||
+                lower.contains("youtu.be/") || lower.contains("vimeo.com") || lower.contains("twitch.tv") ||
+                lower.contains("tiktok.com") || isThirdPartyMediaService(url)
+
+        val isChatService = lower.contains("chatgpt.com") || lower.contains("claude.ai") ||
+                lower.contains("discord.com/app") || lower.contains("web.whatsapp.com")
+
+        if (isSearch || isVideoOrProxy || isChatService) {
+            collapseCommandBar(animated = true)
+        }
+    }
 
     /** Standard protection leaves same-site requests alone to reduce breakage. */
     private fun isSameSite(firstHost: String, secondHost: String): Boolean =

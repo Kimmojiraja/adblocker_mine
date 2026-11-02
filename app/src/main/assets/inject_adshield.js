@@ -409,6 +409,19 @@
         [class*="OpenInApp"],
         [id*="open-in-app"],
         [id*="openInApp"],
+        [class*="get-the-app"],
+        [class*="getTheApp"],
+        [id*="get-app"],
+        [id*="getApp"],
+        [class*="install-app"],
+        [class*="installApp"],
+        [class*="app-upsell"],
+        [class*="appUpsell"],
+        [class*="app-promo"],
+        [class*="appPromo"],
+        a[href*="play.google.com/store/apps"],
+        a[href*="itunes.apple.com"],
+        a[href*="apps.apple.com"],
         div[data-testid="upsell-banner"],
         div[data-testid="banner-mobile-app"],
         div[class*="MobileAppBanner"],
@@ -420,7 +433,11 @@
         .XPromoPopup,
         reddit-bottom-sheet,
         div[class*="xpromo"],
-        .w9hPv {
+        .w9hPv,
+        .qu-open-in-app,
+        .qu-app-banner,
+        div:has(> a[href*="play.google.com/store/apps"]),
+        div[class*="floating-banner"]:has(a[href*="app"]) {
             display: none !important;
         }
 
@@ -534,7 +551,7 @@
             }
         } catch (e) {}
 
-        // 3. Detect mobile YouTube sponsored ad or 0:00 stall state
+        // 3. Detect mobile YouTube sponsored ad state
         const adBadge = document.querySelector('.ytp-ad-text, [class*="badge-and-title"], [aria-label*="Sponsored"], .ytm-ad-preview-text, .ytp-ad-preview-text');
         const isSponsoredText = adBadge && /sponsored/i.test(adBadge.textContent || '');
         const playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player, #player');
@@ -553,19 +570,19 @@
             }
             if (video) {
                 try {
-                    if (!video.muted) {
-                        video.muted = true;
-                        adWasMutedByShield = true;
-                    }
-                    // Only accelerate if video is short (likely an ad) or duration unknown
-                    const isLikelyAdVideo = isNaN(video.duration) || video.duration === 0 || video.duration < 60;
-                    if (isLikelyAdVideo) video.playbackRate = 16.0;
-                    if (!isNaN(video.duration) && video.duration > 0 && !video.ended) {
-                        video.currentTime = Math.max(0, video.duration - 0.05);
-                    } else {
-                        // Dead/blocked ad stream (paused at 0:00 or duration is 0/NaN): trigger ended to release player
-                        // Only dispatch 'ended' if video src looks like an ad (short/blocked streams)
-                        if (video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || (!video.src.includes('googlevideo') && video.duration === 0))) {
+                    // Check if this video instance is actually an ad (ads have short duration, e.g. < 90s, or explicit ad indicators)
+                    const duration = video.duration;
+                    const isDefiniteAdVideo = !isNaN(duration) && duration > 0 && duration < 90;
+                    if (isDefiniteAdVideo) {
+                        if (!video.muted) {
+                            video.muted = true;
+                            adWasMutedByShield = true;
+                        }
+                        video.playbackRate = 16.0;
+                        video.currentTime = Math.max(0, duration - 0.05);
+                    } else if (isNaN(duration) || duration === 0) {
+                        // Dead/blocked ad stream: gently seek or trigger next
+                        if (video.src && (video.src.includes('googleads') || video.src.includes('doubleclick') || (!video.src.includes('googlevideo')))) {
                             video.dispatchEvent(new Event('ended'));
                         }
                     }
@@ -575,7 +592,7 @@
                 } catch (e) {}
             }
         } else if (video) {
-            // Content video active: restore normal speed and un-mute
+            // Main content video is active: preserve normal playback rate and volume
             if (video.playbackRate > 1.0) {
                 video.playbackRate = 1.0;
             }
@@ -598,48 +615,53 @@
     function scrubInstagramAds() {
         if (!window.location.hostname.includes('instagram.com')) return;
 
-        // 1. Scrub Sponsored Articles / Posts from feed
-        const articles = document.querySelectorAll('article, div[role="presentation"] > div > div, main div > div > article');
-        articles.forEach(function(post) {
+        // 1. Scrub Sponsored Articles / Posts / Feed items
+        const posts = document.querySelectorAll('article, div[role="article"], div[role="presentation"] > div > div, main div > div > article, div[class*="x1lliihq"]');
+        posts.forEach(function(post) {
             try {
+                if (post.tagName === 'MAIN' || post.tagName === 'BODY') return;
                 let isSponsored = false;
 
-                // Check 1: Direct link to /about/ads
+                // Check 1: Direct link to about/ads
                 if (post.querySelector('a[href*="/about/ads"], a[href*="about/ads"]')) {
                     isSponsored = true;
                 }
 
-                // Check 2: Sponsored / Paid partnership aria-label
-                if (!isSponsored && post.querySelector('[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i]')) {
+                // Check 2: Sponsored / Paid partnership aria-label or SVG icons
+                if (!isSponsored && post.querySelector('[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i], [aria-label*="Gesponsert" i], [aria-label*="Publicidad" i]')) {
                     isSponsored = true;
                 }
 
-                // Check 3: Text content in headers/spans
+                // Check 3: Header span text matching sponsored indicators
                 if (!isSponsored) {
-                    const headers = post.querySelectorAll('header span, header a, span[dir="auto"]');
-                    for (let i = 0; i < headers.length; i++) {
-                        const t = (headers[i].textContent || '').trim().toLowerCase();
-                        if (t === 'sponsored' || t === 'paid partnership' || t.startsWith('sponsored ·')) {
+                    const text = (post.innerText || post.textContent || '');
+                    if (/\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Commandité|Sponsorisé)\b/i.test(text)) {
+                        // Ensure it's not just a comment
+                        const headerArea = post.querySelector('header') || post;
+                        const headerText = (headerArea.innerText || headerArea.textContent || '');
+                        if (/\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Commandité|Sponsorisé)\b/i.test(headerText)) {
                             isSponsored = true;
-                            break;
                         }
                     }
                 }
 
-                // Check 4: App install / shop prompts in feed
-                if (!isSponsored && post.querySelector('a[href*="play.google.com"], a[href*="itunes.apple.com"]')) {
+                // Check 4: App store install / shopping prompt cards in feed
+                if (!isSponsored && post.querySelector('a[href*="play.google.com"], a[href*="itunes.apple.com"], button[aria-label*="Install" i], a[aria-label*="Install" i]')) {
                     isSponsored = true;
                 }
 
                 if (isSponsored) {
                     post.style.setProperty('display', 'none', 'important');
-                    post.remove();
+                    post.style.setProperty('height', '0px', 'important');
+                    post.style.setProperty('min-height', '0px', 'important');
+                    const parentContainer = post.closest('div[class*="x1y1aw1k"]') || post;
+                    parentContainer.style.setProperty('display', 'none', 'important');
                 }
             } catch (e) {}
         });
 
         // 2. Remove Instagram web app banner & full-screen app gate dialogs
-        document.querySelectorAll('div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"])').forEach(function(el) {
+        document.querySelectorAll('div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"]), div[class*="MobileAppBanner"]').forEach(function(el) {
             try { el.remove(); } catch (e) {}
         });
     }
@@ -682,9 +704,14 @@
     // =========================================================================
     function scrubAppPromos() {
         const host = window.location.hostname;
-        const isAppNagHost = host.includes('ecosia.org') || host.includes('youtube.com') || host.includes('spotify.com') ||
-            host.includes('reddit.com') || host.includes('instagram.com') || host.includes('quora.com');
-        if (!isAppNagHost) return;
+
+        // Universal Open-in-App / SmartBanner scrubber for all websites
+        document.querySelectorAll('.smartbanner, .app-banner, .smart-app-banner, [class*="smartbanner" i], [class*="open-in-app" i], [class*="openInApp"], [class*="getTheApp"], [class*="install-app" i], div:has(> a[href*="play.google.com/store/apps"])').forEach(function(el) {
+            try {
+                el.style.setProperty('display', 'none', 'important');
+                el.remove();
+            } catch (e) {}
+        });
 
         if (host.includes('youtube.com')) {
             document.querySelectorAll('ytm-open-app-button, .mobile-topbar-header-endpoint:has(ytm-open-app-button), [aria-label*="Open App"], [aria-label*="open app"]').forEach(function(el) {
@@ -859,40 +886,35 @@
     }
 
     function defuseClickjackingOverlays() {
+        if (!isAiFilterEnabled) return;
         try {
             unlockPageScrolling();
             const vw = window.innerWidth || document.documentElement.clientWidth;
             const vh = window.innerHeight || document.documentElement.clientHeight;
             if (!vw || !vh || !document.body) return;
 
-            // Lightweight: Only inspect top-level body children (max 25)
-            // NEVER run querySelectorAll on the entire DOM to avoid freezing the JS main thread!
-            const children = document.body.children;
-            const limit = Math.min(children.length, 25);
+            // 1. Inspect top-level body children and high z-index elements
+            const suspects = document.querySelectorAll('body > div, body > a, [style*="z-index"], [style*="zIndex"], [class*="overlay"], [class*="trap"], [id*="overlay"], [id*="trap"]');
+            const limit = Math.min(suspects.length, 40);
             for (let i = 0; i < limit; i++) {
-                const el = children[i];
-                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
+                const el = suspects[i];
+                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.tagName === 'NAV' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
 
-                // Fast attribute / class check before computedStyle
-                const styleAttr = el.getAttribute('style') || '';
-                const isFixed = styleAttr.includes('fixed') || styleAttr.includes('absolute');
-                const cName = typeof el.className === 'string' ? el.className.toLowerCase() : '';
-                const idName = typeof el.id === 'string' ? el.id.toLowerCase() : '';
-                const isOverlaySuspect = cName.includes('overlay') || cName.includes('backdrop') || cName.includes('trap') ||
-                                         idName.includes('overlay') || idName.includes('backdrop') || idName.includes('trap');
+                const style = window.getComputedStyle(el);
+                const pos = style.position;
+                if (pos === 'fixed' || pos === 'absolute') {
+                    const zIndex = parseInt(style.zIndex, 10);
+                    if (zIndex > 20 || isNaN(zIndex)) {
+                        const rect = el.getBoundingClientRect();
+                        const coversScreen = rect.width >= vw * 0.65 && rect.height >= vh * 0.65;
+                        const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
+                        const hasNoRealContent = el.children.length === 0 || (el.innerText || '').trim().length === 0;
 
-                if (isFixed || isOverlaySuspect) {
-                    const style = window.getComputedStyle(el);
-                    if (style.position === 'fixed' || style.position === 'absolute') {
-                        const zIndex = parseInt(style.zIndex, 10);
-                        if (zIndex > 50) {
-                            const rect = el.getBoundingClientRect();
-                            const coversScreen = rect.width >= vw * 0.75 && rect.height >= vh * 0.75;
-                            const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
-                            if (coversScreen && isTransparent) {
-                                el.remove();
-                                unlockPageScrolling();
-                            }
+                        if (coversScreen && (isTransparent || (hasNoRealContent && zIndex > 100))) {
+                            el.style.setProperty('display', 'none', 'important');
+                            el.style.setProperty('pointer-events', 'none', 'important');
+                            el.remove();
+                            unlockPageScrolling();
                         }
                     }
                 }

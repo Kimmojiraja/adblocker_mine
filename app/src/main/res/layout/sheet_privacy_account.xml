@@ -57,7 +57,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Fokk Privacy Vault · Active"
-                    android:textColor="#38BDF8"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -68,7 +68,7 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
-                app:tint="@color/fokk_cyan"
+                app:tint="@color/text_secondary"
                 android:contentDescription="Edit Name" />
         </LinearLayout>
 
@@ -156,11 +156,11 @@
                     android:layout_height="44dp"
                     android:text="Upload Photo"
                     android:textAllCaps="false"
-                    android:textColor="@color/fokk_cyan"
+                    android:textColor="@color/text_primary"
                     android:textSize="12sp"
                     app:cornerRadius="12dp"
                     app:icon="@drawable/ic_add"
-                    app:iconTint="@color/fokk_cyan"
+                    app:iconTint="@color/text_secondary"
                     app:strokeColor="#24344D" />
             </LinearLayout>
         </HorizontalScrollView>
@@ -229,8 +229,8 @@
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
-                    android:text="📱 Setup System-Wide Private DNS (Protects all apps) →"
-                    android:textColor="@color/fokk_cyan"
+                    android:text="Setup System-Wide Private DNS (Protects all apps) →"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -306,7 +306,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0 MB"
-                            android:textColor="#38BDF8"
+                            android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -378,7 +378,7 @@
                 android:textSize="12sp"
                 app:cornerRadius="14dp"
                 app:icon="@drawable/ic_download"
-                app:iconTint="@color/fokk_cyan"
+                app:iconTint="@color/text_primary"
                 app:strokeColor="#24344D" />
 
             <!-- Restore Backup -->
@@ -395,7 +395,7 @@
                 android:textSize="12sp"
                 app:cornerRadius="14dp"
                 app:icon="@drawable/ic_launch"
-                app:iconTint="@color/fokk_purple"
+                app:iconTint="@color/text_primary"
                 app:strokeColor="#24344D" />
         </LinearLayout>
 

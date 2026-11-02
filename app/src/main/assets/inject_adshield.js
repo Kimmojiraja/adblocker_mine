@@ -561,7 +561,7 @@
         }
 
         // 2. In-stream ad active detection (works for desktop and mobile YouTube)
-        const hasAdOverlay = !!document.querySelector('.ytm-player-ad-overlay, ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-text, .ytm-ad-preview-text, [class*="ad-showing"], .ytp-ad-module:not(:empty)');
+        const hasAdOverlay = !!document.querySelector('.ytm-player-ad-overlay, ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-text, .ytm-ad-preview-text, .ytp-ad-module:not(:empty)');
         const isAdShowing = (playerEl && (
             playerEl.classList.contains('ad-showing') ||
             playerEl.classList.contains('ad-interrupting') ||
@@ -581,41 +581,6 @@
                 try { el.remove(); } catch (e) {}
             });
 
-            // Find active video element (ad video or player video)
-            const video = (playerEl && playerEl.querySelector('video')) ||
-                          document.querySelector('.ad-showing video, .video-ads video, ytm-player video, video.html5-main-video, video');
-            if (video) {
-                try {
-                    // Mute ad immediately
-                    if (!video.muted) {
-                        video.muted = true;
-                        adWasMutedByShield = true;
-                    }
-                    video.playbackRate = 16.0;
-
-                    // If ad is playing with known finite duration, jump to end
-                    if (!isNaN(video.duration) && video.duration > 0 && video.duration < 180) {
-                        video.currentTime = video.duration - 0.05;
-                    } else {
-                        // Stalled on black screen / blocked ad stream:
-                        // Dispatch ended event to force YouTube's state machine to transition to main video immediately
-                        video.currentTime = 9999;
-                        video.dispatchEvent(new Event('ended'));
-                    }
-                } catch (e) {}
-            }
-        } else {
-            // Normal video playback: ensure standard 1.0x rate and sound are restored
-            const video = (playerEl && playerEl.querySelector('video')) || document.querySelector('video.html5-main-video, video');
-            if (video) {
-                if (video.playbackRate > 1.0) {
-                    video.playbackRate = 1.0;
-                }
-                if (video.muted && adWasMutedByShield) {
-                    video.muted = false;
-                    adWasMutedByShield = false;
-                }
-            }
         }
     }
 

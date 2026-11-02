@@ -37,27 +37,55 @@
     // =========================================================================
     // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
     // =========================================================================
-    function sanitizeYtPlayerResponse(obj) {
+    function sanitizeYtPlayerResponse(obj, depth) {
         if (!obj || typeof obj !== 'object') return;
+        if (!depth) depth = 0;
+        if (depth > 6) return;
         try {
-            obj.adPlacements = [];
-            obj.playerAds = [];
-            obj.adSlots = [];
-            obj.adBreaks = [];
-            if (obj.adPlacementConfig) delete obj.adPlacementConfig;
-            if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; i++) {
+                    sanitizeYtPlayerResponse(obj[i], depth + 1);
+                }
+                return;
+            }
+
+            // Defuse ad arrays and ad configs if present on this object
+            if ('adPlacements' in obj) obj.adPlacements = [];
+            if ('playerAds' in obj) obj.playerAds = [];
+            if ('adSlots' in obj) obj.adSlots = [];
+            if ('adBreaks' in obj) obj.adBreaks = [];
+            if ('adPlacementConfig' in obj) delete obj.adPlacementConfig;
+            if ('adBreakHeartbeatParams' in obj) delete obj.adBreakHeartbeatParams;
             if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
             if (obj.playbackTracking && obj.playbackTracking.ptrackingUrl) delete obj.playbackTracking.ptrackingUrl;
+
+            // Recurse into known YouTube containers
             if (obj.playerResponse) {
                 if (typeof obj.playerResponse === 'object') {
-                    sanitizeYtPlayerResponse(obj.playerResponse);
+                    sanitizeYtPlayerResponse(obj.playerResponse, depth + 1);
                 } else if (typeof obj.playerResponse === 'string') {
                     try {
                         const parsed = JSON.parse(obj.playerResponse);
-                        sanitizeYtPlayerResponse(parsed);
+                        sanitizeYtPlayerResponse(parsed, depth + 1);
                         obj.playerResponse = JSON.stringify(parsed);
                     } catch (e) {}
                 }
+            }
+
+            // Mobile YouTube prefetch & watch endpoints (resolve_url, get_watch, next)
+            if (obj.endpoint && obj.endpoint.watchEndpoint) {
+                sanitizeYtPlayerResponse(obj.endpoint.watchEndpoint, depth + 1);
+            }
+            if (obj.watchEndpoint) {
+                if (obj.watchEndpoint.unserializedPrefetchData) {
+                    sanitizeYtPlayerResponse(obj.watchEndpoint.unserializedPrefetchData, depth + 1);
+                }
+            }
+            if (obj.unserializedPrefetchData) {
+                sanitizeYtPlayerResponse(obj.unserializedPrefetchData, depth + 1);
+            }
+            if (obj.actions && Array.isArray(obj.actions)) {
+                sanitizeYtPlayerResponse(obj.actions, depth + 1);
             }
         } catch (e) {}
     }
@@ -76,8 +104,8 @@
         });
     } catch (e) {}
 
-    // uBlock Origin json-prune standard: Defuses YouTube ad data in all parsed JSON responses
-    // (runs on every /youtubei/v1/player call without touching fetch Response headers or streams)
+    // uBlock Origin standard: Defuses YouTube ad data across ALL response parsing methods:
+    // 1. window.JSON.parse
     try {
         const origJSONParse = JSON.parse;
         JSON.parse = function(text, reviver) {
@@ -87,6 +115,39 @@
             }
             return data;
         };
+    } catch (e) {}
+
+    // 2. Response.prototype.json (Critical for Chromium / Android WebView — Response.json does NOT call window.JSON.parse)
+    try {
+        if (window.Response && Response.prototype && Response.prototype.json) {
+            const origResponseJson = Response.prototype.json;
+            Response.prototype.json = async function() {
+                const data = await origResponseJson.apply(this, arguments);
+                if (data && typeof data === 'object') {
+                    sanitizeYtPlayerResponse(data);
+                }
+                return data;
+            };
+        }
+    } catch (e) {}
+
+    // 3. XMLHttpRequest.prototype.response getter (for responseType === 'json')
+    try {
+        if (window.XMLHttpRequest && XMLHttpRequest.prototype) {
+            const origXhrGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
+            if (origXhrGetter) {
+                Object.defineProperty(XMLHttpRequest.prototype, 'response', {
+                    get: function() {
+                        const res = origXhrGetter.apply(this);
+                        if (this.responseType === 'json' && res && typeof res === 'object') {
+                            sanitizeYtPlayerResponse(res);
+                        }
+                        return res;
+                    },
+                    configurable: true
+                });
+            }
+        }
     } catch (e) {}
 
     // ytInitialData hook intentionally removed: hooking it breaks YouTube page rendering and causes 5-10s black screen glitch.

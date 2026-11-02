@@ -178,6 +178,26 @@
 
         if (window.fetch) {
             const origFetch = window.fetch;
+
+            // Build safe headers for a modified JSON response.
+            // The original response may be gzip/brotli compressed; after we re-serialize
+            // to plain-text JSON those compression headers become WRONG and cause the
+            // browser/player to fail to parse → YouTube black screen on SPA navigation.
+            function makeSafeHeaders(originalHeaders) {
+                const safe = {};
+                try {
+                    originalHeaders.forEach(function(val, key) {
+                        const k = key.toLowerCase();
+                        // Drop all compression/encoding/length headers — we are sending plain UTF-8 JSON
+                        if (k === 'content-encoding' || k === 'content-length' || k === 'transfer-encoding') return;
+                        safe[key] = val;
+                    });
+                } catch (e) {}
+                // Explicitly set correct content type
+                safe['content-type'] = 'application/json; charset=utf-8';
+                return safe;
+            }
+
             window.fetch = async function(...args) {
                 const response = await origFetch.apply(this, args);
                 try {
@@ -191,7 +211,7 @@
                         return new Response(JSON.stringify(data), {
                             status: response.status,
                             statusText: response.statusText,
-                            headers: response.headers
+                            headers: makeSafeHeaders(response.headers)
                         });
                     }
 
@@ -206,7 +226,7 @@
                             return new Response(JSON.stringify(data), {
                                 status: response.status,
                                 statusText: response.statusText,
-                                headers: response.headers
+                                headers: makeSafeHeaders(response.headers)
                             });
                         }
                     }

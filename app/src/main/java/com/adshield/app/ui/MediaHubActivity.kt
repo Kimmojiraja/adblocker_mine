@@ -2130,27 +2130,27 @@ open class MediaHubActivity : AppCompatActivity() {
                         urlStr.contains("scorecardresearch.com") ||
                         urlStr.contains("quantserve.com")
 
-                // Never block YouTube video streaming or player infrastructure, but block YouTube ad endpoints
-                val isYouTubePage = pageHost?.contains("youtube.com") == true || pageHost?.contains("youtu.be") == true
-                val isYtAdUrl = urlStr.contains("/pagead/") ||
-                    urlStr.contains("/api/stats/ads") ||
-                    urlStr.contains("/ptracking") ||
-                    urlStr.contains("ad_break") ||
-                    urlStr.contains("googleads") ||
-                    urlStr.contains("doubleclick.net")
-                val isSafeYtResource = isYouTubePage && !isYtAdUrl && (
-                    host.contains("googlevideo.com") || host.contains("ytimg.com") ||
-                    host.contains("youtube.com") || host.contains("ggpht.com") ||
-                    host.contains("gstatic.com") || host.contains("googleapis.com")
-                )
-
-                if (isYtAdUrl && !isMediaRequest) {
-                    recordFilteredRequest(view, host)
-                    return createBlockedResourceResponse(urlStr)
+                // Dedicated YouTube handler: block known YouTube ad endpoints, but NEVER touch
+                // legitimate video streams (googlevideo.com) or player infrastructure (youtube.com, ytimg.com).
+                // YouTube is explicitly exempted from general Brave adblock-rust EasyList rules
+                // because generic rules break YouTube SPA navigation & video player state machine.
+                val isYouTubePage = pageHost?.contains("youtube.com") == true || pageHost?.contains("youtu.be") == true ||
+                                    host.contains("youtube.com") || host.contains("googlevideo.com") || host.contains("ytimg.com")
+                if (isYouTubePage) {
+                    val isYtAdUrl = urlStr.contains("/pagead/") ||
+                        urlStr.contains("/api/stats/ads") ||
+                        urlStr.contains("/ptracking") ||
+                        urlStr.contains("ad_break") ||
+                        urlStr.contains("doubleclick.net")
+                    if (isYtAdUrl && !isMediaRequest) {
+                        recordFilteredRequest(view, host)
+                        return createBlockedResourceResponse(urlStr)
+                    }
+                    return super.shouldInterceptRequest(view, request)
                 }
 
-                // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
-                if (!isSafeYtResource && !isMediaRequest) {
+                // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
+                if (!isMediaRequest) {
                     val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
                         url = requestUrl ?: "",
                         sourceUrl = pageUrl ?: "",
@@ -2167,7 +2167,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     }
                 }
 
-                if (isAdScript && !isSafeYtResource && !isMediaRequest) {
+                if (isAdScript && !isMediaRequest) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
@@ -2815,8 +2815,9 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
 
-        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets
-        if (pageUrl != null && !pageUrl.startsWith("file:///android_asset/")) {
+        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
+        val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true
+        if (pageUrl != null && !isYt && !pageUrl.startsWith("file:///android_asset/")) {
             val cosmetic = AdShieldApp.instance.braveEngine.getCosmeticResources(pageUrl)
             if (cosmetic != null) {
                 if (cosmetic.selectors.isNotEmpty()) {

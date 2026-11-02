@@ -284,7 +284,6 @@
         .ytp-ad-player-overlay,
         .ytp-ad-text,
         .ytp-ad-preview-text,
-        .ytp-ad-module,
         div[class*="ad-showing"] .ytp-ad-text,
 
         /* News & Media Article Ad Units, Sponsored Boxes & Overlays */
@@ -601,58 +600,41 @@
             }
         }
 
-        // 2. In-stream ad active detection (works for desktop and mobile YouTube)
-        const hasAdOverlay = !!document.querySelector('.ytm-player-ad-overlay, ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-text, .ytm-ad-preview-text, .ytp-ad-module:not(:empty)');
-        const isAdShowing = (playerEl && (
+        // 2. Programmatically trigger native player skip if available
+        try {
+            if (playerEl && typeof playerEl.skipAd === 'function') {
+                playerEl.skipAd();
+            }
+        } catch (e) {}
+
+        // 3. Remove visual ad overlays from DOM
+        document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
+            try { el.remove(); } catch (e) {}
+        });
+
+        // 4. In-stream ad active detection: ONLY when player specifically marks ad active
+        const isAdShowing = !!(playerEl && (
             playerEl.classList.contains('ad-showing') ||
             playerEl.classList.contains('ad-interrupting') ||
-            playerEl.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay') !== null
-        )) || hasAdOverlay;
+            playerEl.querySelector('.ad-showing, .ad-interrupting') !== null
+        ));
 
         if (isAdShowing) {
-            // Native YouTube player skipAd method (works on desktop YouTube)
-            try {
-                if (playerEl && typeof playerEl.skipAd === 'function') {
-                    playerEl.skipAd();
-                }
-            } catch (e) {}
-
-            // Remove visual ad overlays from DOM
-            document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
-                try { el.remove(); } catch (e) {}
-            });
-
-            // Target ONLY confirmed ad video elements (.ad-showing or .video-ads)
-            // Never manipulate the main content video
             const adVideo = document.querySelector('.ad-showing video, .video-ads video') ||
-                            (playerEl && playerEl.classList.contains('ad-showing') ? playerEl.querySelector('video') : null);
+                            (playerEl ? playerEl.querySelector('video') : null);
 
             if (adVideo) {
                 try {
-                    // Step 1: Mute immediately so user hears no ad audio
+                    // Mute ad video
                     if (!adVideo.muted) {
                         adVideo.muted = true;
                         adWasMutedByShield = true;
                     }
-                    // Step 2: If ad has a known finite duration, jump to end
+                    // Fast-forward ad video to end
                     if (!isNaN(adVideo.duration) && adVideo.duration > 0 && adVideo.duration < 180) {
                         adVideo.currentTime = adVideo.duration - 0.05;
-                    } else if (isNaN(adVideo.duration) || adVideo.duration === 0 || adVideo.readyState < 2) {
-                        // Step 3: Ad stream blocked / stalled → force 'ended' to trigger state machine
-                        try { adVideo.currentTime = 9999; } catch (e) {}
-                        adVideo.dispatchEvent(new Event('ended', { bubbles: true }));
                     }
                 } catch (e) {}
-            } else if (isAdShowing) {
-                // Fallback: no explicit .ad-showing video found — fire ended on first visible video
-                // to clear the stalled black screen (safe because isAdShowing is confirmed)
-                const anyVideo = playerEl ? playerEl.querySelector('video') : document.querySelector('video');
-                if (anyVideo && (isNaN(anyVideo.duration) || anyVideo.duration === 0 || anyVideo.readyState < 2)) {
-                    try {
-                        if (!anyVideo.muted) { anyVideo.muted = true; adWasMutedByShield = true; }
-                        anyVideo.dispatchEvent(new Event('ended', { bubbles: true }));
-                    } catch (e) {}
-                }
             }
         } else {
             // Normal video playback: restore mute and speed if we previously altered them

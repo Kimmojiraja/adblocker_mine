@@ -67,7 +67,6 @@ class AdblockRequestInterceptor(QWebEngineUrlRequestInterceptor):
             is_yt_ad = (
                 "/pagead/" in url_lower or
                 "/api/stats/ads" in url_lower or
-                "/ptracking" in url_lower or
                 "ad_break" in url_lower or
                 "doubleclick.net" in host
             )

@@ -40,13 +40,14 @@
     function sanitizeYtPlayerResponse(obj) {
         if (!obj || typeof obj !== 'object') return;
         try {
-            if (obj.adPlacements) delete obj.adPlacements;
-            if (obj.playerAds) delete obj.playerAds;
-            if (obj.adSlots) delete obj.adSlots;
-            if (obj.adBreaks) delete obj.adBreaks;
+            obj.adPlacements = [];
+            obj.playerAds = [];
+            obj.adSlots = [];
+            obj.adBreaks = [];
             if (obj.adPlacementConfig) delete obj.adPlacementConfig;
             if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
             if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
+            if (obj.playbackTracking && obj.playbackTracking.ptrackingUrl) delete obj.playbackTracking.ptrackingUrl;
             if (obj.playerResponse) {
                 if (typeof obj.playerResponse === 'object') {
                     sanitizeYtPlayerResponse(obj.playerResponse);

@@ -2139,7 +2139,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (isYouTubePage) {
                     val isYtAdUrl = urlStr.contains("/pagead/") ||
                         urlStr.contains("/api/stats/ads") ||
-                        urlStr.contains("/ptracking") ||
                         urlStr.contains("ad_break") ||
                         urlStr.contains("doubleclick.net")
                     if (isYtAdUrl && !isMediaRequest) {

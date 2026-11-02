@@ -2095,6 +2095,11 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
 
                 val urlStr = request.url.toString().lowercase()
+                val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
+                val isMediaRequest = acceptHeader.contains("video/") ||
+                    acceptHeader.contains("audio/") ||
+                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
+                        .any { urlStr.substringBefore('?').endsWith(it) }
                 val isAdScript = urlStr.contains("/pagead/") ||
                         urlStr.contains("adsbygoogle.js") ||
                         urlStr.contains("/adsbygoogle/") ||
@@ -2144,9 +2149,16 @@ open class MediaHubActivity : AppCompatActivity() {
                     return createBlockedResourceResponse(urlStr)
                 }
 
+                val isExplicitAdMedia = isAdScript ||
+                    urlStr.contains("/ad-") ||
+                    urlStr.contains("/ads/") ||
+                    urlStr.contains("/advert") ||
+                    urlStr.contains("/promo/") ||
+                    urlStr.contains("vast") ||
+                    urlStr.contains("prebid")
+
                 // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
-                if (!isSafeYtResource) {
-                    val acceptHeader = request?.requestHeaders?.get("Accept")
+                if (!isSafeYtResource && (!isMediaRequest || isExplicitAdMedia)) {
                     val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
                         url = requestUrl ?: "",
                         sourceUrl = pageUrl ?: "",
@@ -2189,7 +2201,10 @@ open class MediaHubActivity : AppCompatActivity() {
                     host.contains("pixel.wp.com")
                 )
 
-                if (isSocialTracker || (isStrictAdblock && (isAdScript || AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))) {
+                if (isSocialTracker || (isStrictAdblock && (
+                            isAdScript ||
+                            (!isMediaRequest && (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))
+                        ))) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }

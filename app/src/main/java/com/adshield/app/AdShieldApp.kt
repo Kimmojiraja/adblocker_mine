@@ -38,10 +38,8 @@ class AdShieldApp : Application() {
         blocklistEngine = BlocklistEngine(this)
         braveEngine = com.adshield.app.model.BraveAdblockEngine(this)
         dohEngine = com.adshield.app.model.DnsOverHttpsEngine()
-        applicationScope.launch {
-            blocklistEngine.initialize()
-            braveEngine.initialize()
-        }
+        applicationScope.launch { blocklistEngine.initialize() }
+        applicationScope.launch { braveEngine.initialize() }
     }
 
     private fun createNotificationChannels() {

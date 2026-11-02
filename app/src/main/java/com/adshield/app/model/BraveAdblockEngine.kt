@@ -11,6 +11,8 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * High-performance Content Blocking Engine powered by Brave's native `adblock-rust`.
@@ -27,6 +29,7 @@ class BraveAdblockEngine(private val context: Context) {
     private var engine: AdblockEngine? = null
     private val isReady = AtomicBoolean(false)
     private val isFailed = AtomicBoolean(false)
+    private val initializationComplete = CountDownLatch(1)
 
     fun initialize() {
         if (isReady.get() || isFailed.get()) return
@@ -126,6 +129,8 @@ class BraveAdblockEngine(private val context: Context) {
                 Log.e(TAG, "Failed to initialize native Brave adblock-rust engine; falling back to legacy", t)
                 isFailed.set(true)
                 engine = null
+            } finally {
+                initializationComplete.countDown()
             }
         }
     }
@@ -134,6 +139,13 @@ class BraveAdblockEngine(private val context: Context) {
      * Checks if a network request should be blocked, rewritten, or served a replacement resource.
      */
     fun checkNetworkRequest(url: String, sourceUrl: String, mimeOrType: String?): BlockDecision {
+        if (!isReady.get() && !isFailed.get()) {
+            try {
+                initializationComplete.await(INITIALIZATION_WAIT_MS, TimeUnit.MILLISECONDS)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+        }
         val currentEngine = engine
         if (currentEngine == null || !isReady.get()) {
             return FALLBACK_ALLOW_DECISION
@@ -177,6 +189,7 @@ class BraveAdblockEngine(private val context: Context) {
     companion object {
         private const val TAG = "BraveAdblockEngine"
         private const val CACHE_FILE_NAME = "adblock_rust_v2_easylist.bin"
+        private const val INITIALIZATION_WAIT_MS = 750L
 
         private val FALLBACK_ALLOW_DECISION = BlockDecision(
             matched = false,

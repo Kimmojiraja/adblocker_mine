@@ -12,6 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.speech.RecognizerIntent
 import android.app.DownloadManager
 import android.app.PictureInPictureParams
+import android.app.NotificationManager
+import android.app.PendingIntent
+import androidx.core.app.NotificationCompat
 import android.content.Context
 import android.content.ComponentCallbacks2
 import android.content.ClipData
@@ -5600,7 +5603,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 .build()
             try {
                 notificationManager.notify(NOTIFICATION_ID_GHOST_MODE, notif)
-            } catch (_: SecurityException) {}
+            } catch (e: SecurityException) {}
         } else {
             notificationManager.cancel(NOTIFICATION_ID_GHOST_MODE)
         }

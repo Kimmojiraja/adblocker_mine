@@ -57,7 +57,7 @@ class AdShieldApp : Application() {
 
             val ghostChannel = NotificationChannel(
                 CHANNEL_ID_GHOST_MODE,
-                "Ghost Mode &amp; Privacy Safety",
+                "Ghost Mode & Privacy Safety",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Notifies when private Ghost Mode tabs remain open with one-tap exit"

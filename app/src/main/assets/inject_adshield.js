@@ -306,62 +306,34 @@
             document.addEventListener('canplay', unmuteYouTubeVideo, { capture: true, passive: true });
             window.addEventListener('yt-navigate-finish', unmuteYouTubeVideo, { capture: true, passive: true });
 
-            // Direct Clean Navigation: Bypasses YouTube's broken SPA router and ad-buffering delay.
-            // Direct navigation guarantees instant 0-buffering video start, exactly like page refresh.
-            document.addEventListener('click', function(e) {
-                let targetHref = null;
-                const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
-                if (anchor && anchor.href) {
-                    targetHref = anchor.href;
-                } else {
-                    const card = e.target.closest('ytm-video-with-context-renderer, ytm-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, [class*="video-renderer"]');
-                    if (card) {
-                        const innerAnchor = card.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
-                        if (innerAnchor && innerAnchor.href) {
-                            targetHref = innerAnchor.href;
+            // 1-Tap Direct Video Open & Continuous Song-by-Song Autoplay
+            // Defuse YouTube mobile feed inline player preview so 1st tap immediately opens the video
+            try {
+                if (window.ytcfg && typeof window.ytcfg.set === 'function') {
+                    window.ytcfg.set({
+                        'WEB_AUTOPLAY_INLINE': false,
+                        'ENABLE_AUTO_INLINE_PLAYBACK': false,
+                        'INLINE_PREVIEW_ENABLED': false,
+                        'feed_filter_chip_bar_renderer_inline_playback_enabled': false
+                    });
+                }
+            } catch (e) {}
+
+            // Continuous Song-by-Song Autoplay: Smoothly advance to next song without reloading page
+            document.addEventListener('ended', function(e) {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                setTimeout(function() {
+                    const nextBtn = document.querySelector('.ytp-next-button, [aria-label*="Next" i], .ytm-autonav-endscreen-button-next');
+                    if (nextBtn && typeof nextBtn.click === 'function') {
+                        try { nextBtn.click(); } catch (err) {}
+                    } else {
+                        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
+                        if (player && typeof player.nextVideo === 'function') {
+                            try { player.nextVideo(); } catch (err) {}
                         }
                     }
-                }
-                if (!targetHref) return;
-
-                try {
-                    const targetUrl = new URL(targetHref, window.location.href);
-                    const currentV = new URLSearchParams(window.location.search).get('v');
-                    const targetV = targetUrl.searchParams.get('v');
-                    if (targetV && targetV !== currentV) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        window.location.href = targetUrl.href;
-                        return;
-                    }
-                    if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        window.location.href = targetUrl.href;
-                        return;
-                    }
-                } catch (err) {}
-            }, { capture: true });
-
-            // In-page transition hook: Handles programmatic router transitions (e.g. autoplay next video)
-            try {
-                const origPushState = history.pushState;
-                history.pushState = function(state, unused, url) {
-                    if (url && typeof url === 'string') {
-                        try {
-                            const nextUrl = new URL(url, window.location.href);
-                            const nextV = nextUrl.searchParams.get('v');
-                            const curV = new URLSearchParams(window.location.search).get('v');
-                            if (nextV && curV && nextV !== curV) {
-                                origPushState.apply(this, arguments);
-                                window.location.replace(nextUrl.href);
-                                return;
-                            }
-                        } catch (e) {}
-                    }
-                    return origPushState.apply(this, arguments);
-                };
-            } catch (e) {}
+                }, 600);
+            }, { capture: true, passive: true });
 
             // Screen-off background audio: Prevent YouTube from pausing when screen locks or app is minimized
             try {
@@ -528,13 +500,17 @@
         div[role="dialog"]:has(a[href*="play.google.com"]),
         div[data-testid="banner-mobile-app"],
 
-        /* YouTube Mobile Ad Overlays */
+        /* YouTube Mobile Ad Overlays & Feed Inline Preview Defuser */
         .ytm-player-ad-overlay,
         ytm-player-ad-overlay,
         .ytp-ad-player-overlay,
         .ytp-ad-text,
         .ytp-ad-preview-text,
         div[class*="ad-showing"] .ytp-ad-text,
+        ytm-inline-player,
+        .inline-player,
+        ytm-inline-player-renderer,
+        .ytm-inline-preview-scrim,
 
         /* News & Media Article Ad Units, Sponsored Boxes & Overlays */
         div[id*="google_ads"],
@@ -882,6 +858,17 @@
         if (typeof window.__fokk_unmuteYt === 'function') {
             try { window.__fokk_unmuteYt(); } catch (e) {}
         }
+
+        // 5. Continuous Song Autoplay: Enable autonav and advance when song finishes
+        try {
+            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
+            if (player) {
+                if (typeof player.setAutonav === 'function') player.setAutonav(true);
+                if (typeof player.getPlayerState === 'function' && player.getPlayerState() === 0) {
+                    if (typeof player.nextVideo === 'function') player.nextVideo();
+                }
+            }
+        } catch (e) {}
     }
 
     function scrubYouTubeSponsored() {
@@ -936,42 +923,6 @@
         window.addEventListener('yt-page-data-updated', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('spfdone', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('popstate', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
-
-        // Direct navigation capture in document scope: Guarantees zero buffering on card click
-        document.addEventListener('click', function(e) {
-            let targetHref = null;
-            const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
-            if (anchor && anchor.href) {
-                targetHref = anchor.href;
-            } else {
-                const card = e.target.closest('ytm-video-with-context-renderer, ytm-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, [class*="video-renderer"]');
-                if (card) {
-                    const innerAnchor = card.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
-                    if (innerAnchor && innerAnchor.href) {
-                        targetHref = innerAnchor.href;
-                    }
-                }
-            }
-            if (!targetHref) return;
-
-            try {
-                const targetUrl = new URL(targetHref, window.location.href);
-                const currentV = new URLSearchParams(window.location.search).get('v');
-                const targetV = targetUrl.searchParams.get('v');
-                if (targetV && targetV !== currentV) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    window.location.href = targetUrl.href;
-                    return;
-                }
-                if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    window.location.href = targetUrl.href;
-                    return;
-                }
-            } catch (err) {}
-        }, { capture: true });
     }
 
     // =========================================================================

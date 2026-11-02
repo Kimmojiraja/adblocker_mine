@@ -36,7 +36,7 @@ class BraveAdblockEngine(private val context: Context) {
 
             try {
                 val startTime = System.currentTimeMillis()
-                Log.d(TAG, "Initializing Brave adblock-rust engine...")
+                val instance = AdblockEngine.create()
 
                 // Clean up legacy cache if present
                 val oldCacheFile = File(context.cacheDir, "adblock_rust_v1.bin")

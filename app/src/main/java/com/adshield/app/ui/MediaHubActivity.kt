@@ -3437,7 +3437,7 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = position.equals("top", ignoreCase = true)
         val lp = binding.topBar.layoutParams as? RelativeLayout.LayoutParams ?: return
         val collapsedLp = binding.layoutCollapsedBar.layoutParams as? RelativeLayout.LayoutParams
-        val containerLp = binding.tabContainerWrapper.layoutParams as? RelativeLayout.LayoutParams
+        val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
         val density = resources.displayMetrics.density
         val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
         val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
@@ -3459,7 +3459,7 @@ open class MediaHubActivity : AppCompatActivity() {
             containerLp?.let {
                 it.topMargin = statusBarHeight + (66 * density).toInt()
                 it.bottomMargin = 0
-                binding.tabContainerWrapper.layoutParams = it
+                binding.mainContentLayout.layoutParams = it
             }
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
@@ -3488,7 +3488,7 @@ open class MediaHubActivity : AppCompatActivity() {
             containerLp?.let {
                 it.topMargin = 0
                 it.bottomMargin = (68 * density).toInt()
-                binding.tabContainerWrapper.layoutParams = it
+                binding.mainContentLayout.layoutParams = it
             }
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams

@@ -89,19 +89,42 @@
             android:paddingStart="4dp"
             android:paddingEnd="2dp">
 
-            <ImageView
-                android:id="@+id/imgEngineIcon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_engine_google"
-                android:contentDescription="Search engine and site security" />
+            <LinearLayout
+                android:id="@+id/btnEngineSelector"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="2dp"
+                android:paddingEnd="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Select search engine">
+
+                <ImageView
+                    android:id="@+id/imgEngineIcon"
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:src="@drawable/ic_engine_google"
+                    android:contentDescription="Search engine and site security" />
+
+                <ImageView
+                    android:id="@+id/imgEngineDropdown"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginStart="2dp"
+                    android:src="@drawable/ic_collapse"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Engine Dropdown" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/urlInput"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="6dp"
                 android:layout_marginEnd="4dp"
                 android:background="@null"
                 android:hint="Search or enter address"
@@ -153,35 +176,16 @@
                 android:visibility="gone"
                 android:contentDescription="Clear address" />
 
+            <!-- Hidden compatibility views for chipMediaDetected -->
             <LinearLayout
                 android:id="@+id/chipMediaDetected"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:background="@drawable/bg_stat_chip"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="8dp"
-                android:visibility="gone"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_download"
-                    app:tint="#34D399" />
-
+                android:layout_height="wrap_content"
+                android:visibility="gone">
                 <TextView
                     android:id="@+id/textMediaDetectedTitle"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="Video"
-                    android:textColor="#34D399"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
             <ImageButton
@@ -197,7 +201,7 @@
                 android:id="@+id/btnSearchGo"
                 android:layout_width="34dp"
                 android:layout_height="34dp"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="2dp"
                 android:layout_marginEnd="2dp"
                 android:background="@drawable/bg_command_search_go"
                 android:src="@drawable/ic_search"
@@ -213,11 +217,31 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <!-- Video Stream Sniffer Action Button -->
+            <FrameLayout
+                android:id="@+id/btnMediaDetectedAction"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/bg_command_search_go"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                android:contentDescription="Detected Video Stream">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_video"
+                    app:tint="#34D399" />
+            </FrameLayout>
+
             <View
                 android:id="@+id/commandBarDivider"
                 android:layout_width="1dp"
                 android:layout_height="22dp"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="2dp"
                 android:layout_marginEnd="6dp"
                 android:background="#2E3C52" />
 

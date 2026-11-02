@@ -1167,10 +1167,7 @@ open class MediaHubActivity : AppCompatActivity() {
             if (url.isBlank()) return
             activity.runOnUiThread {
                 activity.currentDetectedVideoStream = DetectedVideoStream(url, title)
-                activity.binding.chipMediaDetected.visibility = View.VISIBLE
-                val cleanTitle = title.takeIf { it.isNotBlank() } ?: "Video"
-                val display = if (cleanTitle.length > 12) cleanTitle.take(10) + "…" else cleanTitle
-                activity.binding.textMediaDetectedTitle.text = display
+                activity.binding.btnMediaDetectedAction.visibility = View.VISIBLE
             }
         }
 
@@ -1905,13 +1902,7 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
         val barInset = (70 * density).toInt()
-        if (isTop) {
-            val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
-            val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
-            webView.setPadding(0, barInset + statusBarHeight, 0, 0)
-        } else {
-            webView.setPadding(0, 0, 0, barInset)
-        }
+        webView.setPadding(0, 0, 0, 0)
         webView.clipToPadding = false
 
         webView.setOnTouchListener { _, _ ->
@@ -2974,9 +2965,7 @@ open class MediaHubActivity : AppCompatActivity() {
                             border-color: #1E293B !important;
                         }
                         input, textarea, select {
-                            background-color: #0F172A !important;
-                            color: #F8FAFC !important;
-                            border-color: #334155 !important;
+                            color: inherit !important;
                         }
                         h1, h2, h3, h4, h5, h6, p, span, li, dt, dd {
                             color: inherit;
@@ -3077,6 +3066,10 @@ open class MediaHubActivity : AppCompatActivity() {
             openPaywallMirror()
         }
 
+        binding.btnEngineSelector.setOnClickListener {
+            showSearchEngineDialog()
+        }
+
         binding.imgEngineIcon.setOnClickListener {
             showSearchEngineDialog()
         }
@@ -3118,9 +3111,12 @@ open class MediaHubActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val text = s?.toString()?.trim() ?: ""
-                binding.btnClearUrl.visibility = if (text.isNotEmpty() && binding.urlInput.hasFocus()) View.VISIBLE else View.GONE
-                binding.btnSearchGo.visibility = if (text.isNotEmpty() || binding.urlInput.hasFocus()) View.VISIBLE else View.GONE
-                if (binding.urlInput.hasFocus()) {
+                val hasText = text.isNotEmpty()
+                val isFocused = binding.urlInput.hasFocus()
+                binding.btnClearUrl.visibility = if (hasText && isFocused) View.VISIBLE else View.GONE
+                binding.btnSearchGo.visibility = if (hasText || isFocused) View.VISIBLE else View.GONE
+                binding.btnVoiceSearch.visibility = if (hasText || isFocused) View.GONE else View.VISIBLE
+                if (isFocused) {
                     showRecentHistoryOrSuggestions(text)
                 }
             }
@@ -3136,13 +3132,16 @@ open class MediaHubActivity : AppCompatActivity() {
                     binding.urlInput.setText(currentUrl)
                     binding.urlInput.selectAll()
                 }
-                binding.btnClearUrl.visibility = if (binding.urlInput.text.isNotEmpty()) View.VISIBLE else View.GONE
+                val hasText = binding.urlInput.text.isNotEmpty()
+                binding.btnClearUrl.visibility = if (hasText) View.VISIBLE else View.GONE
                 binding.btnSearchGo.visibility = View.VISIBLE
+                binding.btnVoiceSearch.visibility = View.GONE
                 showRecentHistoryOrSuggestions(binding.urlInput.text.toString().trim())
             } else {
                 binding.cardSuggestions.visibility = View.GONE
                 binding.btnClearUrl.visibility = View.GONE
                 binding.btnSearchGo.visibility = View.GONE
+                binding.btnVoiceSearch.visibility = View.VISIBLE
                 updateUrlBar(activeWebView?.url, activeWebView?.title)
             }
         }
@@ -3173,6 +3172,22 @@ open class MediaHubActivity : AppCompatActivity() {
 
         binding.btnSearchGo.setOnClickListener {
             navigateOrSearch()
+        }
+
+        binding.btnMediaDetectedAction.setOnClickListener {
+            val stream = currentDetectedVideoStream
+            if (stream != null) {
+                val tabIsPrivate = activeTab?.isPrivate == true
+                showDownloadOptions(
+                    downloadUrl = stream.url,
+                    userAgent = cleanMobileUa,
+                    contentDisposition = null,
+                    mimeType = "video/*",
+                    isPrivate = tabIsPrivate,
+                    sourceUrl = activeWebView?.url.orEmpty(),
+                    allowThirdPartyCookies = true
+                )
+            }
         }
 
         binding.chipMediaDetected.setOnClickListener {
@@ -3422,10 +3437,10 @@ open class MediaHubActivity : AppCompatActivity() {
         val isTop = position.equals("top", ignoreCase = true)
         val lp = binding.topBar.layoutParams as? RelativeLayout.LayoutParams ?: return
         val collapsedLp = binding.layoutCollapsedBar.layoutParams as? RelativeLayout.LayoutParams
+        val containerLp = binding.tabContainerWrapper.layoutParams as? RelativeLayout.LayoutParams
         val density = resources.displayMetrics.density
         val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
         val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else (24 * density).toInt()
-        val barInset = (70 * density).toInt()
 
         if (isTop) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -3441,6 +3456,12 @@ open class MediaHubActivity : AppCompatActivity() {
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
+            containerLp?.let {
+                it.topMargin = statusBarHeight + (66 * density).toInt()
+                it.bottomMargin = 0
+                binding.tabContainerWrapper.layoutParams = it
+            }
+
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -3449,7 +3470,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.bottomMargin = 0
                 binding.cardSuggestions.layoutParams = cardLp
             }
-            tabs.forEach { it.webView?.setPadding(0, barInset + statusBarHeight, 0, 0) }
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         } else {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -3464,6 +3485,12 @@ open class MediaHubActivity : AppCompatActivity() {
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = (68 * density).toInt()
+                binding.tabContainerWrapper.layoutParams = it
+            }
+
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
@@ -3472,7 +3499,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.bottomMargin = (76 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
-            tabs.forEach { it.webView?.setPadding(0, 0, 0, barInset) }
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         }
         binding.topBar.layoutParams = lp
     }
@@ -4241,12 +4268,63 @@ open class MediaHubActivity : AppCompatActivity() {
             sheetBinding.rowSavedPages.visibility = View.GONE
         }
 
+        var isToolsShelfExpanded = false
+        sheetBinding.btnMenuExpandTools.setOnClickListener {
+            isToolsShelfExpanded = !isToolsShelfExpanded
+            sheetBinding.layoutMenuExpandedTools.visibility = if (isToolsShelfExpanded) View.VISIBLE else View.GONE
+            sheetBinding.btnMenuExpandTools.animate().rotation(if (isToolsShelfExpanded) 180f else 0f).setDuration(200).start()
+        }
+
+        sheetBinding.btnToolDualScreen.setOnClickListener {
+            dialog.dismiss()
+            toggleDualDeckMode()
+        }
+
+        sheetBinding.btnToolThemes.setOnClickListener {
+            dialog.dismiss()
+            openWallpapersCustomizer()
+        }
+
+        sheetBinding.btnToolAiSummary.setOnClickListener {
+            dialog.dismiss()
+            showSmartPageSummaryDialog()
+        }
+
+        sheetBinding.btnToolAiBlocker.setOnClickListener {
+            val isAiOn = prefs.getBoolean(PREF_AI_FILTER, true)
+            val nextState = !isAiOn
+            prefs.edit().putBoolean(PREF_AI_FILTER, nextState).apply()
+            activeWebView?.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled($nextState);", null)
+            Toast.makeText(this, if (nextState) "AI Trap Defuser Active" else "AI Trap Defuser Paused", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        sheetBinding.btnToolDiagnostics.setOnClickListener {
+            dialog.dismiss()
+            val url = activeTab?.url.orEmpty()
+            if (url.isNotBlank() && !url.contains("fokk_start.html")) {
+                loadUrlInActiveWebView("view-source:$url")
+            } else {
+                Toast.makeText(this, "Open a website to view diagnostics", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        sheetBinding.btnToolDnsShield.setOnClickListener {
+            dialog.dismiss()
+            showShieldSettingsDialog()
+        }
+
         val activePrivacyTab = activeTab
         sheetBinding.textMenuBlockedInfo.text =
-            "WebView observed ${activePrivacyTab?.thirdPartyRequests ?: 0} cross-site requests · Fokk filtered ${activePrivacyTab?.filteredRequests ?: 0}"
+            "Always ON · WebView observed ${activePrivacyTab?.thirdPartyRequests ?: 0} cross-site requests · Fokk filtered ${activePrivacyTab?.filteredRequests ?: 0}"
         sheetBinding.switchMenuShield.isChecked = isShieldEnabled
         sheetBinding.badgeSocialShield.alpha = if (isShieldEnabled) 1.0f else 0.4f
         sheetBinding.badgeAiFilter.alpha = if (isShieldEnabled) 1.0f else 0.4f
+
+        sheetBinding.cardShieldDefenseStatus.setOnClickListener {
+            dialog.dismiss()
+            openShieldDashboard()
+        }
 
         sheetBinding.rowShieldHub.setOnClickListener {
             dialog.dismiss()
@@ -5421,7 +5499,12 @@ open class MediaHubActivity : AppCompatActivity() {
         } else if (isIsolatedPrivateProfile) {
             closePrivateBrowser()
         } else {
-            openShieldDashboard()
+            val currentUrl = activeTab?.url.orEmpty()
+            if (currentUrl.isNotBlank() && !currentUrl.contains("fokk_start.html")) {
+                loadUrlInActiveWebView("file:///android_asset/fokk_start.html")
+            } else {
+                moveTaskToBack(true)
+            }
         }
     }
 

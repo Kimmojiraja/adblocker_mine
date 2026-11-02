@@ -699,9 +699,10 @@
             }
         }
 
-        // 2. Call native player skipAd API if present
+        // 2. Call native player skipAd API ONLY when an ad is actively showing
         try {
-            if (playerEl && typeof playerEl.skipAd === 'function') {
+            const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay');
+            if (isAdShowing && playerEl && typeof playerEl.skipAd === 'function') {
                 playerEl.skipAd();
             }
         } catch (e) {}
@@ -730,14 +731,13 @@
             } catch (e) {}
         });
 
-        // 2. Universal Sponsored badge walker for YouTube (both mobile and desktop)
+        // 2. Targeted Sponsored badge selector for YouTube (without querying all span/div)
         const badges = document.querySelectorAll(
             '.ytm-badge-and-title, ytd-badge-supported-renderer, .badge-style-type-ad, ' +
-            '[aria-label*="Sponsored" i], [aria-label*="promoted" i], span, div'
+            '[aria-label*="Sponsored" i], [aria-label*="promoted" i]'
         );
         for (let i = 0; i < badges.length; i++) {
             const b = badges[i];
-            if (b.children.length > 0) continue; // leaf node only
             const txt = (b.textContent || '').trim().toLowerCase();
             const isSponsoredBadge = txt === 'sponsored' || txt === 'ad' || txt === 'promoted' ||
                                      txt.startsWith('sponsored') || txt.startsWith('ad ·') ||
@@ -760,8 +760,7 @@
         setInterval(function() {
             runYouTubeAdSkipper();
             scrubYouTubeSponsored();
-        }, 200);
-        document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
+        }, 500);
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
         window.addEventListener('yt-navigate-start', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('yt-navigate-finish', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
@@ -1416,6 +1415,10 @@
     // Swipe left 45% = Brightness, Swipe right 45% = Volume, Double-tap = Seek
     // =========================================================================
     (function installVideoGestures() {
+        // YouTube mobile already provides native double-tap 10s seek and touch controls.
+        // Intercepting touches on YouTube causes double-seeking, audio/video desync, and pause glitches.
+        if (window.location.hostname.includes('youtube.com')) return;
+
         let touchStartX = 0;
         let touchStartY = 0;
         let lastTapTime = 0;

@@ -225,6 +225,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var isDecoyUnlockedThisSession = false
 
     private var lastMediaPlayingTime = 0L
+    private var isFullscreenCustomView = false
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingWebPermission: PendingWebPermission? = null
@@ -738,6 +739,10 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
         if (!isIsolatedPrivateProfile) migrateLegacyBrowserPreferences()
+        if (intent?.action == ACTION_WIPE_GHOST_SESSION) {
+            wipeAllPrivateTabsAndSession()
+            return
+        }
         binding = ActivityMediaHubBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -782,6 +787,10 @@ open class MediaHubActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent?.action == ACTION_WIPE_GHOST_SESSION) {
+            wipeAllPrivateTabsAndSession()
+            return
+        }
         handleOpenAction(intent)
         val incomingUrl = incomingWebUrl(intent)
         if (isIsolatedPrivateProfile) {
@@ -1710,6 +1719,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun hideCustomView() {
         val activeCustomView = customView ?: return
+        isFullscreenCustomView = false
         binding.fullscreenContainer.removeView(activeCustomView)
         binding.fullscreenContainer.visibility = View.GONE
         binding.mainContentLayout.visibility = View.VISIBLE
@@ -1851,12 +1861,13 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private val showChromeOnIdleRunnable = Runnable {
-        if (browserChromeHidden && customView == null && !commandBarCollapsed) {
+        if (browserChromeHidden && customView == null && !isFullscreenCustomView && !commandBarCollapsed) {
             setBrowserChromeVisible(true)
         }
     }
 
     private fun setBrowserChromeVisible(visible: Boolean) {
+        if (customView != null || isFullscreenCustomView) return
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
@@ -1947,9 +1958,8 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
-        val barInset = (70 * density).toInt()
-        webView.setPadding(0, 0, 0, 0)
         webView.clipToPadding = false
+        webView.setPadding(0, 0, 0, if (isTop) 0 else (64 * density).toInt())
 
         webView.setOnTouchListener { _, _ ->
             if (binding.urlInput.hasFocus()) {
@@ -2367,6 +2377,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     callback?.onCustomViewHidden()
                     return
                 }
+                isFullscreenCustomView = true
                 val decor = window.decorView
                 previousSystemUiVisibility = decor.systemUiVisibility
                 previousRequestedOrientation = requestedOrientation
@@ -2402,13 +2413,16 @@ open class MediaHubActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
+                if (customView != null || isFullscreenCustomView) return@setOnScrollChangeListener
+                val currentUrl = activeWebView?.url.orEmpty()
+                val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
                 val dy = scrollY - oldScrollY
                 binding.topBar.removeCallbacks(showChromeOnIdleRunnable)
 
                 if (dy > 18 && scrollY > 100) {
                     setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
-                } else if (dy < -18 || scrollY < 25) {
+                } else if (!isShorts && (dy < -18 || scrollY < 25)) {
                     setBrowserChromeVisible(true)
                 }
             }
@@ -3491,29 +3505,29 @@ open class MediaHubActivity : AppCompatActivity() {
         if (isTop) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-            lp.topMargin = statusBarHeight + (4 * density).toInt()
+            lp.topMargin = (6 * density).toInt()
             lp.bottomMargin = 0
 
             collapsedLp?.let {
                 it.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 it.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                it.topMargin = statusBarHeight + (4 * density).toInt()
+                it.topMargin = (6 * density).toInt()
                 it.bottomMargin = 0
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
             containerLp?.let {
-                it.topMargin = statusBarHeight
+                it.topMargin = 0
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = if (browserChromeHidden || commandBarCollapsed) 0f else (52 * density)
+            binding.mainContentLayout.translationY = if (browserChromeHidden || commandBarCollapsed) 0f else (54 * density)
 
             val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                cardLp.topMargin = statusBarHeight + (54 * density).toInt()
+                cardLp.topMargin = (56 * density).toInt()
                 cardLp.bottomMargin = 0
                 binding.cardSuggestions.layoutParams = cardLp
             }
@@ -3533,7 +3547,7 @@ open class MediaHubActivity : AppCompatActivity() {
             }
 
             containerLp?.let {
-                it.topMargin = statusBarHeight
+                it.topMargin = 0
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
@@ -3547,7 +3561,13 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.bottomMargin = (62 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
-            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
+            val bottomPadding = (64 * density).toInt()
+            tabs.forEach { tab ->
+                tab.webView?.let { wv ->
+                    wv.clipToPadding = false
+                    wv.setPadding(0, 0, 0, bottomPadding)
+                }
+            }
         }
         binding.topBar.layoutParams = lp
     }
@@ -4338,13 +4358,21 @@ open class MediaHubActivity : AppCompatActivity() {
             showSmartPageSummaryDialog()
         }
 
+        val updateAiBlockerUi: (Boolean) -> Unit = { active ->
+            sheetBinding.textAiBlockerStatus.text = if (active) "ON" else "OFF"
+            val color = if (active) android.graphics.Color.parseColor("#34D399") else android.graphics.Color.parseColor("#94A3B8")
+            sheetBinding.textAiBlockerStatus.setTextColor(color)
+            sheetBinding.imgAiBlockerIcon.setColorFilter(color)
+        }
+        updateAiBlockerUi(prefs.getBoolean(PREF_AI_FILTER, true))
+
         sheetBinding.btnToolAiBlocker.setOnClickListener {
             val isAiOn = prefs.getBoolean(PREF_AI_FILTER, true)
             val nextState = !isAiOn
             prefs.edit().putBoolean(PREF_AI_FILTER, nextState).apply()
+            updateAiBlockerUi(nextState)
             activeWebView?.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled($nextState);", null)
-            Toast.makeText(this, if (nextState) "AI Trap Defuser Active" else "AI Trap Defuser Paused", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
+            Toast.makeText(this, if (nextState) "AI Trap Defuser: ON" else "AI Trap Defuser: OFF", Toast.LENGTH_SHORT).show()
         }
 
         sheetBinding.btnToolDiagnostics.setOnClickListener {
@@ -5371,12 +5399,23 @@ open class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, "Reader View is for article pages", Toast.LENGTH_SHORT).show()
             return
         }
-        webView.evaluateJavascript("if (typeof toggleFokkReaderMode === 'function') { toggleFokkReaderMode(); } else { 'loading'; }") { res ->
-            if (res == null || res == "null" || res.contains("loading")) {
-                val js = "$readerScript; toggleFokkReaderMode();"
-                webView.evaluateJavascript(js, null)
-            }
-        }
+        Toast.makeText(this, "Entering Reader Mode...", Toast.LENGTH_SHORT).show()
+        val cssEscaped = readerCss.replace("`", "\\`").replace("\\", "\\\\")
+        val js = """
+            (function() {
+                if (!document.getElementById('__fokk_reader_style')) {
+                    const style = document.createElement('style');
+                    style.id = '__fokk_reader_style';
+                    style.textContent = `$cssEscaped`;
+                    (document.head || document.documentElement).appendChild(style);
+                }
+                $readerScript
+                if (typeof window.toggleFokkReaderMode === 'function') {
+                    window.toggleFokkReaderMode(true);
+                }
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
     }
 
     fun showSmartPageSummaryDialog() {
@@ -5452,9 +5491,11 @@ open class MediaHubActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        val isStartPage = activeTab?.url?.contains("fokk_start.html") == true
-        val recentMedia = (System.currentTimeMillis() - lastMediaPlayingTime) < 5000L
-        if (!isStartPage && (isMediaPlaying || recentMedia || customView != null)) {
+        val currentUrl = activeTab?.url.orEmpty()
+        val isStartPage = currentUrl.contains("fokk_start.html")
+        val recentMedia = (System.currentTimeMillis() - lastMediaPlayingTime) < 15000L
+        val isMediaSite = isThirdPartyMediaService(currentUrl) || currentUrl.contains("youtube.com") || currentUrl.contains("youtu.be") || currentUrl.contains("vimeo.com") || currentUrl.contains("twitch.tv")
+        if (!isStartPage && (isMediaPlaying || recentMedia || customView != null || isMediaSite)) {
             enterPipMode()
         }
     }
@@ -5462,14 +5503,16 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun enterPipMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
+                val currentUrl = activeTab?.url.orEmpty()
+                val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
+                val ratio = if (isShorts) Rational(9, 16) else Rational(16, 9)
                 val builder = PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(16, 9))
+                    .setAspectRatio(ratio)
 
-                // Only set sourceRectHint if customView is active and wide (landscape); otherwise let system scale smoothly without blank space
                 if (customView != null) {
                     val rect = android.graphics.Rect()
                     customView?.getGlobalVisibleRect(rect)
-                    if (!rect.isEmpty && rect.width() > rect.height()) {
+                    if (!rect.isEmpty && rect.width() > 0 && rect.height() > 0) {
                         builder.setSourceRectHint(rect)
                     }
                 }
@@ -5480,28 +5523,32 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
                 enterPictureInPictureMode(builder.build())
             } catch (e: Exception) {
-                Toast.makeText(this, "Picture-in-Picture not supported on this device", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Error entering PiP mode", e)
             }
         }
     }
 
     override fun onPause() {
         super.onPause()
-        // Save the latest navigation before Android backgrounds or reclaims this browser process.
         persistSession()
+        updateGhostModeNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
             activeWebView?.onResume()
             return
         }
-        // Do not pause the WebView here: Android can call onPause before it reports the
-        // Picture-in-Picture transition, which would leave an audio-only PiP window.
         CookieManager.getInstance().flush()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        updateGhostModeNotification()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         if (isInPictureInPictureMode) {
             binding.topBar.visibility = View.GONE
+            binding.layoutCollapsedBar.visibility = View.GONE
             binding.bottomNav.visibility = View.GONE
             binding.progressBar.visibility = View.GONE
             binding.cardSuggestions.visibility = View.GONE
@@ -5511,13 +5558,87 @@ open class MediaHubActivity : AppCompatActivity() {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
             }
         } else {
-            binding.topBar.visibility = View.VISIBLE
+            if (commandBarCollapsed) {
+                binding.layoutCollapsedBar.visibility = View.VISIBLE
+                binding.topBar.visibility = View.GONE
+            } else {
+                binding.topBar.visibility = View.VISIBLE
+                binding.layoutCollapsedBar.visibility = View.GONE
+            }
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_exit_pip_view === 'function') window.__fokk_exit_pip_view();", null)
             }
             activeWebView?.requestLayout()
         }
+    }
+
+    private fun updateGhostModeNotification() {
+        val privateCount = tabs.count { it.isPrivate }
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        if (privateCount > 0 || isIsolatedPrivateProfile) {
+            val countText = if (privateCount > 0) "$privateCount private tab${if (privateCount > 1) "s" else ""} open" else "Ghost Mode active"
+            val wipeIntent = Intent(this, MediaHubActivity::class.java).apply {
+                action = ACTION_WIPE_GHOST_SESSION
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pIntent = PendingIntent.getActivity(
+                this,
+                NOTIFICATION_ID_GHOST_MODE,
+                wipeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+            )
+            val notif = NotificationCompat.Builder(this, AdShieldApp.CHANNEL_ID_GHOST_MODE)
+                .setSmallIcon(R.drawable.ic_ghost)
+                .setContentTitle("Ghost Mode is Active")
+                .setContentText("$countText. Tap to close all & wipe session.")
+                .setContentIntent(pIntent)
+                .setOngoing(true)
+                .setAutoCancel(true)
+                .addAction(R.drawable.ic_close, "Close & Wipe", pIntent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
+            try {
+                notificationManager.notify(NOTIFICATION_ID_GHOST_MODE, notif)
+            } catch (_: SecurityException) {}
+        } else {
+            notificationManager.cancel(NOTIFICATION_ID_GHOST_MODE)
+        }
+    }
+
+    private fun wipeAllPrivateTabsAndSession() {
+        val privateTabs = tabs.filter { it.isPrivate }
+        privateTabs.forEach { tab ->
+            tab.webView?.let { wv ->
+                cancelPendingWebPermission(wv)
+                cancelPendingLocationPermission(wv)
+                binding.tabContainer.removeView(wv)
+                pageUrlsByWebView.remove(wv)
+                wv.destroy()
+            }
+        }
+        tabs.removeAll { it.isPrivate }
+        showingPrivateTabs = false
+        CookieManager.getInstance().removeSessionCookies(null)
+        WebStorage.getInstance().deleteAllData()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        notificationManager?.cancel(NOTIFICATION_ID_GHOST_MODE)
+
+        if (isIsolatedPrivateProfile) {
+            Toast.makeText(this, "Ghost Mode session wiped", Toast.LENGTH_SHORT).show()
+            finishAffinity()
+            return
+        }
+
+        if (tabs.isEmpty()) {
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
+        } else {
+            switchToTab(0)
+        }
+        updateTabCounter()
+        persistSession()
+        Toast.makeText(this, "Ghost Mode tabs closed & session wiped", Toast.LENGTH_SHORT).show()
     }
 
     fun openShieldDashboard() {
@@ -5865,6 +5986,8 @@ open class MediaHubActivity : AppCompatActivity() {
 
         const val EXTRA_URL = "extra_url"
         const val EXTRA_OPEN_ACTION = "extra_open_action"
+        const val ACTION_WIPE_GHOST_SESSION = "com.adshield.app.ACTION_WIPE_GHOST_SESSION"
+        private const val NOTIFICATION_ID_GHOST_MODE = 9001
         private const val TAG = "FokkBrowser"
         private const val PREFS_NAME = "fokk_browser_settings_v2"
         private const val LEGACY_PREFS_NAME = "fokk_browser_prefs"

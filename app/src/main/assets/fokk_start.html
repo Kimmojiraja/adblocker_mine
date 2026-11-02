@@ -51,7 +51,7 @@
             background-repeat: no-repeat;
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 24px 20px 24px 20px;
+            padding: 8px 16px 24px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -198,14 +198,16 @@
         }
 
         .dial-label-text {
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text-primary);
             text-align: center;
-            max-width: 76px;
+            max-width: 68px;
+            width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: block;
         }
 
         .add-plus-svg {
@@ -1092,12 +1094,6 @@
                 <button class="modal-close" onclick="closeShortcutsManager()">✕</button>
             </div>
 
-            <!-- Quick Add Presets -->
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Popular Shortcuts (Tap to Add)</div>
-                <div class="preset-chips-row" id="presetChipsRow" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
-            </div>
-
             <!-- Existing Shortcuts List -->
             <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">Current Shortcuts (Pinned on Top)</div>
             <div id="shortcutsManagerList"></div>
@@ -1349,14 +1345,30 @@
                         <svg viewBox="0 0 24 24"><path fill="#00E5FF" d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>
                     </div>` : '';
 
-                const iconSvg = brandSvgs[dial.icon] || `<svg viewBox="0 0 24 24" fill="#00E5FF"><circle cx="12" cy="12" r="10"/></svg>`;
+                let iconHtml = '';
+                if (brandSvgs[dial.icon]) {
+                    iconHtml = brandSvgs[dial.icon];
+                } else {
+                    let domain = '';
+                    try {
+                        domain = new URL(dial.url).hostname;
+                    } catch (e) {
+                        domain = (dial.url || '').replace(/^https?:\/\//, '').split('/')[0];
+                    }
+                    const favUrl = dial.favicon || (domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '');
+                    if (favUrl) {
+                        iconHtml = `<img src="${favUrl}" alt="" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" onerror="this.onerror=null;this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'#94A3B8\\' style=\\'width:24px;height:24px;\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/></svg>';" />`;
+                    } else {
+                        iconHtml = `<svg viewBox="0 0 24 24" fill="#94A3B8" style="width:24px;height:24px;"><circle cx="12" cy="12" r="10"/></svg>`;
+                    }
+                }
 
                 tile.innerHTML = `
                     <div class="dial-circle-disk">
                         ${pinHtml}
-                        ${iconSvg}
+                        ${iconHtml}
                     </div>
-                    <span class="dial-label-text">${dial.title}</span>
+                    <span class="dial-label-text" title="${dial.title}">${dial.title}</span>
                 `;
                 grid.appendChild(tile);
             });
@@ -1378,57 +1390,12 @@
         }
 
         function openShortcutsManager() {
-            renderPresetChips();
             renderShortcutsManagerList();
             document.getElementById('shortcutsModal').classList.add('active');
         }
 
         function closeShortcutsManager() {
             document.getElementById('shortcutsModal').classList.remove('active');
-        }
-
-        function renderPresetChips() {
-            const container = document.getElementById('presetChipsRow');
-            if (!container) return;
-            container.innerHTML = '';
-            popularPresets.forEach(preset => {
-                const existing = speedDials.some(d => d.url.includes(preset.id) || d.title.toLowerCase() === preset.title.toLowerCase());
-                const chip = document.createElement('div');
-                chip.style.cssText = `
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    background: ${existing ? 'rgba(255,255,255,0.04)' : 'rgba(0, 229, 255, 0.12)'};
-                    border: 1px solid ${existing ? 'rgba(255,255,255,0.1)' : 'rgba(0, 229, 255, 0.35)'};
-                    color: ${existing ? 'var(--text-muted)' : 'var(--text-primary)'};
-                    font-size: 11.5px;
-                    font-weight: 700;
-                    padding: 5px 10px;
-                    border-radius: 14px;
-                    cursor: ${existing ? 'default' : 'pointer'};
-                `;
-                const iconPreview = brandSvgs[preset.icon] ? `<span style="width:14px;height:14px;display:inline-block;">${brandSvgs[preset.icon]}</span>` : '';
-                chip.innerHTML = `${iconPreview}<span>${preset.title}</span> ${existing ? '✓' : '+'}`;
-                if (!existing) {
-                    chip.onclick = () => addPresetShortcut(preset);
-                }
-                container.appendChild(chip);
-            });
-        }
-
-        function addPresetShortcut(preset) {
-            speedDials.push({
-                id: preset.id + '_' + Date.now(),
-                title: preset.title,
-                url: preset.url,
-                icon: preset.icon,
-                pinned: false
-            });
-            saveSpeedDials();
-            sortSpeedDials();
-            renderSpeedDials();
-            renderPresetChips();
-            renderShortcutsManagerList();
         }
 
         function renderShortcutsManagerList() {
@@ -1448,10 +1415,18 @@
                     border-radius: 12px;
                     margin-bottom: 6px;
                 `;
-                const iconSvg = brandSvgs[dial.icon] || `<svg viewBox="0 0 24 24" fill="#00E5FF"><circle cx="12" cy="12" r="10"/></svg>`;
+                let iconPreview = '';
+                if (brandSvgs[dial.icon]) {
+                    iconPreview = brandSvgs[dial.icon];
+                } else {
+                    let d = '';
+                    try { d = new URL(dial.url).hostname; } catch(e) { d = (dial.url || '').replace(/^https?:\/\//, '').split('/')[0]; }
+                    const fav = dial.favicon || (d ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128` : '');
+                    iconPreview = fav ? `<img src="${fav}" alt="" style="width:24px;height:24px;border-radius:4px;object-fit:contain;" />` : `<svg viewBox="0 0 24 24" fill="#94A3B8" style="width:20px;height:20px;"><circle cx="12" cy="12" r="10"/></svg>`;
+                }
                 row.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
-                        <div style="width:28px; height:28px; flex-shrink:0;">${iconSvg}</div>
+                        <div style="width:28px; height:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">${iconPreview}</div>
                         <div style="overflow:hidden;">
                             <div style="font-weight:700; font-size:13px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
                                 <span>${dial.title}</span>
@@ -1485,7 +1460,6 @@
             speedDials.splice(idx, 1);
             saveSpeedDials();
             renderSpeedDials();
-            renderPresetChips();
             renderShortcutsManagerList();
         }
 
@@ -1510,11 +1484,18 @@
             else if (lower.includes('discord.')) icon = 'discord';
             else if (lower.includes('linkedin.')) icon = 'linkedin';
 
-            speedDials.push({ id: 'c_' + Date.now(), title, url, icon, pinned: false });
+            let domain = '';
+            try {
+                domain = new URL(url).hostname;
+            } catch (e) {
+                domain = url.replace(/^https?:\/\//, '').split('/')[0];
+            }
+            const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '';
+
+            speedDials.push({ id: 'c_' + Date.now(), title, url, icon, favicon: faviconUrl, pinned: false });
             saveSpeedDials();
             sortSpeedDials();
             renderSpeedDials();
-            renderPresetChips();
             renderShortcutsManagerList();
             document.getElementById('newShortcutTitle').value = '';
             document.getElementById('newShortcutUrl').value = '';

@@ -55,8 +55,18 @@ class AdShieldApp : Application() {
                 setShowBadge(false)
             }
 
+            val ghostChannel = NotificationChannel(
+                CHANNEL_ID_GHOST_MODE,
+                "Ghost Mode &amp; Privacy Safety",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifies when private Ghost Mode tabs remain open with one-tap exit"
+                setShowBadge(true)
+            }
+
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager?.createNotificationChannel(channel)
+            notificationManager?.createNotificationChannel(ghostChannel)
         }
     }
 
@@ -69,6 +79,7 @@ class AdShieldApp : Application() {
 
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"
+        const val CHANNEL_ID_GHOST_MODE = "fokk_ghost_mode_channel"
         const val PREFS_NAME = "adshield_prefs"
         const val KEY_BLOCKED_ADS = "key_blocked_ads_count"
         const val KEY_VPN_ENABLED = "key_vpn_enabled"

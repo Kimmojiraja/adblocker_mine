@@ -244,7 +244,44 @@
             return modified;
         }
 
-        // 2. Network Hook: Fetch & XHR Interceptor (Instagram)
+        // Auto-Unmute YouTube & Prevent Forced Muting
+        try {
+            const origMutedDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
+            if (origMutedDescriptor && origMutedDescriptor.set) {
+                Object.defineProperty(HTMLMediaElement.prototype, 'muted', {
+                    get: origMutedDescriptor.get,
+                    set: function(val) {
+                        // Prevent YouTube from auto-muting videos on navigation/load
+                        if (window.location.hostname.includes('youtube.com')) {
+                            return origMutedDescriptor.set.call(this, false);
+                        }
+                        return origMutedDescriptor.set.call(this, val);
+                    },
+                    configurable: true
+                });
+            }
+        } catch (e) {}
+
+        function unmuteYouTubeVideo() {
+            if (!window.location.hostname.includes('youtube.com')) return;
+            const video = document.querySelector('video');
+            if (video) {
+                if (video.muted) video.muted = false;
+                if (video.volume < 1.0) video.volume = 1.0;
+            }
+            const unmuteBtn = document.querySelector('.ytp-unmute, [aria-label*="unmute" i], .ytm-unmute-button');
+            if (unmuteBtn && typeof unmuteBtn.click === 'function') {
+                try { unmuteBtn.click(); } catch (e) {}
+            }
+        }
+
+        if (window.location.hostname.includes('youtube.com')) {
+            document.addEventListener('play', unmuteYouTubeVideo, { capture: true, passive: true });
+            document.addEventListener('playing', unmuteYouTubeVideo, { capture: true, passive: true });
+            window.addEventListener('yt-navigate-finish', unmuteYouTubeVideo, { capture: true, passive: true });
+        }
+
+        // 2. Network Hook: Fetch & XHR Interceptor (YouTube & Instagram)
         if (window.fetch) {
             const origFetch = window.fetch;
             function makeSafeHeaders(originalHeaders) {
@@ -264,6 +301,18 @@
                 const response = await origFetch.apply(this, args);
                 try {
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
+                    // Intercept YouTube in-page dynamic player endpoints
+                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') ||
+                        url.includes('/youtubei/v1/reel/reel_item_watch') || url.includes('/youtubei/v1/browse')) {
+                        const clone = response.clone();
+                        const data = await clone.json();
+                        sanitizeYtPlayerResponse(data);
+                        return new Response(JSON.stringify(data), {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: makeSafeHeaders(response.headers)
+                        });
+                    }
                     if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') ||
                         url.includes('/api/v1/feed/reels_tray/') || url.includes('/api/v1/discover/') ||
                         url.includes('/api/v1/igtv/') || url.includes('/api/v1/clips/') ||
@@ -292,6 +341,31 @@
             };
             XMLHttpRequest.prototype.send = function(body) {
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
+                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') ||
+                                 this._fokkTargetUrl.includes('/youtubei/v1/next') ||
+                                 this._fokkTargetUrl.includes('/youtubei/v1/reel/reel_item_watch') ||
+                                 this._fokkTargetUrl.includes('/youtubei/v1/browse');
+                    if (isYt) {
+                        const self = this;
+                        const modifyYtResponse = function() {
+                            if (self.readyState === 4 && self.status === 200) {
+                                try {
+                                    const data = JSON.parse(self.responseText);
+                                    sanitizeYtPlayerResponse(data);
+                                    const cleaned = JSON.stringify(data);
+                                    Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
+                                    Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
+                                } catch (e) {}
+                            }
+                        };
+                        this.addEventListener('readystatechange', modifyYtResponse, { capture: true });
+                        this.addEventListener('load', modifyYtResponse, { capture: true });
+                        const origOnReady = this.onreadystatechange;
+                        this.onreadystatechange = function() {
+                            modifyYtResponse();
+                            if (origOnReady) origOnReady.apply(this, arguments);
+                        };
+                    }
                     const isIg = this._fokkTargetUrl.includes('/graphql/query') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/timeline/') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/') ||

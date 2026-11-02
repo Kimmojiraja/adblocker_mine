@@ -1,6 +1,6 @@
 {
-  "versionCode": 74,
-  "versionName": "1.0.74",
+  "versionCode": 75,
+  "versionName": "1.0.75",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Native Video Controls Restored: Removed synthetic gesture handlers that conflicted with YouTube's native double-tap to seek 10s.\n- Video Pause Reliability: Eliminated auto-play/unpause loops so pausing videos works immediately and stays paused without glitching.\n- Performance Optimization: Removed CPU-heavy DOM scans during playback, ensuring silky-smooth, glitch-free video streaming."
+  "changelog": "- Instant SPA Video Starts: Hooked YouTube's internal dynamic player fetch/XHR endpoints so clicking any video loads instantly without needing a page refresh.\n- Auto-Mute Neutralized: Disarmed YouTube mobile's automatic muting on page loads and transitions so sound plays clearly and unmuted every time."
 }

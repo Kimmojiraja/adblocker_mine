@@ -180,20 +180,15 @@
             const origFetch = window.fetch;
 
             // Build safe headers for a modified JSON response.
-            // The original response may be gzip/brotli compressed; after we re-serialize
-            // to plain-text JSON those compression headers become WRONG and cause the
-            // browser/player to fail to parse → YouTube black screen on SPA navigation.
             function makeSafeHeaders(originalHeaders) {
                 const safe = {};
                 try {
                     originalHeaders.forEach(function(val, key) {
                         const k = key.toLowerCase();
-                        // Drop all compression/encoding/length headers — we are sending plain UTF-8 JSON
                         if (k === 'content-encoding' || k === 'content-length' || k === 'transfer-encoding') return;
                         safe[key] = val;
                     });
                 } catch (e) {}
-                // Explicitly set correct content type
                 safe['content-type'] = 'application/json; charset=utf-8';
                 return safe;
             }
@@ -203,17 +198,9 @@
                 try {
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
 
-                    // YouTube player data
-                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') || url.includes('/youtubei/v1/reel') || url.includes('/youtubei/v1/browse')) {
-                        const clone = response.clone();
-                        const data = await clone.json();
-                        sanitizeYtPlayerResponse(data);
-                        return new Response(JSON.stringify(data), {
-                            status: response.status,
-                            statusText: response.statusText,
-                            headers: makeSafeHeaders(response.headers)
-                        });
-                    }
+                    // YouTube: do NOT intercept fetch responses — re-creating Response objects
+                    // breaks YouTube's internal player pipeline causing black screen on SPA navigation.
+                    // YouTube ad blocking is handled natively by shouldInterceptRequest in MediaHubActivity.
 
                     // Instagram feed & GraphQL data
                     if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') ||
@@ -244,22 +231,20 @@
             };
             XMLHttpRequest.prototype.send = function(body) {
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
-                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next') || this._fokkTargetUrl.includes('/youtubei/v1/reel') || this._fokkTargetUrl.includes('/youtubei/v1/browse');
-                    const isIg = this._fokkTargetUrl.includes('/graphql/query') || this._fokkTargetUrl.includes('/api/v1/feed/timeline/') || this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/');
-                    if (isYt || isIg) {
+                    // Instagram only — YouTube XHR interception removed to prevent black screen
+                    const isIg = this._fokkTargetUrl.includes('/graphql/query') ||
+                                 this._fokkTargetUrl.includes('/api/v1/feed/timeline/') ||
+                                 this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/') ||
+                                 this._fokkTargetUrl.includes('/api/v1/discover/') ||
+                                 this._fokkTargetUrl.includes('/api/v1/clips/') ||
+                                 this._fokkTargetUrl.includes('/api/v1/feed/user/');
+                    if (isIg) {
                         const self = this;
                         const modifyResponse = function() {
                             if (self.readyState === 4 && self.status === 200) {
                                 try {
                                     const data = JSON.parse(self.responseText);
-                                    let modified = false;
-                                    if (isYt) {
-                                        sanitizeYtPlayerResponse(data);
-                                        modified = true;
-                                    } else if (isIg) {
-                                        modified = sanitizeInstagramData(data);
-                                    }
-                                    if (modified) {
+                                    if (sanitizeInstagramData(data)) {
                                         const cleaned = JSON.stringify(data);
                                         Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
                                         Object.defineProperty(self, 'response', { value: cleaned, configurable: true });

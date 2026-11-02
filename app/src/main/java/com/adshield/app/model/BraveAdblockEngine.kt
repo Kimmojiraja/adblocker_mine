@@ -38,7 +38,10 @@ class BraveAdblockEngine(private val context: Context) {
                 val startTime = System.currentTimeMillis()
                 Log.d(TAG, "Initializing Brave adblock-rust engine...")
 
-                val instance = AdblockEngine.create()
+                // Clean up legacy cache if present
+                val oldCacheFile = File(context.cacheDir, "adblock_rust_v1.bin")
+                if (oldCacheFile.exists()) oldCacheFile.delete()
+
                 val cacheFile = File(context.cacheDir, CACHE_FILE_NAME)
 
                 var loadedFromCache = false
@@ -56,7 +59,7 @@ class BraveAdblockEngine(private val context: Context) {
                 }
 
                 if (!loadedFromCache) {
-                    val rulesBuilder = StringBuilder(1024 * 1024)
+                    val rulesBuilder = StringBuilder(3 * 1024 * 1024)
 
                     // 1. Load curated ABP / uBlock rules
                     try {
@@ -173,7 +176,7 @@ class BraveAdblockEngine(private val context: Context) {
 
     companion object {
         private const val TAG = "BraveAdblockEngine"
-        private const val CACHE_FILE_NAME = "adblock_rust_v1.bin"
+        private const val CACHE_FILE_NAME = "adblock_rust_v2_easylist.bin"
 
         private val FALLBACK_ALLOW_DECISION = BlockDecision(
             matched = false,

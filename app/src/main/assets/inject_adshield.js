@@ -43,7 +43,21 @@
             if (obj.adPlacements) delete obj.adPlacements;
             if (obj.playerAds) delete obj.playerAds;
             if (obj.adSlots) delete obj.adSlots;
+            if (obj.adBreaks) delete obj.adBreaks;
+            if (obj.adPlacementConfig) delete obj.adPlacementConfig;
             if (obj.adBreakHeartbeatParams) delete obj.adBreakHeartbeatParams;
+            if (obj.playerConfig && obj.playerConfig.adConfig) delete obj.playerConfig.adConfig;
+            if (obj.playerResponse) {
+                if (typeof obj.playerResponse === 'object') {
+                    sanitizeYtPlayerResponse(obj.playerResponse);
+                } else if (typeof obj.playerResponse === 'string') {
+                    try {
+                        const parsed = JSON.parse(obj.playerResponse);
+                        sanitizeYtPlayerResponse(parsed);
+                        obj.playerResponse = JSON.stringify(parsed);
+                    } catch (e) {}
+                }
+            }
         } catch (e) {}
     }
 
@@ -137,7 +151,7 @@
                     const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
 
                     // YouTube player data
-                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') || url.includes('/youtubei/v1/reel/')) {
+                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') || url.includes('/youtubei/v1/reel') || url.includes('/youtubei/v1/browse')) {
                         const clone = response.clone();
                         const data = await clone.json();
                         sanitizeYtPlayerResponse(data);
@@ -174,12 +188,11 @@
             };
             XMLHttpRequest.prototype.send = function(body) {
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
-                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next') || this._fokkTargetUrl.includes('/youtubei/v1/reel/');
+                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') || this._fokkTargetUrl.includes('/youtubei/v1/next') || this._fokkTargetUrl.includes('/youtubei/v1/reel') || this._fokkTargetUrl.includes('/youtubei/v1/browse');
                     const isIg = this._fokkTargetUrl.includes('/graphql/query') || this._fokkTargetUrl.includes('/api/v1/feed/timeline/') || this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/');
                     if (isYt || isIg) {
                         const self = this;
-                        const origOnReady = this.onreadystatechange;
-                        this.onreadystatechange = function() {
+                        const modifyResponse = function() {
                             if (self.readyState === 4 && self.status === 200) {
                                 try {
                                     const data = JSON.parse(self.responseText);
@@ -197,6 +210,12 @@
                                     }
                                 } catch (e) {}
                             }
+                        };
+                        this.addEventListener('readystatechange', modifyResponse, { capture: true });
+                        this.addEventListener('load', modifyResponse, { capture: true });
+                        const origOnReady = this.onreadystatechange;
+                        this.onreadystatechange = function() {
+                            modifyResponse();
                             if (origOnReady) origOnReady.apply(this, arguments);
                         };
                     }
@@ -502,11 +521,6 @@
     }
 
     // =========================================================================
-    // YouTube Web Video Ad Auto-Skipper (Zero-Blank-Screen Instant Skip Engine)
-    // =========================================================================
-    let adWasMutedByShield = false;
-
-    // =========================================================================
     // YouTube Web Video Ad Auto-Skipper & Instant Stall Bypass Engine
     // =========================================================================
     let adWasMutedByShield = false;
@@ -514,7 +528,8 @@
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
-        const playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+        const playerEl = document.getElementById('movie_player') ||
+                         document.querySelector('.html5-video-player, ytm-player, #player, .player-container, #player-container');
 
         // 1. Programmatically click all modern YouTube skip buttons immediately
         const skipButtons = [
@@ -529,6 +544,9 @@
             '.ytp-ad-skip-button-container button',
             '.ytp-ad-skip-button-slot button',
             '.ytm-ad-skip-button',
+            '.ytm-skip-ad-button',
+            '.ytp-ad-skip-button-text',
+            'ytm-player-ad-overlay button',
             '[aria-label*="Skip ad"]',
             '[aria-label*="Skip Ad"]'
         ];
@@ -542,13 +560,18 @@
             }
         }
 
-        // 2. In-stream ad active detection strictly scoped to the video player container
-        const isAdShowing = playerEl && (playerEl.classList.contains('ad-showing') || playerEl.classList.contains('ad-interrupting'));
+        // 2. In-stream ad active detection (works for desktop and mobile YouTube)
+        const hasAdOverlay = !!document.querySelector('.ytm-player-ad-overlay, ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-text, .ytm-ad-preview-text, [class*="ad-showing"], .ytp-ad-module:not(:empty)');
+        const isAdShowing = (playerEl && (
+            playerEl.classList.contains('ad-showing') ||
+            playerEl.classList.contains('ad-interrupting') ||
+            playerEl.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay') !== null
+        )) || hasAdOverlay;
 
         if (isAdShowing) {
             // Native YouTube player skipAd method
             try {
-                if (typeof playerEl.skipAd === 'function') {
+                if (playerEl && typeof playerEl.skipAd === 'function') {
                     playerEl.skipAd();
                 }
             } catch (e) {}
@@ -558,17 +581,26 @@
                 try { el.remove(); } catch (e) {}
             });
 
-            const video = (playerEl && playerEl.querySelector('video')) || document.querySelector('video.html5-main-video, video');
+            // Find active video element (ad video or player video)
+            const video = (playerEl && playerEl.querySelector('video')) ||
+                          document.querySelector('.ad-showing video, .video-ads video, ytm-player video, video.html5-main-video, video');
             if (video) {
                 try {
-                    // Mute and jump to end of ad stream
+                    // Mute ad immediately
                     if (!video.muted) {
                         video.muted = true;
                         adWasMutedByShield = true;
                     }
                     video.playbackRate = 16.0;
+
+                    // If ad is playing with known finite duration, jump to end
                     if (!isNaN(video.duration) && video.duration > 0 && video.duration < 180) {
                         video.currentTime = video.duration - 0.05;
+                    } else {
+                        // Stalled on black screen / blocked ad stream:
+                        // Dispatch ended event to force YouTube's state machine to transition to main video immediately
+                        video.currentTime = 9999;
+                        video.dispatchEvent(new Event('ended'));
                     }
                 } catch (e) {}
             }
@@ -588,9 +620,14 @@
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(runYouTubeAdSkipper, 250);
+        setInterval(runYouTubeAdSkipper, 200);
         document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('yt-navigate-start', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('yt-navigate-finish', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('yt-page-data-updated', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('spfdone', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('popstate', runYouTubeAdSkipper, { capture: true, passive: true });
     }
 
     // =========================================================================

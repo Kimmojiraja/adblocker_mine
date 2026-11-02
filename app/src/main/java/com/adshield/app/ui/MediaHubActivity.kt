@@ -1798,10 +1798,16 @@ open class MediaHubActivity : AppCompatActivity() {
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
 
         binding.layoutCollapsedBar.visibility = View.GONE
+        val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
 
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
+            containerLp?.let {
+                it.topMargin = if (isTop) (56 * density).toInt() else 0
+                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
+                binding.mainContentLayout.layoutParams = it
+            }
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
             binding.topBar.animate()
@@ -1813,6 +1819,11 @@ open class MediaHubActivity : AppCompatActivity() {
         } else {
             if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
@@ -1848,10 +1859,8 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
-        val density = resources.displayMetrics.density
         webView.clipToPadding = false
-        webView.setPadding(0, 0, 0, if (isTop) 0 else (64 * density).toInt())
+        webView.setPadding(0, 0, 0, 0)
 
         webView.setOnTouchListener { _, _ ->
             if (binding.urlInput.hasFocus()) {
@@ -2116,13 +2125,24 @@ open class MediaHubActivity : AppCompatActivity() {
                         urlStr.contains("scorecardresearch.com") ||
                         urlStr.contains("quantserve.com")
 
-                // Never block YouTube video streaming or player infrastructure
+                // Never block YouTube video streaming or player infrastructure, but block YouTube ad endpoints
                 val isYouTubePage = pageHost?.contains("youtube.com") == true || pageHost?.contains("youtu.be") == true
-                val isSafeYtResource = isYouTubePage && (
+                val isYtAdUrl = urlStr.contains("/pagead/") ||
+                    urlStr.contains("/api/stats/ads") ||
+                    urlStr.contains("/ptracking") ||
+                    urlStr.contains("ad_break") ||
+                    urlStr.contains("googleads") ||
+                    urlStr.contains("doubleclick.net")
+                val isSafeYtResource = isYouTubePage && !isYtAdUrl && (
                     host.contains("googlevideo.com") || host.contains("ytimg.com") ||
                     host.contains("youtube.com") || host.contains("ggpht.com") ||
                     host.contains("gstatic.com") || host.contains("googleapis.com")
                 )
+
+                if (isYtAdUrl) {
+                    recordFilteredRequest(view, host)
+                    return createBlockedResourceResponse(urlStr)
+                }
 
                 // 1. Check native Brave adblock-rust Engine (EasyList + uBlock Origin + Adult / Video rules)
                 if (!isSafeYtResource) {

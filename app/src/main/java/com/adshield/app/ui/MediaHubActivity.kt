@@ -149,7 +149,7 @@ open class MediaHubActivity : AppCompatActivity() {
         var isHibernated: Boolean = false,
         var savedScrollY: Int = 0,
         val isPrivate: Boolean = false,
-        var webView: WebView?
+        var webView: WebView? = null
     )
 
     private data class PendingWebPermission(
@@ -6094,19 +6094,20 @@ open class MediaHubActivity : AppCompatActivity() {
             CookieManager.getInstance().removeAllCookies(null)
             CookieManager.getInstance().flush()
             WebStorage.getInstance().deleteAllData()
-            activeWebView?.clearCache(true)
-            activeWebView?.clearHistory()
 
+            for (tab in tabs) {
+                tab.webView?.let { webView ->
+                    cancelPendingWebPermission(webView)
+                    cancelPendingLocationPermission(webView)
+                    binding.tabContainer.removeView(webView)
+                    pageUrlsByWebView.remove(webView)
+                    webView.clearCache(true)
+                    webView.clearHistory()
+                    webView.destroy()
+                }
+            }
             tabs.clear()
-            val startTab = BrowserTab(
-                id = UUID.randomUUID().toString(),
-                title = "Fokk Start",
-                url = "file:///android_asset/fokk_start.html",
-                isPrivate = false
-            )
-            tabs.add(startTab)
-            activeTabIndex = 0
-            activeWebView?.loadUrl("file:///android_asset/fokk_start.html")
+            addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
             updateTabCounter()
             setBrowserChromeVisible(true)
             Toast.makeText(this, "🔥 Session burned. All history, cache & tabs purged.", Toast.LENGTH_SHORT).show()

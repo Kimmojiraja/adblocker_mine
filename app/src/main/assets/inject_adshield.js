@@ -75,6 +75,19 @@
         });
     } catch (e) {}
 
+    // uBlock Origin json-prune standard: Defuses YouTube ad data in all parsed JSON responses
+    // (runs on every /youtubei/v1/player call without touching fetch Response headers or streams)
+    try {
+        const origJSONParse = JSON.parse;
+        JSON.parse = function(text, reviver) {
+            const data = origJSONParse.apply(this, arguments);
+            if (data && typeof data === 'object') {
+                sanitizeYtPlayerResponse(data);
+            }
+            return data;
+        };
+    } catch (e) {}
+
     // ytInitialData hook intentionally removed: hooking it breaks YouTube page rendering and causes 5-10s black screen glitch.
 
     // Instagram response scrubber
@@ -425,6 +438,8 @@
         /* YouTube Web Ads & Sponsored Cards */
         ytm-item-section-renderer:has(ytm-promoted-sparkles-web-renderer),
         ytm-item-section-renderer:has(ytm-ad-slot-renderer),
+        ytm-item-section-renderer:has([aria-label*="Sponsored" i]),
+        ytm-video-with-context-renderer:has([aria-label*="Sponsored" i]),
         ytm-compact-promoted-item-renderer,
         div.ytm-promoted-sparkles-web-renderer,
         ytm-promoted-sparkles-web-renderer,
@@ -437,6 +452,12 @@
         ytd-banner-promo-renderer,
         ytd-ad-slot-renderer,
         ytd-in-feed-ad-layout-renderer,
+        ytd-rich-item-renderer:has(ytd-ad-slot-renderer),
+        ytd-rich-item-renderer:has(ytd-in-feed-ad-layout-renderer),
+        ytd-rich-item-renderer:has([aria-label*="Sponsored" i]),
+        ytd-rich-item-renderer:has(.badge-style-type-ad),
+        ytd-video-renderer:has([aria-label*="Sponsored" i]),
+        ytd-video-renderer:has(.badge-style-type-ad),
         .ytp-ad-overlay-container,
         ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
 
@@ -504,13 +525,22 @@
 
     function injectCosmetics() {
         if (document.getElementById('__fokk_cosmetic_style')) return;
+        const target = document.head || document.documentElement;
+        if (!target) {
+            return;
+        }
         const style = document.createElement('style');
         style.id = '__fokk_cosmetic_style';
         style.textContent = cosmeticCss;
-        (document.head || document.documentElement).appendChild(style);
+        target.appendChild(style);
     }
 
     injectCosmetics();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectCosmetics, { once: true });
+        // Also try on readystatechange as soon as documentElement exists
+        document.addEventListener('readystatechange', injectCosmetics);
+    }
 
 // =========================================================================
     // Cookie Consent Auto-Dismiss & Scrubber (Web-Wide + Ecosia)
@@ -561,17 +591,15 @@
     }
 
     // =========================================================================
-    // YouTube Web Video Ad Auto-Skipper & Instant Stall Bypass Engine
+    // YouTube Ad Skip & Overlay Remover (uBO Standard — Zero Video Tampering)
     // =========================================================================
-    let adWasMutedByShield = false;
-
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
         const playerEl = document.getElementById('movie_player') ||
-                         document.querySelector('.html5-video-player, ytm-player, #player, .player-container, #player-container');
+                         document.querySelector('.html5-video-player, ytm-player, #player');
 
-        // 1. Programmatically click all modern YouTube skip buttons immediately
+        // 1. Programmatically click native YouTube skip buttons immediately
         const skipButtons = [
             '.ytp-ad-skip-button',
             '.ytp-ad-skip-button-modern',
@@ -587,8 +615,8 @@
             '.ytm-skip-ad-button',
             '.ytp-ad-skip-button-text',
             'ytm-player-ad-overlay button',
-            '[aria-label*="Skip ad"]',
-            '[aria-label*="Skip Ad"]'
+            '[aria-label*="Skip ad" i]',
+            '[aria-label*="Skip Ad" i]'
         ];
         for (let i = 0; i < skipButtons.length; i++) {
             const btn = document.querySelector(skipButtons[i]);
@@ -600,7 +628,7 @@
             }
         }
 
-        // 2. Programmatically trigger native player skip if available
+        // 2. Call native player skipAd API if present
         try {
             if (playerEl && typeof playerEl.skipAd === 'function') {
                 playerEl.skipAd();
@@ -611,53 +639,62 @@
         document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
             try { el.remove(); } catch (e) {}
         });
+    }
 
-        // 4. In-stream ad active detection: ONLY when player specifically marks ad active
-        const isAdShowing = !!(playerEl && (
-            playerEl.classList.contains('ad-showing') ||
-            playerEl.classList.contains('ad-interrupting') ||
-            playerEl.querySelector('.ad-showing, .ad-interrupting') !== null
-        ));
+    function scrubYouTubeSponsored() {
+        if (!window.location.hostname.includes('youtube.com')) return;
 
-        if (isAdShowing) {
-            const adVideo = document.querySelector('.ad-showing video, .video-ads video') ||
-                            (playerEl ? playerEl.querySelector('video') : null);
+        // 1. Direct YouTube ad containers
+        document.querySelectorAll(
+            'ytd-ad-slot-renderer, ytm-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ' +
+            'ytm-promoted-sparkles-web-renderer, ytm-promoted-sparkles-text-search-web-renderer, ' +
+            'ytm-companion-ad-renderer, ytd-banner-promo-renderer, ytd-promoted-video-renderer, ' +
+            'ytd-statement-banner-renderer, ytd-primetime-promo-renderer'
+        ).forEach(function(el) {
+            try {
+                const card = el.closest('ytd-rich-item-renderer, ytd-video-renderer, ytm-item-section-renderer, ytm-video-with-context-renderer, ytd-rich-section-renderer') || el;
+                card.style.setProperty('display', 'none', 'important');
+            } catch (e) {}
+        });
 
-            if (adVideo) {
-                try {
-                    // Mute ad video
-                    if (!adVideo.muted) {
-                        adVideo.muted = true;
-                        adWasMutedByShield = true;
-                    }
-                    // Fast-forward ad video to end
-                    if (!isNaN(adVideo.duration) && adVideo.duration > 0 && adVideo.duration < 180) {
-                        adVideo.currentTime = adVideo.duration - 0.05;
-                    }
-                } catch (e) {}
-            }
-        } else {
-            // Normal video playback: restore mute and speed if we previously altered them
-            if (adWasMutedByShield) {
-                const video = (playerEl && playerEl.querySelector('video')) ||
-                              document.querySelector('video.html5-main-video, ytm-player video, video');
-                if (video && !document.querySelector('.ad-showing video, .video-ads video')) {
-                    video.muted = false;
-                    adWasMutedByShield = false;
+        // 2. Universal Sponsored badge walker for YouTube (both mobile and desktop)
+        const badges = document.querySelectorAll(
+            '.ytm-badge-and-title, ytd-badge-supported-renderer, .badge-style-type-ad, ' +
+            '[aria-label*="Sponsored" i], [aria-label*="promoted" i], span, div'
+        );
+        for (let i = 0; i < badges.length; i++) {
+            const b = badges[i];
+            if (b.children.length > 0) continue; // leaf node only
+            const txt = (b.textContent || '').trim().toLowerCase();
+            const isSponsoredBadge = txt === 'sponsored' || txt === 'ad' || txt === 'promoted' ||
+                                     txt.startsWith('sponsored') || txt.startsWith('ad ·') ||
+                                     txt.startsWith('ad •') || txt.startsWith('promoted');
+            if (isSponsoredBadge && txt.length < 35) {
+                const card = b.closest(
+                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ' +
+                    'ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ' +
+                    'ytm-video-with-context-renderer, ytm-item-section-renderer, ytm-compact-video-renderer, ' +
+                    'ytm-ad-slot-renderer, ytm-promoted-sparkles-web-renderer, [class*="video-renderer"], [class*="media-item"]'
+                );
+                if (card) {
+                    card.style.setProperty('display', 'none', 'important');
                 }
             }
         }
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(runYouTubeAdSkipper, 200);
+        setInterval(function() {
+            runYouTubeAdSkipper();
+            scrubYouTubeSponsored();
+        }, 200);
         document.addEventListener('timeupdate', runYouTubeAdSkipper, { capture: true, passive: true });
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('yt-navigate-start', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('yt-navigate-finish', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('yt-page-data-updated', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('spfdone', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('popstate', runYouTubeAdSkipper, { capture: true, passive: true });
+        window.addEventListener('yt-navigate-start', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+        window.addEventListener('yt-navigate-finish', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+        window.addEventListener('yt-page-data-updated', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+        window.addEventListener('spfdone', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+        window.addEventListener('popstate', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
     }
 
     // =========================================================================
@@ -667,20 +704,18 @@
         if (!window.location.hostname.includes('instagram.com')) return;
 
         // Fast path: CSS structural markers Instagram uses for sponsored posts
-        // These are reliable and don't require reading innerText
         const directAdSelectors = [
-            // "Sponsored" label appears in a <span> inside the article header
-            'article:has(span._a9zs)',                      // Sponsored label class
-            'article:has(a[href*="/about/ads"])',             // About ads link
+            'article:has(span._a9zs)',
+            'article:has(a[href*="/about/ads"])',
             'div[role="article"]:has(a[href*="/about/ads"])',
             'article:has([aria-label="Sponsored" i])',
             'article:has([aria-label="Paid partnership" i])',
+            'div[class*="x1lliihq"]:has(a[href*="/about/ads"])'
         ];
         directAdSelectors.forEach(function(sel) {
             try {
                 document.querySelectorAll(sel).forEach(function(el) {
                     try {
-                        // Walk up to remove the feed item container
                         const container = el.closest('div[style*="padding"]') || el.parentElement || el;
                         container.style.setProperty('display', 'none', 'important');
                         el.style.setProperty('display', 'none', 'important');
@@ -689,26 +724,39 @@
             } catch (e) {}
         });
 
+        // Universal leaf-node text walker for Instagram
+        document.querySelectorAll('span, a, div').forEach(function(el) {
+            try {
+                if (el.children.length === 0) {
+                    const txt = (el.textContent || '').trim().toLowerCase();
+                    if (txt === 'sponsored' || txt === 'paid partnership') {
+                        const post = el.closest('article, div[role="article"], div[class*="x1lliihq"]');
+                        if (post) {
+                            post.style.setProperty('display', 'none', 'important');
+                            if (post.parentElement && post.parentElement.tagName !== 'MAIN') {
+                                post.parentElement.style.setProperty('display', 'none', 'important');
+                            }
+                        }
+                    }
+                }
+            } catch (e) {}
+        });
+
         // Comprehensive text-based scrubber for all article-like feed items
-        const posts = document.querySelectorAll('article, div[role="article"]');
+        const posts = document.querySelectorAll('article, div[role="article"], div[class*="x1lliihq"]');
         posts.forEach(function(post) {
             try {
                 if (post.tagName === 'MAIN' || post.tagName === 'BODY' || post.tagName === 'HTML') return;
-                if (post.style.display === 'none') return; // Already hidden
+                if (post.style.display === 'none') return;
 
                 let isSponsored = false;
-
-                // Check 1: Direct link to Instagram's ad disclosure page
                 if (post.querySelector('a[href*="/about/ads"], a[href*="about/ads"]')) isSponsored = true;
-
-                // Check 2: ARIA labels for Sponsored / Paid Partnership (multi-language)
                 if (!isSponsored && post.querySelector(
                     '[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i], ' +
                     '[aria-label*="Gesponsert" i], [aria-label*="Publicidad" i], ' +
                     '[aria-label*="Patrocinado" i], [aria-label*="Sponsorisé" i]'
                 )) isSponsored = true;
 
-                // Check 3: Header-level span text (fast — only read header, not whole post)
                 if (!isSponsored) {
                     const header = post.querySelector('header');
                     if (header) {
@@ -719,10 +767,8 @@
                     }
                 }
 
-                // Check 4: SVG or icon that links to the about/ads page
                 if (!isSponsored && post.querySelector('svg[aria-label*="Sponsored" i]')) isSponsored = true;
 
-                // Check 5: App install / shopping prompt
                 if (!isSponsored && post.querySelector(
                     'a[href*="play.google.com"], a[href*="itunes.apple.com"], ' +
                     'button[aria-label*="Install" i], a[aria-label*="Install" i]'
@@ -730,7 +776,6 @@
 
                 if (isSponsored) {
                     post.style.setProperty('display', 'none', 'important');
-                    // Also hide the wrapper container so no gap is left in the feed
                     const wrapper = post.parentElement;
                     if (wrapper && wrapper.tagName !== 'MAIN' && wrapper.tagName !== 'BODY') {
                         wrapper.style.setProperty('display', 'none', 'important');
@@ -739,7 +784,7 @@
             } catch (e) {}
         });
 
-        // 2. Remove Instagram web app banner & full-screen app gate dialogs
+        // Remove Instagram web app banner & full-screen app gate dialogs
         document.querySelectorAll(
             'div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"]), ' +
             'div[class*="MobileAppBanner"], div[class*="x1n2onr6"]:has([href*="/about/ads"])'

@@ -17,3 +17,4 @@ local.properties
 .cxx/
 *.apk
 *.aab
+__pycache__/

@@ -126,11 +126,44 @@
             // REST general items
             if (Array.isArray(data.items)) {
                 data.items = data.items.filter(function(item) {
-                    if (item.ad_id || item.is_sponsored || item.sponsored_data) return false;
-                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership)) return false;
+                    if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
+                    if (item.media_or_ad && (item.media_or_ad.ad_id || item.media_or_ad.sponsored_data || item.media_or_ad.is_paid_partnership || item.media_or_ad.ad_type)) return false;
                     return true;
                 });
                 modified = true;
+            }
+
+            // Injected items (newer Instagram API wraps ads inside injected_items)
+            if (Array.isArray(data.injected_items)) {
+                data.injected_items = data.injected_items.filter(function(item) {
+                    if (!item) return true;
+                    // All injected items with ad content types
+                    if (item.item_type && item.item_type !== 'media') return false;
+                    if (item.ad_id || item.is_sponsored || item.sponsored_data || item.ad_type) return false;
+                    return true;
+                });
+                modified = true;
+            }
+
+            // Top-level response with embedded edge containers
+            if (data.data) {
+                ['user', 'xdt_api__v1__media__shortcode__web_info', 'xdt_api__v1__media__media_aware_shortcode'].forEach(function(key) {
+                    const container = data.data[key];
+                    if (container && container.edge_web_feed_timeline) {
+                        const edges = container.edge_web_feed_timeline.edges;
+                        if (Array.isArray(edges)) {
+                            container.edge_web_feed_timeline.edges = edges.filter(function(edge) {
+                                const node = edge && edge.node;
+                                if (!node) return true;
+                                if (node.__typename === 'GraphSponsoredUser' || node.__typename === 'XDTAdMedia') return false;
+                                if (node.is_promoted) return false;
+                                if (node.media_or_ad && (node.media_or_ad.ad_id || node.media_or_ad.is_paid_partnership)) return false;
+                                return true;
+                            });
+                            modified = true;
+                        }
+                    }
+                });
             }
         } catch (e) {}
         return modified;
@@ -163,7 +196,10 @@
                     }
 
                     // Instagram feed & GraphQL data
-                    if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') || url.includes('/api/v1/feed/reels_tray/')) {
+                    if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') ||
+                        url.includes('/api/v1/feed/reels_tray/') || url.includes('/api/v1/discover/') ||
+                        url.includes('/api/v1/igtv/') || url.includes('/api/v1/clips/') ||
+                        url.includes('/api/v1/feed/user/') || url.includes('/ajax/bz')) {
                         const clone = response.clone();
                         const data = await clone.json();
                         if (sanitizeInstagramData(data)) {
@@ -569,7 +605,7 @@
         )) || hasAdOverlay;
 
         if (isAdShowing) {
-            // Native YouTube player skipAd method
+            // Native YouTube player skipAd method (works on desktop YouTube)
             try {
                 if (playerEl && typeof playerEl.skipAd === 'function') {
                     playerEl.skipAd();
@@ -581,20 +617,47 @@
                 try { el.remove(); } catch (e) {}
             });
 
-            // Mute only a video explicitly marked as an ad. Do not alter the
-            // normal player timeline or playback rate.
-            const adVideo = document.querySelector('.ad-showing video, .video-ads video');
-            if (adVideo && !adVideo.muted) {
-                adVideo.muted = true;
-                adWasMutedByShield = true;
-            }
+            // Target ONLY confirmed ad video elements (.ad-showing or .video-ads)
+            // Never manipulate the main content video
+            const adVideo = document.querySelector('.ad-showing video, .video-ads video') ||
+                            (playerEl && playerEl.classList.contains('ad-showing') ? playerEl.querySelector('video') : null);
 
-        }
-        else if (adWasMutedByShield) {
-            const video = document.querySelector('video.html5-main-video, ytm-player video, video');
-            if (video && !document.querySelector('.ad-showing video, .video-ads video')) {
-                video.muted = false;
-                adWasMutedByShield = false;
+            if (adVideo) {
+                try {
+                    // Step 1: Mute immediately so user hears no ad audio
+                    if (!adVideo.muted) {
+                        adVideo.muted = true;
+                        adWasMutedByShield = true;
+                    }
+                    // Step 2: If ad has a known finite duration, jump to end
+                    if (!isNaN(adVideo.duration) && adVideo.duration > 0 && adVideo.duration < 180) {
+                        adVideo.currentTime = adVideo.duration - 0.05;
+                    } else if (isNaN(adVideo.duration) || adVideo.duration === 0 || adVideo.readyState < 2) {
+                        // Step 3: Ad stream blocked / stalled → force 'ended' to trigger state machine
+                        try { adVideo.currentTime = 9999; } catch (e) {}
+                        adVideo.dispatchEvent(new Event('ended', { bubbles: true }));
+                    }
+                } catch (e) {}
+            } else if (isAdShowing) {
+                // Fallback: no explicit .ad-showing video found — fire ended on first visible video
+                // to clear the stalled black screen (safe because isAdShowing is confirmed)
+                const anyVideo = playerEl ? playerEl.querySelector('video') : document.querySelector('video');
+                if (anyVideo && (isNaN(anyVideo.duration) || anyVideo.duration === 0 || anyVideo.readyState < 2)) {
+                    try {
+                        if (!anyVideo.muted) { anyVideo.muted = true; adWasMutedByShield = true; }
+                        anyVideo.dispatchEvent(new Event('ended', { bubbles: true }));
+                    } catch (e) {}
+                }
+            }
+        } else {
+            // Normal video playback: restore mute and speed if we previously altered them
+            if (adWasMutedByShield) {
+                const video = (playerEl && playerEl.querySelector('video')) ||
+                              document.querySelector('video.html5-main-video, ytm-player video, video');
+                if (video && !document.querySelector('.ad-showing video, .video-ads video')) {
+                    video.muted = false;
+                    adWasMutedByShield = false;
+                }
             }
         }
     }
@@ -616,59 +679,102 @@
     function scrubInstagramAds() {
         if (!window.location.hostname.includes('instagram.com')) return;
 
-        // 1. Scrub Sponsored Articles / Posts / Feed items
-        const posts = document.querySelectorAll('article, div[role="article"], div[role="presentation"] > div > div, main div > div > article, div[class*="x1lliihq"]');
+        // Fast path: CSS structural markers Instagram uses for sponsored posts
+        // These are reliable and don't require reading innerText
+        const directAdSelectors = [
+            // "Sponsored" label appears in a <span> inside the article header
+            'article:has(span._a9zs)',                      // Sponsored label class
+            'article:has(a[href*="/about/ads"])',             // About ads link
+            'div[role="article"]:has(a[href*="/about/ads"])',
+            'article:has([aria-label="Sponsored" i])',
+            'article:has([aria-label="Paid partnership" i])',
+        ];
+        directAdSelectors.forEach(function(sel) {
+            try {
+                document.querySelectorAll(sel).forEach(function(el) {
+                    try {
+                        // Walk up to remove the feed item container
+                        const container = el.closest('div[style*="padding"]') || el.parentElement || el;
+                        container.style.setProperty('display', 'none', 'important');
+                        el.style.setProperty('display', 'none', 'important');
+                    } catch (e) {}
+                });
+            } catch (e) {}
+        });
+
+        // Comprehensive text-based scrubber for all article-like feed items
+        const posts = document.querySelectorAll('article, div[role="article"]');
         posts.forEach(function(post) {
             try {
-                if (post.tagName === 'MAIN' || post.tagName === 'BODY') return;
+                if (post.tagName === 'MAIN' || post.tagName === 'BODY' || post.tagName === 'HTML') return;
+                if (post.style.display === 'none') return; // Already hidden
+
                 let isSponsored = false;
 
-                // Check 1: Direct link to about/ads
-                if (post.querySelector('a[href*="/about/ads"], a[href*="about/ads"]')) {
-                    isSponsored = true;
-                }
+                // Check 1: Direct link to Instagram's ad disclosure page
+                if (post.querySelector('a[href*="/about/ads"], a[href*="about/ads"]')) isSponsored = true;
 
-                // Check 2: Sponsored / Paid partnership aria-label or SVG icons
-                if (!isSponsored && post.querySelector('[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i], [aria-label*="Gesponsert" i], [aria-label*="Publicidad" i]')) {
-                    isSponsored = true;
-                }
+                // Check 2: ARIA labels for Sponsored / Paid Partnership (multi-language)
+                if (!isSponsored && post.querySelector(
+                    '[aria-label*="Sponsored" i], [aria-label*="Paid partnership" i], ' +
+                    '[aria-label*="Gesponsert" i], [aria-label*="Publicidad" i], ' +
+                    '[aria-label*="Patrocinado" i], [aria-label*="Sponsorisé" i]'
+                )) isSponsored = true;
 
-                // Check 3: Header span text matching sponsored indicators
+                // Check 3: Header-level span text (fast — only read header, not whole post)
                 if (!isSponsored) {
-                    const text = (post.innerText || post.textContent || '');
-                    if (/\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Commandité|Sponsorisé)\b/i.test(text)) {
-                        // Ensure it's not just a comment
-                        const headerArea = post.querySelector('header') || post;
-                        const headerText = (headerArea.innerText || headerArea.textContent || '');
-                        if (/\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Commandité|Sponsorisé)\b/i.test(headerText)) {
+                    const header = post.querySelector('header');
+                    if (header) {
+                        const headerText = header.textContent || '';
+                        if (/\b(Sponsored|Paid partnership|Gesponsert|Publicidad|Patrocinado|Sponsorisé|Commandité)\b/i.test(headerText)) {
                             isSponsored = true;
                         }
                     }
                 }
 
-                // Check 4: App store install / shopping prompt cards in feed
-                if (!isSponsored && post.querySelector('a[href*="play.google.com"], a[href*="itunes.apple.com"], button[aria-label*="Install" i], a[aria-label*="Install" i]')) {
-                    isSponsored = true;
-                }
+                // Check 4: SVG or icon that links to the about/ads page
+                if (!isSponsored && post.querySelector('svg[aria-label*="Sponsored" i]')) isSponsored = true;
+
+                // Check 5: App install / shopping prompt
+                if (!isSponsored && post.querySelector(
+                    'a[href*="play.google.com"], a[href*="itunes.apple.com"], ' +
+                    'button[aria-label*="Install" i], a[aria-label*="Install" i]'
+                )) isSponsored = true;
 
                 if (isSponsored) {
                     post.style.setProperty('display', 'none', 'important');
-                    post.style.setProperty('height', '0px', 'important');
-                    post.style.setProperty('min-height', '0px', 'important');
-                    const parentContainer = post.closest('div[class*="x1y1aw1k"]') || post;
-                    parentContainer.style.setProperty('display', 'none', 'important');
+                    // Also hide the wrapper container so no gap is left in the feed
+                    const wrapper = post.parentElement;
+                    if (wrapper && wrapper.tagName !== 'MAIN' && wrapper.tagName !== 'BODY') {
+                        wrapper.style.setProperty('display', 'none', 'important');
+                    }
                 }
             } catch (e) {}
         });
 
         // 2. Remove Instagram web app banner & full-screen app gate dialogs
-        document.querySelectorAll('div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"]), div[class*="MobileAppBanner"]').forEach(function(el) {
+        document.querySelectorAll(
+            'div[data-testid="banner-mobile-app"], div[role="dialog"]:has(a[href*="play.google.com"]), ' +
+            'div[class*="MobileAppBanner"], div[class*="x1n2onr6"]:has([href*="/about/ads"])'
+        ).forEach(function(el) {
             try { el.remove(); } catch (e) {}
         });
     }
 
     if (window.location.hostname.includes('instagram.com')) {
-        setInterval(scrubInstagramAds, 300);
+        // Run immediately and often — Instagram renders lazily
+        scrubInstagramAds();
+        setInterval(scrubInstagramAds, 500);
+        // Also run on DOM changes for dynamically loaded feed items
+        try {
+            const igObserver = new MutationObserver(function(mutations) {
+                let hasNew = false;
+                mutations.forEach(function(m) { if (m.addedNodes.length) hasNew = true; });
+                if (hasNew) scrubInstagramAds();
+            });
+            const feedRoot = document.querySelector('main') || document.body;
+            if (feedRoot) igObserver.observe(feedRoot, { childList: true, subtree: true });
+        } catch (e) {}
     }
 
 

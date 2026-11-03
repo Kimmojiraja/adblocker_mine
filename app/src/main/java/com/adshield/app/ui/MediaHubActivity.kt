@@ -588,7 +588,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private var currentSearchEngine: SearchEngine = SearchEngine.ECOSIA
+    private var currentSearchEngine: SearchEngine = SearchEngine.BING
 
     private var cachedTrendingTopicsJson: String = """
         [
@@ -853,11 +853,11 @@ open class MediaHubActivity : AppCompatActivity() {
         binding = ActivityMediaHubBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.ECOSIA.name)
+        val savedEngineName = prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.BING.name)
         currentSearchEngine = try {
-            SearchEngine.valueOf(savedEngineName ?: SearchEngine.ECOSIA.name)
+            SearchEngine.valueOf(savedEngineName ?: SearchEngine.BING.name)
         } catch (e: Exception) {
-            SearchEngine.ECOSIA
+            SearchEngine.BING
         }
         applySearchEngine(currentSearchEngine)
         val toolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
@@ -3319,6 +3319,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun setupQuickEngineSwitcher() {
         val pairs = listOf(
+            binding.btnQuickEngineBing to SearchEngine.BING,
             binding.btnQuickEngineEcosia to SearchEngine.ECOSIA,
             binding.btnQuickEngineGoogle to SearchEngine.GOOGLE,
             binding.btnQuickEngineDuckDuckGo to SearchEngine.DUCKDUCKGO,
@@ -3347,6 +3348,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun updateQuickEngineSwitcherUI() {
         val mapping = listOf(
+            binding.btnQuickEngineBing to SearchEngine.BING,
             binding.btnQuickEngineEcosia to SearchEngine.ECOSIA,
             binding.btnQuickEngineGoogle to SearchEngine.GOOGLE,
             binding.btnQuickEngineDuckDuckGo to SearchEngine.DUCKDUCKGO,
@@ -5074,6 +5076,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         fun updateEngineRadios(selected: SearchEngine) {
+            b.radioEngineBing.isChecked = selected == SearchEngine.BING
             b.radioEngineEcosia.isChecked = selected == SearchEngine.ECOSIA
             b.radioEngineDdg.isChecked = selected == SearchEngine.DUCKDUCKGO
             b.radioEngineBrave.isChecked = selected == SearchEngine.BRAVE
@@ -5090,6 +5093,7 @@ open class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, "Search engine set to ${engine.displayName}", Toast.LENGTH_SHORT).show()
         }
 
+        b.rowEngineBing.setOnClickListener { selectEngine(SearchEngine.BING) }
         b.rowEngineEcosia.setOnClickListener { selectEngine(SearchEngine.ECOSIA) }
         b.rowEngineDdg.setOnClickListener { selectEngine(SearchEngine.DUCKDUCKGO) }
         b.rowEngineBrave.setOnClickListener { selectEngine(SearchEngine.BRAVE) }
@@ -6235,7 +6239,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 put("version", 1)
                 put("alias", prefs.getString(PREF_USER_ALIAS, "Shadow Falcon"))
                 put("avatar", prefs.getString(PREF_USER_AVATAR, "falcon"))
-                put("searchEngine", prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.ECOSIA.name))
+                put("searchEngine", prefs.getString(PREF_SEARCH_ENGINE, SearchEngine.BING.name))
                 put("history", localPrefs.getString(PREF_BROWSING_HISTORY, "[]"))
                 put("eliteDns", prefs.getBoolean(PREF_ELITE_DNS_FILTER, true))
                 put("activeTheme", prefs.getString(PREF_ACTIVE_THEME, "default"))

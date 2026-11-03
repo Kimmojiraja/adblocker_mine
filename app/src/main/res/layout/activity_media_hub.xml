@@ -391,6 +391,25 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
+                    <!-- Bing -->
+                    <FrameLayout
+                        android:id="@+id/btnQuickEngineBing"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Search with Bing">
+
+                        <ImageView
+                            android:id="@+id/imgQuickEngineBing"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_engine_bing" />
+                    </FrameLayout>
+
                     <!-- Ecosia -->
                     <FrameLayout
                         android:id="@+id/btnQuickEngineEcosia"

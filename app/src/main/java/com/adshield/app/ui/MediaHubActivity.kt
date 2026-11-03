@@ -2056,11 +2056,14 @@ open class MediaHubActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             cacheMode = if (isPrivate) WebSettings.LOAD_NO_CACHE else WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            allowFileAccess = false
-            allowContentAccess = false
+            allowFileAccess = true
+            allowContentAccess = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = cleanMobileUa
         }
+
+        webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
+        webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
 
         // Intercept downloads cleanly
         webView.setDownloadListener { downloadUrl, userAgent, contentDisposition, mimetype, _ ->
@@ -2123,10 +2126,17 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadingTab?.thirdPartyRequests = 0
                 loadingTab?.thirdPartyRequestHosts?.clear()
                 if (view == activeWebView) {
-                    setBrowserChromeVisible(true)
-                    updateToolbarLayoutForUrl(pageUrl, animated = true)
+                    val isStartPage = pageUrl == null || pageUrl.contains("fokk_start.html")
+                    if (isStartPage) {
+                        binding.topBar.visibility = View.GONE
+                        binding.layoutCollapsedBar.visibility = View.GONE
+                        binding.cardSuggestions.visibility = View.GONE
+                    } else {
+                        setBrowserChromeVisible(true)
+                    }
+                    updateToolbarLayoutForUrl(pageUrl, animated = false)
                     isShieldEnabled = isShieldEnabledFor(pageUrl)
-                    binding.progressBar.visibility = View.VISIBLE
+                    binding.progressBar.visibility = if (isStartPage) View.GONE else View.VISIBLE
                     // page reset
                     if (pageUrl != null && !binding.urlInput.hasFocus()) {
                         val displayUrl = if (loadingTab?.isOfflineReader == true) loadingTab.url else pageUrl
@@ -3072,18 +3082,18 @@ open class MediaHubActivity : AppCompatActivity() {
     /** The native bridge is required only by our bundled start page, never by remote content. */
     private fun setBridgeEnabled(webView: WebView?, url: String?) {
         if (webView == null) return
-        webView.removeJavascriptInterface("FokkShieldBridge")
-        webView.removeJavascriptInterface("FokkMediaBridge")
-        webView.removeJavascriptInterface("FokkVideoBridge")
+        val isAssetPage = url?.startsWith("file:///android_asset/") == true
+        if (isAssetPage) {
+            webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
+        } else {
+            webView.removeJavascriptInterface("FokkShieldBridge")
+        }
         if (url?.startsWith(OFFLINE_PAGE_BASE_URL) != true) {
             webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
             val isSnifferEnabled = prefs.getBoolean(PREF_VIDEO_SNIFFER, true)
             if (isSnifferEnabled) {
                 webView.addJavascriptInterface(FokkVideoBridge(this), "FokkVideoBridge")
             }
-        }
-        if (url?.startsWith("file:///android_asset/") == true) {
-            webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
         }
     }
 
@@ -3545,6 +3555,8 @@ open class MediaHubActivity : AppCompatActivity() {
         if (binding.urlInput.hasFocus()) return
         binding.imgEngineIcon.imageTintList = null
         if (url == null || url.contains("fokk_start.html")) {
+            binding.topBar.visibility = View.GONE
+            binding.layoutCollapsedBar.visibility = View.GONE
             binding.urlInput.setText("")
             binding.urlInput.hint = if (activeTab?.isPrivate == true || isIsolatedPrivateProfile) {
                 "Ghost Mode • Search with ${currentSearchEngine.displayName}"
@@ -3600,7 +3612,7 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun applyToolbarPosition(position: String, isHomePage: Boolean = false, animated: Boolean = false) {
-        if (isToolbarInHomeMode == isHomePage && lastAppliedToolbarPos == position) {
+        if (isToolbarInHomeMode == isHomePage && lastAppliedToolbarPos == position && (!isHomePage || binding.topBar.visibility == View.GONE)) {
             return
         }
         isToolbarInHomeMode = isHomePage
@@ -3616,6 +3628,20 @@ open class MediaHubActivity : AppCompatActivity() {
         binding.layoutCollapsedBar.visibility = View.GONE
         commandBarCollapsed = false
 
+        if (isHomePage) {
+            binding.topBar.visibility = View.GONE
+            binding.layoutCollapsedBar.visibility = View.GONE
+            binding.cardSuggestions.visibility = View.GONE
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
+            binding.mainContentLayout.translationY = 0f
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
+            return
+        }
+
         if (animated && binding.root is ViewGroup) {
             val transition = TransitionSet().apply {
                 ordering = TransitionSet.ORDERING_TOGETHER
@@ -3625,14 +3651,6 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             TransitionManager.beginDelayedTransition(binding.root as ViewGroup, transition)
         }
-
-        if (isHomePage) {
-            binding.topBar.visibility = View.GONE
-            containerLp?.let {
-                it.topMargin = 0
-                it.bottomMargin = 0
-                binding.mainContentLayout.layoutParams = it
-            }
             binding.mainContentLayout.translationY = 0f
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         } else if (isTop) {
@@ -5578,7 +5596,12 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
         if (!inPip) {
-            binding.topBar.visibility = View.VISIBLE
+            val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+            if (isHome) {
+                binding.topBar.visibility = View.GONE
+            } else {
+                binding.topBar.visibility = View.VISIBLE
+            }
             binding.layoutCollapsedBar.visibility = View.GONE
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) activeWebView?.evaluateJavascript(
@@ -5686,7 +5709,12 @@ open class MediaHubActivity : AppCompatActivity() {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
             }
         } else {
-            binding.topBar.visibility = View.VISIBLE
+            val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+            if (isHome) {
+                binding.topBar.visibility = View.GONE
+            } else {
+                binding.topBar.visibility = View.VISIBLE
+            }
             binding.layoutCollapsedBar.visibility = View.GONE
             binding.bottomNav.visibility = View.VISIBLE
             if (!isThirdPartyMediaService(activeWebView?.url)) {

@@ -1980,6 +1980,15 @@
         }
 
         function initCommandCard() {
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.getSearchEngine) {
+                    const nativeEng = (window.FokkShieldBridge.getSearchEngine() || '').toLowerCase();
+                    if (searchEngines[nativeEng]) {
+                        currentActiveEngine = nativeEng;
+                    }
+                }
+            } catch (e) {}
+
             const engine = searchEngines[currentActiveEngine] || searchEngines.google;
             const slot = document.getElementById('engineLogoSlot');
             if (slot) slot.innerHTML = engine.icon;
@@ -1989,7 +1998,7 @@
 
             // Sync Tab Count
             try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getTabCount === 'function') {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.getTabCount) {
                     const cnt = window.FokkShieldBridge.getTabCount();
                     const badge = document.getElementById('tabBadgeNumber');
                     if (badge && cnt) badge.textContent = cnt;
@@ -2007,9 +2016,13 @@
 
         function toggleCommandMenu(e) {
             if (e) e.stopPropagation();
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function') {
-                window.FokkShieldBridge.openMenu();
-                return;
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openMenu) {
+                    window.FokkShieldBridge.openMenu();
+                    return;
+                }
+            } catch (e) {
+                console.error("openMenu error", e);
             }
             const popover = document.getElementById('commandMenuPopover');
             const engPop = document.getElementById('engineDropdownPopover');
@@ -2101,11 +2114,15 @@
 
         function triggerTabsAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function' && window.FokkShieldBridge.isAndroid) {
-                window.FokkShieldBridge.openTabs();
-            } else {
-                openTabSwitcherModal();
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openTabs) {
+                    window.FokkShieldBridge.openTabs();
+                    return;
+                }
+            } catch (e) {
+                console.error("openTabs error", e);
             }
+            openTabSwitcherModal();
         }
 
         function openTabSwitcherModal() {
@@ -2307,30 +2324,54 @@
 
         function openFavoritesAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openBookmarks === 'function') {
-                window.FokkShieldBridge.openBookmarks();
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openBookmarks) {
+                    window.FokkShieldBridge.openBookmarks();
+                    return;
+                }
+            } catch (e) {
+                console.error("openBookmarks error", e);
             }
+            showPreviewToast('Bookmarks & Saved Pages');
         }
 
         function openHistoryAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openHistory === 'function') {
-                window.FokkShieldBridge.openHistory();
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openHistory) {
+                    window.FokkShieldBridge.openHistory();
+                    return;
+                }
+            } catch (e) {
+                console.error("openHistory error", e);
             }
+            showPreviewToast('Browsing History');
         }
 
         function openShieldAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openShieldDashboard === 'function') {
-                window.FokkShieldBridge.openShieldDashboard();
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openShieldDashboard) {
+                    window.FokkShieldBridge.openShieldDashboard();
+                    return;
+                }
+            } catch (e) {
+                console.error("openShieldDashboard error", e);
             }
+            showPreviewToast('AdShield Defense');
         }
 
         function openSettingsAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openSettings === 'function') {
-                window.FokkShieldBridge.openSettings();
+            try {
+                if (window.FokkShieldBridge && window.FokkShieldBridge.openSettings) {
+                    window.FokkShieldBridge.openSettings();
+                    return;
+                }
+            } catch (e) {
+                console.error("openSettings error", e);
             }
+            showPreviewToast('Browser Settings');
         }
 
         function openShortcutsManager() {

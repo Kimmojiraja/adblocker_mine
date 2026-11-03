@@ -1,6 +1,6 @@
 {
-  "versionCode": 89,
-  "versionName": "1.0.89",
+  "versionCode": 90,
+  "versionName": "1.0.90",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Unified Command Card: Eliminated dual bottom toolbar on start page, routing all homescreen search to the center Command Input Card.\n- Expandable Command Card: Card dynamically expands on focus/typing for spacious text entry without arrow button.\n- Bottom Shortcuts with Carousel: Anchored shortcuts to bottom of start screen with Manage Shortcuts above, featuring 2x2 horizontal swipe paging and dot indicators.\n- Native Menu Sheet: Three-dots on Command Card opens the native browser menu."
+  "changelog": "- Total Removal of Homescreen Bottom Bar: Guaranteed complete removal of bottom native bar on the start page across app resume, orientation change, and initial load.\n- Restored All Feature Buttons: Registered FokkShieldBridge directly on WebView instantiation and protected against lifecycle detachment, making Favorites, History, AdShield, Settings, Tab Switcher, and Three-Dots Menu fully functional.\n- Synchronized Search Engine: Command Card automatically matches user's active native default engine on startup."
 }

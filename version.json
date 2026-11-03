@@ -1,6 +1,6 @@
 {
-  "versionCode": 84,
-  "versionName": "1.0.84",
+  "versionCode": 85,
+  "versionName": "1.0.85",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Fixed Search Engine Logos: Resolved JavaScript initialization issue, restored authentic brand vector SVGs for Google, Ecosia, DuckDuckGo, Brave, and Bing in the engine capsule and switcher popover.\n- Fully Interactive Action Controls: Fixed click handlers for engine selector chevron, search arrow, mic, tabs badge [1], and three-dots options menu.\n- Desktop Tab Switcher: Added interactive Active Tabs modal for desktop preview.\n- Speed Dial Cards: Restored 2x2 shortcut cards (YouTube, Instagram, Google, Reddit) beneath feature buttons."
+  "changelog": "- Native Android Bottom Sheet Bridge: Tapping the three-dots menu on Android opens the complete native Android bottom sheet (Profile, Burn Session, Back/Forward/Refresh, Downloads, Saved Pages, History, AdShield Defense, Dual Screen Mode, Wallpapers & Themes, AI Page Summary, AI Trap Defuser, Diagnostics, and General Settings).\n- Expanded Desktop Options: Desktop harness popover now includes Wallpapers & Themes, Burn Session, and Downloads in addition to Bookmarks, History, Shield, Settings, and New Tab.\n- Verified Full Interactivity: Active tabs switcher modal and search engine switcher."
 }

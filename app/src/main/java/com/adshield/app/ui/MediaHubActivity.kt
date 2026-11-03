@@ -1171,6 +1171,11 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun isAndroidNative(): Boolean {
+            return true
+        }
+
+        @JavascriptInterface
         fun openTabs() {
             activity.runOnUiThread {
                 activity.showTabSwitcherDialog()
@@ -1181,6 +1186,13 @@ open class MediaHubActivity : AppCompatActivity() {
         fun openMenu() {
             activity.runOnUiThread {
                 activity.showBrowserMenuDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun burnSession() {
+            activity.runOnUiThread {
+                activity.burnSession()
             }
         }
 
@@ -6215,7 +6227,7 @@ open class MediaHubActivity : AppCompatActivity() {
         )
     }
 
-    private fun burnSession() {
+    fun burnSession() {
         try {
             CookieManager.getInstance().removeAllCookies(null)
             CookieManager.getInstance().flush()

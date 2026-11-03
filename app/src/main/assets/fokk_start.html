@@ -6,7 +6,7 @@
     <title>Fokk Browser</title>
     <style>
         :root {
-            --bg-color: #0A0D14;
+            --bg-color: #080D1A;
             --surface-card: #121824;
             --card-border: rgba(255, 255, 255, 0.08);
             --fokk-purple: #8B5CF6;
@@ -20,7 +20,7 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #0A0D14;
+                --bg-color: #080D1A;
                 --surface-card: #121824;
                 --card-border: rgba(255, 255, 255, 0.08);
                 --fokk-purple: #8B5CF6;
@@ -44,7 +44,11 @@
 
         body {
             position: relative;
-            background: #0A0D14 radial-gradient(circle at 50% 0%, #162032 0%, #0A0D14 65%);
+            background: #090E1A;
+            background-image: 
+                radial-gradient(ellipse 100% 65% at 50% -5%, #1C3560 0%, #0F1E38 45%, transparent 80%),
+                radial-gradient(ellipse 85% 55% at 50% 105%, #132442 0%, transparent 70%),
+                radial-gradient(circle at 50% 50%, #0B1426 0%, #070B14 100%);
             background-size: cover;
             background-position: center center;
             background-attachment: fixed;
@@ -837,11 +841,7 @@
             stroke: #C084FC !important;
         }
 
-        .hero-livepulse-btn.pulse-glow {
-            border-color: rgba(0, 229, 255, 0.35) !important;
-            background: rgba(0, 229, 255, 0.08) !important;
-            color: #00E5FF !important;
-        }
+
 
         .hero-privacy-btn svg, .hero-livepulse-btn svg {
             color: #FFFFFF !important;
@@ -1358,8 +1358,10 @@
                 <span id="heroGhostText">Ghost Mode: OFF</span>
             </button>
 
-            <button class="hero-livepulse-btn pulse-glow" onclick="openLivePulseHub()" title="Truth Pulse Hub">
-                <span class="pulse-indicator">●</span>
+            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Truth Pulse Hub">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
                 <span>Truth Pulse</span>
             </button>
         </div>
@@ -1718,8 +1720,8 @@
                     </svg>
                     <span class="wp-title" style="font-size: 11px; font-weight: 700; color: var(--fokk-cyan);">Upload Image</span>
                 </div>
-                <div class="wallpaper-card active" onclick="setWallpaper('default')" style="background: #0A0E18; color: #fff;">
-                    <span class="wp-title">Cyber Obsidian</span>
+                <div class="wallpaper-card active" onclick="setWallpaper('default')" style="background: #090E1A; color: #fff;">
+                    <span class="wp-title">Midnight Sapphire</span>
                 </div>
                 <div class="wallpaper-card" onclick="setWallpaper('pure_obsidian')" style="background: #11131C; color: #fff;">
                     <span class="wp-title">Obsidian Dark</span>
@@ -2357,8 +2359,8 @@
                 body.style.backgroundSize = 'cover';
                 body.style.backgroundPosition = 'center';
             } else {
-                body.style.backgroundImage = 'none';
-                body.style.backgroundColor = 'var(--bg-color)';
+                body.style.backgroundImage = '';
+                body.style.backgroundColor = '';
             }
             try { localStorage.setItem('fokk_global_theme', themeType); } catch(e){}
             document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));

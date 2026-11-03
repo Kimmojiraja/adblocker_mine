@@ -1,6 +1,6 @@
 {
-  "versionCode": 85,
-  "versionName": "1.0.85",
+  "versionCode": 86,
+  "versionName": "1.0.86",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Native Android Bottom Sheet Bridge: Tapping the three-dots menu on Android opens the complete native Android bottom sheet (Profile, Burn Session, Back/Forward/Refresh, Downloads, Saved Pages, History, AdShield Defense, Dual Screen Mode, Wallpapers & Themes, AI Page Summary, AI Trap Defuser, Diagnostics, and General Settings).\n- Expanded Desktop Options: Desktop harness popover now includes Wallpapers & Themes, Burn Session, and Downloads in addition to Bookmarks, History, Shield, Settings, and New Tab.\n- Verified Full Interactivity: Active tabs switcher modal and search engine switcher."
+  "changelog": "- Cosmic Midnight Sapphire Background: Upgraded homescreen from generic flat dark theme to a custom Arc-inspired midnight sapphire ambient gradient depth.\n- Sleek Truth Pulse Capsule: Removed the glowing cyan dot and neon pulse glow, replacing it with a clean vector heartbeat pulse SVG icon matching the Ghost Mode capsule aesthetic.\n- Dynamic Theme Restoration: Selecting default theme cleanly restores the native CSS ambient cosmic gradient."
 }

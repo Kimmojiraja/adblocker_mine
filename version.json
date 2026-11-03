@@ -1,6 +1,6 @@
 {
-  "versionCode": 81,
-  "versionName": "1.0.81",
+  "versionCode": 82,
+  "versionName": "1.0.82",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Restored Player Controls: Player controls (play/pause arrows, 10s skip, fullscreen toggle, quality settings gear, 3-dots, timeline scrubber) remain interactive and reappear smoothly on tap.\n- Shorts Auto-Play & Navigation Fix: Feed previews and Shorts no longer auto-advance or hijack user scrolling; swipe and tap controls restored naturally.\n- True Immersive Fullscreen: Fullscreen auto-rotates to sensor landscape, completely hides status and navigation bars, and retains interactive on-screen controls.\n- Performance & Smoothness: Removed redundant response clones and scoped DOM cleaners away from YouTube DOM for stutter-free scrolling.\n- Clean Burn Session: Removed fire emoji from Burn Session menu action."
+  "changelog": "- Modern Luxury UI Architecture: Arc & Safari 18 inspired dark obsidian aesthetic with subtle ambient radial illumination.\n- Dynamic Command Bar: Floats centered in the middle of the Start Page and glides down to bottom (or top) smoothly upon search or navigation.\n- Modern Squircle Command Card: Upgraded from curvy oval pill to 14dp squircle with subtle crisp border while preserving all tabs, three-dots menu, voice search, reader view, and multi-engine selector features.\n- Modern Feature Buttons: Geometric vector SVG squircle buttons for Favorites, History, AdShield, and Settings (no basic emojis).\n- Ghost Mode & Truth Pulse: Header capsules with real-time toggle status and pulsing neon Truth Pulse hub trigger.\n- 2x2 Speed Dial Cards: Brand logo squircles with clean bold title and domain subtitle."
 }

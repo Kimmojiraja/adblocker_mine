@@ -773,7 +773,8 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         applySearchEngine(currentSearchEngine)
         val toolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
-        applyToolbarPosition(toolbarPos)
+        val isHomeInitial = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+        applyToolbarPosition(toolbarPos, isHomePage = isHomeInitial, animated = false)
 
         loadInjectionScript()
         setupControls()
@@ -1147,6 +1148,35 @@ open class MediaHubActivity : AppCompatActivity() {
                 activity.openShieldDashboard()
             }
         }
+
+        @JavascriptInterface
+        fun openBookmarks() {
+            activity.runOnUiThread {
+                activity.showSavedPagesDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun openHistory() {
+            activity.runOnUiThread {
+                activity.showHistoryDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun openSettings() {
+            activity.runOnUiThread {
+                activity.showGeneralSettingsDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun openUrl(url: String) {
+            activity.runOnUiThread {
+                activity.loadUrlInActiveWebView(url)
+            }
+        }
+
 
         @JavascriptInterface
         fun onPaywallDetected(url: String) {
@@ -1721,6 +1751,9 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         pageUrlsByWebView[webView] = targetUrl
         setBridgeEnabled(webView, targetUrl)
+        if (webView === activeWebView) {
+            updateToolbarLayoutForUrl(targetUrl, animated = true)
+        }
         webView.loadUrl(targetUrl)
     }
 
@@ -2019,6 +2052,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadingTab?.thirdPartyRequestHosts?.clear()
                 if (view == activeWebView) {
                     setBrowserChromeVisible(true)
+                    updateToolbarLayoutForUrl(pageUrl, animated = true)
                     isShieldEnabled = isShieldEnabledFor(pageUrl)
                     binding.progressBar.visibility = View.VISIBLE
                     // page reset
@@ -3457,6 +3491,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 binding.urlInput.setText(url)
             }
         }
+        updateToolbarLayoutForUrl(url, animated = true)
     }
 
     private fun openSystemDownloads() {
@@ -3482,17 +3517,72 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyToolbarPosition(position: String) {
+    private var isToolbarInHomeMode: Boolean? = null
+    private var lastAppliedToolbarPos: String? = null
+
+    fun updateToolbarLayoutForUrl(url: String?, animated: Boolean = true) {
+        val isHome = url == null || url.contains("fokk_start.html") || url.isBlank()
+        val prefPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+        applyToolbarPosition(prefPos, isHomePage = isHome, animated = animated)
+    }
+
+    private fun applyToolbarPosition(position: String, isHomePage: Boolean = false, animated: Boolean = false) {
+        if (isToolbarInHomeMode == isHomePage && lastAppliedToolbarPos == position) {
+            return
+        }
+        isToolbarInHomeMode = isHomePage
+        lastAppliedToolbarPos = position
+
         val isTop = position.equals("top", ignoreCase = true)
         val lp = binding.topBar.layoutParams as? RelativeLayout.LayoutParams ?: return
         val collapsedLp = binding.layoutCollapsedBar.layoutParams as? RelativeLayout.LayoutParams
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
+        val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
         val density = resources.displayMetrics.density
 
         binding.layoutCollapsedBar.visibility = View.GONE
         commandBarCollapsed = false
 
-        if (isTop) {
+        if (animated && binding.root is ViewGroup) {
+            val transition = TransitionSet().apply {
+                ordering = TransitionSet.ORDERING_TOGETHER
+                addTransition(ChangeBounds())
+                duration = 240
+                interpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
+            }
+            TransitionManager.beginDelayedTransition(binding.root as ViewGroup, transition)
+        }
+
+        if (isHomePage) {
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+            lp.topMargin = (165 * density).toInt()
+            lp.bottomMargin = 0
+
+            collapsedLp?.let {
+                it.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                it.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                it.topMargin = (165 * density).toInt()
+                it.bottomMargin = 0
+                binding.layoutCollapsedBar.layoutParams = it
+            }
+
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
+            binding.mainContentLayout.translationY = 0f
+
+            if (cardLp != null) {
+                cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                cardLp.topMargin = (222 * density).toInt()
+                cardLp.bottomMargin = 0
+                binding.cardSuggestions.layoutParams = cardLp
+            }
+            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
+        } else if (isTop) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.topMargin = (6 * density).toInt()
@@ -3513,7 +3603,6 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             binding.mainContentLayout.translationY = 0f
 
-            val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
@@ -3543,7 +3632,6 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             binding.mainContentLayout.translationY = 0f
 
-            val cardLp = binding.cardSuggestions.layoutParams as? RelativeLayout.LayoutParams
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -3654,7 +3742,7 @@ open class MediaHubActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showHistoryDialog() {
+    fun showHistoryDialog() {
         if (isIsolatedPrivateProfile) {
             Toast.makeText(this, "Browsing history is unavailable in private tabs", Toast.LENGTH_SHORT).show()
             return
@@ -4058,7 +4146,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSavedPagesDialog() {
+    fun showSavedPagesDialog() {
         if (isIsolatedPrivateProfile) {
             Toast.makeText(this, "Saved pages are unavailable in private tabs", Toast.LENGTH_SHORT).show()
             return
@@ -4583,7 +4671,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 .setSingleChoiceItems(options, selectedIndex) { d, which ->
                     val newPos = if (which == 1) "top" else "bottom"
                     prefs.edit().putString(PREF_TOOLBAR_POSITION, newPos).apply()
-                    applyToolbarPosition(newPos)
+                    val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+                    applyToolbarPosition(newPos, isHomePage = isHome, animated = true)
                     sheetBinding.textToolbarPosition.text = if (newPos == "top") "Top" else "Bottom (Thumb Reach)"
                     Toast.makeText(this, "Toolbar position set to ${options[which]}", Toast.LENGTH_SHORT).show()
                     d.dismiss()
@@ -4725,7 +4814,7 @@ open class MediaHubActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showGeneralSettingsDialog() {
+    fun showGeneralSettingsDialog() {
         val dialog = BottomSheetDialog(this)
         val b = SheetGeneralSettingsBinding.inflate(layoutInflater)
         dialog.setContentView(b.root)
@@ -4768,7 +4857,8 @@ open class MediaHubActivity : AppCompatActivity() {
         b.switchToolbarPosition.setOnCheckedChangeListener { _, checked ->
             val newPos = if (checked) "top" else "bottom"
             prefs.edit().putString(PREF_TOOLBAR_POSITION, newPos).apply()
-            applyToolbarPosition(newPos)
+            val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+            applyToolbarPosition(newPos, isHomePage = isHome, animated = true)
             b.textToolbarPosLabel.text = if (checked) "Top (Classic address bar)" else "Bottom (Thumb-friendly reach)"
             Toast.makeText(this, "Toolbar position set to ${if (checked) "Top" else "Bottom"}", Toast.LENGTH_SHORT).show()
         }

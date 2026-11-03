@@ -638,6 +638,63 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private val cachedNewsByCategory = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    fun fetchLivePulseNews(category: String): String {
+        val norm = category.lowercase(Locale.ROOT).trim()
+        val cached = cachedNewsByCategory[norm]
+        if (!cached.isNullOrBlank()) return cached
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val rssUrl = when (norm) {
+                    "tech" -> "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-US&gl=US&ceid=US:en"
+                    "business", "markets" -> "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en"
+                    "science" -> "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=en-US&gl=US&ceid=US:en"
+                    "sports" -> "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-US&gl=US&ceid=US:en"
+                    "culture", "entertainment" -> "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-US&gl=US&ceid=US:en"
+                    else -> "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+                }
+                val conn = URL(rssUrl).openConnection() as HttpURLConnection
+                conn.connectTimeout = 4500
+                conn.readTimeout = 4500
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+                if (conn.responseCode == 200) {
+                    val xml = conn.inputStream.bufferedReader().use { it.readText() }
+                    val itemRegex = Regex("<item>(.*?)</item>", RegexOption.DOT_MATCHES_ALL)
+                    val titleRegex = Regex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>|<title>(.*?)</title>")
+                    val sourceRegex = Regex("<source[^>]*>(.*?)</source>")
+                    val linkRegex = Regex("<link>(.*?)</link>")
+
+                    val jsonArr = JSONArray()
+                    itemRegex.findAll(xml).take(10).forEach { itemMatch ->
+                        val content = itemMatch.groupValues[1]
+                        val rawTitle = titleRegex.find(content)?.let { it.groupValues[1].ifEmpty { it.groupValues[2] } } ?: return@forEach
+                        if (rawTitle.contains("Google News", ignoreCase = true)) return@forEach
+                        val titleClean = rawTitle.replace("&amp;", "&").replace("&quot;", "\"").replace("&#39;", "'").trim()
+                        val source = sourceRegex.find(content)?.groupValues?.get(1)?.replace("&amp;", "&") ?: "News"
+                        val link = linkRegex.find(content)?.groupValues?.get(1) ?: ""
+                        val query = titleClean.substringBefore(" - ")
+
+                        val obj = JSONObject().apply {
+                            put("title", titleClean)
+                            put("source", source)
+                            put("time", "Live")
+                            put("query", query)
+                            put("category", norm)
+                            put("url", link)
+                        }
+                        jsonArr.put(obj)
+                    }
+                    if (jsonArr.length() > 0) {
+                        cachedNewsByCategory[norm] = jsonArr.toString()
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+        return cachedNewsByCategory[norm] ?: ""
+    }
+
     private fun extractSearchQuery(url: String?): String? {
         if (url == null) return null
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return null
@@ -1220,6 +1277,27 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun openReaderMode() {
+            activity.runOnUiThread {
+                activity.openReaderView()
+            }
+        }
+
+        @JavascriptInterface
+        fun saveCurrentPage() {
+            activity.runOnUiThread {
+                activity.saveCurrentPage()
+            }
+        }
+
+        @JavascriptInterface
+        fun openDownloads() {
+            activity.runOnUiThread {
+                activity.openSystemDownloads()
+            }
+        }
+
+        @JavascriptInterface
         fun openNewTab() {
             activity.runOnUiThread {
                 activity.addNewTab("file:///android_asset/fokk_start.html", isPrivate = activity.isIsolatedPrivateProfile)
@@ -1229,6 +1307,11 @@ open class MediaHubActivity : AppCompatActivity() {
         @JavascriptInterface
         fun getTabCount(): Int {
             return activity.tabs.size
+        }
+
+        @JavascriptInterface
+        fun getLiveNews(category: String): String {
+            return activity.fetchLivePulseNews(category)
         }
 
         @JavascriptInterface
@@ -2225,6 +2308,7 @@ open class MediaHubActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
                 super.onPageFinished(view, pageUrl)
                 if (view != null && pageUrl != null) pageUrlsByWebView[view] = pageUrl
+                setBridgeEnabled(view, pageUrl)
                 if (view == activeWebView) {
                     binding.progressBar.visibility = View.GONE
                     binding.swipeRefreshLayout.isRefreshing = false
@@ -4194,7 +4278,8 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         val currentUrl = webView.url ?: currentTab.url
         if (!isWebUrl(currentUrl)) {
-            Toast.makeText(this, "Only open web pages can be saved for offline reading", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Save Page is for live websites. Showing your Saved Pages...", Toast.LENGTH_SHORT).show()
+            showSavedPagesDialog()
             return
         }
         val currentTitle = webView.title?.ifBlank { currentUrl } ?: currentUrl

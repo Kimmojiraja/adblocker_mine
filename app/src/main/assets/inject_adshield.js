@@ -361,31 +361,55 @@
                 }
             }, { capture: true, passive: true });
 
-            // Prevent unsolicited / unexpected auto-opening of YouTube Shorts without explicit user click
-            let lastUserShortsInteraction = 0;
-            const markShortsInteraction = function(e) {
-                const target = e.target;
-                if (!target) return;
-                const shortsEl = target.closest && target.closest(
-                    'a[href*="/shorts/"], [data-target-id*="shorts"], ytm-reel-shelf-renderer, ' +
-                    'ytm-shorts-lockup-view-model, .ytm-shorts-entry-point, [aria-label*="Shorts" i], ' +
-                    'ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer'
-                );
-                if (shortsEl) {
-                    lastUserShortsInteraction = Date.now();
+            // Complete YouTube Shorts Disarmer: Neutralize and redirect any /shorts/<id> to regular /watch?v=<id>
+            function neutralizeShortsUrl(url) {
+                if (!url || typeof url !== 'string') return url;
+                const match = url.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    const videoId = match[1];
+                    const query = url.includes('?') ? '&' + url.split('?')[1] : '';
+                    return url.replace(/\/shorts\/[a-zA-Z0-9_-]+(\?[^#]*)?/, '/watch?v=' + videoId + query);
                 }
-            };
-            document.addEventListener('pointerdown', markShortsInteraction, { capture: true, passive: true });
-            document.addEventListener('click', markShortsInteraction, { capture: true, passive: true });
+                return url;
+            }
 
-            // Hook history.pushState and replaceState in YouTube SPA to block unsolicited shorts auto-redirects
+            function checkAndRedirectShortsLocation() {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                const path = window.location.pathname;
+                if (path.startsWith('/shorts')) {
+                    const match = path.match(/^\/shorts\/([a-zA-Z0-9_-]+)/);
+                    if (match && match[1]) {
+                        console.warn('[Fokk Shield] Auto-redirecting Shorts to standard watch player:', match[1]);
+                        const query = window.location.search ? window.location.search.replace('?', '&') : '';
+                        window.location.replace('/watch?v=' + match[1] + query);
+                    } else {
+                        console.warn('[Fokk Shield] Redirecting /shorts feed to YouTube Home');
+                        window.location.replace('/');
+                    }
+                }
+            }
+
+            // Continuous navigation guards
+            checkAndRedirectShortsLocation();
+            window.addEventListener('yt-navigate-start', checkAndRedirectShortsLocation, { capture: true, passive: true });
+            window.addEventListener('yt-navigate-finish', checkAndRedirectShortsLocation, { capture: true, passive: true });
+            window.addEventListener('popstate', checkAndRedirectShortsLocation, { capture: true, passive: true });
+            window.addEventListener('hashchange', checkAndRedirectShortsLocation, { capture: true, passive: true });
+            setInterval(checkAndRedirectShortsLocation, 350);
+
+            // Hook history.pushState and replaceState in YouTube SPA to rewrite shorts URLs directly
             const origPushState = window.history.pushState;
             window.history.pushState = function(state, title, url) {
-                if (url && typeof url === 'string' && url.includes('/shorts/')) {
-                    const elapsed = Date.now() - lastUserShortsInteraction;
-                    if (elapsed > 3500) {
-                        console.warn('[Fokk Shield] Blocked unsolicited YouTube Shorts auto-navigation:', url);
+                if (url && typeof url === 'string') {
+                    if (url === '/shorts' || url === '/shorts/' || url.endsWith('/shorts')) {
+                        console.warn('[Fokk Shield] Blocked pushState to /shorts feed');
                         return;
+                    }
+                    const newUrl = neutralizeShortsUrl(url);
+                    if (newUrl !== url) {
+                        console.warn('[Fokk Shield] Rewriting Shorts pushState to standard watch URL:', newUrl);
+                        url = newUrl;
+                        arguments[2] = newUrl;
                     }
                 }
                 return origPushState.apply(this, arguments);
@@ -393,11 +417,16 @@
 
             const origReplaceState = window.history.replaceState;
             window.history.replaceState = function(state, title, url) {
-                if (url && typeof url === 'string' && url.includes('/shorts/')) {
-                    const elapsed = Date.now() - lastUserShortsInteraction;
-                    if (elapsed > 3500) {
-                        console.warn('[Fokk Shield] Blocked unsolicited YouTube Shorts replaceState:', url);
+                if (url && typeof url === 'string') {
+                    if (url === '/shorts' || url === '/shorts/' || url.endsWith('/shorts')) {
+                        console.warn('[Fokk Shield] Blocked replaceState to /shorts feed');
                         return;
+                    }
+                    const newUrl = neutralizeShortsUrl(url);
+                    if (newUrl !== url) {
+                        console.warn('[Fokk Shield] Rewriting Shorts replaceState to standard watch URL:', newUrl);
+                        url = newUrl;
+                        arguments[2] = newUrl;
                     }
                 }
                 return origReplaceState.apply(this, arguments);
@@ -790,8 +819,18 @@
         [aria-label*="Open App"],
         [aria-label*="open app"],
         [aria-label*="Get App"],
-        [aria-label*="get app"],
         ytm-mealbar-promo-renderer,
+
+        /* YouTube Shorts Shelves, Bottom Bar Pivot Tab, and Auto-Reels */
+        ytm-pivot-bar-item-renderer:nth-child(2),
+        ytm-pivot-bar-item-renderer:has([aria-label*="Shorts" i]),
+        ytm-pivot-bar-item-renderer:has(div[class*="pivot-shorts"]),
+        ytm-reel-shelf-renderer,
+        ytd-reel-shelf-renderer,
+        ytm-shorts-lockup-view-model,
+        .ytm-shorts-entry-point,
+        [data-target-id*="shorts"],
+        ytd-rich-shelf-renderer[is-shorts],
 
         /* Anti-App-Nag: Open in App / Get App Banners & Prompts across sites */
         .smartbanner,

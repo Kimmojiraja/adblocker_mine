@@ -1536,19 +1536,19 @@
             left: 0;
             right: 0;
             bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: #090D14;
-            z-index: 1000;
-            display: flex;
+            z-index: 10000;
+            display: none;
             flex-direction: column;
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
-            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
         }
         .visual-hub-screen.active, .video-hub-screen.active {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: none !important;
         }
         .visual-hub-bar, .video-hub-bar {
             display: flex;
@@ -4153,14 +4153,24 @@
 
         function openVisualHub() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            renderVisualGrid(currentVisualCategory);
+            try {
+                renderVisualGrid(currentVisualCategory);
+            } catch (err) {
+                console.error("renderVisualGrid error", err);
+            }
             const m = document.getElementById('visualHubModal');
-            if (m) m.classList.add('active');
+            if (m) {
+                m.classList.add('active');
+                m.style.display = 'flex';
+            }
         }
 
         function closeVisualHub() {
             const m = document.getElementById('visualHubModal');
-            if (m) m.classList.remove('active');
+            if (m) {
+                m.classList.remove('active');
+                m.style.display = 'none';
+            }
         }
 
         function filterVisuals(cat, btn) {
@@ -4278,14 +4288,24 @@
 
         function openMediaVideoHub() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
-            renderVideoGrid(currentVideoCategory);
+            try {
+                renderVideoGrid(currentVideoCategory);
+            } catch (err) {
+                console.error("renderVideoGrid error", err);
+            }
             const m = document.getElementById('videoHubModal');
-            if (m) m.classList.add('active');
+            if (m) {
+                m.classList.add('active');
+                m.style.display = 'flex';
+            }
         }
 
         function closeVideoHub() {
             const m = document.getElementById('videoHubModal');
-            if (m) m.classList.remove('active');
+            if (m) {
+                m.classList.remove('active');
+                m.style.display = 'none';
+            }
         }
 
         function filterVideos(cat, btn) {

@@ -1593,10 +1593,19 @@ open class MediaHubActivity : AppCompatActivity() {
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
                 val isExplicitUserNav = userGesture || hasRecentUserInteraction()
 
-                // Prevent unsolicited auto-redirects to YouTube Shorts without explicit user gesture
-                if ((rawUrl.contains("youtube.com/shorts/") || rawUrl.contains("m.youtube.com/shorts/")) && !isExplicitUserNav) {
-                    Log.d(TAG, "Blocked unsolicited auto-redirect to YouTube Shorts")
-                    return true
+                // Completely disarm YouTube Shorts: convert any /shorts/<id> into normal video /watch?v=<id>
+                if (targetHost.contains("youtube.com") && rawUrl.contains("/shorts/")) {
+                    val shortsId = rawUrl.substringAfter("/shorts/").substringBefore("?").substringBefore("/").substringBefore("#")
+                    if (shortsId.isNotBlank() && webView != null) {
+                        val query = if (rawUrl.contains("?")) "&" + rawUrl.substringAfter("?").substringBefore("#") else ""
+                        val normalWatchUrl = "https://m.youtube.com/watch?v=$shortsId$query"
+                        Log.d(TAG, "Redirected YouTube Shorts to standard watch URL: $normalWatchUrl")
+                        loadUrlInWebView(webView, normalWatchUrl)
+                        return true
+                    } else if (webView != null) {
+                        loadUrlInWebView(webView, "https://m.youtube.com/")
+                        return true
+                    }
                 }
 
                 // Only block rogue unsolicited redirects (e.g. pop-unders or unauthorized script redirects)

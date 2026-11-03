@@ -1,7 +1,8 @@
-# Signing material must be held outside source control and injected by CI.
+# Signing material
 *.jks
 *.keystore
 *.p12
+!keystore/debug.keystore
 signing.properties
 
 # Android/Gradle generated files

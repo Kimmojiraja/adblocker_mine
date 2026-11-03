@@ -239,23 +239,34 @@
             color: #00E5FF;
         }
 
-        .command-go-btn {
-            width: 30px;
-            height: 30px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #00E5FF, #00B4D8);
-            border: none;
-            border-radius: 8px;
-            color: #0A0F1D;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            flex-shrink: 0;
+        /* Expanding command card on click/type */
+        .start-command-card.expanded,
+        .start-command-card:focus-within {
+            background: rgba(22, 22, 28, 0.98);
+            border-color: rgba(255, 255, 255, 0.32);
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.9), 0 0 14px rgba(255, 255, 255, 0.08);
         }
 
-        .command-go-btn:active {
-            transform: scale(0.92);
+        .command-action-divider,
+        .tabs-badge-btn,
+        .menu-dots-btn {
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .start-command-card.expanded .command-action-divider,
+        .start-command-card:focus-within .command-action-divider,
+        .start-command-card.expanded .tabs-badge-btn,
+        .start-command-card:focus-within .tabs-badge-btn,
+        .start-command-card.expanded .menu-dots-btn,
+        .start-command-card:focus-within .menu-dots-btn {
+            opacity: 0;
+            max-width: 0;
+            width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            pointer-events: none;
+            overflow: hidden;
         }
 
         .command-action-divider {
@@ -401,12 +412,71 @@
         }
 
         /* 4. MODERN 2x2 SPEED DIAL CARDS */
-        .shortcuts-grid-modern {
+        /* 4. MODERN HORIZONTAL CAROUSEL SPEED DIAL CARDS */
+        .hero-spacer {
+            flex: 1;
+            min-height: 20px;
+        }
+
+        .shortcuts-bottom-section {
             width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: auto;
+            gap: 12px;
+            padding-bottom: 4px;
+        }
+
+        .shortcuts-manage-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .shortcuts-manage-row:active {
+            transform: scale(0.96);
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .shortcuts-carousel-wrapper {
+            width: 100%;
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .shortcuts-carousel-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .shortcuts-page-grid {
+            flex: 0 0 100%;
+            width: 100%;
+            min-width: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
+            scroll-snap-align: start;
+            box-sizing: border-box;
+            padding: 2px 1px;
         }
 
         .dial-card {
@@ -416,11 +486,12 @@
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
-            padding: 12px 14px;
+            padding: 11px 12px;
             cursor: pointer;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+            min-width: 0;
         }
 
         .dial-card:hover, .dial-card:active {
@@ -454,7 +525,7 @@
         }
 
         .dial-title {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--text-primary);
             white-space: nowrap;
@@ -471,27 +542,28 @@
             text-overflow: ellipsis;
         }
 
-        .shortcuts-manage-row {
+        .shortcuts-dots-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 8px 16px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: var(--text-muted);
-            font-size: 11.5px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.16s ease;
-            margin-top: 4px;
+            min-height: 8px;
+            margin-top: 2px;
         }
 
-        .shortcuts-manage-row:active {
-            transform: scale(0.96);
-            color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.07);
+        .shortcut-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.22);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .shortcut-dot.active {
+            width: 18px;
+            background: #00E5FF;
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
         }
 
         .pulse-indicator {
@@ -1406,14 +1478,6 @@
                     </svg>
                 </button>
 
-                <!-- Go / Search Button -->
-                <button class="command-go-btn" id="commandGoBtn" onclick="submitCommandSearch()" title="Search">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                        <polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                </button>
-
                 <!-- Vertical Divider -->
                 <div class="command-action-divider"></div>
 
@@ -1515,18 +1579,29 @@
             </div>
         </div>
 
-        <!-- 4. MODERN 2x2 SPEED DIAL CARDS -->
-        <div class="shortcuts-grid-modern" id="speedDialGrid">
-            <!-- Dynamically populated 2x2 cards -->
-        </div>
+        <!-- FLEX SPACER TO PUSH SHORTCUTS TO BOTTOM -->
+        <div class="hero-spacer"></div>
 
-        <!-- EDIT SHORTCUTS TRIGGER -->
-        <div class="shortcuts-manage-row" onclick="openShortcutsManager()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v2m0 16v2m10-10h-2M4 12H2"/>
-            </svg>
-            <span>Manage Shortcuts</span>
+        <!-- 4. BOTTOM SHORTCUTS SECTION -->
+        <div class="shortcuts-bottom-section">
+            <!-- EDIT SHORTCUTS TRIGGER (PLACED ABOVE SHORTCUTS) -->
+            <div class="shortcuts-manage-row" onclick="openShortcutsManager()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 2v2m0 16v2m10-10h-2M4 12H2"/>
+                </svg>
+                <span>Manage Shortcuts</span>
+            </div>
+
+            <!-- HORIZONTAL SWIPEABLE CAROUSEL -->
+            <div class="shortcuts-carousel-wrapper" id="shortcutsCarousel">
+                <!-- Dynamically populated 2x2 grid pages -->
+            </div>
+
+            <!-- PAGE INDICATOR DOTS -->
+            <div class="shortcuts-dots-indicator" id="shortcutsDots">
+                <!-- Dynamically populated dots if pages > 1 -->
+            </div>
         </div>
     </div>
 
@@ -1888,12 +1963,29 @@
             popover.appendChild(moreItem);
         }
 
+        function setupCommandInputListeners() {
+            const input = document.getElementById('startCommandInput');
+            const card = document.getElementById('startCommandCard');
+            if (!input || !card) return;
+            input.addEventListener('focus', () => {
+                card.classList.add('expanded');
+            });
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (input.value.trim().length === 0) {
+                        card.classList.remove('expanded');
+                    }
+                }, 150);
+            });
+        }
+
         function initCommandCard() {
             const engine = searchEngines[currentActiveEngine] || searchEngines.google;
             const slot = document.getElementById('engineLogoSlot');
             if (slot) slot.innerHTML = engine.icon;
 
             renderEngineDropdown();
+            setupCommandInputListeners();
 
             // Sync Tab Count
             try {
@@ -1914,8 +2006,8 @@
         }
 
         function toggleCommandMenu(e) {
-            e.stopPropagation();
-            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function') {
+            if (e) e.stopPropagation();
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function') {
                 window.FokkShieldBridge.openMenu();
                 return;
             }
@@ -1947,10 +2039,16 @@
             const hasText = val.trim().length > 0;
             const clearBtn = document.getElementById('commandClearBtn');
             const voiceBtn = document.getElementById('commandVoiceBtn');
-            const goBtn = document.getElementById('commandGoBtn');
+            const card = document.getElementById('startCommandCard');
             if (clearBtn) clearBtn.style.display = hasText ? 'flex' : 'none';
             if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
-            if (goBtn) goBtn.style.display = hasText ? 'flex' : 'none';
+            if (card) {
+                if (hasText) {
+                    card.classList.add('expanded');
+                } else if (!document.getElementById('startCommandInput')?.matches(':focus')) {
+                    card.classList.remove('expanded');
+                }
+            }
         }
 
         function clearCommandInput() {
@@ -2110,47 +2208,90 @@
         }
 
         function renderSpeedDials() {
-            const grid = document.getElementById('speedDialGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
+            const carousel = document.getElementById('shortcutsCarousel');
+            const dotsContainer = document.getElementById('shortcutsDots');
+            if (!carousel) return;
+            carousel.innerHTML = '';
+            if (dotsContainer) dotsContainer.innerHTML = '';
 
-            const displayDials = speedDials.slice(0, 4);
+            const pageSize = 4;
+            const totalPages = Math.max(1, Math.ceil(speedDials.length / pageSize));
 
-            displayDials.forEach((dial) => {
-                const card = document.createElement('div');
-                card.className = 'dial-card';
-                card.onclick = () => { openDialUrl(dial.url); };
+            for (let p = 0; p < totalPages; p++) {
+                const pageGrid = document.createElement('div');
+                pageGrid.className = 'shortcuts-page-grid';
 
-                let domain = '';
-                try {
-                    domain = new URL(dial.url).hostname.replace(/^www\./, '');
-                } catch (e) {
-                    domain = (dial.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-                }
+                const pageDials = speedDials.slice(p * pageSize, (p + 1) * pageSize);
+                pageDials.forEach((dial) => {
+                    const card = document.createElement('div');
+                    card.className = 'dial-card';
+                    card.onclick = () => { openDialUrl(dial.url); };
 
-                let iconSvg = '';
-                if (brandSvgs[dial.icon]) {
-                    iconSvg = brandSvgs[dial.icon];
-                } else {
-                    const favUrl = dial.favicon || (domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '');
-                    if (favUrl) {
-                        iconSvg = `<img src="${favUrl}" alt="" style="width:24px;height:24px;border-radius:6px;object-fit:contain;" onerror="this.onerror=null;this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'#94A3B8\\' style=\\'width:22px;height:22px;\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/></svg>';" />`;
-                    } else {
-                        iconSvg = `<svg viewBox="0 0 24 24" fill="#94A3B8" style="width:22px;height:22px;"><circle cx="12" cy="12" r="10"/></svg>`;
+                    let domain = '';
+                    try {
+                        domain = new URL(dial.url).hostname.replace(/^www\./, '');
+                    } catch (e) {
+                        domain = (dial.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
                     }
-                }
 
-                card.innerHTML = `
-                    <div class="dial-icon-box">
-                        ${iconSvg}
-                    </div>
-                    <div class="dial-info">
-                        <span class="dial-title">${dial.title}</span>
-                        <span class="dial-subtitle">${domain}</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+                    let iconSvg = '';
+                    if (brandSvgs[dial.icon]) {
+                        iconSvg = brandSvgs[dial.icon];
+                    } else {
+                        const favUrl = dial.favicon || (domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '');
+                        if (favUrl) {
+                            iconSvg = `<img src="${favUrl}" alt="" style="width:24px;height:24px;border-radius:6px;object-fit:contain;" onerror="this.onerror=null;this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'#94A3B8\\' style=\\'width:22px;height:22px;\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/></svg>';" />`;
+                        } else {
+                            iconSvg = `<svg viewBox="0 0 24 24" fill="#94A3B8" style="width:22px;height:22px;"><circle cx="12" cy="12" r="10"/></svg>`;
+                        }
+                    }
+
+                    card.innerHTML = `
+                        <div class="dial-icon-box">
+                            ${iconSvg}
+                        </div>
+                        <div class="dial-info">
+                            <span class="dial-title">${dial.title}</span>
+                            <span class="dial-subtitle">${domain}</span>
+                        </div>
+                    `;
+                    pageGrid.appendChild(card);
+                });
+
+                carousel.appendChild(pageGrid);
+            }
+
+            if (dotsContainer) {
+                if (totalPages > 1) {
+                    dotsContainer.style.display = 'flex';
+                    for (let i = 0; i < totalPages; i++) {
+                        const dot = document.createElement('span');
+                        dot.className = 'shortcut-dot' + (i === 0 ? ' active' : '');
+                        dot.onclick = () => {
+                            carousel.scrollTo({
+                                left: i * carousel.clientWidth,
+                                behavior: 'smooth'
+                            });
+                        };
+                        dotsContainer.appendChild(dot);
+                    }
+                } else {
+                    dotsContainer.style.display = 'none';
+                }
+            }
+
+            if (!carousel.dataset.scrollBound) {
+                carousel.dataset.scrollBound = 'true';
+                carousel.addEventListener('scroll', () => {
+                    const dots = dotsContainer ? dotsContainer.querySelectorAll('.shortcut-dot') : [];
+                    if (!dots.length) return;
+                    const pageIndex = Math.round(carousel.scrollLeft / (carousel.clientWidth || 1));
+                    dots.forEach((dot, idx) => {
+                        if (idx === pageIndex) dot.classList.add('active');
+                        else dot.classList.remove('active');
+                    });
+                }, { passive: true });
+            }
         }
 
         function openDialUrl(url) {

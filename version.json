@@ -1,6 +1,6 @@
 {
-  "versionCode": 88,
-  "versionName": "1.0.88",
+  "versionCode": 89,
+  "versionName": "1.0.89",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Obsidian Noir Command Input Card: Replaced blue/navy card background and borders with luxury frosted obsidian glass matching the pitch black aesthetic seamlessly.\n- Refined Engine Roster: Streamlined start page quick switcher to Google, Ecosia, DuckDuckGo, and Bing, while preserving Brave and Startpage in the Default Engine selection settings dialog."
+  "changelog": "- Unified Command Card: Eliminated dual bottom toolbar on start page, routing all homescreen search to the center Command Input Card.\n- Expandable Command Card: Card dynamically expands on focus/typing for spacious text entry without arrow button.\n- Bottom Shortcuts with Carousel: Anchored shortcuts to bottom of start screen with Manage Shortcuts above, featuring 2x2 horizontal swipe paging and dot indicators.\n- Native Menu Sheet: Three-dots on Command Card opens the native browser menu."
 }

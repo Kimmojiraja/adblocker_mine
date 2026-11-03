@@ -1923,6 +1923,13 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun expandCommandBar(animated: Boolean = true) {
+        val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+        if (isHome) {
+            binding.topBar.visibility = View.GONE
+            binding.layoutCollapsedBar.visibility = View.GONE
+            commandBarCollapsed = false
+            return
+        }
         binding.layoutCollapsedBar.visibility = View.GONE
         commandBarCollapsed = false
         binding.topBar.visibility = View.VISIBLE
@@ -1944,6 +1951,18 @@ open class MediaHubActivity : AppCompatActivity() {
 
         binding.layoutCollapsedBar.visibility = View.GONE
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
+
+        val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+        if (isHome) {
+            binding.topBar.visibility = View.GONE
+            browserChromeHidden = false
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
+            return
+        }
 
         if (visible) {
             if (!browserChromeHidden) return
@@ -2742,6 +2761,7 @@ open class MediaHubActivity : AppCompatActivity() {
             loadUrlInWebView(current.webView, current.url)
         }
         updateUrlBar(current.url, current.title)
+        updateToolbarLayoutForUrl(current.url, animated = false)
 
         // Apply Private Tab styling if active
         binding.imgEngineIcon.imageTintList = null

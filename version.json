@@ -1,6 +1,6 @@
 {
-  "versionCode": 95,
-  "versionName": "1.0.95",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.95/app-debug.apk",
-  "changelog": "- Microsoft Bing Default Search: Integrated Bing with Copilot AI as default search engine across the native browser and start page, complete with quick switcher toolbar access and settings integration.\n- Modern Bulky Curvy Command Card: Redesigned the address/search card into a sleek dark rounded capsule pill with high-contrast text, glowing cyan voice mic, round black-bordered tab counter, and pure white three-dots menu.\n- Sleek Dark Circular Action Buttons: Redesigned Favorites, Images, Videos, and Save into dark circular icon discs with clean glowing vector icons.\n- Authentic Brand Logos: Replaced basic/emoji-like search icons with crisp official vector SVGs for Bing, Google, DuckDuckGo, Ecosia, Brave, and Startpage."
+  "versionCode": 96,
+  "versionName": "1.0.96",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.96/app-debug.apk",
+  "changelog": "- Official Search Engine Logos: Rendered exact official vector logos matching reference for Microsoft Bing (Fluent ribbon 'b'), Google (4-color G), DuckDuckGo (Dax duck badge), Ecosia (standalone tree canopy & trunk), Brave (lion shield), and Startpage (capital letter 'S' with purple accent underline).\n- Bulky Curvy Webpage Command Card: Matched the floating webpage address/command bar to the home command card design with a sleek 28dp rounded dark pill, 56dp height, engine capsule selector, glowing cyan mic, circular black-bordered tab counter, and pure white three-dots menu.\n- Spacious Long Text Input: Expanded command card height and implemented automatic action folding when typing, giving full-width space for entering long queries with 1-tap clear button and adaptive font sizing."
 }

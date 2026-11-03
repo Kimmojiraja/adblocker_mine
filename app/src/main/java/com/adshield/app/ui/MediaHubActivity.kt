@@ -3834,7 +3834,7 @@ open class MediaHubActivity : AppCompatActivity() {
             }
 
             containerLp?.let {
-                it.topMargin = (56 * density).toInt()
+                it.topMargin = (64 * density).toInt()
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
@@ -3843,7 +3843,7 @@ open class MediaHubActivity : AppCompatActivity() {
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                cardLp.topMargin = (56 * density).toInt()
+                cardLp.topMargin = (64 * density).toInt()
                 cardLp.bottomMargin = 0
                 binding.cardSuggestions.layoutParams = cardLp
             }
@@ -3865,7 +3865,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
             containerLp?.let {
                 it.topMargin = 0
-                it.bottomMargin = (56 * density).toInt()
+                it.bottomMargin = (64 * density).toInt()
                 binding.mainContentLayout.layoutParams = it
             }
             binding.mainContentLayout.translationY = 0f
@@ -3874,7 +3874,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.topMargin = 0
-                cardLp.bottomMargin = (56 * density).toInt()
+                cardLp.bottomMargin = (64 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }

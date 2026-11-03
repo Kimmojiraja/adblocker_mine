@@ -1188,6 +1188,26 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun fetchOnlineWallpapers(query: String, page: Int): String {
+            return try {
+                val q = if (query.isBlank()) "wallpapers" else query
+                val targetUrl = "https://wallhaven.cc/api/v1/search?q=${java.net.URLEncoder.encode(q, "UTF-8")}&page=$page&purity=100&sorting=toplist"
+                val conn = URL(targetUrl).openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) FokkShield/1.0")
+                conn.connectTimeout = 7000
+                conn.readTimeout = 7000
+                if (conn.responseCode == 200) {
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    ""
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        @JavascriptInterface
         fun openPrivateTabs() {
             activity.runOnUiThread {
                 activity.authenticateForPrivateTabs {
@@ -2198,6 +2218,8 @@ open class MediaHubActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             allowFileAccess = true
             allowContentAccess = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = cleanMobileUa
         }

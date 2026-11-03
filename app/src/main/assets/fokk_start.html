@@ -4630,14 +4630,48 @@
             return results;
         }
 
-        function renderVisualGrid(cat, query = '', reset = false) {
+        async function renderVisualGrid(cat, query = '', reset = false) {
             const grid = document.getElementById('visualGridContainer');
             if (!grid) return;
             if (reset) {
                 grid.innerHTML = '';
                 visualPage = 1;
             }
-            const items = getUnlimitedVisualBatch(cat, visualPage, query);
+
+            let items = [];
+            // 1. Fetch live unlimited 4K wallpapers via Native Bridge or direct fetch
+            try {
+                const searchQuery = query || (cat === 'all' ? 'wallpapers' : cat);
+                let raw = '';
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.fetchOnlineWallpapers === 'function') {
+                    raw = window.FokkShieldBridge.fetchOnlineWallpapers(searchQuery, visualPage);
+                }
+                if (!raw) {
+                    const res = await fetch(`https://wallhaven.cc/api/v1/search?q=${encodeURIComponent(searchQuery)}&page=${visualPage}&purity=100&sorting=toplist`);
+                    if (res.ok) raw = await res.text();
+                }
+                if (raw) {
+                    const json = JSON.parse(raw);
+                    if (json && json.data && json.data.length > 0) {
+                        items = json.data.map(item => ({
+                            title: `${(item.category || cat).toUpperCase()} • ${item.resolution || '4K UHD'}`,
+                            category: item.category || cat,
+                            sub: `Wallhaven • ${item.resolution || 'Ultra 4K'}`,
+                            img: (item.thumbs && item.thumbs.large) ? item.thumbs.large : item.path,
+                            fullImg: item.path,
+                            ratio: item.ratio || "1.3"
+                        }));
+                    }
+                }
+            } catch (err) {
+                console.log("[VisualHub] Network fetch notice:", err);
+            }
+
+            // 2. Fallback to procedural seed expansion if network unreachable
+            if (items.length === 0) {
+                items = getUnlimitedVisualBatch(cat, visualPage, query);
+            }
+
             if (items.length === 0 && reset) {
                 grid.innerHTML = '<div style="column-span: all; text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No visuals found. Try another search term.</div>';
                 return;
@@ -4646,11 +4680,12 @@
             items.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'visual-card';
+                const dlUrl = item.fullImg || item.img;
                 card.innerHTML = `
                     <span class="visual-card-badge">${item.category.toUpperCase()} 4K</span>
                     <button class="visual-card-vibe-btn" title="Vibe Boost" onclick="boostVisualVibe(event, '${item.category}')">&hearts;</button>
-                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${item.img}', '${item.category}')">
-                    <div class="visual-card-info" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${item.img}', '${item.category}')">
+                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${dlUrl}', '${item.category}')">
+                    <div class="visual-card-info" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${dlUrl}', '${item.category}')">
                         <span class="visual-card-title">${item.title}</span>
                         <span class="visual-card-sub">${item.sub}</span>
                     </div>

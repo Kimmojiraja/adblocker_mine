@@ -3385,17 +3385,14 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         binding.btnNavFavorite.setOnClickListener {
-            val activeWeb = activeWebView
-            val targetUrl = activeWeb?.url
-            if (!targetUrl.isNullOrEmpty() && !targetUrl.contains("fokk_start.html")) {
-                val isSaved = savedPagesList.any { it.url == targetUrl }
+            val targetUrl = activeWebView?.url.orEmpty()
+            if (isWebUrl(targetUrl)) {
+                val isSaved = offlinePageStore.list().any { it.url == targetUrl }
                 if (isSaved) {
                     showSavedPagesDialog()
                 } else {
-                    saveCurrentPageOffline(activeWeb)
-                    addBookmark(targetUrl, activeWeb.title ?: "Favorite Page")
+                    saveCurrentPage()
                     binding.btnNavFavorite.setColorFilter(android.graphics.Color.parseColor("#FBBF24"))
-                    Toast.makeText(this@MediaHubActivity, "⭐ Added to Favorites & Bookmarks! (Saved offline)", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 showSavedPagesDialog()
@@ -3729,8 +3726,8 @@ open class MediaHubActivity : AppCompatActivity() {
         val isHome = isHomePageUrl(url)
         binding.btnNavFavorite.visibility = if (isHome) View.GONE else View.VISIBLE
         if (!isHome) {
-            val targetUrl = url ?: activeWebView?.url ?: ""
-            val isSaved = savedPagesList.any { it.url == targetUrl }
+            val targetUrl = url ?: activeWebView?.url.orEmpty()
+            val isSaved = if (isWebUrl(targetUrl)) offlinePageStore.list().any { it.url == targetUrl } else false
             binding.btnNavFavorite.setColorFilter(if (isSaved) android.graphics.Color.parseColor("#FBBF24") else android.graphics.Color.parseColor("#94A3B8"))
         }
         updateToolbarLayoutForUrl(url, animated = true)

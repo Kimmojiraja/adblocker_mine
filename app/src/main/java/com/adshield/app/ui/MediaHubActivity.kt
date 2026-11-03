@@ -660,6 +660,14 @@ open class MediaHubActivity : AppCompatActivity() {
                 "Search with ${engine.displayName} or enter address"
             }
         }
+        tabs.forEach { tab ->
+            if (tab.url.contains("fokk_start.html")) {
+                tab.webView?.evaluateJavascript(
+                    "if (typeof updateEngineFromNative === 'function') updateEngineFromNative('${engine.name.lowercase()}');",
+                    null
+                )
+            }
+        }
         val currentUrl = activeWebView?.url.orEmpty()
         val query = extractSearchQuery(currentUrl)
         if (!query.isNullOrBlank() && activeWebView != null) {
@@ -1843,6 +1851,9 @@ open class MediaHubActivity : AppCompatActivity() {
         (scheme == "http" || scheme == "https") && !uri.host.isNullOrBlank()
     }.getOrDefault(false)
 
+    private fun isHomePageUrl(url: String?): Boolean =
+        url == null || url.isBlank() || url.contains("fokk_start.html") || url == "about:blank"
+
     private fun extractDestinationUrl(rawUrl: String): String? {
         val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return null
         val redirectParamKeys = listOf(
@@ -1923,7 +1934,7 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun expandCommandBar(animated: Boolean = true) {
-        val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+        val isHome = isHomePageUrl(activeWebView?.url)
         if (isHome) {
             binding.topBar.visibility = View.GONE
             binding.layoutCollapsedBar.visibility = View.GONE
@@ -1952,7 +1963,7 @@ open class MediaHubActivity : AppCompatActivity() {
         binding.layoutCollapsedBar.visibility = View.GONE
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
 
-        val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+        val isHome = isHomePageUrl(activeWebView?.url)
         if (isHome) {
             binding.topBar.visibility = View.GONE
             browserChromeHidden = false
@@ -2126,7 +2137,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 loadingTab?.thirdPartyRequests = 0
                 loadingTab?.thirdPartyRequestHosts?.clear()
                 if (view == activeWebView) {
-                    val isStartPage = pageUrl == null || pageUrl.contains("fokk_start.html")
+                    val isStartPage = isHomePageUrl(pageUrl)
                     if (isStartPage) {
                         binding.topBar.visibility = View.GONE
                         binding.layoutCollapsedBar.visibility = View.GONE
@@ -2739,12 +2750,14 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun switchToTab(index: Int) {
         if (index !in tabs.indices) return
-        setBrowserChromeVisible(true)
+        val current = tabs[index]
+        if (!isHomePageUrl(current.url)) {
+            setBrowserChromeVisible(true)
+        }
         val previousTab = activeTab
         previousTab?.lastActiveTime = System.currentTimeMillis()
 
         activeTabIndex = index
-        val current = tabs[index]
         current.lastActiveTime = System.currentTimeMillis()
         if (current.isHibernated) {
             current.isHibernated = false
@@ -2815,6 +2828,14 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun updateTabCounter() {
         binding.textTabCount.text = tabs.size.toString()
+        tabs.forEach { tab ->
+            if (isHomePageUrl(tab.url)) {
+                tab.webView?.evaluateJavascript(
+                    "if (typeof updateTabBadgeFromNative === 'function') updateTabBadgeFromNative(${tabs.size});",
+                    null
+                )
+            }
+        }
     }
 
     private fun isShieldEnabledFor(url: String?): Boolean {
@@ -3082,7 +3103,7 @@ open class MediaHubActivity : AppCompatActivity() {
     /** The native bridge is required only by our bundled start page, never by remote content. */
     private fun setBridgeEnabled(webView: WebView?, url: String?) {
         if (webView == null) return
-        val isAssetPage = url?.startsWith("file:///android_asset/") == true
+        val isAssetPage = isHomePageUrl(url) || url?.startsWith("file:///android_asset/") == true
         if (isAssetPage) {
             webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
         } else {
@@ -3554,7 +3575,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun updateUrlBar(url: String?, title: String?) {
         if (binding.urlInput.hasFocus()) return
         binding.imgEngineIcon.imageTintList = null
-        if (url == null || url.contains("fokk_start.html")) {
+        if (isHomePageUrl(url)) {
             binding.topBar.visibility = View.GONE
             binding.layoutCollapsedBar.visibility = View.GONE
             binding.urlInput.setText("")
@@ -3564,16 +3585,16 @@ open class MediaHubActivity : AppCompatActivity() {
                 "Search with ${currentSearchEngine.displayName} or enter address"
             }
             binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
-        } else if (url.contains("fokk_about.html")) {
+        } else if (url?.contains("fokk_about.html") == true) {
             binding.urlInput.setText("fokk://about")
             binding.imgEngineIcon.setImageResource(R.drawable.ic_info)
         } else {
             binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
             try {
                 val host = Uri.parse(url).host ?: url
-                binding.urlInput.setText(host.removePrefix("www."))
+                binding.urlInput.setText(host?.removePrefix("www.") ?: "")
             } catch (e: Exception) {
-                binding.urlInput.setText(url)
+                binding.urlInput.setText(url ?: "")
             }
         }
         updateToolbarLayoutForUrl(url, animated = true)
@@ -3606,13 +3627,14 @@ open class MediaHubActivity : AppCompatActivity() {
     private var lastAppliedToolbarPos: String? = null
 
     fun updateToolbarLayoutForUrl(url: String?, animated: Boolean = true) {
-        val isHome = url == null || url.contains("fokk_start.html") || url.isBlank()
+        val isHome = isHomePageUrl(url)
         val prefPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
         applyToolbarPosition(prefPos, isHomePage = isHome, animated = animated)
     }
 
     private fun applyToolbarPosition(position: String, isHomePage: Boolean = false, animated: Boolean = false) {
-        if (isToolbarInHomeMode == isHomePage && lastAppliedToolbarPos == position && (!isHomePage || binding.topBar.visibility == View.GONE)) {
+        val targetVisibility = if (isHomePage) View.GONE else View.VISIBLE
+        if (isToolbarInHomeMode == isHomePage && lastAppliedToolbarPos == position && binding.topBar.visibility == targetVisibility) {
             return
         }
         isToolbarInHomeMode = isHomePage
@@ -3651,9 +3673,8 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             TransitionManager.beginDelayedTransition(binding.root as ViewGroup, transition)
         }
-            binding.mainContentLayout.translationY = 0f
-            tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
-        } else if (isTop) {
+
+        if (isTop) {
             binding.topBar.visibility = View.VISIBLE
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
@@ -5596,7 +5617,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
         if (!inPip) {
-            val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+            val isHome = isHomePageUrl(activeWebView?.url)
             if (isHome) {
                 binding.topBar.visibility = View.GONE
             } else {
@@ -5709,7 +5730,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 activeWebView?.evaluateJavascript("if (typeof window.__fokk_enter_pip_view === 'function') window.__fokk_enter_pip_view();", null)
             }
         } else {
-            val isHome = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
+            val isHome = isHomePageUrl(activeWebView?.url)
             if (isHome) {
                 binding.topBar.visibility = View.GONE
             } else {
@@ -6304,7 +6325,7 @@ open class MediaHubActivity : AppCompatActivity() {
             tabs.clear()
             addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
             updateTabCounter()
-            setBrowserChromeVisible(true)
+            updateToolbarLayoutForUrl("file:///android_asset/fokk_start.html", animated = false)
             Toast.makeText(this, "Session burned. All history, cache & tabs purged.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Log.e(TAG, "Error burning session", e)

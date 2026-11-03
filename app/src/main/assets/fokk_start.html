@@ -2006,6 +2006,17 @@
             } catch (e) {}
         }
 
+        window.updateTabBadgeFromNative = function(cnt) {
+            const badge = document.getElementById('tabBadgeNumber');
+            if (badge && cnt) badge.textContent = cnt;
+        };
+
+        window.updateEngineFromNative = function(engKey) {
+            if (engKey && searchEngines[engKey.toLowerCase()]) {
+                selectSearchEngine(engKey.toLowerCase());
+            }
+        };
+
         function toggleEngineMenu(e) {
             e.stopPropagation();
             const popover = document.getElementById('engineDropdownPopover');
@@ -3258,6 +3269,8 @@
         loadSpeedDials();
         loadTrendingTopics();
         updateGhostModeStatus();
+        setTimeout(initCommandCard, 80);
+        setTimeout(initCommandCard, 350);
 
         // Sync Live Stats from Android Bridge
         try {

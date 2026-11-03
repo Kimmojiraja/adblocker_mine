@@ -1,6 +1,6 @@
 {
-  "versionCode": 90,
-  "versionName": "1.0.90",
+  "versionCode": 91,
+  "versionName": "1.0.91",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Total Removal of Homescreen Bottom Bar: Guaranteed complete removal of bottom native bar on the start page across app resume, orientation change, and initial load.\n- Restored All Feature Buttons: Registered FokkShieldBridge directly on WebView instantiation and protected against lifecycle detachment, making Favorites, History, AdShield, Settings, Tab Switcher, and Three-Dots Menu fully functional.\n- Synchronized Search Engine: Command Card automatically matches user's active native default engine on startup."
+  "changelog": "- Total Removal of Homescreen Bottom Bar: Guaranteed complete removal of bottom native bar on the start page across app resume, orientation change, tab switching, and initial load.\n- Complete Bridge & Action Functionality: All 4 squircle feature buttons (Favorites, History, AdShield, Settings) as well as the middle Command Card's tab counter badge and three-dots menu are fully wired and functional.\n- Synchronized Webpage Navigation Flow: Submitting search/URL smoothly transitions from the homescreen Command Card to the webpage with full native toolbar (Tabs badge and Three-Dots bottom sheet with Back, Forward, Reload, Home, etc.)."
 }

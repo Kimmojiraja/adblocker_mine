@@ -145,6 +145,10 @@ class DesktopTestBrowser(QMainWindow):
         self.btn_go.clicked.connect(self.navigate_to_url)
 
         # Quick Links
+        start_page_url = f"file://{ROOT_DIR}/app/src/main/assets/fokk_start.html"
+        btn_home = QPushButton("🏠 Start Page")
+        btn_home.clicked.connect(lambda: self.load_url(start_page_url))
+
         btn_yt = QPushButton("YouTube")
         btn_yt.clicked.connect(lambda: self.load_url("https://m.youtube.com"))
 
@@ -179,6 +183,7 @@ class DesktopTestBrowser(QMainWindow):
         toolbar.addWidget(self.btn_reload)
         toolbar.addWidget(self.url_bar, 1)
         toolbar.addWidget(self.btn_go)
+        toolbar.addWidget(btn_home)
         toolbar.addWidget(btn_yt)
         toolbar.addWidget(btn_ig)
         toolbar.addWidget(self.ua_combo)
@@ -219,8 +224,8 @@ class DesktopTestBrowser(QMainWindow):
 
         layout.addWidget(self.view, 1)
 
-        # Start with mobile YouTube
-        self.load_url("https://m.youtube.com")
+        # Start with Fokk Start Page
+        self.load_url(start_page_url)
 
     def force_unmute_videos(self):
         js = """

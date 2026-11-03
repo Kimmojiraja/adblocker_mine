@@ -1401,6 +1401,40 @@
     </div>
 
     <script>
+        // DESKTOP & BROWSER PREVIEW FALLBACK
+        function showPreviewToast(msg) {
+            let toast = document.getElementById('fokkPreviewToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'fokkPreviewToast';
+                toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(18,24,36,0.95);color:#F8FAFC;border:1px solid rgba(0,229,255,0.4);box-shadow:0 8px 30px rgba(0,0,0,0.5);padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:600;z-index:99999;transition:all 0.25s ease;pointer-events:none;display:flex;align-items:center;gap:8px;backdrop-filter:blur(10px);';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            clearTimeout(window._toastTimeout);
+            window._toastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+        }
+
+        if (!window.FokkShieldBridge) {
+            let ghostModeState = false;
+            window.FokkShieldBridge = {
+                isGhostModeActive: function() { return ghostModeState; },
+                toggleGhostMode: function() {
+                    ghostModeState = !ghostModeState;
+                    updateGhostModeStatus();
+                    showPreviewToast(ghostModeState ? 'Ghost Mode: ON' : 'Ghost Mode: OFF');
+                },
+                openBookmarks: function() { showPreviewToast('Opening Saved Pages / Favorites...'); },
+                openHistory: function() { showPreviewToast('Opening Browsing History...'); },
+                openShieldDashboard: function() { showPreviewToast('Opening AdShield Defense Matrix...'); },
+                openSettings: function() { showPreviewToast('Opening General Settings...'); },
+                openUrl: function(url) { window.location.href = url; },
+                search: function(q) { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q); },
+                getStats: function() { return JSON.stringify({ blocked: 42 }); }
+            };
+        }
+
         // BRAND SVGS - AUTHENTIC OFFICIAL LOGOS
         const brandSvgs = {
             google: `<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/></svg>`,

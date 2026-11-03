@@ -1,6 +1,6 @@
 {
-  "versionCode": 97,
-  "versionName": "1.0.97",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.97/app-debug.apk",
-  "changelog": "- Fixed Tab & Three-Dots Buttons Glitches: Permanently eliminated aggressive focus-within and text-folding hiding rules so that the tab counter and options menu buttons never disappear, glitch, or drop touch events.\n- Complete Button Functionality & Empty States: Fixed Bookmarks & Saved dialog to always open immediately even when empty, providing an informative message rather than failing silently.\n- Stable Command Bar & Menu Actions: Streamlined tap handling across all start-page action buttons, 4K visual hub, media video hub, and popover menu options."
+  "versionCode": 98,
+  "versionName": "1.0.98",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.98/app-debug.apk",
+  "changelog": "- Permanent Fix for Three-Dots & All Section Action Buttons: Fixed SVG pointer interception across all buttons with pointer-events: none, ensuring clicks never misfire or get swallowed by inner SVG paths/circles.\n- Robust Popover Dismiss Logic: Upgraded document dismiss listener with closest() checks to prevent premature menu closure during touch events.\n- Complete Event Handling: Added stopPropagation and vibration feedback across all popover items, command bar buttons, and 4 home essential circular discs.\n- Zero Sticky Hovers on Mobile: Scoped all hover interactions to fine pointers with responsive active touch states."
 }

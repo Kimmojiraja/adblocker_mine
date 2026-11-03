@@ -254,10 +254,30 @@
             cursor: pointer;
             transition: all 0.15s ease;
             flex-shrink: 0;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .command-icon-btn svg,
+        .command-icon-btn svg *,
+        .engine-selector-capsule svg,
+        .engine-selector-capsule svg *,
+        .popover-menu-item svg,
+        .popover-menu-item svg *,
+        .popover-menu-item span,
+        .home-essential svg,
+        .home-essential svg * {
+            pointer-events: none;
         }
 
         .command-icon-btn:hover, .command-icon-btn:active {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .command-icon-btn:active {
+            transform: scale(0.92);
         }
 
         #commandVoiceBtn {
@@ -377,12 +397,25 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.14s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .engine-option-item:hover, .engine-option-item:active,
-        .popover-menu-item:hover, .popover-menu-item:active {
-            background: rgba(255, 255, 255, 0.08);
+        .engine-option-item:active,
+        .popover-menu-item:active {
+            background: rgba(255, 255, 255, 0.16);
             color: #00E5FF;
+            transform: scale(0.98);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .engine-option-item:hover,
+            .popover-menu-item:hover {
+                background: rgba(255, 255, 255, 0.08);
+                color: #00E5FF;
+            }
         }
 
         .engine-opt-icon {
@@ -1511,18 +1544,26 @@
             box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .home-essential svg { width: 22px; height: 22px; flex: 0 0 auto; }
-        .home-essential:hover {
-            transform: translateY(-2px) scale(1.05);
-            background: rgba(30, 41, 59, 0.96);
-            border-color: rgba(255, 255, 255, 0.28);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
-        }
+        .home-essential svg { width: 22px; height: 22px; flex: 0 0 auto; pointer-events: none; }
         .home-essential:active {
-            transform: translateY(1px) scale(0.96);
-            background: rgba(15, 23, 42, 1);
+            transform: translateY(1px) scale(0.94);
+            background: rgba(30, 41, 59, 1);
+            border-color: rgba(0, 229, 255, 0.4);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .home-essential:hover {
+                transform: translateY(-2px) scale(1.05);
+                background: rgba(30, 41, 59, 0.96);
+                border-color: rgba(255, 255, 255, 0.28);
+                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+            }
         }
 
         .features-strip { display: none; }
@@ -1868,35 +1909,35 @@
 
             <!-- Three-Dots Quick Menu Popover -->
             <div class="command-menu-popover" id="commandMenuPopover">
-                <div class="popover-menu-item" onclick="openFavoritesAction()">
+                <div class="popover-menu-item" onclick="openFavoritesAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     <span>Bookmarks & Saved</span>
                 </div>
-                <div class="popover-menu-item" onclick="openHistoryAction()">
+                <div class="popover-menu-item" onclick="openHistoryAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span>Browsing History</span>
                 </div>
-                <div class="popover-menu-item" onclick="openShieldAction()">
+                <div class="popover-menu-item" onclick="openShieldAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     <span>AdShield Defense</span>
                 </div>
-                <div class="popover-menu-item" onclick="openWallpapersCustomizer()">
+                <div class="popover-menu-item" onclick="openWallpapersCustomizer(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
                     <span>Wallpapers & Themes</span>
                 </div>
-                <div class="popover-menu-item" onclick="triggerBurnSessionAction()">
+                <div class="popover-menu-item" onclick="triggerBurnSessionAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                     <span>Burn Session</span>
                 </div>
-                <div class="popover-menu-item" onclick="triggerDownloadsAction()">
+                <div class="popover-menu-item" onclick="triggerDownloadsAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>Downloads</span>
                 </div>
-                <div class="popover-menu-item" onclick="openSettingsAction()">
+                <div class="popover-menu-item" onclick="openSettingsAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     <span>Settings</span>
                 </div>
-                <div class="popover-menu-item" onclick="triggerNewTabAction()">
+                <div class="popover-menu-item" onclick="triggerNewTabAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>New Tab</span>
                 </div>
@@ -1947,10 +1988,10 @@
 
         <!-- FOUR HOME ESSENTIALS: sleek circular action discs -->
         <div class="home-essentials-strip" aria-label="Quick actions">
-            <button class="home-essential" onclick="openFavoritesAction()" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.2"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
-            <button class="home-essential" onclick="openVisualHub()" title="Visuals & Wallpapers" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg></button>
-            <button class="home-essential" onclick="openMediaVideoHub()" title="Trending Videos" aria-label="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="#F87171"/></svg></button>
-            <button class="home-essential" onclick="saveCurrentPageAction()" title="Save Page" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.2"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 17h8"/></svg></button>
+            <button class="home-essential" onclick="openFavoritesAction(event)" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.2"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
+            <button class="home-essential" onclick="openVisualHub(event)" title="Visuals & Wallpapers" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg></button>
+            <button class="home-essential" onclick="openMediaVideoHub(event)" title="Trending Videos" aria-label="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="#F87171"/></svg></button>
+            <button class="home-essential" onclick="saveCurrentPageAction(event)" title="Save Page" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.2"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 17h8"/></svg></button>
         </div>
 
         <!-- FLEX SPACER TO PUSH SHORTCUTS TO BOTTOM -->
@@ -2486,7 +2527,11 @@
         };
 
         function toggleEngineMenu(e) {
-            e.stopPropagation();
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) {}
             const popover = document.getElementById('engineDropdownPopover');
             const menuPop = document.getElementById('commandMenuPopover');
             if (menuPop) menuPop.classList.remove('active');
@@ -2495,9 +2540,10 @@
 
         function toggleCommandMenu(e) {
             if (e) {
-                e.stopPropagation();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
                 if (typeof e.preventDefault === 'function') e.preventDefault();
             }
+            if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             const engPop = document.getElementById('engineDropdownPopover');
             if (engPop) engPop.classList.remove('active');
@@ -2540,7 +2586,12 @@
             }
         }
 
-        function clearCommandInput() {
+        function clearCommandInput(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) {}
             const input = document.getElementById('startCommandInput');
             if (input) {
                 input.value = '';
@@ -2579,8 +2630,12 @@
             }
         }
 
-        function triggerVoiceAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function triggerVoiceAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.startVoiceSearch === 'function') {
                 window.FokkShieldBridge.startVoiceSearch();
             } else if (window.SpeechRecognition || window.webkitSpeechRecognition) {
@@ -2621,8 +2676,12 @@
             }
         }
 
-        function saveCurrentPageAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function saveCurrentPageAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.saveCurrentPage === 'function') {
                 window.FokkShieldBridge.saveCurrentPage();
             } else {
@@ -2658,7 +2717,12 @@
             if (m) m.classList.remove('active');
         }
 
-        function triggerNewTabAction() {
+        function triggerNewTabAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             const tabModal = document.getElementById('tabSwitcherModal');
@@ -2670,7 +2734,12 @@
             }
         }
 
-        function triggerBurnSessionAction() {
+        function triggerBurnSessionAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.burnSession === 'function') {
@@ -2680,7 +2749,12 @@
             }
         }
 
-        function triggerDownloadsAction() {
+        function triggerDownloadsAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openDownloads === 'function') {
@@ -2693,14 +2767,16 @@
         document.addEventListener('click', function(e) {
             const engPop = document.getElementById('engineDropdownPopover');
             const menuPop = document.getElementById('commandMenuPopover');
-            const engBtn = document.getElementById('engineSelectorBtn');
-            const menuBtn = document.getElementById('commandMenuBtn');
 
-            if (engPop && !engPop.contains(e.target) && (!engBtn || !engBtn.contains(e.target))) {
-                engPop.classList.remove('active');
+            if (engPop && engPop.classList.contains('active')) {
+                if (!e.target.closest('#engineDropdownPopover') && !e.target.closest('#engineSelectorBtn')) {
+                    engPop.classList.remove('active');
+                }
             }
-            if (menuPop && !menuPop.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
-                menuPop.classList.remove('active');
+            if (menuPop && menuPop.classList.contains('active')) {
+                if (!e.target.closest('#commandMenuPopover') && !e.target.closest('#commandMenuBtn')) {
+                    menuPop.classList.remove('active');
+                }
             }
         });
 
@@ -2850,8 +2926,12 @@
             }
         }
 
-        function openFavoritesAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openFavoritesAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             try {
@@ -2859,14 +2939,18 @@
                     window.FokkShieldBridge.openBookmarks();
                     return;
                 }
-            } catch (e) {
-                console.error("openBookmarks error", e);
+            } catch (err) {
+                console.error("openBookmarks error", err);
             }
             showPreviewToast('Bookmarks & Saved Pages');
         }
 
-        function openHistoryAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openHistoryAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             try {
@@ -2874,14 +2958,18 @@
                     window.FokkShieldBridge.openHistory();
                     return;
                 }
-            } catch (e) {
-                console.error("openHistory error", e);
+            } catch (err) {
+                console.error("openHistory error", err);
             }
             showPreviewToast('Browsing History');
         }
 
-        function openShieldAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openShieldAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             try {
@@ -2889,14 +2977,18 @@
                     window.FokkShieldBridge.openShieldDashboard();
                     return;
                 }
-            } catch (e) {
-                console.error("openShieldDashboard error", e);
+            } catch (err) {
+                console.error("openShieldDashboard error", err);
             }
             showPreviewToast('AdShield Defense');
         }
 
-        function openSettingsAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openSettingsAction(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             try {
@@ -2904,14 +2996,18 @@
                     window.FokkShieldBridge.openSettings();
                     return;
                 }
-            } catch (e) {
-                console.error("openSettings error", e);
+            } catch (err) {
+                console.error("openSettings error", err);
             }
             showPreviewToast('Browser Settings');
         }
 
-        function openWallpapersCustomizer() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openWallpapersCustomizer(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
             openThemeModal();
@@ -4213,8 +4309,12 @@
 
         let currentVisualCategory = 'all';
 
-        function openVisualHub() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openVisualHub(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             try {
                 renderVisualGrid(currentVisualCategory);
             } catch (err) {
@@ -4348,8 +4448,12 @@
 
         let currentVideoCategory = 'trending';
 
-        function openMediaVideoHub() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function openMediaVideoHub(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             try {
                 renderVideoGrid(currentVideoCategory);
             } catch (err) {

@@ -131,14 +131,225 @@
             text-transform: uppercase;
         }
 
-        /* 2. COMMAND BAR SPACER */
-        .command-bar-spacer {
+        /* 2. ULTRA-MODERN SQUIRCLE COMMAND INPUT CARD */
+        .command-card-container {
+            width: 100%;
+            position: relative;
+            margin: 6px 0 16px 0;
+            z-index: 50;
+        }
+
+        .start-command-card {
             width: 100%;
             height: 48px;
-            margin: 8px 0 16px 0;
-            pointer-events: none;
-            visibility: hidden;
+            background: rgba(18, 26, 43, 0.94);
+            border: 1.5px solid #2A3A54;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 229, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
         }
+
+        .start-command-card:focus-within,
+        .start-command-card:hover {
+            border-color: #00E5FF;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 229, 255, 0.22);
+        }
+
+        .engine-selector-capsule {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            padding: 4px 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #8E9CAE;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .engine-selector-capsule:hover, .engine-selector-capsule:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #FFFFFF;
+        }
+
+        .engine-logo-slot {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .engine-logo-slot svg {
+            width: 19px;
+            height: 19px;
+        }
+
+        .engine-caret {
+            transition: transform 0.2s ease;
+        }
+
+        .start-command-input {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #F8FAFC;
+            font-size: 13.5px;
+            font-weight: 500;
+            font-family: inherit;
+            padding: 0 4px;
+        }
+
+        .start-command-input::placeholder {
+            color: #64748B;
+            font-weight: 400;
+        }
+
+        .command-icon-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #94A3B8;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .command-icon-btn:hover, .command-icon-btn:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #00E5FF;
+        }
+
+        .command-go-btn {
+            width: 30px;
+            height: 30px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00E5FF, #00B4D8);
+            border: none;
+            border-radius: 8px;
+            color: #0A0F1D;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .command-go-btn:active {
+            transform: scale(0.92);
+        }
+
+        .command-action-divider {
+            width: 1px;
+            height: 18px;
+            background: #2E3C52;
+            margin: 0 1px;
+            flex-shrink: 0;
+        }
+
+        .tabs-badge-btn {
+            position: relative;
+        }
+
+        .tab-badge-num {
+            min-width: 19px;
+            height: 19px;
+            padding: 0 4px;
+            border: 1.5px solid #94A3B8;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #F8FAFC;
+            background: rgba(255, 255, 255, 0.04);
+            box-sizing: border-box;
+            line-height: 1;
+        }
+
+        .tabs-badge-btn:hover .tab-badge-num {
+            border-color: #00E5FF;
+            color: #00E5FF;
+        }
+
+        /* Popovers */
+        .engine-dropdown-popover,
+        .command-menu-popover {
+            position: absolute;
+            top: 54px;
+            background: rgba(18, 26, 43, 0.98);
+            border: 1.5px solid #2A3A54;
+            border-radius: 14px;
+            padding: 6px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 229, 255, 0.12);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            min-width: 190px;
+            animation: fadeInDown 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .engine-dropdown-popover { left: 4px; }
+        .command-menu-popover { right: 4px; min-width: 210px; }
+
+        .engine-dropdown-popover.active,
+        .command-menu-popover.active {
+            display: flex;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .engine-option-item,
+        .popover-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            color: #F8FAFC;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.14s ease;
+        }
+
+        .engine-option-item:hover, .engine-option-item:active,
+        .popover-menu-item:hover, .popover-menu-item:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #00E5FF;
+        }
+
+        .engine-opt-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .engine-opt-icon svg { width: 18px; height: 18px; }
 
         /* 3. FOUR SQUIRCLE FEATURE BUTTONS */
         .features-strip {
@@ -1161,8 +1372,113 @@
             <span class="brand-title-hero">Fokk</span>
         </div>
 
-        <!-- 2. NATIVE COMMAND BAR SPACER -->
-        <div class="command-bar-spacer" id="commandBarSpacer"></div>
+        <!-- 2. ULTRA-MODERN SQUIRCLE COMMAND INPUT CARD -->
+        <div class="command-card-container" id="commandCardContainer">
+            <div class="start-command-card" id="startCommandCard">
+                <!-- Search Engine Selector -->
+                <button class="engine-selector-capsule" id="engineSelectorBtn" onclick="toggleEngineMenu(event)" title="Change Search Engine">
+                    <span class="engine-logo-slot" id="engineLogoSlot">
+                        <!-- Populated dynamically with active engine SVG -->
+                    </span>
+                    <svg class="engine-caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+
+                <!-- URL / Search Input -->
+                <input type="text" class="start-command-input" id="startCommandInput"
+                       placeholder="Search or enter address"
+                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                       onkeydown="onCommandInputKey(event)"
+                       oninput="onCommandInputChange(this.value)">
+
+                <!-- Clear Input Button -->
+                <button class="command-icon-btn" id="commandClearBtn" onclick="clearCommandInput()" title="Clear" style="display: none;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+
+                <!-- Voice Search Button -->
+                <button class="command-icon-btn" id="commandVoiceBtn" onclick="triggerVoiceAction()" title="Voice Search">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                </button>
+
+                <!-- Go / Search Button -->
+                <button class="command-go-btn" id="commandGoBtn" onclick="submitCommandSearch()" title="Search">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+
+                <!-- Vertical Divider -->
+                <div class="command-action-divider"></div>
+
+                <!-- Tabs Badge -->
+                <button class="command-icon-btn tabs-badge-btn" id="commandTabsBtn" onclick="triggerTabsAction()" title="Open Tabs">
+                    <span class="tab-badge-num" id="tabBadgeNumber">1</span>
+                </button>
+
+                <!-- Three-Dots Menu -->
+                <button class="command-icon-btn menu-dots-btn" id="commandMenuBtn" onclick="toggleCommandMenu(event)" title="Options Menu">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1.5"/>
+                        <circle cx="12" cy="5" r="1.5"/>
+                        <circle cx="12" cy="19" r="1.5"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Search Engine Dropdown Popover -->
+            <div class="engine-dropdown-popover" id="engineDropdownPopover">
+                <div class="engine-option-item" onclick="selectSearchEngine('google')">
+                    <span class="engine-opt-icon" id="optIconGoogle"></span>
+                    <span class="engine-opt-name">Google</span>
+                </div>
+                <div class="engine-option-item" onclick="selectSearchEngine('ecosia')">
+                    <span class="engine-opt-icon">🌱</span>
+                    <span class="engine-opt-name">Ecosia</span>
+                </div>
+                <div class="engine-option-item" onclick="selectSearchEngine('duckduckgo')">
+                    <span class="engine-opt-icon">🦆</span>
+                    <span class="engine-opt-name">DuckDuckGo</span>
+                </div>
+                <div class="engine-option-item" onclick="selectSearchEngine('brave')">
+                    <span class="engine-opt-icon">🦁</span>
+                    <span class="engine-opt-name">Brave</span>
+                </div>
+                <div class="engine-option-item" onclick="selectSearchEngine('bing')">
+                    <span class="engine-opt-icon">🅱️</span>
+                    <span class="engine-opt-name">Bing</span>
+                </div>
+            </div>
+
+            <!-- Three-Dots Quick Menu Popover -->
+            <div class="command-menu-popover" id="commandMenuPopover">
+                <div class="popover-menu-item" onclick="openFavoritesAction()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>Bookmarks & Saved</span>
+                </div>
+                <div class="popover-menu-item" onclick="openHistoryAction()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Browsing History</span>
+                </div>
+                <div class="popover-menu-item" onclick="openShieldAction()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>AdShield Defense</span>
+                </div>
+                <div class="popover-menu-item" onclick="openSettingsAction()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Settings</span>
+                </div>
+                <div class="popover-menu-item" onclick="triggerNewTabAction()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>New Tab</span>
+                </div>
+            </div>
+        </div>
 
         <!-- 3. FOUR SQUIRCLE FEATURE ACTION BUTTONS -->
         <div class="features-strip">
@@ -1429,6 +1745,12 @@
                 openHistory: function() { showPreviewToast('Opening Browsing History...'); },
                 openShieldDashboard: function() { showPreviewToast('Opening AdShield Defense Matrix...'); },
                 openSettings: function() { showPreviewToast('Opening General Settings...'); },
+                openTabs: function() { showPreviewToast('Opening Tabs Switcher...'); },
+                openMenu: function() { showPreviewToast('Opening Browser Menu...'); },
+                startVoiceSearch: function() { showPreviewToast('Listening for voice search...'); },
+                openNewTab: function() { window.location.reload(); },
+                getTabCount: function() { return 1; },
+                setSearchEngine: function(e) { showPreviewToast('Engine switched to ' + e); },
                 openUrl: function(url) { window.location.href = url; },
                 search: function(q) { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q); },
                 getStats: function() { return JSON.stringify({ blocked: 42 }); }
@@ -1437,6 +1759,191 @@
 
         // BRAND SVGS - AUTHENTIC OFFICIAL LOGOS
         const brandSvgs = {
+            google: `<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/></svg>`,
+            instagram: `<svg viewBox="0 0 24 24"><defs><linearGradient id="ig-grad-real" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#FFD600"/><stop offset="25%" stop-color="#FF0040"/><stop offset="60%" stop-color="#D800B9"/><stop offset="100%" stop-color="#7000FF"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-grad-real)"/><rect x="3.5" y="3.5" width="17" height="17" rx="4.8" fill="none" stroke="#FFFFFF" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="#FFFFFF" stroke-width="1.8"/><circle cx="16.5" cy="7.5" r="1.1" fill="#FFFFFF"/></svg>`,
+            youtube: `<svg viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><path fill="#FFFFFF" d="m9.545 15.568 6.273-3.568-6.273-3.568z"/></svg>`,
+            x: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#000000"/><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+            reddit: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF4500"/><path fill="#FFFFFF" d="M16.5 11a1.5 1.5 0 0 0-1.44 1.09 7.4 7.4 0 0 0-3.06-.65V8.53l1.83.41a1.2 1.2 0 1 0 .28-.9l-2.45-.55a.3.3 0 0 0-.35.23L10.8 11.4a7.4 7.4 0 0 0-3.24.68A1.5 1.5 0 1 0 6 13.5a3.8 3.8 0 0 0 0 .58c0 2.21 2.69 4 6 4s6-1.79 6-4a3.8 3.8 0 0 0 0-.58 1.5 1.5 0 0 0-1.5-2.5zm-6.75 2a.75.75 0 1 1-.75-.75.75.75 0 0 1 .75.75zm4.5 2.25a3.3 3.3 0 0 1-4.5 0 .25.25 0 0 1 .35-.35 2.8 2.8 0 0 0 3.8 0 .25.25 0 0 1 .35.35zm.75-1.5a.75.75 0 1 1 .75-.75.75.75 0 0 1-.75.75z"/></svg>`,
+            wikipedia: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FFFFFF"/><path fill="#111111" d="M12.09 2.91C6.98 2.91 2.84 7.05 2.84 12.16c0 5.11 4.14 9.25 9.25 9.25 5.11 0 9.25-4.14 9.25-9.25 0-5.11-4.14-9.25-9.25-9.25zm5.54 12.88h-1.28l-1.39-4.74-1.39 4.74h-1.28l-2.09-7.22h1.44l1.32 4.96 1.34-4.96h1.36l1.34 4.96 1.32-4.96h1.44l-2.13 7.22z"/></svg>`,
+            spotify: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1DB954"/><path fill="#FFFFFF" d="M17.43 15.35a.73.73 0 0 1-1 .24c-2.75-1.68-6.22-2.06-10.3-1.13a.73.73 0 1 1-.33-1.42c4.47-1.02 8.31-.59 11.39 1.3a.73.73 0 0 1 .24 1.01zm1.37-3.05a.91.91 0 0 1-1.25.3c-3.15-1.94-7.95-2.5-11.68-1.37a.91.91 0 1 1-.53-1.74c4.27-1.29 9.56-.67 13.16 1.55a.91.91 0 0 1 .3 1.26zm.12-3.18c-3.78-2.24-10.02-2.45-13.63-1.35a1.09 1.09 0 0 1-.64-2.09c4.17-1.27 11.08-1.02 15.43 1.57a1.09 1.09 0 0 1-1.16 1.87z"/></svg>`,
+            github: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#181717"/><path fill="#FFFFFF" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>`,
+            netflix: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#000000"/><path fill="#E50914" d="M5.398 21.328V2.672h3.336v14.412L15.266 2.672h3.336v18.656h-3.336V6.916L8.734 21.328z"/></svg>`,
+            amazon: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#131921"/><path fill="#FF9900" d="M13.62 14.53c-1.74 0-3.16-.4-4.24-1.2-.21-.16-.05-.44.18-.32 1.34.68 2.82.95 4.14.73 1.96-.33 3.65-1.74 4.35-3.64.12-.32.48-.12.39.2-.84 2.45-2.81 4.23-4.82 4.23zm8.01 4.23c-.32.32-.84.21-.95-.2-.53-2.02-2.54-3.56-4.68-3.56-1.57 0-3.04.83-3.8 2.15-.16.27-.47.16-.42-.16.32-1.78 1.94-3.14 3.86-3.14 2.53 0 4.88 1.83 5.49 4.31.05.21-.1.4-.3.6l-.2.01zM2.4 18.77c4.68 3.52 11.23 3.82 16.92.93.35-.18.66.19.34.45-5.32 4.29-12.82 3.86-17.57-.93-.16-.16-.01-.4.21-.35.03-.05.07-.08.1-.1z"/></svg>`,
+            discord: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#5865F2"/><path fill="#FFFFFF" d="M17.3 6.9A13.2 13.2 0 0 0 13.8 5.8a.1.1 0 0 0-.1.1c-.2.3-.3.7-.5 1-1.3-.2-2.6-.2-3.8 0-.2-.3-.3-.7-.5-1a.1.1 0 0 0-.1-.1 13.2 13.2 0 0 0-3.5 1.1.1.1 0 0 0-.1.1C3.3 10.4 2.7 13.8 3.1 17.1a.1.1 0 0 0 .1.1 13.3 13.3 0 0 0 4 2 .1.1 0 0 0 .1 0c.3-.4.6-.9.8-1.4a.1.1 0 0 0-.1-.1c-.4-.2-.8-.4-1.2-.6a.1.1 0 0 1 0-.2c.1-.1.2-.1.3-.2 2.6 1.2 5.4 1.2 8 0 .1.1.2.1.3.2a.1.1 0 0 1 0 .2c-.4.2-.8.4-1.2.6a.1.1 0 0 0-.1.1c.3.5.5 1 .8 1.4a.1.1 0 0 0 .1 0 13.3 13.3 0 0 0 4-2 .1.1 0 0 0 .1-.1c.5-3.9-.8-7.3-2.3-10.2a.1.1 0 0 0-.1-.1zM8.8 14.5c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6c.8 0 1.4.7 1.4 1.6s-.6 1.6-1.4 1.6zm6.4 0c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6c.8 0 1.4.7 1.4 1.6s-.6 1.6-1.4 1.6z"/></svg>`,
+            linkedin: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0A66C2"/><path fill="#FFFFFF" d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.62 1.62 0 0 0 1.62-1.62c0-.89-.73-1.62-1.62-1.62a1.62 1.62 0 0 0-1.62 1.62c0 .89.73 1.62 1.62 1.62m1.4 9.74v-8.37H5.06v8.37h2.8z"/></svg>`
+        };
+
+        // SEARCH ENGINE DEFINITIONS
+        const searchEngines = {
+            google: {
+                name: 'Google',
+                url: 'https://www.google.com/search?q=',
+                icon: brandSvgs.google
+            },
+            ecosia: {
+                name: 'Ecosia',
+                url: 'https://www.ecosia.org/search?q=',
+                icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#00AA4F"/><path fill="#FFFFFF" d="M12 4a8 8 0 0 0-8 8c0 3.5 2.3 6.5 5.5 7.5v-2.3c-2-.8-3.5-2.8-3.5-5.2 0-3.3 2.7-6 6-6s6 2.7 6 6c0 2.4-1.5 4.4-3.5 5.2v2.3c3.2-1 5.5-4 5.5-7.5a8 8 0 0 0-8-8z"/><path fill="#FFFFFF" d="M11 11h2v8h-2z"/></svg>`
+            },
+            duckduckgo: {
+                name: 'DuckDuckGo',
+                url: 'https://duckduckgo.com/?q=',
+                icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#DE5833"/><circle cx="9" cy="10" r="1.5" fill="#FFFFFF"/><circle cx="15" cy="10" r="1.5" fill="#FFFFFF"/><path fill="#F9A01B" d="M12 11c-2 0-3.5 1-3.5 2.5 0 2 2 3.5 3.5 3.5s3.5-1.5 3.5-3.5c0-1.5-1.5-2.5-3.5-2.5z"/></svg>`
+            },
+            brave: {
+                name: 'Brave',
+                url: 'https://search.brave.com/search?q=',
+                icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FB542B"/><path fill="#FFFFFF" d="M7.5 7.5l2-1.5h5l2 1.5l1.5 4.5l-6 6l-6-6z"/></svg>`
+            },
+            bing: {
+                name: 'Bing',
+                url: 'https://www.bing.com/search?q=',
+                icon: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#008373"/><path fill="#FFFFFF" d="M6 3v18l5.5-3.2l5 2.7l3-3.2l-6-3.8l5.5-4.2l-3-4.5z"/></svg>`
+            }
+        };
+
+        let currentActiveEngine = localStorage.getItem('fokk_search_engine') || 'google';
+
+        function initCommandCard() {
+            const engine = searchEngines[currentActiveEngine] || searchEngines.google;
+            const slot = document.getElementById('engineLogoSlot');
+            if (slot) slot.innerHTML = engine.icon;
+
+            const optGoogle = document.getElementById('optIconGoogle');
+            if (optGoogle) optGoogle.innerHTML = brandSvgs.google;
+
+            // Sync Tab Count
+            try {
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getTabCount === 'function') {
+                    const cnt = window.FokkShieldBridge.getTabCount();
+                    const badge = document.getElementById('tabBadgeNumber');
+                    if (badge && cnt) badge.textContent = cnt;
+                }
+            } catch (e) {}
+        }
+
+        function toggleEngineMenu(e) {
+            e.stopPropagation();
+            const popover = document.getElementById('engineDropdownPopover');
+            const menuPop = document.getElementById('commandMenuPopover');
+            if (menuPop) menuPop.classList.remove('active');
+            if (popover) popover.classList.toggle('active');
+        }
+
+        function toggleCommandMenu(e) {
+            e.stopPropagation();
+            const popover = document.getElementById('commandMenuPopover');
+            const engPop = document.getElementById('engineDropdownPopover');
+            if (engPop) engPop.classList.remove('active');
+            if (popover) popover.classList.toggle('active');
+        }
+
+        function selectSearchEngine(engKey) {
+            if (!searchEngines[engKey]) engKey = 'google';
+            currentActiveEngine = engKey;
+            localStorage.setItem('fokk_search_engine', engKey);
+            const slot = document.getElementById('engineLogoSlot');
+            if (slot) slot.innerHTML = searchEngines[engKey].icon;
+
+            const popover = document.getElementById('engineDropdownPopover');
+            if (popover) popover.classList.remove('active');
+
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setSearchEngine === 'function') {
+                window.FokkShieldBridge.setSearchEngine(engKey);
+            }
+            showPreviewToast('Engine: ' + searchEngines[engKey].name);
+        }
+
+        function onCommandInputChange(val) {
+            const hasText = val.trim().length > 0;
+            const clearBtn = document.getElementById('commandClearBtn');
+            const voiceBtn = document.getElementById('commandVoiceBtn');
+            const goBtn = document.getElementById('commandGoBtn');
+            if (clearBtn) clearBtn.style.display = hasText ? 'flex' : 'none';
+            if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
+            if (goBtn) goBtn.style.display = hasText ? 'flex' : 'none';
+        }
+
+        function clearCommandInput() {
+            const input = document.getElementById('startCommandInput');
+            if (input) {
+                input.value = '';
+                input.focus();
+                onCommandInputChange('');
+            }
+        }
+
+        function onCommandInputKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitCommandSearch();
+            }
+        }
+
+        function submitCommandSearch() {
+            const input = document.getElementById('startCommandInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+
+            let targetUrl = text;
+            if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+                // direct url
+            } else if (targetUrl.includes('.') && !targetUrl.includes(' ')) {
+                targetUrl = 'https://' + targetUrl;
+            } else {
+                const engine = searchEngines[currentActiveEngine] || searchEngines.google;
+                targetUrl = engine.url + encodeURIComponent(text);
+            }
+
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openUrl === 'function') {
+                window.FokkShieldBridge.openUrl(targetUrl);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+
+        function triggerVoiceAction() {
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.startVoiceSearch === 'function') {
+                window.FokkShieldBridge.startVoiceSearch();
+            } else {
+                showPreviewToast('Listening for voice search...');
+            }
+        }
+
+        function triggerTabsAction() {
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function') {
+                window.FokkShieldBridge.openTabs();
+            } else {
+                showPreviewToast('Opening Tabs Switcher...');
+            }
+        }
+
+        function triggerNewTabAction() {
+            const popover = document.getElementById('commandMenuPopover');
+            if (popover) popover.classList.remove('active');
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openNewTab === 'function') {
+                window.FokkShieldBridge.openNewTab();
+            } else {
+                window.location.reload();
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const engPop = document.getElementById('engineDropdownPopover');
+            const menuPop = document.getElementById('commandMenuPopover');
+            const engBtn = document.getElementById('engineSelectorBtn');
+            const menuBtn = document.getElementById('commandMenuBtn');
+
+            if (engPop && !engPop.contains(e.target) && (!engBtn || !engBtn.contains(e.target))) {
+                engPop.classList.remove('active');
+            }
+            if (menuPop && !menuPop.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
+                menuPop.classList.remove('active');
+            }
+        });
             google: `<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.94H1.24v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.26c-.25-.72-.38-1.49-.38-2.26s.13-1.54.38-2.26V6.59H1.24C.45 8.16 0 9.94 0 12s.45 3.84 1.24 5.41l4.04-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.59l4.04 3.15c.95-2.84 3.6-4.99 6.72-4.99z"/></svg>`,
             instagram: `<svg viewBox="0 0 24 24"><defs><linearGradient id="ig-grad-real" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#FFD600"/><stop offset="25%" stop-color="#FF0040"/><stop offset="60%" stop-color="#D800B9"/><stop offset="100%" stop-color="#7000FF"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-grad-real)"/><rect x="3.5" y="3.5" width="17" height="17" rx="4.8" fill="none" stroke="#FFFFFF" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="#FFFFFF" stroke-width="1.8"/><circle cx="16.5" cy="7.5" r="1.1" fill="#FFFFFF"/></svg>`,
             youtube: `<svg viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><path fill="#FFFFFF" d="m9.545 15.568 6.273-3.568-6.273-3.568z"/></svg>`,
@@ -2462,6 +2969,7 @@
             });
         }
 
+        initCommandCard();
         loadSpeedDials();
         loadTrendingTopics();
         updateGhostModeStatus();

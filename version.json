@@ -1,6 +1,6 @@
 {
-  "versionCode": 82,
-  "versionName": "1.0.82",
+  "versionCode": 83,
+  "versionName": "1.0.83",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Modern Luxury UI Architecture: Arc & Safari 18 inspired dark obsidian aesthetic with subtle ambient radial illumination.\n- Dynamic Command Bar: Floats centered in the middle of the Start Page and glides down to bottom (or top) smoothly upon search or navigation.\n- Modern Squircle Command Card: Upgraded from curvy oval pill to 14dp squircle with subtle crisp border while preserving all tabs, three-dots menu, voice search, reader view, and multi-engine selector features.\n- Modern Feature Buttons: Geometric vector SVG squircle buttons for Favorites, History, AdShield, and Settings (no basic emojis).\n- Ghost Mode & Truth Pulse: Header capsules with real-time toggle status and pulsing neon Truth Pulse hub trigger.\n- 2x2 Speed Dial Cards: Brand logo squircles with clean bold title and domain subtitle."
+  "changelog": "- Center Command Input Card: Embedded modern 14dp squircle Command Input Card on the Start Page right above the shortcuts and feature buttons with search engine switcher, voice search, tabs counter, and options menu.\n- Dynamic Web Toolbar: Seamlessly switches to bottom/top floating bar upon searching or navigating to web pages.\n- Desktop Preview Support: Full standalone interactivity for desktop testing harness and WebEngine.\n- Modern SVG Feature Buttons: Squircle actions for Favorites, History, AdShield, and Settings."
 }

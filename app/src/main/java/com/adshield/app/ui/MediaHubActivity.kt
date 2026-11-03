@@ -1171,6 +1171,39 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun openTabs() {
+            activity.runOnUiThread {
+                activity.showTabSwitcherDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun openMenu() {
+            activity.runOnUiThread {
+                activity.showBrowserMenuDialog()
+            }
+        }
+
+        @JavascriptInterface
+        fun startVoiceSearch() {
+            activity.runOnUiThread {
+                activity.startVoiceSearch()
+            }
+        }
+
+        @JavascriptInterface
+        fun openNewTab() {
+            activity.runOnUiThread {
+                activity.addNewTab("file:///android_asset/fokk_start.html", isPrivate = activity.isIsolatedPrivateProfile)
+            }
+        }
+
+        @JavascriptInterface
+        fun getTabCount(): Int {
+            return activity.tabs.size
+        }
+
+        @JavascriptInterface
         fun openUrl(url: String) {
             activity.runOnUiThread {
                 activity.loadUrlInActiveWebView(url)
@@ -3554,35 +3587,16 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         if (isHomePage) {
-            lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-            lp.topMargin = (165 * density).toInt()
-            lp.bottomMargin = 0
-
-            collapsedLp?.let {
-                it.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-                it.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                it.topMargin = (165 * density).toInt()
-                it.bottomMargin = 0
-                binding.layoutCollapsedBar.layoutParams = it
-            }
-
+            binding.topBar.visibility = View.GONE
             containerLp?.let {
                 it.topMargin = 0
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
             binding.mainContentLayout.translationY = 0f
-
-            if (cardLp != null) {
-                cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-                cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                cardLp.topMargin = (222 * density).toInt()
-                cardLp.bottomMargin = 0
-                binding.cardSuggestions.layoutParams = cardLp
-            }
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         } else if (isTop) {
+            binding.topBar.visibility = View.VISIBLE
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.topMargin = (6 * density).toInt()
@@ -3612,6 +3626,7 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         } else {
+            binding.topBar.visibility = View.VISIBLE
             lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.topMargin = 0
@@ -3926,7 +3941,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    private fun showTabSwitcherDialog() {
+    fun showTabSwitcherDialog() {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = SheetTabSwitcherBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
@@ -4328,7 +4343,7 @@ open class MediaHubActivity : AppCompatActivity() {
             </main></body></html>""".trimIndent()
     }
 
-    private fun showBrowserMenuDialog() {
+    fun showBrowserMenuDialog() {
         flushFilteredRequestCounts()
         val dialog = BottomSheetDialog(this)
         val sheetBinding = SheetBrowserMenuBinding.inflate(layoutInflater)

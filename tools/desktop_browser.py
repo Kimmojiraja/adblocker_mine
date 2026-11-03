@@ -15,7 +15,9 @@ os.environ["ALSA_CONFIG_PATH"] = "/usr/share/alsa/alsa.conf"
 os.environ["PULSE_SERVER"] = f"unix:/run/user/{os.getuid()}/pulse/native"
 
 # Add Chromium flags before QApplication initializes
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--no-sandbox"
 sys.argv.extend([
+    "--no-sandbox",
     "--autoplay-policy=no-user-gesture-required",
     "--enable-features=AudioServiceOutOfProcess",
     "--disable-features=AudioServiceSandbox"

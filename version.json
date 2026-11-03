@@ -1,6 +1,6 @@
 {
-  "versionCode": 80,
-  "versionName": "1.0.80",
+  "versionCode": 81,
+  "versionName": "1.0.81",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Orientation Snapping Fixed: Fullscreen custom view no longer forces sensor landscape rotation.\n- Play/Pause Twitch Loop Fixed: Removed polling watchdog and button toggle collisions; playback automation is clean, smooth, and respects user pause.\n- Lockscreen Media Controls & MediaSession: Lockscreen card and notification with Play/Pause, Skip ±10s, and track title.\n- Screen-Off Audio Playback: Audio continues playing when the screen is locked or turned off with CPU wake lock.\n- 1-Tap Burn Session: Instantly purge all cookies, site data, cache, and open tabs with a single tap.\n- Geo-Unblocker Headers: Automatic X-Forwarded-For & Client-IP header injection to bypass location blocks without a system VPN."
+  "changelog": "- Restored Player Controls: Player controls (play/pause arrows, 10s skip, fullscreen toggle, quality settings gear, 3-dots, timeline scrubber) remain interactive and reappear smoothly on tap.\n- Shorts Auto-Play & Navigation Fix: Feed previews and Shorts no longer auto-advance or hijack user scrolling; swipe and tap controls restored naturally.\n- True Immersive Fullscreen: Fullscreen auto-rotates to sensor landscape, completely hides status and navigation bars, and retains interactive on-screen controls.\n- Performance & Smoothness: Removed redundant response clones and scoped DOM cleaners away from YouTube DOM for stutter-free scrolling.\n- Clean Burn Session: Removed fire emoji from Burn Session menu action."
 }

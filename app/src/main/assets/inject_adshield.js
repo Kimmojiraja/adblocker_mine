@@ -127,7 +127,11 @@
                 Response.prototype.json = async function() {
                     const data = await origResponseJson.apply(this, arguments);
                     if (data && typeof data === 'object') {
-                        sanitizeYtPlayerResponse(data);
+                        if (window.location.hostname.includes('youtube.com')) {
+                            sanitizeYtPlayerResponse(data);
+                        } else if (window.location.hostname.includes('instagram.com')) {
+                            sanitizeInstagramData(data);
+                        }
                     }
                     return data;
                 };
@@ -306,18 +310,26 @@
             document.addEventListener('canplay', unmuteYouTubeVideo, { capture: true, passive: true });
             window.addEventListener('yt-navigate-finish', unmuteYouTubeVideo, { capture: true, passive: true });
 
-            // 1-Tap Direct Clean Navigation: Bypasses YouTube's broken SPA router and eliminates 5-10s ad buffering
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchStartTime = 0;
-            let userExplicitPaused = false;
+            // Force HTML5 Fullscreen API on player container rather than raw video element
+            // This guarantees all player controls (play/pause, timeline, gear, 3-dots, exit fullscreen) remain interactive in fullscreen!
+            try {
+                delete HTMLVideoElement.prototype.webkitEnterFullscreen;
+            } catch (e) {
+                try {
+                    HTMLVideoElement.prototype.webkitEnterFullscreen = function() {
+                        const playerContainer = document.getElementById('movie_player') ||
+                                                document.querySelector('.html5-video-player, #player');
+                        if (playerContainer && typeof playerContainer.requestFullscreen === 'function') {
+                            return playerContainer.requestFullscreen();
+                        }
+                        if (typeof this.requestFullscreen === 'function') {
+                            return this.requestFullscreen();
+                        }
+                    };
+                } catch (e2) {}
+            }
 
-            document.addEventListener('pointerdown', function(e) {
-                if (!window.location.hostname.includes('youtube.com')) return;
-                touchStartX = e.clientX;
-                touchStartY = e.clientY;
-                touchStartTime = Date.now();
-            }, { capture: true, passive: true });
+            let userExplicitPaused = false;
 
             document.addEventListener('click', function(e) {
                 if (!window.location.hostname.includes('youtube.com')) return;
@@ -349,10 +361,11 @@
                 }
             }, { capture: true, passive: true });
 
-            // Immediate Playback & Unmute Trigger (Clean & Non-fighting: No button toggling loops)
+            // Playback & Unmute Trigger (Only triggers on /watch pages; NEVER on feed, search or Shorts)
             function triggerPlayNow() {
                 if (!window.location.hostname.includes('youtube.com')) return;
                 if (userExplicitPaused) return;
+                if (!window.location.pathname.startsWith('/watch')) return;
 
                 const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
                 if (player) {
@@ -410,116 +423,45 @@
                 }
             };
 
-            // 1-Tap Direct Clean Navigation: Single tap opens & auto-plays immediately
-            document.addEventListener('pointerup', function(e) {
-                if (!window.location.hostname.includes('youtube.com')) return;
-                const dx = Math.abs(e.clientX - touchStartX);
-                const dy = Math.abs(e.clientY - touchStartY);
-                const dt = Date.now() - touchStartTime;
-                if (dx > 12 || dy > 12 || dt > 600) return; // Ignore scrolling or long press
-
-                // In playlist panels or queues, let YouTube change the video index in-page and auto-play immediately!
-                const playlistItem = e.target.closest('ytm-playlist-panel-video-renderer, ytm-playlist-video-renderer, .playlist-items, [class*="playlist-panel"]');
-                if (playlistItem) {
-                    userExplicitPaused = false;
-                    setTimeout(triggerPlayNow, 300);
-                    setTimeout(triggerPlayNow, 800);
-                    return; // DO NOT reload, let YouTube switch video smoothly and auto-play
-                }
-
-                // Locate destination video URL on the 1st single tap from feed or search
-                const anchor = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
-                let targetHref = anchor ? anchor.href : null;
-                if (!targetHref) {
-                    const card = e.target.closest('ytm-video-with-context-renderer, ytm-compact-video-renderer, ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, [class*="video-renderer"], ytm-media-item');
-                    if (card) {
-                        const inner = card.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
-                        if (inner && inner.href) targetHref = inner.href;
-                    }
-                }
-                if (!targetHref) return;
-
-                try {
-                    const targetUrl = new URL(targetHref, window.location.href);
-                    const curV = new URLSearchParams(window.location.search).get('v');
-                    const nextV = targetUrl.searchParams.get('v');
-                    if (nextV && nextV !== curV) {
-                        targetUrl.searchParams.set('autoplay', '1');
-                        userExplicitPaused = false;
-                        window.location.href = targetUrl.href;
-                    } else if (targetUrl.pathname.startsWith('/shorts/') && targetUrl.pathname !== window.location.pathname) {
-                        userExplicitPaused = false;
-                        window.location.href = targetUrl.href;
-                    }
-                } catch (err) {}
-            }, { capture: true, passive: true });
-
-            // Continuous Song-by-Song & Playlist Autoplay: Automatically advances and plays the next video
+            // Continuous Song-by-Song & Playlist Autoplay: Only advances on /watch when inside a playlist
             function advancePlaylistOrQueue() {
                 if (!window.location.hostname.includes('youtube.com')) return;
                 userExplicitPaused = false;
+                if (!window.location.pathname.startsWith('/watch') || !window.location.search.includes('list=')) return;
 
                 const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
-                const isPlaylist = window.location.search.includes('list=') ||
-                                   (player && typeof player.getPlaylist === 'function' && Array.isArray(player.getPlaylist()) && player.getPlaylist().length > 0);
-
-                if (isPlaylist) {
-                    // Inside a playlist: advance via native player API without reloading the page
-                    if (player && typeof player.nextVideo === 'function') {
-                        try {
-                            player.nextVideo();
-                            setTimeout(triggerPlayNow, 500);
-                            return;
-                        } catch (e) {}
-                    }
-                    const nextBtn = document.querySelector('.ytp-next-button, [aria-label*="Next" i], .ytm-playlist-next-button');
-                    if (nextBtn && typeof nextBtn.click === 'function') {
-                        try {
-                            nextBtn.click();
-                            setTimeout(triggerPlayNow, 500);
-                            return;
-                        } catch (e) {}
-                    }
-                }
-
-                // Autoplay next button or up-next queue item
-                const nextAnchor = document.querySelector('.ytm-autonav-endscreen-button-next, a[aria-label*="Next" i], .ytp-next-button');
-                if (nextAnchor && nextAnchor.href) {
-                    const u = new URL(nextAnchor.href, window.location.href);
-                    u.searchParams.set('autoplay', '1');
-                    window.location.href = u.href;
-                    return;
-                }
-                if (nextAnchor && typeof nextAnchor.click === 'function') {
-                    try { nextAnchor.click(); return; } catch (err) {}
-                }
-
-                const nextCard = document.querySelector('ytm-video-with-context-renderer a[href*="/watch"], ytm-compact-video-renderer a[href*="/watch"]');
-                if (nextCard && nextCard.href) {
-                    const u = new URL(nextCard.href, window.location.href);
-                    u.searchParams.set('autoplay', '1');
-                    window.location.href = u.href;
-                    return;
-                }
-
                 if (player && typeof player.nextVideo === 'function') {
                     try {
                         player.nextVideo();
                         setTimeout(triggerPlayNow, 500);
-                    } catch (err) {}
+                        return;
+                    } catch (e) {}
+                }
+                const nextBtn = document.querySelector('.ytp-next-button, [aria-label*="Next" i], .ytm-playlist-next-button');
+                if (nextBtn && typeof nextBtn.click === 'function') {
+                    try {
+                        nextBtn.click();
+                        setTimeout(triggerPlayNow, 500);
+                        return;
+                    } catch (e) {}
                 }
             }
             window.__fokk_advancePlaylistOrQueue = advancePlaylistOrQueue;
 
+            // Only advance playlists when an active playlist track ends
             document.addEventListener('ended', function(e) {
-                setTimeout(advancePlaylistOrQueue, 600);
+                if (window.location.pathname.startsWith('/watch') && window.location.search.includes('list=')) {
+                    setTimeout(advancePlaylistOrQueue, 600);
+                }
             }, { capture: true, passive: true });
 
-            // Ensure playback starts automatically whenever watch page loads or updates
+            // Ensure playback starts automatically when navigating to a new watch page
             window.addEventListener('yt-navigate-finish', function() {
                 userExplicitPaused = false;
-                setTimeout(triggerPlayNow, 300);
-                setTimeout(triggerPlayNow, 800);
+                if (window.location.pathname.startsWith('/watch')) {
+                    setTimeout(triggerPlayNow, 300);
+                    setTimeout(triggerPlayNow, 800);
+                }
             }, { capture: true, passive: true });
 
             // Screen-off background audio: Prevent YouTube from pausing when screen locks or app is minimized
@@ -532,69 +474,7 @@
             } catch (e) {}
         }
 
-        // 2. Network Hook: Fetch & XHR Interceptor (YouTube & Instagram)
-        if (window.fetch) {
-            const origFetch = window.fetch;
-            function makeSafeHeaders(originalHeaders) {
-                const safe = {};
-                try {
-                    originalHeaders.forEach(function(val, key) {
-                        const k = key.toLowerCase();
-                        if (k === 'content-encoding' || k === 'content-length' || k === 'transfer-encoding') return;
-                        safe[key] = val;
-                    });
-                } catch (e) {}
-                safe['content-type'] = 'application/json; charset=utf-8';
-                return safe;
-            }
-
-            window.fetch = async function(...args) {
-                try {
-                    if (args[1]) {
-                        if (!args[1].headers) args[1].headers = {};
-                        if (args[1].headers instanceof Headers) {
-                            if (!args[1].headers.has('X-Forwarded-For')) args[1].headers.set('X-Forwarded-For', '104.28.19.1');
-                            if (!args[1].headers.has('Client-IP')) args[1].headers.set('Client-IP', '104.28.19.1');
-                        } else if (typeof args[1].headers === 'object') {
-                            if (!args[1].headers['X-Forwarded-For']) args[1].headers['X-Forwarded-For'] = '104.28.19.1';
-                            if (!args[1].headers['Client-IP']) args[1].headers['Client-IP'] = '104.28.19.1';
-                        }
-                    }
-                } catch (e) {}
-                const response = await origFetch.apply(this, args);
-                try {
-                    const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '');
-                    // Intercept YouTube in-page dynamic player endpoints
-                    if (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next') ||
-                        url.includes('/youtubei/v1/reel/reel_item_watch') || url.includes('/youtubei/v1/browse')) {
-                        const clone = response.clone();
-                        const data = await clone.json();
-                        sanitizeYtPlayerResponse(data);
-                        return new Response(JSON.stringify(data), {
-                            status: response.status,
-                            statusText: response.statusText,
-                            headers: makeSafeHeaders(response.headers)
-                        });
-                    }
-                    if (url.includes('/graphql/query') || url.includes('/api/v1/feed/timeline/') ||
-                        url.includes('/api/v1/feed/reels_tray/') || url.includes('/api/v1/discover/') ||
-                        url.includes('/api/v1/igtv/') || url.includes('/api/v1/clips/') ||
-                        url.includes('/api/v1/feed/user/') || url.includes('/ajax/bz')) {
-                        const clone = response.clone();
-                        const data = await clone.json();
-                        if (sanitizeInstagramData(data)) {
-                            return new Response(JSON.stringify(data), {
-                                status: response.status,
-                                statusText: response.statusText,
-                                headers: makeSafeHeaders(response.headers)
-                            });
-                        }
-                    }
-                } catch (e) {}
-                return response;
-            };
-        }
-
+        // 2. Network Hook: XHR response text interceptor (Response.prototype.json handles fetch in memory)
         if (window.XMLHttpRequest) {
             const origOpen = XMLHttpRequest.prototype.open;
             const origSend = XMLHttpRequest.prototype.send;
@@ -603,10 +483,6 @@
                 return origOpen.apply(this, arguments);
             };
             XMLHttpRequest.prototype.send = function(body) {
-                try {
-                    this.setRequestHeader('X-Forwarded-For', '104.28.19.1');
-                    this.setRequestHeader('Client-IP', '104.28.19.1');
-                } catch (e) {}
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
                     const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') ||
                                  this._fokkTargetUrl.includes('/youtubei/v1/next') ||
@@ -627,11 +503,6 @@
                         };
                         this.addEventListener('readystatechange', modifyYtResponse, { capture: true });
                         this.addEventListener('load', modifyYtResponse, { capture: true });
-                        const origOnReady = this.onreadystatechange;
-                        this.onreadystatechange = function() {
-                            modifyYtResponse();
-                            if (origOnReady) origOnReady.apply(this, arguments);
-                        };
                     }
                     const isIg = this._fokkTargetUrl.includes('/graphql/query') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/timeline/') ||
@@ -655,11 +526,6 @@
                         };
                         this.addEventListener('readystatechange', modifyResponse, { capture: true });
                         this.addEventListener('load', modifyResponse, { capture: true });
-                        const origOnReady = this.onreadystatechange;
-                        this.onreadystatechange = function() {
-                            modifyResponse();
-                            if (origOnReady) origOnReady.apply(this, arguments);
-                        };
                     }
                 }
                 return origSend.apply(this, arguments);
@@ -710,10 +576,7 @@
         .ytp-ad-text,
         .ytp-ad-preview-text,
         div[class*="ad-showing"] .ytp-ad-text,
-        ytm-inline-player,
-        .inline-player,
-        ytm-inline-player-renderer,
-        .ytm-inline-preview-scrim,
+
 
         /* News & Media Article Ad Units, Sponsored Boxes & Overlays */
         div[id*="google_ads"],
@@ -1057,12 +920,9 @@
             try { el.remove(); } catch (e) {}
         });
 
-        // 4. Ensure ad elements are removed without forcing v.play() loop (which interferes with YouTube buffering)
+        // 4. Ensure active video is unmuted without forcing video.play() in a loop
         if (typeof window.__fokk_unmuteYt === 'function') {
             try { window.__fokk_unmuteYt(); } catch (e) {}
-        }
-        if (typeof window.__fokk_triggerPlay === 'function') {
-            try { window.__fokk_triggerPlay(); } catch (e) {}
         }
 
         // 5. Continuous Song Autoplay: Enable autonav and advance when song finishes
@@ -1469,6 +1329,8 @@
 
     function defuseClickjackingOverlays() {
         if (!isAiFilterEnabled) return;
+        const host = window.location.hostname;
+        if (host.includes('youtube.com') || host.includes('instagram.com')) return;
         try {
             unlockPageScrolling();
             const vw = window.innerWidth || document.documentElement.clientWidth;
@@ -1556,13 +1418,18 @@
             setTimeout(function() {
                 pendingSweep = false;
                 if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
-                if (host.includes('youtube.com')) runYouTubeAdSkipper();
-                if (host.includes('instagram.com')) scrubInstagramAds();
-                scrubNewsAds();
-                scrubAppPromos();
-                scrubCookieBanners();
-                scrubAdultAndStreamingAds();
-                unlockPageScrolling();
+                if (host.includes('youtube.com')) {
+                    runYouTubeAdSkipper();
+                    scrubYouTubeSponsored();
+                } else if (host.includes('instagram.com')) {
+                    scrubInstagramAds();
+                } else {
+                    scrubNewsAds();
+                    scrubAppPromos();
+                    scrubCookieBanners();
+                    scrubAdultAndStreamingAds();
+                    unlockPageScrolling();
+                }
                 document.querySelectorAll('video').forEach(hookVideoPlayback);
             }, 500);
         });
@@ -1572,27 +1439,29 @@
         });
     } catch (e) {}
 
-    // Initial pass on DOMContentLoaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            scrubAiContent();
+    function runInitialScrub() {
+        const host = window.location.hostname;
+        if (host.includes('google.') || host.includes('bing.com')) scrubAiContent();
+        if (host.includes('youtube.com')) {
+            runYouTubeAdSkipper();
+            scrubYouTubeSponsored();
+        } else if (host.includes('instagram.com')) {
+            scrubInstagramAds();
+        } else {
             scrubNewsAds();
             scrubAppPromos();
             scrubCookieBanners();
             scrubAdultAndStreamingAds();
-            runYouTubeAdSkipper();
-            scrubInstagramAds();
-            document.querySelectorAll('video').forEach(hookVideoPlayback);
-        });
-    } else {
-        scrubAiContent();
-        scrubNewsAds();
-        scrubAppPromos();
-        scrubCookieBanners();
-        scrubAdultAndStreamingAds();
-        runYouTubeAdSkipper();
-        scrubInstagramAds();
+            unlockPageScrolling();
+        }
         document.querySelectorAll('video').forEach(hookVideoPlayback);
+    }
+
+    // Initial pass on DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInitialScrub);
+    } else {
+        runInitialScrub();
     }
 
     // =========================================================================

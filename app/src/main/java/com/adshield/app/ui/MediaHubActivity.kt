@@ -73,6 +73,9 @@ import android.widget.RadioButton
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.os.Environment
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -1807,7 +1810,14 @@ open class MediaHubActivity : AppCompatActivity() {
         if (previousWindowWasFullscreen == false) {
             window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
         }
-        previousRequestedOrientation?.let { requestedOrientation = it }
+        previousRequestedOrientation?.let { requestedOrientation = it } ?: run {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+
+        try {
+            val insetsController = WindowCompat.getInsetsController(window, decor)
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
+        } catch (e: Exception) {}
 
         val callback = customViewCallback
         customView = null
@@ -2363,7 +2373,18 @@ open class MediaHubActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                try {
+                    val insetsController = WindowCompat.getInsetsController(window, decor)
+                    insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    insetsController.hide(WindowInsetsCompat.Type.systemBars())
+                } catch (e: Exception) {}
+
+                // Auto-rotate to sensor landscape so widescreen videos fill display
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+                view.isFocusable = true
+                view.isFocusableInTouchMode = true
+                view.requestFocus()
                 binding.fullscreenContainer.addView(
                     view,
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -6110,7 +6131,7 @@ open class MediaHubActivity : AppCompatActivity() {
             addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
             updateTabCounter()
             setBrowserChromeVisible(true)
-            Toast.makeText(this, "🔥 Session burned. All history, cache & tabs purged.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Session burned. All history, cache & tabs purged.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Log.e(TAG, "Error burning session", e)
         }

@@ -295,7 +295,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="🔥 Burn Session (Purge All History &amp; Cache)"
+                        android:text="Burn Session (Purge All History &amp; Cache)"
                         android:textColor="#FF6B6B"
                         android:textSize="12.5sp"
                         android:textStyle="bold" />

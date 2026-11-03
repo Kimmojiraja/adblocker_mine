@@ -1,6 +1,6 @@
 {
-  "versionCode": 98,
-  "versionName": "1.0.98",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.98/app-debug.apk",
-  "changelog": "- Permanent Fix for Three-Dots & All Section Action Buttons: Fixed SVG pointer interception across all buttons with pointer-events: none, ensuring clicks never misfire or get swallowed by inner SVG paths/circles.\n- Robust Popover Dismiss Logic: Upgraded document dismiss listener with closest() checks to prevent premature menu closure during touch events.\n- Complete Event Handling: Added stopPropagation and vibration feedback across all popover items, command bar buttons, and 4 home essential circular discs.\n- Zero Sticky Hovers on Mobile: Scoped all hover interactions to fine pointers with responsive active touch states."
+  "versionCode": 99,
+  "versionName": "1.0.99",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.99/app-debug.apk",
+  "changelog": "- Direct Native Feature Hubs Connection: Home Page three-dots button now directly opens the full Native Browser Menu Bottom Sheet (showBrowserMenuDialog) giving 1-tap access to General & Search Engines, Shield & Ghost Stealth, Media/PiP, and Daily Essentials.\n- Daylight Mode (Light Theme): Added clean Light Theme support accessible directly from General & Search Engines and Wallpapers & Themes on the Home Page.\n- Unified Experience: Home Page and browsing view now share the same rich browser engine controls."
 }

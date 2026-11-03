@@ -33,6 +33,71 @@
             }
         }
 
+        body.light-theme {
+            --bg-color: #F1F5F9;
+            --surface-card: #FFFFFF;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #64748B;
+            --tile-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+            color: #0F172A;
+            background: #F1F5F9 !important;
+        }
+
+        body.light-theme .start-command-card {
+            background: #FFFFFF !important;
+            border-color: rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        body.light-theme .start-command-input {
+            color: #0F172A !important;
+        }
+
+        body.light-theme .start-command-input::placeholder {
+            color: #64748B !important;
+        }
+
+        body.light-theme .command-icon-btn {
+            color: #334155 !important;
+        }
+
+        body.light-theme .tab-badge-num {
+            border-color: #CBD5E1 !important;
+            background: #E2E8F0 !important;
+            color: #0F172A !important;
+        }
+
+        body.light-theme .menu-dots-btn svg circle {
+            fill: #334155 !important;
+            stroke: #334155 !important;
+        }
+
+        body.light-theme .hero-wordmark {
+            color: #0F172A !important;
+        }
+
+        body.light-theme .home-essential {
+            background: rgba(255, 255, 255, 0.96) !important;
+            border-color: rgba(0, 0, 0, 0.08) !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        body.light-theme .speed-dial-card {
+            background: #FFFFFF !important;
+            border-color: rgba(0, 0, 0, 0.06) !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        body.light-theme .speed-dial-title {
+            color: #0F172A !important;
+        }
+
+        body.light-theme .speed-dial-url {
+            color: #64748B !important;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -2286,6 +2351,9 @@
                 <div class="wallpaper-card" onclick="setWallpaper('aurora')" style="background-image: url('https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=400&q=80');">
                     <span class="wp-title">Aurora</span>
                 </div>
+                <div class="wallpaper-card" onclick="setWallpaper('pearl_light')" style="background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A;">
+                    <span class="wp-title" style="color: #0F172A;">Pearl Light</span>
+                </div>
             </div>
             <input type="file" id="wallpaperFileInput" accept="image/*" style="display:none;" onchange="handleWallpaperFileSelected(event)">
             <button class="modal-btn" onclick="closeThemeModal()" style="margin-top: 10px;">Done</button>
@@ -2544,6 +2612,14 @@
                 if (typeof e.preventDefault === 'function') e.preventDefault();
             }
             if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) {}
+            try {
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function') {
+                    window.FokkShieldBridge.openMenu();
+                    return;
+                }
+            } catch (err) {
+                console.error("openMenu error", err);
+            }
             const popover = document.getElementById('commandMenuPopover');
             const engPop = document.getElementById('engineDropdownPopover');
             if (engPop) engPop.classList.remove('active');
@@ -3190,6 +3266,7 @@
             body.style.backgroundSize = '';
             body.style.backgroundPosition = '';
             body.style.backgroundRepeat = '';
+            body.classList.remove('light-theme');
 
             if (themeType === 'custom') {
                 let data = customData;
@@ -3207,6 +3284,10 @@
                     body.style.backgroundAttachment = 'fixed';
                     body.style.backgroundRepeat = 'no-repeat';
                 }
+            } else if (themeType === 'pearl_light') {
+                body.classList.add('light-theme');
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = '#F1F5F9';
             } else if (themeType === 'pure_obsidian') {
                 body.style.backgroundImage = 'none';
                 body.style.backgroundColor = '#11131C';
@@ -4531,6 +4612,12 @@
         loadSpeedDials();
         loadTrendingTopics();
         updateGhostModeStatus();
+        try {
+            const savedTheme = localStorage.getItem('fokk_global_theme') || 'default';
+            if (savedTheme && window.applyThemeFromNative) {
+                window.applyThemeFromNative(savedTheme, '');
+            }
+        } catch (e) {}
         setTimeout(initCommandCard, 80);
         setTimeout(initCommandCard, 350);
 

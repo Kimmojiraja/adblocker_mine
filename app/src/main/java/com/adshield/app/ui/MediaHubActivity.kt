@@ -5128,6 +5128,17 @@ open class MediaHubActivity : AppCompatActivity() {
             Toast.makeText(this, if (checked) "HTTPS-Only Mode Enabled" else "HTTPS-Only Mode Disabled", Toast.LENGTH_SHORT).show()
         }
 
+        val isLightMode = prefs.getBoolean(PREF_LIGHT_THEME, false)
+        b.switchLightMode.isChecked = isLightMode
+        b.textLightModeDesc.text = if (isLightMode) "Light theme active" else "Dark Cyberpunk active (Default)"
+        b.switchLightMode.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(PREF_LIGHT_THEME, checked).apply()
+            b.textLightModeDesc.text = if (checked) "Light theme active" else "Dark Cyberpunk active (Default)"
+            val themeKey = if (checked) "pearl_light" else "default"
+            activeWebView?.evaluateJavascript("if (typeof setWallpaper === 'function') setWallpaper('$themeKey');", null)
+            Toast.makeText(this, if (checked) "Daylight Mode Enabled" else "Dark Mode Enabled", Toast.LENGTH_SHORT).show()
+        }
+
         dialog.show()
     }
 
@@ -6555,6 +6566,7 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val LEGACY_PREFS_NAME = "fokk_browser_prefs"
         private const val LOCAL_PREFS_NAME = "fokk_browser_local"
         private const val PREF_TOOLBAR_POSITION = "fokk_toolbar_position"
+        private const val PREF_LIGHT_THEME = "fokk_light_theme"
         private const val PREF_SEARCH_ENGINE = "fokk_search_engine"
         private const val PREF_REMOTE_SUGGESTIONS = "fokk_remote_search_suggestions"
         private const val PREF_STRICT_ADBLOCK = "filter_strict_adblock"

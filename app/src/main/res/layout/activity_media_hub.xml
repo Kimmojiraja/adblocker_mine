@@ -269,6 +269,16 @@
             </FrameLayout>
 
             <ImageButton
+                android:id="@+id/btnNavFavorite"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_marginStart="1dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_star"
+                app:tint="@color/text_primary"
+                android:contentDescription="Favorite this page" />
+
+            <ImageButton
                 android:id="@+id/btnNavMenu"
                 android:layout_width="34dp"
                 android:layout_height="34dp"

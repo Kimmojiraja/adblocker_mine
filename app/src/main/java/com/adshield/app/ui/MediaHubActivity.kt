@@ -655,25 +655,46 @@ open class MediaHubActivity : AppCompatActivity() {
                     "culture", "entertainment" -> "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-US&gl=US&ceid=US:en"
                     else -> "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
                 }
-                val conn = URL(rssUrl).openConnection() as HttpURLConnection
-                conn.connectTimeout = 4500
-                conn.readTimeout = 4500
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+
+                var currentRssUrl = rssUrl
+                var conn: HttpURLConnection
+                var redirects = 0
+                while (true) {
+                    val url = URL(currentRssUrl)
+                    conn = url.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 5000
+                    conn.readTimeout = 5000
+                    conn.instanceFollowRedirects = true
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36")
+                    val code = conn.responseCode
+                    if ((code == 301 || code == 302 || code == 307 || code == 308) && redirects < 5) {
+                        val loc = conn.getHeaderField("Location")
+                        if (!loc.isNullOrBlank()) {
+                            currentRssUrl = loc
+                            redirects++
+                            continue
+                        }
+                    }
+                    break
+                }
+
                 if (conn.responseCode == 200) {
                     val xml = conn.inputStream.bufferedReader().use { it.readText() }
                     val itemRegex = Regex("<item>(.*?)</item>", RegexOption.DOT_MATCHES_ALL)
                     val titleRegex = Regex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>|<title>(.*?)</title>")
                     val sourceRegex = Regex("<source[^>]*>(.*?)</source>")
                     val linkRegex = Regex("<link>(.*?)</link>")
+                    val mediaRegex = Regex("""<media:content[^>]+url=["']([^"']+)["']|<enclosure[^>]+url=["']([^"']+)["']|<img[^>]+src=["']([^"']+)["']""")
 
                     val jsonArr = JSONArray()
-                    itemRegex.findAll(xml).take(10).forEach { itemMatch ->
+                    itemRegex.findAll(xml).take(12).forEach { itemMatch ->
                         val content = itemMatch.groupValues[1]
                         val rawTitle = titleRegex.find(content)?.let { it.groupValues[1].ifEmpty { it.groupValues[2] } } ?: return@forEach
                         if (rawTitle.contains("Google News", ignoreCase = true)) return@forEach
                         val titleClean = rawTitle.replace("&amp;", "&").replace("&quot;", "\"").replace("&#39;", "'").trim()
                         val source = sourceRegex.find(content)?.groupValues?.get(1)?.replace("&amp;", "&") ?: "News"
                         val link = linkRegex.find(content)?.groupValues?.get(1) ?: ""
+                        val mediaUrl = mediaRegex.find(content)?.let { it.groupValues[1].ifEmpty { it.groupValues[2].ifEmpty { it.groupValues[3] } } } ?: ""
                         val query = titleClean.substringBefore(" - ")
 
                         val obj = JSONObject().apply {
@@ -683,6 +704,7 @@ open class MediaHubActivity : AppCompatActivity() {
                             put("query", query)
                             put("category", norm)
                             put("url", link)
+                            if (mediaUrl.isNotBlank()) put("img", mediaUrl)
                         }
                         jsonArr.put(obj)
                     }
@@ -1570,6 +1592,12 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
                 val isExplicitUserNav = userGesture || hasRecentUserInteraction()
+
+                // Prevent unsolicited auto-redirects to YouTube Shorts without explicit user gesture
+                if ((rawUrl.contains("youtube.com/shorts/") || rawUrl.contains("m.youtube.com/shorts/")) && !isExplicitUserNav) {
+                    Log.d(TAG, "Blocked unsolicited auto-redirect to YouTube Shorts")
+                    return true
+                }
 
                 // Only block rogue unsolicited redirects (e.g. pop-unders or unauthorized script redirects)
                 // NEVER block navigation when the user explicitly tapped or navigated!
@@ -3356,6 +3384,24 @@ open class MediaHubActivity : AppCompatActivity() {
             showTabSwitcherDialog()
         }
 
+        binding.btnNavFavorite.setOnClickListener {
+            val activeWeb = activeWebView
+            val targetUrl = activeWeb?.url
+            if (!targetUrl.isNullOrEmpty() && !targetUrl.contains("fokk_start.html")) {
+                val isSaved = savedPagesList.any { it.url == targetUrl }
+                if (isSaved) {
+                    showSavedPagesDialog()
+                } else {
+                    saveCurrentPageOffline(activeWeb)
+                    addBookmark(targetUrl, activeWeb.title ?: "Favorite Page")
+                    binding.btnNavFavorite.setColorFilter(android.graphics.Color.parseColor("#FBBF24"))
+                    Toast.makeText(this@MediaHubActivity, "⭐ Added to Favorites & Bookmarks! (Saved offline)", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                showSavedPagesDialog()
+            }
+        }
+
         binding.btnNavMenu.setOnClickListener {
             showBrowserMenuDialog()
         }
@@ -3679,6 +3725,13 @@ open class MediaHubActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 binding.urlInput.setText(url ?: "")
             }
+        }
+        val isHome = isHomePageUrl(url)
+        binding.btnNavFavorite.visibility = if (isHome) View.GONE else View.VISIBLE
+        if (!isHome) {
+            val targetUrl = url ?: activeWebView?.url ?: ""
+            val isSaved = savedPagesList.any { it.url == targetUrl }
+            binding.btnNavFavorite.setColorFilter(if (isSaved) android.graphics.Color.parseColor("#FBBF24") else android.graphics.Color.parseColor("#94A3B8"))
         }
         updateToolbarLayoutForUrl(url, animated = true)
     }
@@ -4316,7 +4369,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     }.getOrNull()
                     tempArchiveFile.delete()
                     if (saved != null) {
-                        Toast.makeText(this@MediaHubActivity, "Saved full visual archive for offline use!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MediaHubActivity, "⭐ Added to Favorites & Bookmarks! (Saved offline)", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this@MediaHubActivity, "Could not save this page", Toast.LENGTH_LONG).show()
                     }
@@ -4564,13 +4617,22 @@ open class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
-        // 4. Save Page button
-        sheetBinding.btnMenuSave.alpha = if (isStartPage) 0.35f else 1.0f
-        sheetBinding.btnMenuSave.isEnabled = !isStartPage && !isPrivateProfile
-        if (isPrivateProfile) sheetBinding.btnMenuSave.alpha = 0.35f
+        // 4. Bookmark & Save Page button
+        val currentUrl = activeWebView?.url.orEmpty()
+        val isAlreadyBookmarked = if (isWebUrl(currentUrl)) offlinePageStore.list().any { it.url == currentUrl } else false
+        if (isAlreadyBookmarked) {
+            sheetBinding.btnMenuSave.imageTintList = android.content.res.ColorStateList.valueOf(0xFFFBBF24.toInt())
+        }
+        sheetBinding.btnMenuSave.alpha = if (isStartPage) 0.85f else 1.0f
+        sheetBinding.btnMenuSave.isEnabled = !isPrivateProfile
+        sheetBinding.btnMenuSave.contentDescription = if (isStartPage) "Favorites & Bookmarks" else "Favorite This Page"
         sheetBinding.btnMenuSave.setOnClickListener {
             dialog.dismiss()
-            saveCurrentPage()
+            if (isStartPage) {
+                showSavedPagesDialog()
+            } else {
+                saveCurrentPage()
+            }
         }
 
         // 5. Downloads button (opens standard downloads manager)

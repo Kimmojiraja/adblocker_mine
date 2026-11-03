@@ -870,42 +870,48 @@
         .hero-privacy-btn, .hero-livepulse-btn {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            background: transparent !important;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            border: 1px solid transparent !important;
-            border-radius: 9999px;
-            padding: 7px 15px;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            background: rgba(255, 255, 255, 0.06) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: 50% !important;
+            padding: 0;
             color: #FFFFFF !important;
-            font-size: 12px;
-            font-weight: 600;
             cursor: pointer;
-            box-shadow: none;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .hero-privacy-btn.ghost-mode-active {
-            border-color: transparent !important;
-            background: transparent !important;
-            color: #E9D5FF !important;
-            box-shadow: none;
+            border-color: rgba(192, 132, 252, 0.6) !important;
+            background: rgba(168, 85, 247, 0.22) !important;
+            color: #C084FC !important;
+            box-shadow: 0 0 16px rgba(192, 132, 252, 0.45);
         }
         .hero-privacy-btn.ghost-mode-active svg {
             color: #C084FC !important;
             stroke: #C084FC !important;
+            filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.7));
         }
 
+        .hero-livepulse-btn svg {
+            color: #38BDF8 !important;
+            stroke: #38BDF8 !important;
+            filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+        }
 
-
-        .hero-privacy-btn svg, .hero-livepulse-btn svg {
+        .hero-privacy-btn svg {
             color: #FFFFFF !important;
             stroke: #FFFFFF !important;
         }
 
         .hero-privacy-btn:active, .hero-livepulse-btn:active {
-            transform: scale(0.95);
-            background: transparent !important;
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.14) !important;
         }
 
         /* LIVE PULSE HUB CARD BUTTON ON HOMESCREEN */
@@ -1007,14 +1013,19 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 7px 12px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 6px 10px;
             color: var(--text-primary);
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
+            border-radius: 9999px;
+            transition: background 0.15s ease;
+        }
+        .pulse-back-btn:active {
+            background: rgba(255, 255, 255, 0.08) !important;
         }
 
         .pulse-bar-title {
@@ -1024,13 +1035,13 @@
         }
 
         .pulse-country-select {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            color: var(--fokk-cyan);
-            font-size: 12px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: var(--fokk-cyan) !important;
+            font-size: 12.5px;
             font-weight: 700;
-            padding: 7px 10px;
+            padding: 6px 8px;
             outline: none;
             cursor: pointer;
         }
@@ -1145,20 +1156,22 @@
         }
 
         .weather-edit-btn {
-            background: rgba(0, 229, 255, 0.12);
-            border: 1px solid rgba(0, 229, 255, 0.35);
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
             border-radius: 9999px;
-            padding: 5px 12px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 12px;
             font-weight: 700;
-            color: var(--fokk-cyan);
+            color: var(--fokk-cyan) !important;
             cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
             transition: all 0.15s ease;
         }
 
         .weather-edit-btn:active {
-            transform: scale(0.95);
-            background: rgba(0, 229, 255, 0.25);
+            opacity: 0.75;
         }
 
         .weather-main-row {
@@ -1489,7 +1502,21 @@
         .pulse-news-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; }
         .pulse-news-tag { display: none; }
         .pulse-news-footer { gap: 5px; flex-wrap: wrap; line-height: 1.3; }
-        .pulse-customize-btn { border: 1px solid var(--card-border); background: rgba(255,255,255,0.06); color: var(--text-primary); border-radius: 9px; padding: 7px 9px; font-size: 11px; font-weight: 700; }
+        .pulse-customize-btn {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: var(--fokk-cyan) !important;
+            border-radius: 9999px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .pulse-customize-btn:active {
+            background: rgba(0, 229, 255, 0.1) !important;
+        }
         .pulse-custom-panel { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px 0; }
         .pulse-custom-panel.active { display: grid; }
         .pulse-custom-panel label { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 12px; }
@@ -1502,25 +1529,222 @@
             .home-essential { font-size: 10px; }
         }
 
+        /* IN-APP VISUAL DISCOVERY & MEDIA VIDEO HUBS */
+        .visual-hub-screen, .video-hub-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #090D14;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .visual-hub-screen.active, .video-hub-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .visual-hub-bar, .video-hub-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #0D131F;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+        .visual-scroll-content, .video-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 16px 40px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 680px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .visual-search-box {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 6px 10px;
+        }
+        .visual-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #FFFFFF;
+            font-size: 13.5px;
+            font-weight: 500;
+        }
+        .visual-search-go {
+            background: linear-gradient(135deg, #7C3AED, #3B82F6);
+            border: none;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .visual-tags-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+        .visual-tags-strip::-webkit-scrollbar { display: none; }
+        .visual-tag-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: var(--text-secondary);
+            border-radius: 9999px;
+            padding: 6px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .visual-tag-btn.active {
+            background: linear-gradient(135deg, #00E5FF, #3B82F6);
+            color: #000000;
+            font-weight: 800;
+        }
+        .visual-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .visual-card {
+            border-radius: 14px;
+            overflow: hidden;
+            background: #131A29;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+        .visual-card:active {
+            transform: scale(0.97);
+        }
+        .visual-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+        .visual-card-info {
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .visual-card-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .visual-card-sub {
+            font-size: 10.5px;
+            color: var(--fokk-cyan);
+            font-weight: 600;
+        }
+        .video-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .video-card {
+            display: flex;
+            gap: 12px;
+            background: #131A29;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .video-card:active {
+            transform: scale(0.98);
+        }
+        .video-thumb-wrap {
+            position: relative;
+            width: 140px;
+            min-width: 140px;
+            height: 88px;
+        }
+        .video-thumb-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .video-duration {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .video-card-body {
+            padding: 8px 10px 8px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            overflow: hidden;
+        }
+        .video-card-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+        }
+        .video-card-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
     </style>
 </head>
 <body id="pageBody">
 
     <div class="main-container">
-        <!-- Compact top controls: icon-only Ghost Mode and Truth Pulse. -->
+        <!-- Prominent top controls: Cyber Ghost and Truth Pulse with distinctive icons and generous touch targets -->
         <div class="hero-top-bar">
-            <button class="hero-privacy-btn" id="heroGhostBtn" onclick="toggleGhostMode()" title="Toggle Ghost Mode" aria-label="Toggle Ghost Mode">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
-                    <circle cx="12" cy="12" r="2.5"/>
-                    <path d="m4 4 16 16"/>
+            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Truth Pulse Hub" aria-label="Open Truth Pulse">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12h4l3-8 4 16 3-8h7"/>
+                    <circle cx="21" cy="12" r="1.5" fill="currentColor"/>
                 </svg>
             </button>
-            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Truth Pulse Hub" aria-label="Open Truth Pulse">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="8"/>
-                    <path d="M12 4v4M20 12h-4M12 20v-4M4 12h4"/>
-                    <circle cx="12" cy="12" r="2"/>
+            <button class="hero-privacy-btn" id="heroGhostBtn" onclick="toggleGhostMode()" title="Toggle Ghost Mode" aria-label="Toggle Ghost Mode">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 10h.01M15 10h.01"/>
+                    <path d="M12 2a8 8 0 0 0-8 8v11l3-2 3 2 2-2 2 2 3-2 3 2V10a8 8 0 0 0-8-8z"/>
                 </svg>
             </button>
         </div>
@@ -1670,8 +1894,8 @@
         <!-- FOUR HOME ESSENTIALS: equal-width actions directly below search. -->
         <div class="home-essentials-strip" aria-label="Daily essentials">
             <button class="home-essential" onclick="openFavoritesAction()" title="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg><span>Favorites</span></button>
-            <button class="home-essential" onclick="openDialUrl('https://www.google.com/search?tbm=isch&q=trending+images')" title="Images"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg><span>Images</span></button>
-            <button class="home-essential" onclick="openDialUrl('https://www.youtube.com/results?search_query=trending+videos')" title="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg><span>Videos</span></button>
+            <button class="home-essential" onclick="openVisualHub()" title="Visuals & Wallpapers"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg><span>Images</span></button>
+            <button class="home-essential" onclick="openMediaVideoHub()" title="Trending Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg><span>Videos</span></button>
             <button class="home-essential" onclick="saveCurrentPageAction()" title="Save Page"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 17h8"/></svg><span>Save</span></button>
         </div>
 
@@ -1749,6 +1973,64 @@
                 <button class="modal-btn" onclick="addNewShortcut()" style="background: var(--fokk-cyan); color: #000; font-weight: 700;">Add Shortcut</button>
             </div>
             <button class="modal-btn" onclick="closeShortcutsManager()" style="background: rgba(255,255,255,0.06); color: var(--text-primary); margin-top: 8px;">Done</button>
+        </div>
+    </div>
+
+    <!-- 1. IN-APP VISUAL DISCOVERY & 4K WALLPAPER STUDIO MODAL -->
+    <div class="visual-hub-screen" id="visualHubModal">
+        <div class="visual-hub-bar">
+            <button class="pulse-back-btn" onclick="closeVisualHub()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Back</span>
+            </button>
+            <span class="pulse-bar-title">Visuals &amp; Wallpapers</span>
+            <button class="pulse-customize-btn" onclick="openDialUrl('https://unsplash.com')" title="Explore 4K Library">Unsplash 4K</button>
+        </div>
+        <div class="visual-scroll-content">
+            <div class="visual-search-box">
+                <input type="text" id="visualSearchInput" class="visual-search-input" placeholder="Search 4K visuals, cyberpunk, anime, landscapes..." onkeydown="if(event.key==='Enter') searchVisuals()">
+                <button class="visual-search-go" onclick="searchVisuals()">Search</button>
+            </div>
+            <div class="visual-tags-strip">
+                <button class="visual-tag-btn active" onclick="filterVisuals('all', this)">All Visuals</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('wallpapers', this)">4K Wallpapers</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('cyberpunk', this)">Cyberpunk &amp; Neon</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('nature', this)">Nature &amp; Skies</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('space', this)">Cosmos &amp; Space</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('anime', this)">Anime &amp; Concept</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('minimal', this)">Minimal 3D</button>
+            </div>
+            <div class="visual-grid" id="visualGridContainer">
+                <!-- Dynamically populated high-res cards -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. IN-APP TRENDING MEDIA & VIDEO HUB MODAL -->
+    <div class="video-hub-screen" id="videoHubModal">
+        <div class="video-hub-bar">
+            <button class="pulse-back-btn" onclick="closeVideoHub()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Back</span>
+            </button>
+            <span class="pulse-bar-title">Media &amp; Video Hub</span>
+            <button class="pulse-customize-btn" onclick="openDialUrl('https://www.youtube.com')" title="Ad-Free YouTube">Ad-Free YT</button>
+        </div>
+        <div class="video-scroll-content">
+            <div class="visual-search-box">
+                <input type="text" id="videoSearchInput" class="visual-search-input" placeholder="Search videos, music, gaming, science..." onkeydown="if(event.key==='Enter') searchVideos()">
+                <button class="visual-search-go" onclick="searchVideos()">Search</button>
+            </div>
+            <div class="visual-tags-strip">
+                <button class="visual-tag-btn active" onclick="filterVideos('trending', this)">Trending Now</button>
+                <button class="visual-tag-btn" onclick="filterVideos('music', this)">Music &amp; Lo-Fi</button>
+                <button class="visual-tag-btn" onclick="filterVideos('gaming', this)">Gaming &amp; Tech</button>
+                <button class="visual-tag-btn" onclick="filterVideos('science', this)">Science &amp; Space</button>
+                <button class="visual-tag-btn" onclick="filterVideos('cinema', this)">Movie Trailers</button>
+            </div>
+            <div class="video-grid" id="videoGridContainer">
+                <!-- Dynamically populated video cards -->
+            </div>
         </div>
     </div>
 
@@ -3091,31 +3373,58 @@
 
             // SPORTS
             {
-                title: "Champions League Quarterfinals: Dramatic Stoppage Time Thriller Seals Semifinal Spot",
+                title: "Champions League Knockout Stage: Stunning 94th-Minute Decider Lights Up Europe",
                 category: "sports",
                 tag: "Football",
-                source: "ESPN",
-                time: "40m ago",
-                img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=360&q=80",
-                query: "Champions league football quarterfinal match highlights"
+                source: "ESPN FC",
+                time: "20m ago",
+                img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=640&q=80",
+                query: "Champions League knockout stage match highlights results"
             },
             {
-                title: "Formula 1 Grand Prix: Next-Gen Ground-Effect Aerodynamics Showcase Record Overtakes",
+                title: "Formula 1 2026 Season: Next-Gen Active Aero & Sustainable Biofuels Debut on Track",
                 category: "sports",
                 tag: "Motorsport",
                 source: "Motorsport.com",
-                time: "2h ago",
-                img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=360&q=80",
-                query: "Formula 1 grand prix race results standings"
+                time: "45m ago",
+                img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=80",
+                query: "Formula 1 grand prix qualifying standings 2026"
             },
             {
-                title: "NBA Playoffs: 50-Point Masterclass Propels Championship Contender to Lead",
+                title: "NBA Championship Race: 48-Point Triple-Double Sensation Seals Overtime Victory",
                 category: "sports",
                 tag: "Basketball",
                 source: "The Athletic",
+                time: "1h ago",
+                img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=640&q=80",
+                query: "NBA scores standings highlights basketball today"
+            },
+            {
+                title: "Premier League Title Race Heats Up as Top Contenders Separated by Single Goal",
+                category: "sports",
+                tag: "Premier League",
+                source: "Sky Sports",
+                time: "2h ago",
+                img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=640&q=80",
+                query: "Premier League football table results highlights"
+            },
+            {
+                title: "ICC T20 Championship: Record Run Chase Shatters Records in Thrilling Super Over",
+                category: "sports",
+                tag: "Cricket",
+                source: "Cricinfo",
                 time: "3h ago",
-                img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=360&q=80",
-                query: "NBA playoffs scores highlights basketball standings"
+                img: "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=640&q=80",
+                query: "Cricket T20 championship scores match results"
+            },
+            {
+                title: "Grand Slam Tennis: 5-Set Classic Under Stadium Lights Caps Off Unforgettable Final",
+                category: "sports",
+                tag: "Tennis",
+                source: "Tennis Channel",
+                time: "4h ago",
+                img: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=640&q=80",
+                query: "Grand Slam tennis championship finals scores"
             },
 
             // ENTERTAINMENT
@@ -3412,23 +3721,80 @@
                 return;
             }
 
-            const fallbackPhotos = {
-                tech: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=640&q=82",
-                business: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=640&q=82",
-                science: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=640&q=82",
-                sports: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=640&q=82",
-                world: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=640&q=82",
-                culture: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=640&q=82",
-                all: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=640&q=82"
+            const editorialPhotoPool = {
+                tech: [
+                    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=640&q=80"
+                ],
+                business: [
+                    "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=640&q=80"
+                ],
+                sports: [
+                    "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=640&q=80"
+                ],
+                world: [
+                    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1572949645841-094f3a9c4c94?auto=format&fit=crop&w=640&q=80"
+                ],
+                science: [
+                    "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=640&q=80"
+                ],
+                culture: [
+                    "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=640&q=80"
+                ],
+                all: [
+                    "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1476242906366-d8eb64c2f661?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?auto=format&fit=crop&w=640&q=80"
+                ]
             };
 
-            items.forEach(item => {
+            function getDynamicArticlePhoto(item, idx) {
+                if (item.img && typeof item.img === 'string' && item.img.startsWith('http')) {
+                    return item.img;
+                }
+                const cat = (item.category || '').toLowerCase();
+                const pool = editorialPhotoPool[cat] || editorialPhotoPool.all;
+                let hash = 0;
+                const str = (item.title || '') + (item.source || '') + idx;
+                for (let i = 0; i < str.length; i++) {
+                    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return pool[Math.abs(hash) % pool.length];
+            }
+
+            items.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'pulse-news-card';
                 card.onclick = () => openPulseQuery(item.query || item.title);
-                const imgSrc = item.img || fallbackPhotos[item.category] || fallbackPhotos.all;
+                const imgSrc = getDynamicArticlePhoto(item, index);
                 card.innerHTML = `
-                    <img src="${imgSrc}" alt="News" class="pulse-news-img" onerror="this.src='${fallbackPhotos.all}'">
+                    <img src="${imgSrc}" alt="News" class="pulse-news-img" onerror="this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=640&q=80'">
                     <div class="pulse-news-body">
                         <div class="pulse-news-title">${item.title}</div>
                         <div class="pulse-news-footer">
@@ -3680,10 +4046,12 @@
         }
 
         const sampleSports = [
-            { league: "Champions League", match: "Real Madrid 2 - 1 Bayern Munich", status: "FT" },
-            { league: "NBA Finals", match: "Boston Celtics 112 - 108 Golden State", status: "FT" },
-            { league: "Formula 1", match: "Monaco GP: Ferrari P1 • Red Bull P2", status: "Race Day" },
-            { league: "Premier League", match: "Arsenal 3 - 1 Chelsea", status: "FT" }
+            { league: "Champions League", match: "Arsenal 2 - 1 PSG (Aggregate 3-2)", status: "FT" },
+            { league: "NBA Championship", match: "Lakers 118 - 114 Nuggets (OT)", status: "FT" },
+            { league: "Formula 1 2026", match: "Silverstone GP: McLaren P1 • Ferrari P2", status: "Race Day" },
+            { league: "Premier League", match: "Liverpool 3 - 2 Man City (90+4')", status: "FT" },
+            { league: "IPL / T20 Cricket", match: "Mumbai 198/4 beat Chennai 195/6", status: "FT" },
+            { league: "Grand Slam Final", match: "Alcaraz def. Sinner 6-4, 4-6, 7-6, 6-3", status: "FT" }
         ];
 
         function renderPulseSports() {
@@ -3703,6 +4071,274 @@
                 `;
                 list.appendChild(card);
             });
+        }
+
+        // VISUAL DISCOVERY & 4K WALLPAPER STUDIO
+        const visualLibrary = [
+            {
+                title: "Cyberpunk Neon Tokyo Cityscape",
+                category: "cyberpunk",
+                sub: "4K UHD • Neon Alley",
+                img: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Dolomite Mountain Ridge Alpenglow",
+                category: "nature",
+                sub: "Landscape • 4K Panorama",
+                img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Cosmic Deep Space Nebula & Stars",
+                category: "space",
+                sub: "James Webb • Deep Sky",
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Minimalist Architectural Geometry",
+                category: "minimal",
+                sub: "Architecture • Pure Lines",
+                img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Luminescent Cyber Grid & Matrix",
+                category: "cyberpunk",
+                sub: "Digital Art • 3D Render",
+                img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Majestic Alpine Lake Reflection",
+                category: "nature",
+                sub: "4K Nature • Crisp Water",
+                img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Astronaut Orbiting Planet Earth",
+                category: "space",
+                sub: "Orbital View • Atmospheric Rim",
+                img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Futuristic Synthwave Highway Sunset",
+                category: "anime",
+                sub: "Retrowave • Concept Art",
+                img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Misty Pine Forest Nordic Serenity",
+                category: "nature",
+                sub: "Atmospheric • 4K Forest",
+                img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Abstract Flowing Iridescent Glass",
+                category: "minimal",
+                sub: "Abstract 3D • Fluid Prism",
+                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Anime Cherry Blossom Rain & Lanterns",
+                category: "anime",
+                sub: "Digital Painting • Vibrant",
+                img: "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=800&q=82"
+            },
+            {
+                title: "Aurora Borealis Emerald Night Sky",
+                category: "space",
+                sub: "Northern Lights • Arctic",
+                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=82"
+            }
+        ];
+
+        let currentVisualCategory = 'all';
+
+        function openVisualHub() {
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+            renderVisualGrid(currentVisualCategory);
+            const m = document.getElementById('visualHubModal');
+            if (m) m.classList.add('active');
+        }
+
+        function closeVisualHub() {
+            const m = document.getElementById('visualHubModal');
+            if (m) m.classList.remove('active');
+        }
+
+        function filterVisuals(cat, btn) {
+            currentVisualCategory = cat;
+            document.querySelectorAll('#visualHubModal .visual-tag-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderVisualGrid(cat);
+        }
+
+        function renderVisualGrid(cat, query = '') {
+            const grid = document.getElementById('visualGridContainer');
+            if (!grid) return;
+            grid.innerHTML = '';
+            let list = visualLibrary;
+            if (cat !== 'all' && cat !== 'wallpapers') {
+                list = list.filter(v => v.category === cat);
+            }
+            if (query) {
+                const q = query.toLowerCase();
+                list = list.filter(v => v.title.toLowerCase().includes(q) || v.sub.toLowerCase().includes(q));
+            }
+            if (list.length === 0) {
+                grid.innerHTML = '<div style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No visuals found. Try another keyword.</div>';
+                return;
+            }
+            list.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'visual-card';
+                card.onclick = () => selectVisualWallpaper(item);
+                card.innerHTML = `
+                    <img src="${item.img}" alt="${item.title}" loading="lazy">
+                    <div class="visual-card-info">
+                        <span class="visual-card-title">${item.title}</span>
+                        <span class="visual-card-sub">${item.sub}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function searchVisuals() {
+            const input = document.getElementById('visualSearchInput');
+            const q = input ? input.value.trim() : '';
+            renderVisualGrid(currentVisualCategory, q);
+        }
+
+        function selectVisualWallpaper(item) {
+            if (confirm(`Apply "${item.title}" as your Fokk Startpage Wallpaper?`)) {
+                localStorage.setItem('fokk_custom_wallpaper', item.img);
+                localStorage.setItem('fokk_theme_color', 'custom');
+                applyTheme('custom');
+                try {
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setCustomWallpaper === 'function') {
+                        window.FokkShieldBridge.setCustomWallpaper(item.img);
+                    }
+                } catch (e) {}
+                showPreviewToast('✨ Wallpaper Applied Successfully!');
+                closeVisualHub();
+            }
+        }
+
+        // TRENDING MEDIA & VIDEO HUB
+        const videoLibrary = [
+            {
+                title: "NASA James Webb Captures Earliest Known Galaxy in Cosmic History",
+                category: "science",
+                channel: "NASA Deep Space",
+                duration: "14:22",
+                thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=nasa+james+webb+earliest+galaxy"
+            },
+            {
+                title: "Synthwave & Lo-Fi Beats to Relax / Study / Code Ad-Free 24/7",
+                category: "music",
+                channel: "ChilledCow Music",
+                duration: "LIVE",
+                thumb: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=lofi+hip+hop+radio+beats+to+relax+study"
+            },
+            {
+                title: "Unreal Engine 6 Tech Demo: Photorealistic Next-Gen Gaming Showcase",
+                category: "gaming",
+                channel: "IGN Tech",
+                duration: "11:45",
+                thumb: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=unreal+engine+6+tech+demo+showcase"
+            },
+            {
+                title: "Formula 1 2026 Regulations: How Ground-Effect Aerodynamics Changed Racing",
+                category: "trending",
+                channel: "F1 Official",
+                duration: "18:04",
+                thumb: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=formula+1+2026+aerodynamics+regulations"
+            },
+            {
+                title: "Next-Gen Quantum Computing Explained: 10,000 Logical Qubits Milestone",
+                category: "science",
+                channel: "Veritasium Tech",
+                duration: "21:30",
+                thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=quantum+computing+logical+qubits+explained"
+            },
+            {
+                title: "Official Movie Teaser: Dune-Scale Interstellar Sci-Fi Epic",
+                category: "cinema",
+                channel: "Warner Bros Pictures",
+                duration: "02:45",
+                thumb: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=480&q=80",
+                url: "https://www.youtube.com/results?search_query=official+movie+trailer+sci-fi+epic"
+            }
+        ];
+
+        let currentVideoCategory = 'trending';
+
+        function openMediaVideoHub() {
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+            renderVideoGrid(currentVideoCategory);
+            const m = document.getElementById('videoHubModal');
+            if (m) m.classList.add('active');
+        }
+
+        function closeVideoHub() {
+            const m = document.getElementById('videoHubModal');
+            if (m) m.classList.remove('active');
+        }
+
+        function filterVideos(cat, btn) {
+            currentVideoCategory = cat;
+            document.querySelectorAll('#videoHubModal .visual-tag-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderVideoGrid(cat);
+        }
+
+        function renderVideoGrid(cat, query = '') {
+            const grid = document.getElementById('videoGridContainer');
+            if (!grid) return;
+            grid.innerHTML = '';
+            let list = videoLibrary;
+            if (cat !== 'trending') {
+                list = list.filter(v => v.category === cat);
+            }
+            if (query) {
+                const q = query.toLowerCase();
+                list = list.filter(v => v.title.toLowerCase().includes(q) || v.channel.toLowerCase().includes(q));
+            }
+            if (list.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No videos found. Use search to find any video with ad-block protection.</div>';
+                return;
+            }
+            list.forEach(v => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = () => {
+                    closeVideoHub();
+                    openDialUrl(v.url);
+                };
+                card.innerHTML = `
+                    <div class="video-thumb-wrap">
+                        <img src="${v.thumb}" alt="${v.title}" loading="lazy">
+                        <span class="video-duration">${v.duration}</span>
+                    </div>
+                    <div class="video-card-body">
+                        <div class="video-card-title">${v.title}</div>
+                        <div class="video-card-meta">${v.channel} &bull; Ad-Free Stream</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function searchVideos() {
+            const input = document.getElementById('videoSearchInput');
+            const q = input ? input.value.trim() : '';
+            if (q) {
+                closeVideoHub();
+                openDialUrl(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`);
+            }
         }
 
         initCommandCard();

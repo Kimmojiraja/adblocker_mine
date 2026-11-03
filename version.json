@@ -1,6 +1,6 @@
 {
-  "versionCode": 92,
-  "versionName": "1.0.92",
+  "versionCode": 93,
+  "versionName": "1.0.93",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases",
-  "changelog": "- Permanent Native Bridge Persistence: Fixed bridge disconnect when navigating between start page and web pages so three-dots menu and tabs badge never fall back to mock popovers.\n- Update Flow & Crash Elimination: Added REQUEST_INSTALL_PACKAGES permission, replaced deprecated ProgressDialog with modern Material3-compatible dialog, and added direct GitHub Releases fallback to prevent crashes and infinite update loops.\n- Live Truth Pulse Data: Real-time weather, crypto, forex, and Google News RSS headlines with auto-retrying ingestion."
+  "changelog": "- YouTube Shorts Auto-Open Disarmed: Blocked unsolicited client-side SPA redirects to Shorts and restricted autoplay nextVideo strictly to playlists.\n- 1-Tap Browser Favorites & Offline Saving: Added dedicated dynamic Favorite Star directly on active browser toolbar and 3-dots sheet.\n- Redesigned Cyber Ghost & Pulse Logos: Enlarged touch targets with cyber ghost and cardiogram pulse waveforms.\n- Unboxed Live Pulse UI: Completely borderless floating controls for Back, Customize, Country Select, and Weather.\n- Unique Editorial News Pictures: Integrated dynamic article photo pool hashing to give each story a distinct picture.\n- Fresh 2026 Sports Headlines: Updated feeds for Champions League, Formula 1, NBA, Premier League, IPL, and Grand Slam.\n- In-App Visual Studio & Wallpapers: Browse 4K wallpapers and apply directly as startpage background.\n- In-App Trending Media & Video Hub: Curated categories and ad-free streaming launcher."
 }

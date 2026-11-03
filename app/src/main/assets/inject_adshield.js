@@ -361,6 +361,48 @@
                 }
             }, { capture: true, passive: true });
 
+            // Prevent unsolicited / unexpected auto-opening of YouTube Shorts without explicit user click
+            let lastUserShortsInteraction = 0;
+            const markShortsInteraction = function(e) {
+                const target = e.target;
+                if (!target) return;
+                const shortsEl = target.closest && target.closest(
+                    'a[href*="/shorts/"], [data-target-id*="shorts"], ytm-reel-shelf-renderer, ' +
+                    'ytm-shorts-lockup-view-model, .ytm-shorts-entry-point, [aria-label*="Shorts" i], ' +
+                    'ytd-rich-shelf-renderer[is-shorts], ytd-reel-shelf-renderer'
+                );
+                if (shortsEl) {
+                    lastUserShortsInteraction = Date.now();
+                }
+            };
+            document.addEventListener('pointerdown', markShortsInteraction, { capture: true, passive: true });
+            document.addEventListener('click', markShortsInteraction, { capture: true, passive: true });
+
+            // Hook history.pushState and replaceState in YouTube SPA to block unsolicited shorts auto-redirects
+            const origPushState = window.history.pushState;
+            window.history.pushState = function(state, title, url) {
+                if (url && typeof url === 'string' && url.includes('/shorts/')) {
+                    const elapsed = Date.now() - lastUserShortsInteraction;
+                    if (elapsed > 3500) {
+                        console.warn('[Fokk Shield] Blocked unsolicited YouTube Shorts auto-navigation:', url);
+                        return;
+                    }
+                }
+                return origPushState.apply(this, arguments);
+            };
+
+            const origReplaceState = window.history.replaceState;
+            window.history.replaceState = function(state, title, url) {
+                if (url && typeof url === 'string' && url.includes('/shorts/')) {
+                    const elapsed = Date.now() - lastUserShortsInteraction;
+                    if (elapsed > 3500) {
+                        console.warn('[Fokk Shield] Blocked unsolicited YouTube Shorts replaceState:', url);
+                        return;
+                    }
+                }
+                return origReplaceState.apply(this, arguments);
+            };
+
             // Playback & Unmute Trigger (Only triggers on /watch pages; NEVER on feed, search or Shorts)
             function triggerPlayNow() {
                 if (!window.location.hostname.includes('youtube.com')) return;
@@ -375,7 +417,7 @@
                     if (typeof player.setVolume === 'function') {
                         try { player.setVolume(100); } catch (e) {}
                     }
-                    if (typeof player.setAutonav === 'function') {
+                    if (typeof player.setAutonav === 'function' && window.location.search.includes('list=')) {
                         try { player.setAutonav(true); } catch (e) {}
                     }
                     if (typeof player.playVideo === 'function') {
@@ -925,13 +967,14 @@
             try { window.__fokk_unmuteYt(); } catch (e) {}
         }
 
-        // 5. Continuous Song Autoplay: Enable autonav and advance when song finishes
+        // 5. Continuous Playlist Autoplay: Only advance if explicitly inside a playlist
         try {
             const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
             if (player) {
-                if (typeof player.setAutonav === 'function') player.setAutonav(true);
-                if (typeof player.getPlayerState === 'function' && player.getPlayerState() === 0) {
-                    if (typeof player.nextVideo === 'function') player.nextVideo();
+                if (window.location.pathname.startsWith('/watch') && window.location.search.includes('list=')) {
+                    if (typeof player.getPlayerState === 'function' && player.getPlayerState() === 0) {
+                        if (typeof player.nextVideo === 'function') player.nextVideo();
+                    }
                 }
             }
         } catch (e) {}

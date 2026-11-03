@@ -1,6 +1,6 @@
 {
-  "versionCode": 96,
-  "versionName": "1.0.96",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.96/app-debug.apk",
-  "changelog": "- Official Search Engine Logos: Rendered exact official vector logos matching reference for Microsoft Bing (Fluent ribbon 'b'), Google (4-color G), DuckDuckGo (Dax duck badge), Ecosia (standalone tree canopy & trunk), Brave (lion shield), and Startpage (capital letter 'S' with purple accent underline).\n- Bulky Curvy Webpage Command Card: Matched the floating webpage address/command bar to the home command card design with a sleek 28dp rounded dark pill, 56dp height, engine capsule selector, glowing cyan mic, circular black-bordered tab counter, and pure white three-dots menu.\n- Spacious Long Text Input: Expanded command card height and implemented automatic action folding when typing, giving full-width space for entering long queries with 1-tap clear button and adaptive font sizing."
+  "versionCode": 97,
+  "versionName": "1.0.97",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.97/app-debug.apk",
+  "changelog": "- Fixed Tab & Three-Dots Buttons Glitches: Permanently eliminated aggressive focus-within and text-folding hiding rules so that the tab counter and options menu buttons never disappear, glitch, or drop touch events.\n- Complete Button Functionality & Empty States: Fixed Bookmarks & Saved dialog to always open immediately even when empty, providing an informative message rather than failing silently.\n- Stable Command Bar & Menu Actions: Streamlined tap handling across all start-page action buttons, 4K visual hub, media video hub, and popover menu options."
 }

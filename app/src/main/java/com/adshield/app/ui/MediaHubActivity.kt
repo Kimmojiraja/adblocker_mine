@@ -4393,22 +4393,30 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         try {
             val savedPages = offlinePageStore.list()
-            if (savedPages.isEmpty()) {
-                Toast.makeText(this, "No saved pages yet. Tap Save Page on any website!", Toast.LENGTH_LONG).show()
-                return
-            }
             val content = layoutInflater.inflate(R.layout.dialog_saved_pages, null)
             val searchInput = content.findViewById<EditText>(R.id.editSavedPageSearch)
             val status = content.findViewById<TextView>(R.id.textSavedPageSearchStatus)
             val results = content.findViewById<LinearLayout>(R.id.layoutSavedPageResults)
             val dialog = MaterialAlertDialogBuilder(this)
-                .setTitle("Saved pages")
+                .setTitle("Bookmarks & Saved Pages")
                 .setView(content)
                 .setNegativeButton("Close", null)
                 .create()
 
             fun renderPages(pages: List<OfflinePageStore.SavedPage>, query: String) {
                 results.removeAllViews()
+                if (pages.isEmpty()) {
+                    status.text = if (query.isBlank()) "No saved pages yet" else "No matches found"
+                    val emptyTv = TextView(this@MediaHubActivity).apply {
+                        text = if (query.isBlank()) "No bookmarks or saved pages yet.\nTap the Star or Save button on any webpage to save pages for quick offline access!" else "No saved pages matching \"$query\""
+                        setTextColor(ContextCompat.getColor(this@MediaHubActivity, R.color.text_secondary))
+                        textSize = 13.5f
+                        gravity = Gravity.CENTER
+                        setPadding(0, (24 * resources.displayMetrics.density).toInt(), 0, (24 * resources.displayMetrics.density).toInt())
+                    }
+                    results.addView(emptyTv)
+                    return
+                }
                 status.text = if (query.isBlank()) {
                     "${pages.size} saved pages · search titles and text · long press to delete"
                 } else {

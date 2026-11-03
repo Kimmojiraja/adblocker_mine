@@ -166,15 +166,6 @@
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9), 0 0 16px rgba(56, 189, 248, 0.22);
         }
 
-        /* Maximum typing space: fold away secondary buttons when typing or focused */
-        .start-command-card.has-text .command-action-divider,
-        .start-command-card.has-text .tabs-badge-btn,
-        .start-command-card.has-text .menu-dots-btn,
-        .start-command-card:focus-within .command-action-divider,
-        .start-command-card:focus-within .tabs-badge-btn,
-        .start-command-card:focus-within .menu-dots-btn {
-            display: none !important;
-        }
 
         #commandClearBtn {
             width: 32px;
@@ -1857,7 +1848,7 @@
                 <div class="command-action-divider"></div>
 
                 <!-- Tabs Badge -->
-                <button class="command-icon-btn tabs-badge-btn" id="commandTabsBtn" onclick="triggerTabsAction()" title="Open Tabs">
+                <button class="command-icon-btn tabs-badge-btn" id="commandTabsBtn" onclick="triggerTabsAction(event)" title="Open Tabs">
                     <span class="tab-badge-num" id="tabBadgeNumber">1</span>
                 </button>
 
@@ -2503,22 +2494,16 @@
         }
 
         function toggleCommandMenu(e) {
-            if (e) e.stopPropagation();
-            try {
-                const isNative = (window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function')
-                    ? window.FokkShieldBridge.isAndroidNative()
-                    : isAppEnvironment;
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function' && isNative) {
-                    window.FokkShieldBridge.openMenu();
-                    return;
-                }
-            } catch (error) {
-                console.error('openMenu error', error);
+            if (e) {
+                e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
             }
             const popover = document.getElementById('commandMenuPopover');
             const engPop = document.getElementById('engineDropdownPopover');
             if (engPop) engPop.classList.remove('active');
-            if (popover) popover.classList.toggle('active');
+            if (popover) {
+                popover.classList.toggle('active');
+            }
         }
 
         function selectSearchEngine(engKey) {
@@ -2543,14 +2528,9 @@
             const hasText = val.trim().length > 0;
             const clearBtn = document.getElementById('commandClearBtn');
             const voiceBtn = document.getElementById('commandVoiceBtn');
-            const card = document.getElementById('startCommandCard');
             const input = document.getElementById('startCommandInput');
             if (clearBtn) clearBtn.style.display = hasText ? 'flex' : 'none';
             if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
-            if (card) {
-                if (hasText) card.classList.add('has-text');
-                else card.classList.remove('has-text');
-            }
             if (input) {
                 if (val.length > 26) {
                     input.style.fontSize = '13.5px';
@@ -2650,18 +2630,19 @@
             }
         }
 
-        function triggerTabsAction() {
-            if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+        function triggerTabsAction(e) {
+            if (e) {
+                e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             try {
-                const isNative = (window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function')
-                    ? window.FokkShieldBridge.isAndroidNative()
-                    : isAppEnvironment;
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function' && isNative) {
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function') {
                     window.FokkShieldBridge.openTabs();
                     return;
                 }
-            } catch (e) {
-                console.error("openTabs error", e);
+            } catch (err) {
+                console.error("openTabs error", err);
             }
             openTabSwitcherModal();
         }

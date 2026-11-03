@@ -1,6 +1,6 @@
 {
-  "versionCode": 99,
-  "versionName": "1.0.99",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.99/app-debug.apk",
-  "changelog": "- Direct Native Feature Hubs Connection: Home Page three-dots button now directly opens the full Native Browser Menu Bottom Sheet (showBrowserMenuDialog) giving 1-tap access to General & Search Engines, Shield & Ghost Stealth, Media/PiP, and Daily Essentials.\n- Daylight Mode (Light Theme): Added clean Light Theme support accessible directly from General & Search Engines and Wallpapers & Themes on the Home Page.\n- Unified Experience: Home Page and browsing view now share the same rich browser engine controls."
+  "versionCode": 101,
+  "versionName": "1.0.101",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v1.0.101/app-debug.apk",
+  "changelog": "- Unlimited Pinterest-Style Visuals & 4K Wallpapers: Direct live connection to Wallhaven 4K/8K public database.\n- Unlimited Video & Sounds Hub: Infinite ad-free feeds for 24/7 Lo-Fi beats, Peace & Zen (432Hz), Raw Acoustic, Cinema 4K, and Soundscapes.\n- On-Device Privacy Interest Engine: Learns and curates feeds dynamically on-device with zero cloud telemetry.\n- Screen-Off YouTube & Background Audio Fix: YouTube and audio continue playing seamlessly when minimized or screen locks.\n- Auto-Stealth Search: Disarms Google Account activity tracking on search queries."
 }

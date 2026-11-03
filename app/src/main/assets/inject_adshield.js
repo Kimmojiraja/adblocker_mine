@@ -539,9 +539,38 @@
             try {
                 Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });
                 Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });
-                document.addEventListener('visibilitychange', function(e) {
-                    e.stopImmediatePropagation();
-                }, { capture: true });
+                Object.defineProperty(document, 'webkitHidden', { get: function() { return false; }, configurable: true });
+                Object.defineProperty(document, 'webkitVisibilityState', { get: function() { return 'visible'; }, configurable: true });
+                try { document.hasFocus = function() { return true; }; } catch (e) {}
+
+                ['visibilitychange', 'webkitvisibilitychange', 'blur', 'pagehide'].forEach(function(evt) {
+                    window.addEventListener(evt, function(e) {
+                        if (window.__fokk_is_background || document.hidden) e.stopImmediatePropagation();
+                    }, true);
+                    document.addEventListener(evt, function(e) {
+                        if (window.__fokk_is_background || document.hidden) e.stopImmediatePropagation();
+                    }, true);
+                });
+
+                // Detect actual user tap on player controls
+                let userTapTimer = null;
+                document.addEventListener('pointerdown', function(e) {
+                    const target = e.target;
+                    if (target && target.closest && target.closest('video, .ytp-play-button, .player-control-play-pause-icon, button[aria-label*="Pause" i], button[aria-label*="Play" i]')) {
+                        userExplicitPaused = true;
+                        if (userTapTimer) clearTimeout(userTapTimer);
+                        userTapTimer = setTimeout(function() { userExplicitPaused = false; }, 1200);
+                    }
+                }, true);
+
+                // Intercept HTMLMediaElement.prototype.pause
+                const origMediaPause = HTMLMediaElement.prototype.pause;
+                HTMLMediaElement.prototype.pause = function() {
+                    if (window.__fokk_is_background && !userExplicitPaused) {
+                        return;
+                    }
+                    return origMediaPause.apply(this, arguments);
+                };
             } catch (e) {}
         }
 

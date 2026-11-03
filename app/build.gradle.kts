@@ -11,8 +11,8 @@ android {
         applicationId = "com.adshield.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 99
-        versionName = "1.0.99"
+        versionCode = 100
+        versionName = "1.0.100"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

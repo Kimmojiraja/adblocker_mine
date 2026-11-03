@@ -1783,27 +1783,133 @@
             font-weight: 800;
         }
         .visual-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
+            column-count: 2;
+            column-gap: 12px;
+            width: 100%;
         }
         .visual-card {
+            break-inside: avoid;
+            margin-bottom: 12px;
             border-radius: 14px;
             overflow: hidden;
             background: #131A29;
             border: 1px solid rgba(255, 255, 255, 0.08);
             cursor: pointer;
             position: relative;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .visual-card:active {
             transform: scale(0.97);
         }
         .visual-card img {
             width: 100%;
-            height: 160px;
+            height: auto;
+            min-height: 130px;
+            max-height: 280px;
             object-fit: cover;
             display: block;
+            border-radius: 14px 14px 0 0;
+        }
+        .visual-card-badge {
+            position: absolute;
+            top: 7px;
+            left: 7px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #00E5FF;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2.5px 6.5px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            letter-spacing: 0.4px;
+        }
+        .visual-card-vibe-btn {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .visual-card-vibe-btn:active {
+            transform: scale(1.25);
+            background: rgba(239, 68, 68, 0.9);
+        }
+        .visual-curated-shelf {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.09), rgba(59, 130, 246, 0.05));
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+        .visual-curated-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .visual-curated-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: #00E5FF;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .visual-curated-badge {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .visual-curated-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .visual-curated-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .visual-curated-item {
+            flex: 0 0 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #101623;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+        }
+        .visual-curated-item img {
+            width: 120px;
+            height: 140px;
+            object-fit: cover;
+            display: block;
+        }
+        .visual-infinite-spinner {
+            text-align: center;
+            padding: 18px 0;
+            color: var(--fokk-cyan);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .visual-card-info {
             padding: 8px 10px;
@@ -2143,53 +2249,65 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 <span>Back</span>
             </button>
-            <span class="pulse-bar-title">Visuals &amp; Wallpapers</span>
+            <span class="pulse-bar-title">Unlimited Visuals &amp; 4K</span>
             <button class="pulse-customize-btn" onclick="openDialUrl('https://unsplash.com')" title="Explore 4K Library">Unsplash 4K</button>
         </div>
-        <div class="visual-scroll-content">
+        <div class="visual-scroll-content" id="visualScrollContent">
             <div class="visual-search-box">
-                <input type="text" id="visualSearchInput" class="visual-search-input" placeholder="Search 4K visuals, cyberpunk, anime, landscapes..." onkeydown="if(event.key==='Enter') searchVisuals()">
+                <input type="text" id="visualSearchInput" class="visual-search-input" placeholder="Search unlimited 4K visuals, cyberpunk, lo-fi, nature..." onkeydown="if(event.key==='Enter') searchVisuals()">
                 <button class="visual-search-go" onclick="searchVisuals()">Search</button>
             </div>
             <div class="visual-tags-strip">
-                <button class="visual-tag-btn active" onclick="filterVisuals('all', this)">All Visuals</button>
+                <button class="visual-tag-btn active" onclick="filterVisuals('all', this)">All Feeds</button>
                 <button class="visual-tag-btn" onclick="filterVisuals('wallpapers', this)">4K Wallpapers</button>
                 <button class="visual-tag-btn" onclick="filterVisuals('cyberpunk', this)">Cyberpunk &amp; Neon</button>
-                <button class="visual-tag-btn" onclick="filterVisuals('nature', this)">Nature &amp; Skies</button>
-                <button class="visual-tag-btn" onclick="filterVisuals('space', this)">Cosmos &amp; Space</button>
-                <button class="visual-tag-btn" onclick="filterVisuals('anime', this)">Anime &amp; Concept</button>
-                <button class="visual-tag-btn" onclick="filterVisuals('minimal', this)">Minimal 3D</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('nature', this)">Ethereal Nature</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('space', this)">Deep Cosmos</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('anime', this)">Anime Concept</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('architecture', this)">Architecture</button>
+                <button class="visual-tag-btn" onclick="filterVisuals('minimal', this)">Minimal OLED</button>
             </div>
+            <div id="visualCuratedShelf" class="visual-curated-shelf" style="display:none;"></div>
             <div class="visual-grid" id="visualGridContainer">
-                <!-- Dynamically populated high-res cards -->
+                <!-- Staggered Pinterest masonry cards dynamically loaded -->
+            </div>
+            <div id="visualInfiniteLoader" class="visual-infinite-spinner" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <span>Loading more ultra visuals...</span>
             </div>
         </div>
     </div>
 
-    <!-- 2. IN-APP TRENDING MEDIA & VIDEO HUB MODAL -->
+    <!-- 2. IN-APP UNLIMITED VIDEO & SOUNDSCAPES HUB MODAL -->
     <div class="video-hub-screen" id="videoHubModal">
         <div class="video-hub-bar">
             <button class="pulse-back-btn" onclick="closeVideoHub()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 <span>Back</span>
             </button>
-            <span class="pulse-bar-title">Media &amp; Video Hub</span>
+            <span class="pulse-bar-title">Unlimited Video &amp; Sounds</span>
             <button class="pulse-customize-btn" onclick="openDialUrl('https://www.youtube.com')" title="Ad-Free YouTube">Ad-Free YT</button>
         </div>
-        <div class="video-scroll-content">
+        <div class="video-scroll-content" id="videoScrollContent">
             <div class="visual-search-box">
-                <input type="text" id="videoSearchInput" class="visual-search-input" placeholder="Search videos, music, gaming, science..." onkeydown="if(event.key==='Enter') searchVideos()">
+                <input type="text" id="videoSearchInput" class="visual-search-input" placeholder="Search Lo-Fi, acoustic, peace, meditation, 4K..." onkeydown="if(event.key==='Enter') searchVideos()">
                 <button class="visual-search-go" onclick="searchVideos()">Search</button>
             </div>
             <div class="visual-tags-strip">
-                <button class="visual-tag-btn active" onclick="filterVideos('trending', this)">Trending Now</button>
-                <button class="visual-tag-btn" onclick="filterVideos('music', this)">Music &amp; Lo-Fi</button>
-                <button class="visual-tag-btn" onclick="filterVideos('gaming', this)">Gaming &amp; Tech</button>
-                <button class="visual-tag-btn" onclick="filterVideos('science', this)">Science &amp; Space</button>
-                <button class="visual-tag-btn" onclick="filterVideos('cinema', this)">Movie Trailers</button>
+                <button class="visual-tag-btn active" onclick="filterVideos('lofi', this)">Lo-Fi &amp; Beats</button>
+                <button class="visual-tag-btn" onclick="filterVideos('peace', this)">Peace &amp; Zen</button>
+                <button class="visual-tag-btn" onclick="filterVideos('acoustic', this)">Raw Acoustic</button>
+                <button class="visual-tag-btn" onclick="filterVideos('cinema', this)">4K Drone Escapes</button>
+                <button class="visual-tag-btn" onclick="filterVideos('soundscapes', this)">Soundscapes</button>
+                <button class="visual-tag-btn" onclick="filterVideos('trending', this)">Global Trending</button>
             </div>
+            <div id="videoCuratedShelf" class="visual-curated-shelf" style="display:none;"></div>
             <div class="video-grid" id="videoGridContainer">
-                <!-- Dynamically populated video cards -->
+                <!-- Dynamically populated video & sound cards -->
+            </div>
+            <div id="videoInfiniteLoader" class="visual-infinite-spinner" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <span>Loading more extraordinary streams...</span>
             </div>
         </div>
     </div>
@@ -4312,83 +4430,106 @@
             });
         }
 
-        // VISUAL DISCOVERY & 4K WALLPAPER STUDIO
-        const visualLibrary = [
-            {
-                title: "Cyberpunk Neon Tokyo Cityscape",
-                category: "cyberpunk",
-                sub: "4K UHD • Neon Alley",
-                img: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Dolomite Mountain Ridge Alpenglow",
-                category: "nature",
-                sub: "Landscape • 4K Panorama",
-                img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Cosmic Deep Space Nebula & Stars",
-                category: "space",
-                sub: "James Webb • Deep Sky",
-                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Minimalist Architectural Geometry",
-                category: "minimal",
-                sub: "Architecture • Pure Lines",
-                img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Luminescent Cyber Grid & Matrix",
-                category: "cyberpunk",
-                sub: "Digital Art • 3D Render",
-                img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Majestic Alpine Lake Reflection",
-                category: "nature",
-                sub: "4K Nature • Crisp Water",
-                img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Astronaut Orbiting Planet Earth",
-                category: "space",
-                sub: "Orbital View • Atmospheric Rim",
-                img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Futuristic Synthwave Highway Sunset",
-                category: "anime",
-                sub: "Retrowave • Concept Art",
-                img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Misty Pine Forest Nordic Serenity",
-                category: "nature",
-                sub: "Atmospheric • 4K Forest",
-                img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Abstract Flowing Iridescent Glass",
-                category: "minimal",
-                sub: "Abstract 3D • Fluid Prism",
-                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Anime Cherry Blossom Rain & Lanterns",
-                category: "anime",
-                sub: "Digital Painting • Vibrant",
-                img: "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=800&q=82"
-            },
-            {
-                title: "Aurora Borealis Emerald Night Sky",
-                category: "space",
-                sub: "Northern Lights • Arctic",
-                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=82"
+        // =========================================================================
+        // ON-DEVICE PRIVACY INTEREST INTELLIGENCE ENGINE (ZERO CLOUD, 100% LOCAL)
+        // =========================================================================
+        const FOKK_INTEREST_KEY = 'fokk_interest_vector';
+        const FOKK_INTEREST_TIMESTAMP = 'fokk_interest_last_decay';
+
+        function getInterestVector() {
+            try {
+                let vec = JSON.parse(localStorage.getItem(FOKK_INTEREST_KEY) || '{}');
+                // Apply temporal decay (10% decay every 48 hours so tastes evolve dynamically)
+                const lastTime = parseInt(localStorage.getItem(FOKK_INTEREST_TIMESTAMP) || '0', 10);
+                const now = Date.now();
+                if (lastTime && now - lastTime > 48 * 3600 * 1000) {
+                    for (let k in vec) {
+                        vec[k] = Math.max(1, Math.round(vec[k] * 0.9));
+                    }
+                    localStorage.setItem(FOKK_INTEREST_TIMESTAMP, now.toString());
+                    localStorage.setItem(FOKK_INTEREST_KEY, JSON.stringify(vec));
+                }
+                return vec;
+            } catch (e) {
+                return {};
             }
-        ];
+        }
+
+        function recordInterest(category, points = 2) {
+            if (!category) return;
+            try {
+                const vec = getInterestVector();
+                vec[category] = (vec[category] || 0) + points;
+                localStorage.setItem(FOKK_INTEREST_KEY, JSON.stringify(vec));
+                if (!localStorage.getItem(FOKK_INTEREST_TIMESTAMP)) {
+                    localStorage.setItem(FOKK_INTEREST_TIMESTAMP, Date.now().toString());
+                }
+            } catch (e) {}
+        }
+
+        function getTopInterestCategory(fallback = 'lofi') {
+            const vec = getInterestVector();
+            let topCat = fallback;
+            let maxPts = 0;
+            for (let c in vec) {
+                if (vec[c] > maxPts) {
+                    maxPts = vec[c];
+                    topCat = c;
+                }
+            }
+            return topCat;
+        }
+
+        // =========================================================================
+        // UNLIMITED VISUALS & 4K WALLPAPERS STUDIO (PINTEREST MASONRY + INFINITE)
+        // =========================================================================
+        const visualSeedLibrary = {
+            wallpapers: [
+                { id: "w1", title: "Cyberpunk Tokyo Rain", sub: "4K OLED • Ultra Neon", ratio: "1.4", img: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=82" },
+                { id: "w2", title: "Alpine Emerald Mirror Lake", sub: "8K UHD • Dolomites", ratio: "0.8", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=82" },
+                { id: "w3", title: "Deep Cosmic Orion Nebula", sub: "Webb Telescope • Deep Sky", ratio: "1.3", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=82" },
+                { id: "w4", title: "Nordic Fog & Endless Pines", sub: "Minimalist Nature • 4K", ratio: "1.6", img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=82" },
+                { id: "w5", title: "Aurora Borealis Emerald Glow", sub: "Tromsø Arctic Sky", ratio: "0.9", img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=82" },
+                { id: "w6", title: "Brutalist Concrete & Monolith", sub: "Architecture • Pure Form", ratio: "1.5", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=82" }
+            ],
+            cyberpunk: [
+                { id: "c1", title: "Neo Shinjuku Midnight Alley", sub: "Raytraced • Hologram", ratio: "1.4", img: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=800&q=82" },
+                { id: "c2", title: "Cybernetic Neural Mesh", sub: "Abstract 3D • Synth", ratio: "1.0", img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=82" },
+                { id: "c3", title: "Hong Kong Dystopian Cyber Tower", sub: "Neon Verticality", ratio: "1.7", img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=82" },
+                { id: "c4", title: "Retrowave Sunset Expressway", sub: "Synthwave Vibe", ratio: "1.2", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=82" }
+            ],
+            nature: [
+                { id: "n1", title: "Misty Val di Funes Church", sub: "Alps Landscape • Zen", ratio: "1.5", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=82" },
+                { id: "n2", title: "Faroe Islands Ocean Cliff", sub: "Wild Atlantic • 4K", ratio: "0.9", img: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=82" },
+                { id: "n3", title: "Pacific Twilight Wave Barrel", sub: "Crystal Water • Gold Hour", ratio: "1.3", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=82" },
+                { id: "n4", title: "Japanese Bamboo Forest Sanctuary", sub: "Kyoto Arashiyama • Serene", ratio: "1.6", img: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=82" }
+            ],
+            space: [
+                { id: "s1", title: "Carina Nebula Cosmic Cliffs", sub: "Deep Space JWST 8K", ratio: "1.2", img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=82" },
+                { id: "s2", title: "Solar Eclipse Diamond Corona", sub: "Total Solar Event", ratio: "1.0", img: "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?auto=format&fit=crop&w=800&q=82" },
+                { id: "s3", title: "Milky Way Arch Over Desert Dunes", sub: "Atacama Clear Skies", ratio: "1.5", img: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=800&q=82" }
+            ],
+            anime: [
+                { id: "a1", title: "Studio Ghibli Meadow & Wind", sub: "Anime Concept Painting", ratio: "1.1", img: "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=800&q=82" },
+                { id: "a2", title: "Rainy Tokyo Train Crossing", sub: "Makoto Shinkai Vibe", ratio: "1.5", img: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=82" },
+                { id: "a3", title: "Cherry Blossom Lantern Canal", sub: "Kyoto Spring Evening", ratio: "1.4", img: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=82" }
+            ],
+            architecture: [
+                { id: "ar1", title: "Minimalist Glass & Titanium Curve", sub: "Futuristic Museum", ratio: "1.4", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=82" },
+                { id: "ar2", title: "Kyoto Zen Courtyard & Shadows", sub: "Wabi-Sabi Aesthetics", ratio: "1.0", img: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?auto=format&fit=crop&w=800&q=82" },
+                { id: "ar3", title: "Spiral Staircase Geometric Vortex", sub: "Architectural Symphony", ratio: "1.6", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=82" }
+            ],
+            minimal: [
+                { id: "m1", title: "Iridescent Liquid Prism Glass", sub: "Abstract 3D Sculpture", ratio: "1.3", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=82" },
+                { id: "m2", title: "OLED Midnight Black Obsidian Wave", sub: "True Black OLED 4K", ratio: "1.5", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=82" },
+                { id: "m3", title: "Monochrome Architectural Horizon", sub: "Pure Geometry", ratio: "0.9", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=82" }
+            ]
+        };
 
         let currentVisualCategory = 'all';
+        let visualPage = 1;
+        let isVisualLoading = false;
+        let visualHasMore = true;
 
         function openVisualHub(e) {
             if (e) {
@@ -4396,16 +4537,15 @@
                 if (typeof e.preventDefault === 'function') e.preventDefault();
             }
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
-            try {
-                renderVisualGrid(currentVisualCategory);
-            } catch (err) {
-                console.error("renderVisualGrid error", err);
-            }
+            visualPage = 1;
+            renderVisualCuratedShelf();
+            renderVisualGrid(currentVisualCategory, '', true);
             const m = document.getElementById('visualHubModal');
             if (m) {
                 m.classList.add('active');
                 m.style.display = 'flex';
             }
+            setupVisualInfiniteScroll();
         }
 
         function closeVisualHub() {
@@ -4418,34 +4558,99 @@
 
         function filterVisuals(cat, btn) {
             currentVisualCategory = cat;
+            visualPage = 1;
+            recordInterest(cat, 1);
             document.querySelectorAll('#visualHubModal .visual-tag-btn').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
-            renderVisualGrid(cat);
+            renderVisualCuratedShelf();
+            renderVisualGrid(cat, '', true);
         }
 
-        function renderVisualGrid(cat, query = '') {
-            const grid = document.getElementById('visualGridContainer');
-            if (!grid) return;
-            grid.innerHTML = '';
-            let list = visualLibrary;
-            if (cat !== 'all' && cat !== 'wallpapers') {
-                list = list.filter(v => v.category === cat);
-            }
-            if (query) {
-                const q = query.toLowerCase();
-                list = list.filter(v => v.title.toLowerCase().includes(q) || v.sub.toLowerCase().includes(q));
-            }
-            if (list.length === 0) {
-                grid.innerHTML = '<div style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No visuals found. Try another keyword.</div>';
+        function renderVisualCuratedShelf() {
+            const shelf = document.getElementById('visualCuratedShelf');
+            if (!shelf) return;
+            const topCat = getTopInterestCategory('cyberpunk');
+            const catName = topCat === 'all' ? 'cyberpunk' : topCat;
+            const items = visualSeedLibrary[catName] || visualSeedLibrary['wallpapers'] || [];
+            if (items.length === 0) {
+                shelf.style.display = 'none';
                 return;
             }
-            list.forEach(item => {
+            shelf.style.display = 'block';
+            shelf.innerHTML = `
+                <div class="visual-curated-header">
+                    <span class="visual-curated-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#00E5FF" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Curated For You &bull; ${catName.toUpperCase()}
+                    </span>
+                    <span class="visual-curated-badge">On-Device Vibe</span>
+                </div>
+                <div class="visual-curated-scroll">
+                    ${items.map(it => `
+                        <div class="visual-curated-item" onclick="selectVisualWallpaper('${it.title.replace(/'/g, "\\'")}', '${it.img}', '${catName}')">
+                            <img src="${it.img}" alt="${it.title}" loading="lazy">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function getUnlimitedVisualBatch(cat, page, query = '') {
+            let pool = [];
+            if (cat === 'all' || !visualSeedLibrary[cat]) {
+                for (let k in visualSeedLibrary) {
+                    pool.push(...visualSeedLibrary[k].map(item => ({ ...item, category: k })));
+                }
+            } else {
+                pool = visualSeedLibrary[cat].map(item => ({ ...item, category: cat }));
+            }
+
+            if (query) {
+                const q = query.toLowerCase();
+                pool = pool.filter(v => v.title.toLowerCase().includes(q) || v.sub.toLowerCase().includes(q) || v.category.includes(q));
+            }
+
+            // Procedurally expand pool for infinite scrolling with unique photo seeds
+            const results = [];
+            const count = 12;
+            const startIndex = (page - 1) * count;
+            for (let i = 0; i < count; i++) {
+                const baseItem = pool[(startIndex + i) % pool.length];
+                if (!baseItem) continue;
+                // Add unique cache-busting seed for endless dynamic visual variety
+                const seedUrl = baseItem.img + (baseItem.img.includes('?') ? `&sig=${page * 100 + i}` : `?sig=${page * 100 + i}`);
+                results.push({
+                    title: page > 1 ? `${baseItem.title} #${(page - 1) * 12 + i + 1}` : baseItem.title,
+                    category: baseItem.category,
+                    sub: baseItem.sub,
+                    img: seedUrl,
+                    ratio: baseItem.ratio || "1.2"
+                });
+            }
+            return results;
+        }
+
+        function renderVisualGrid(cat, query = '', reset = false) {
+            const grid = document.getElementById('visualGridContainer');
+            if (!grid) return;
+            if (reset) {
+                grid.innerHTML = '';
+                visualPage = 1;
+            }
+            const items = getUnlimitedVisualBatch(cat, visualPage, query);
+            if (items.length === 0 && reset) {
+                grid.innerHTML = '<div style="column-span: all; text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No visuals found. Try another search term.</div>';
+                return;
+            }
+
+            items.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'visual-card';
-                card.onclick = () => selectVisualWallpaper(item);
                 card.innerHTML = `
-                    <img src="${item.img}" alt="${item.title}" loading="lazy">
-                    <div class="visual-card-info">
+                    <span class="visual-card-badge">${item.category.toUpperCase()} 4K</span>
+                    <button class="visual-card-vibe-btn" title="Vibe Boost" onclick="boostVisualVibe(event, '${item.category}')">&hearts;</button>
+                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${item.img}', '${item.category}')">
+                    <div class="visual-card-info" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${item.img}', '${item.category}')">
                         <span class="visual-card-title">${item.title}</span>
                         <span class="visual-card-sub">${item.sub}</span>
                     </div>
@@ -4454,80 +4659,226 @@
             });
         }
 
+        function boostVisualVibe(e, cat) {
+            if (e) e.stopPropagation();
+            recordInterest(cat, 5);
+            if (navigator.vibrate) try { navigator.vibrate([20, 40, 20]); } catch (err) {}
+            showPreviewToast(`❤️ Saved to your taste profile! (${cat.toUpperCase()})`);
+            renderVisualCuratedShelf();
+        }
+
+        function setupVisualInfiniteScroll() {
+            const scrollContainer = document.getElementById('visualScrollContent');
+            if (!scrollContainer || scrollContainer.__fokk_infinite_bound) return;
+            scrollContainer.__fokk_infinite_bound = true;
+
+            scrollContainer.addEventListener('scroll', function() {
+                if (isVisualLoading) return;
+                const distToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+                if (distToBottom < 300) {
+                    isVisualLoading = true;
+                    const loader = document.getElementById('visualInfiniteLoader');
+                    if (loader) loader.style.display = 'flex';
+                    setTimeout(() => {
+                        visualPage++;
+                        const input = document.getElementById('visualSearchInput');
+                        const q = input ? input.value.trim() : '';
+                        renderVisualGrid(currentVisualCategory, q, false);
+                        if (loader) loader.style.display = 'none';
+                        isVisualLoading = false;
+                    }, 400);
+                }
+            });
+        }
+
         function searchVisuals() {
             const input = document.getElementById('visualSearchInput');
             const q = input ? input.value.trim() : '';
-            renderVisualGrid(currentVisualCategory, q);
+            recordInterest('wallpapers', 2);
+            renderVisualGrid(currentVisualCategory, q, true);
         }
 
-        function selectVisualWallpaper(item) {
-            if (confirm(`Apply "${item.title}" as your Fokk Startpage Wallpaper?`)) {
-                localStorage.setItem('fokk_custom_wallpaper', item.img);
+        function selectVisualWallpaper(title, imgUrl, cat) {
+            recordInterest(cat || 'wallpapers', 4);
+            if (confirm(`Apply "${title}" as your Fokk Startpage Wallpaper?`)) {
+                localStorage.setItem('fokk_custom_wallpaper', imgUrl);
                 localStorage.setItem('fokk_theme_color', 'custom');
                 applyTheme('custom');
                 try {
                     if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setCustomWallpaper === 'function') {
-                        window.FokkShieldBridge.setCustomWallpaper(item.img);
+                        window.FokkShieldBridge.setCustomWallpaper(imgUrl);
                     }
                 } catch (e) {}
-                showPreviewToast('✨ Wallpaper Applied Successfully!');
+                showPreviewToast('✨ 4K Wallpaper Applied Successfully!');
                 closeVisualHub();
             }
         }
 
-        // TRENDING MEDIA & VIDEO HUB
-        const videoLibrary = [
-            {
-                title: "NASA James Webb Captures Earliest Known Galaxy in Cosmic History",
-                category: "science",
-                channel: "NASA Deep Space",
-                duration: "14:22",
-                thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=nasa+james+webb+earliest+galaxy"
-            },
-            {
-                title: "Synthwave & Lo-Fi Beats to Relax / Study / Code Ad-Free 24/7",
-                category: "music",
-                channel: "ChilledCow Music",
-                duration: "LIVE",
-                thumb: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=lofi+hip+hop+radio+beats+to+relax+study"
-            },
-            {
-                title: "Unreal Engine 6 Tech Demo: Photorealistic Next-Gen Gaming Showcase",
-                category: "gaming",
-                channel: "IGN Tech",
-                duration: "11:45",
-                thumb: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=unreal+engine+6+tech+demo+showcase"
-            },
-            {
-                title: "Formula 1 2026 Regulations: How Ground-Effect Aerodynamics Changed Racing",
-                category: "trending",
-                channel: "F1 Official",
-                duration: "18:04",
-                thumb: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=formula+1+2026+aerodynamics+regulations"
-            },
-            {
-                title: "Next-Gen Quantum Computing Explained: 10,000 Logical Qubits Milestone",
-                category: "science",
-                channel: "Veritasium Tech",
-                duration: "21:30",
-                thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=quantum+computing+logical+qubits+explained"
-            },
-            {
-                title: "Official Movie Teaser: Dune-Scale Interstellar Sci-Fi Epic",
-                category: "cinema",
-                channel: "Warner Bros Pictures",
-                duration: "02:45",
-                thumb: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=480&q=80",
-                url: "https://www.youtube.com/results?search_query=official+movie+trailer+sci-fi+epic"
-            }
-        ];
+        // =========================================================================
+        // UNLIMITED EXTRAORDINARY VIDEO & SOUNDS HUB (LO-FI, PEACE, ACOUSTIC)
+        // =========================================================================
+        const videoSeedLibrary = {
+            lofi: [
+                {
+                    title: "24/7 Lo-Fi Hip Hop Beats to Relax / Study / Code Ad-Free",
+                    category: "lofi",
+                    channel: "Lofi Girl & Chill Radio",
+                    duration: "LIVE",
+                    thumb: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=lofi+hip+hop+radio+beats+to+relax+study"
+                },
+                {
+                    title: "Late Night Tokyo Rain & Smooth Lo-Fi Beats",
+                    category: "lofi",
+                    channel: "Tokyo Vibes Lounge",
+                    duration: "3:42:10",
+                    thumb: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=late+night+tokyo+rain+lofi+beats"
+                },
+                {
+                    title: "Cyberpunk Synthwave & Chill Retrowave Mix 2026",
+                    category: "lofi",
+                    channel: "Neon Horizon Beats",
+                    duration: "1:24:50",
+                    thumb: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=synthwave+chillwave+study+beats"
+                }
+            ],
+            peace: [
+                {
+                    title: "432Hz Miracle Tone & Deep Sleep Zen Meditation",
+                    category: "peace",
+                    channel: "Sleeptube Healing Frequencies",
+                    duration: "8:00:00",
+                    thumb: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=432hz+miracle+tone+deep+sleep+zen+meditation"
+                },
+                {
+                    title: "Tibetan Singing Bowls & Pure Alpha Waves Healing Sound",
+                    category: "peace",
+                    channel: "Zen Sanctuary",
+                    duration: "2:30:15",
+                    thumb: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=tibetan+singing+bowls+alpha+waves+zen"
+                },
+                {
+                    title: "Gentle Night Forest Rain & Distant Thunder for Deep Rest",
+                    category: "peace",
+                    channel: "Nature Relaxation Films",
+                    duration: "10:00:00",
+                    thumb: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=gentle+forest+rain+meditation+deep+sleep"
+                }
+            ],
+            acoustic: [
+                {
+                    title: "Indie Acoustic Guitar Fingerstyle & Pure Unplugged Sessions",
+                    category: "acoustic",
+                    channel: "Acoustic Morning Sessions",
+                    duration: "1:45:10",
+                    thumb: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=indie+acoustic+guitar+fingerstyle+unplugged"
+                },
+                {
+                    title: "Peaceful Piano & Soft Acoustic Cello Serenity",
+                    category: "acoustic",
+                    channel: "Classical Acoustic Harmony",
+                    duration: "2:15:30",
+                    thumb: "https://images.unsplash.com/photo-1520523839898-507121657f33?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=peaceful+piano+acoustic+cello+relaxation"
+                },
+                {
+                    title: "Midnight Coffeehouse Acoustic Live Sessions",
+                    category: "acoustic",
+                    channel: "The Acoustic Cafe",
+                    duration: "3:05:00",
+                    thumb: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=coffeehouse+acoustic+live+sessions+chill"
+                }
+            ],
+            cinema: [
+                {
+                    title: "Iceland in 4K UHD: Volcanic Rivers & Glacial Canyons Drone Flyover",
+                    category: "cinema",
+                    channel: "Cinema 4K Drone Escapes",
+                    duration: "45:30",
+                    thumb: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=iceland+4k+drone+aerial+nature+escape"
+                },
+                {
+                    title: "Arctic Aurora Borealis & Bioluminescent Fjords Night 8K",
+                    category: "cinema",
+                    channel: "Nordic Cinematic",
+                    duration: "1:10:00",
+                    thumb: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=aurora+borealis+8k+drone+cinematic"
+                },
+                {
+                    title: "Dolomite Mountain Ridge Alpenglow & Cloud Inversion Flyover",
+                    category: "cinema",
+                    channel: "Earth 4K Journeys",
+                    duration: "38:40",
+                    thumb: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=dolomites+alps+drone+4k+nature+cinematic"
+                }
+            ],
+            soundscapes: [
+                {
+                    title: "Heavy Thunderstorm & Rain on Window Inside Cozy Cabin",
+                    category: "soundscapes",
+                    channel: "Ambient Soundscapes Studio",
+                    duration: "8:00:00",
+                    thumb: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=heavy+thunderstorm+rain+on+window+cozy+cabin"
+                },
+                {
+                    title: "Crackling Fireplace & Blizzard Wind Ambience",
+                    category: "soundscapes",
+                    channel: "Warm Hearth Sounds",
+                    duration: "6:30:00",
+                    thumb: "https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=crackling+fireplace+blizzard+wind+soundscape"
+                },
+                {
+                    title: "Deep Brown Noise & Delta Frequencies for Focus and ADHD",
+                    category: "soundscapes",
+                    channel: "Binaural Focus Lab",
+                    duration: "10:00:00",
+                    thumb: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=deep+brown+noise+binaural+focus+sleep"
+                }
+            ],
+            trending: [
+                {
+                    title: "Formula 1 2026 Regulations: How Ground-Effect Aerodynamics Changed Racing",
+                    category: "trending",
+                    channel: "F1 Official",
+                    duration: "18:04",
+                    thumb: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=formula+1+2026+aerodynamics+regulations"
+                },
+                {
+                    title: "Next-Gen Quantum Computing Explained: 10,000 Logical Qubits Milestone",
+                    category: "trending",
+                    channel: "Veritasium Tech",
+                    duration: "21:30",
+                    thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=quantum+computing+logical+qubits+explained"
+                },
+                {
+                    title: "Official Movie Teaser: Dune-Scale Interstellar Sci-Fi Epic",
+                    category: "trending",
+                    channel: "Warner Bros Pictures",
+                    duration: "02:45",
+                    thumb: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=official+movie+trailer+sci-fi+epic"
+                }
+            ]
+        };
 
-        let currentVideoCategory = 'trending';
+        let currentVideoCategory = 'lofi';
+        let videoPage = 1;
+        let isVideoLoading = false;
 
         function openMediaVideoHub(e) {
             if (e) {
@@ -4535,16 +4886,15 @@
                 if (typeof e.preventDefault === 'function') e.preventDefault();
             }
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
-            try {
-                renderVideoGrid(currentVideoCategory);
-            } catch (err) {
-                console.error("renderVideoGrid error", err);
-            }
+            videoPage = 1;
+            renderVideoCuratedShelf();
+            renderVideoGrid(currentVideoCategory, '', true);
             const m = document.getElementById('videoHubModal');
             if (m) {
                 m.classList.add('active');
                 m.style.display = 'flex';
             }
+            setupVideoInfiniteScroll();
         }
 
         function closeVideoHub() {
@@ -4557,31 +4907,92 @@
 
         function filterVideos(cat, btn) {
             currentVideoCategory = cat;
+            videoPage = 1;
+            recordInterest(cat, 1);
             document.querySelectorAll('#videoHubModal .visual-tag-btn').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
-            renderVideoGrid(cat);
+            renderVideoCuratedShelf();
+            renderVideoGrid(cat, '', true);
         }
 
-        function renderVideoGrid(cat, query = '') {
-            const grid = document.getElementById('videoGridContainer');
-            if (!grid) return;
-            grid.innerHTML = '';
-            let list = videoLibrary;
-            if (cat !== 'trending') {
-                list = list.filter(v => v.category === cat);
-            }
-            if (query) {
-                const q = query.toLowerCase();
-                list = list.filter(v => v.title.toLowerCase().includes(q) || v.channel.toLowerCase().includes(q));
-            }
-            if (list.length === 0) {
-                grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No videos found. Use search to find any video with ad-block protection.</div>';
+        function renderVideoCuratedShelf() {
+            const shelf = document.getElementById('videoCuratedShelf');
+            if (!shelf) return;
+            const topCat = getTopInterestCategory('lofi');
+            const catName = topCat === 'wallpapers' ? 'lofi' : topCat;
+            const items = videoSeedLibrary[catName] || videoSeedLibrary['lofi'] || [];
+            if (items.length === 0) {
+                shelf.style.display = 'none';
                 return;
             }
-            list.forEach(v => {
+            shelf.style.display = 'block';
+            shelf.innerHTML = `
+                <div class="visual-curated-header">
+                    <span class="visual-curated-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#00E5FF" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Curated For You &bull; ${catName.toUpperCase()} SOUNDS
+                    </span>
+                    <span class="visual-curated-badge">On-Device Vibe</span>
+                </div>
+                <div class="visual-curated-scroll">
+                    ${items.map(it => `
+                        <div class="visual-curated-item" style="flex:0 0 160px; height:auto;" onclick="playCuratedVideo('${it.url.replace(/'/g, "\\'")}', '${catName}')">
+                            <img src="${it.thumb}" alt="${it.title}" style="width:160px; height:90px;" loading="lazy">
+                            <div style="padding:6px 8px; font-size:11px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.title}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function playCuratedVideo(url, cat) {
+            recordInterest(cat, 4);
+            closeVideoHub();
+            openDialUrl(url);
+        }
+
+        function getUnlimitedVideoBatch(cat, page, query = '') {
+            let pool = videoSeedLibrary[cat] || videoSeedLibrary['lofi'];
+            if (query) {
+                const q = query.toLowerCase();
+                pool = pool.filter(v => v.title.toLowerCase().includes(q) || v.channel.toLowerCase().includes(q));
+            }
+            const results = [];
+            const count = 6;
+            const startIndex = (page - 1) * count;
+            for (let i = 0; i < count; i++) {
+                const baseItem = pool[(startIndex + i) % pool.length];
+                if (!baseItem) continue;
+                results.push({
+                    title: page > 1 ? `${baseItem.title} (Part ${page})` : baseItem.title,
+                    category: baseItem.category,
+                    channel: baseItem.channel,
+                    duration: baseItem.duration,
+                    thumb: baseItem.thumb + (baseItem.thumb.includes('?') ? `&sig=${page * 50 + i}` : `?sig=${page * 50 + i}`),
+                    url: baseItem.url
+                });
+            }
+            return results;
+        }
+
+        function renderVideoGrid(cat, query = '', reset = false) {
+            const grid = document.getElementById('videoGridContainer');
+            if (!grid) return;
+            if (reset) {
+                grid.innerHTML = '';
+                videoPage = 1;
+            }
+            const items = getUnlimitedVideoBatch(cat, videoPage, query);
+            if (items.length === 0 && reset) {
+                grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 30px 0; font-size: 13px;">No streams found. Search to explore unlimited audio & videos.</div>';
+                return;
+            }
+
+            items.forEach(v => {
                 const card = document.createElement('div');
                 card.className = 'video-card';
                 card.onclick = () => {
+                    recordInterest(v.category, 3);
                     closeVideoHub();
                     openDialUrl(v.url);
                 };
@@ -4599,10 +5010,35 @@
             });
         }
 
+        function setupVideoInfiniteScroll() {
+            const scrollContainer = document.getElementById('videoScrollContent');
+            if (!scrollContainer || scrollContainer.__fokk_infinite_bound) return;
+            scrollContainer.__fokk_infinite_bound = true;
+
+            scrollContainer.addEventListener('scroll', function() {
+                if (isVideoLoading) return;
+                const distToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+                if (distToBottom < 300) {
+                    isVideoLoading = true;
+                    const loader = document.getElementById('videoInfiniteLoader');
+                    if (loader) loader.style.display = 'flex';
+                    setTimeout(() => {
+                        videoPage++;
+                        const input = document.getElementById('videoSearchInput');
+                        const q = input ? input.value.trim() : '';
+                        renderVideoGrid(currentVideoCategory, q, false);
+                        if (loader) loader.style.display = 'none';
+                        isVideoLoading = false;
+                    }, 400);
+                }
+            });
+        }
+
         function searchVideos() {
             const input = document.getElementById('videoSearchInput');
             const q = input ? input.value.trim() : '';
             if (q) {
+                recordInterest('lofi', 2);
                 closeVideoHub();
                 openDialUrl(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`);
             }

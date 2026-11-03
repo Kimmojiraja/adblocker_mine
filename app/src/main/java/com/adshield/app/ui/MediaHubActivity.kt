@@ -1384,10 +1384,14 @@ open class MediaHubActivity : AppCompatActivity() {
         @JavascriptInterface
         fun onMediaPlaybackChanged(isPlaying: Boolean, hasActiveVideo: Boolean) {
             activity.runOnUiThread {
-                activity.isMediaPlaying = isPlaying
-                if (isPlaying || hasActiveVideo) {
-                    activity.lastMediaPlayingTime = System.currentTimeMillis()
-                }
+                activity.onMediaPlaybackUpdated(isPlaying, hasActiveVideo, null)
+            }
+        }
+
+        @JavascriptInterface
+        fun reportMediaPlayback(isPlaying: Boolean, hasActiveVideo: Boolean, title: String) {
+            activity.runOnUiThread {
+                activity.onMediaPlaybackUpdated(isPlaying, hasActiveVideo, title)
             }
         }
     }
@@ -1918,6 +1922,11 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         val tab = tabs.firstOrNull { it.webView === webView }
         tab?.isOfflineReader = false
+
+        // Auto-Stealth Search: Strip personalization & history attachment on Google queries
+        if (targetUrl.contains("google.") && targetUrl.contains("/search") && !targetUrl.contains("pws=0")) {
+            targetUrl = if (targetUrl.contains("?")) "$targetUrl&pws=0" else "$targetUrl?pws=0"
+        }
         val tabIsPrivate = tab?.isPrivate == true
         CookieManager.getInstance().setAcceptThirdPartyCookies(
             webView,
@@ -5789,6 +5798,7 @@ open class MediaHubActivity : AppCompatActivity() {
         super.onResume()
         activeWebView?.onResume()
         activeWebView?.resumeTimers()
+        activeWebView?.evaluateJavascript("window.__fokk_is_background = false;", null)
 
         val inPip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode
         if (!inPip) {
@@ -5870,15 +5880,23 @@ open class MediaHubActivity : AppCompatActivity() {
         super.onPause()
         persistSession()
         updateGhostModeNotification()
+        val bgAudio = prefs.getBoolean("fokk_background_audio", true)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
             activeWebView?.onResume()
             return
         }
-        if (isMediaPlaying) {
+        if (isMediaPlaying && bgAudio) {
+            activeWebView?.onResume()
             activeWebView?.resumeTimers()
+            activeWebView?.evaluateJavascript("window.__fokk_is_background = true;", null)
             if (mediaWakeLock?.isHeld == false) {
                 try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
             }
+            try {
+                val am = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                @Suppress("DEPRECATION")
+                am?.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+            } catch (e: Exception) {}
         }
         CookieManager.getInstance().flush()
     }
@@ -5886,8 +5904,14 @@ open class MediaHubActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         updateGhostModeNotification()
-        if (isMediaPlaying) {
+        val bgAudio = prefs.getBoolean("fokk_background_audio", true)
+        if (isMediaPlaying && bgAudio) {
+            activeWebView?.onResume()
             activeWebView?.resumeTimers()
+            activeWebView?.evaluateJavascript("window.__fokk_is_background = true;", null)
+            if (mediaWakeLock?.isHeld == false) {
+                try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
+            }
         }
     }
 

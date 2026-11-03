@@ -1,6 +1,6 @@
 {
-  "versionCode": 91,
-  "versionName": "1.0.91",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Total Removal of Homescreen Bottom Bar: Guaranteed complete removal of bottom native bar on the start page across app resume, orientation change, tab switching, and initial load.\n- Complete Bridge & Action Functionality: All 4 squircle feature buttons (Favorites, History, AdShield, Settings) as well as the middle Command Card's tab counter badge and three-dots menu are fully wired and functional.\n- Synchronized Webpage Navigation Flow: Submitting search/URL smoothly transitions from the homescreen Command Card to the webpage with full native toolbar (Tabs badge and Three-Dots bottom sheet with Back, Forward, Reload, Home, etc.)."
+  "versionCode": 92,
+  "versionName": "1.0.92",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases",
+  "changelog": "- Permanent Native Bridge Persistence: Fixed bridge disconnect when navigating between start page and web pages so three-dots menu and tabs badge never fall back to mock popovers.\n- Update Flow & Crash Elimination: Added REQUEST_INSTALL_PACKAGES permission, replaced deprecated ProgressDialog with modern Material3-compatible dialog, and added direct GitHub Releases fallback to prevent crashes and infinite update loops.\n- Live Truth Pulse Data: Real-time weather, crypto, forex, and Google News RSS headlines with auto-retrying ingestion."
 }

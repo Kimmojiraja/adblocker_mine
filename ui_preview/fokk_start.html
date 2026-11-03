@@ -1931,10 +1931,12 @@
             window._toastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
         }
 
+        const isAppEnvironment = location.href.includes('android_asset') || location.protocol === 'file:';
+
         if (!window.FokkShieldBridge) {
             let ghostModeState = localStorage.getItem('fokk_ghost_mode') === 'true';
             window.FokkShieldBridge = {
-                isAndroidNative: function() { return false; },
+                isAndroidNative: function() { return isAppEnvironment; },
                 isGhostModeActive: function() { return ghostModeState; },
                 toggleGhostMode: function() {
                     ghostModeState = !ghostModeState;
@@ -2153,7 +2155,10 @@
         function toggleCommandMenu(e) {
             if (e) e.stopPropagation();
             try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function' && window.FokkShieldBridge.isAndroidNative && window.FokkShieldBridge.isAndroidNative()) {
+                const isNative = (window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function')
+                    ? window.FokkShieldBridge.isAndroidNative()
+                    : isAppEnvironment;
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openMenu === 'function' && isNative) {
                     window.FokkShieldBridge.openMenu();
                     return;
                 }
@@ -2285,7 +2290,10 @@
         function triggerTabsAction() {
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
             try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function' && window.FokkShieldBridge.isAndroidNative && window.FokkShieldBridge.isAndroidNative()) {
+                const isNative = (window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function')
+                    ? window.FokkShieldBridge.isAndroidNative()
+                    : isAppEnvironment;
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openTabs === 'function' && isNative) {
                     window.FokkShieldBridge.openTabs();
                     return;
                 }
@@ -3436,7 +3444,7 @@
             });
         }
 
-        function renderFilteredNews() {
+        function renderFilteredNews(retryCount = 0) {
             try {
                 if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getLiveNews === 'function') {
                     const raw = window.FokkShieldBridge.getLiveNews(currentNewsCategory);
@@ -3446,6 +3454,8 @@
                             renderNewsCards(parsed);
                             return;
                         }
+                    } else if (retryCount < 4) {
+                        setTimeout(() => renderFilteredNews(retryCount + 1), 800);
                     }
                 }
             } catch (e) {}

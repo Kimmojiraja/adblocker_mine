@@ -81,8 +81,15 @@ object AppUpdateManager {
             }
 
             activity.runOnUiThread {
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
                 if (latestCode > currentCode && downloadUrl.isNotBlank()) {
-                    showUpdateDialog(activity, latestName, changelog, downloadUrl)
+                    val prefs = activity.getSharedPreferences("fokk_update_prefs", Context.MODE_PRIVATE)
+                    val lastPrompt = prefs.getLong("last_prompt_time", 0L)
+                    val isCoolingDown = !manualCheck && (System.currentTimeMillis() - lastPrompt < 12 * 60 * 60 * 1000L)
+                    if (!isCoolingDown) {
+                        prefs.edit().putLong("last_prompt_time", System.currentTimeMillis()).apply()
+                        showUpdateDialog(activity, latestName, changelog, downloadUrl)
+                    }
                 } else if (manualCheck) {
                     val message = when {
                         !metadataLoaded -> "Could not check for updates. Check your connection and try again."
@@ -95,18 +102,34 @@ object AppUpdateManager {
         }
     }
 
+    fun openReleasesPage(activity: Activity) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/adblocker_mine/releases")).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(activity, "Could not open browser for releases", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun showUpdateDialog(activity: Activity, newVersion: String, notes: String, downloadUrl: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         AlertDialog.Builder(activity)
             .setTitle("Update Available: FokkShield v$newVersion")
             .setMessage("$notes\n\nWould you like to download and install this update now?")
             .setPositiveButton("Update Now") { _, _ ->
                 checkInstallPermissionAndDownload(activity, downloadUrl, newVersion)
             }
+            .setNeutralButton("Web Releases") { _, _ ->
+                openReleasesPage(activity)
+            }
             .setNegativeButton("Later", null)
             .show()
     }
 
     private fun checkInstallPermissionAndDownload(activity: Activity, downloadUrl: String, newVersion: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!activity.packageManager.canRequestPackageInstalls()) {
                 AlertDialog.Builder(activity)
@@ -116,11 +139,21 @@ object AppUpdateManager {
                         try {
                             val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                                 data = Uri.parse("package:${activity.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             activity.startActivity(intent)
                         } catch (e: Exception) {
-                            activity.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
+                            try {
+                                activity.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                })
+                            } catch (_: Exception) {
+                                openReleasesPage(activity)
+                            }
                         }
+                    }
+                    .setNeutralButton("Web Releases") { _, _ ->
+                        openReleasesPage(activity)
                     }
                     .setNegativeButton("Cancel", null)
                     .show()
@@ -130,22 +163,56 @@ object AppUpdateManager {
         startApkDownload(activity, downloadUrl, newVersion)
     }
 
-    @Suppress("DEPRECATION")
     private fun startApkDownload(activity: Activity, downloadUrl: String, newVersion: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         val uri = Uri.parse(downloadUrl)
         if (uri.scheme != "https") {
             Toast.makeText(activity, "Update download must use HTTPS", Toast.LENGTH_LONG).show()
+            openReleasesPage(activity)
             return
         }
-        val progressDialog = ProgressDialog(activity).apply {
-            setTitle("Downloading FokkShield v$newVersion")
-            setMessage("Downloading update package...")
-            isIndeterminate = false
-            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
-            max = 100
-            setCancelable(false)
-            show()
+
+        // Safe programmatic layout compatible with Theme.Material3 (avoids ProgressDialog crashes)
+        val density = activity.resources.displayMetrics.density
+        val padding = (20 * density).toInt()
+
+        val layout = android.widget.LinearLayout(activity).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(padding, padding / 2, padding, padding / 2)
         }
+
+        val statusLabel = android.widget.TextView(activity).apply {
+            text = "Connecting to update server..."
+            textSize = 14f
+            setTextColor(0xFFE2E8F0.toInt())
+        }
+
+        val progressBar = android.widget.ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = false
+            max = 100
+            progress = 0
+            val lp = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = (14 * density).toInt() }
+            layoutParams = lp
+        }
+
+        layout.addView(statusLabel)
+        layout.addView(progressBar)
+
+        var isCancelled = false
+        val downloadDialog = AlertDialog.Builder(activity)
+            .setTitle("Downloading FokkShield v$newVersion")
+            .setView(layout)
+            .setCancelable(false)
+            .setNegativeButton("Cancel") { d, _ ->
+                isCancelled = true
+                d.dismiss()
+            }
+            .create()
+
+        downloadDialog.show()
 
         thread {
             try {
@@ -153,6 +220,7 @@ object AppUpdateManager {
                 var conn: HttpURLConnection
                 var redirectCount = 0
                 while (true) {
+                    if (isCancelled) return@thread
                     val url = URL(currentUrl)
                     conn = url.openConnection() as HttpURLConnection
                     conn.connectTimeout = 15000
@@ -172,12 +240,13 @@ object AppUpdateManager {
                     break
                 }
 
+                if (isCancelled) return@thread
                 if (conn.responseCode !in 200..299) {
                     throw IllegalStateException("Update server returned HTTP ${conn.responseCode}")
                 }
                 val contentType = conn.contentType.orEmpty().lowercase()
                 if (contentType.contains("text/html") || contentType.contains("application/json")) {
-                    throw IllegalStateException("Update server did not return an APK")
+                    throw IllegalStateException("Update server did not return an APK package")
                 }
 
                 val fileLength = conn.contentLength
@@ -196,10 +265,23 @@ object AppUpdateManager {
                 var count: Int
 
                 while (input.read(data).also { count = it } != -1) {
+                    if (isCancelled) {
+                        output.close()
+                        input.close()
+                        if (apkFile.exists()) apkFile.delete()
+                        return@thread
+                    }
                     total += count.toLong()
                     if (fileLength > 0) {
                         val progress = (total * 100 / fileLength).toInt()
-                        activity.runOnUiThread { progressDialog.progress = progress }
+                        activity.runOnUiThread {
+                            if (!activity.isFinishing && !activity.isDestroyed && downloadDialog.isShowing) {
+                                progressBar.progress = progress
+                                val mbDone = String.format("%.1f", total / (1024f * 1024f))
+                                val mbTotal = String.format("%.1f", fileLength / (1024f * 1024f))
+                                statusLabel.text = "Downloaded $progress% ($mbDone MB / $mbTotal MB)"
+                            }
+                        }
                     }
                     output.write(data, 0, count)
                 }
@@ -210,17 +292,28 @@ object AppUpdateManager {
 
                 if (apkFile.length() < 32 * 1024) {
                     apkFile.delete()
-                    throw IllegalStateException("Downloaded update is invalid or incomplete")
+                    throw IllegalStateException("Downloaded update package is incomplete")
                 }
 
                 activity.runOnUiThread {
-                    progressDialog.dismiss()
-                    promptInstallApk(activity, apkFile)
+                    if (!activity.isFinishing && !activity.isDestroyed) {
+                        if (downloadDialog.isShowing) downloadDialog.dismiss()
+                        promptInstallApk(activity, apkFile)
+                    }
                 }
             } catch (e: Exception) {
                 activity.runOnUiThread {
-                    progressDialog.dismiss()
-                    Toast.makeText(activity, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    if (!activity.isFinishing && !activity.isDestroyed) {
+                        if (downloadDialog.isShowing) downloadDialog.dismiss()
+                        AlertDialog.Builder(activity)
+                            .setTitle("Update Download Failed")
+                            .setMessage("Could not download update package directly: ${e.message ?: "Unknown error"}.\n\nWould you like to open the GitHub Releases page to download the latest APK manually?")
+                            .setPositiveButton("Open Web Releases") { _, _ ->
+                                openReleasesPage(activity)
+                            }
+                            .setNegativeButton("Close", null)
+                            .show()
+                    }
                 }
             }
         }
@@ -241,7 +334,14 @@ object AppUpdateManager {
             }
             activity.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(activity, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG).show()
+            AlertDialog.Builder(activity)
+                .setTitle("Installer Launch Error")
+                .setMessage("Could not open system installer (${e.message}). You can download the latest APK directly from the releases page.")
+                .setPositiveButton("Open Releases") { _, _ ->
+                    openReleasesPage(activity)
+                }
+                .setNegativeButton("Close", null)
+                .show()
         }
     }
 

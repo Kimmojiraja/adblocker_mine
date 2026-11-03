@@ -3184,21 +3184,20 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
-    /** The native bridge is required only by our bundled start page, never by remote content. */
+    /** The native bridge is permanently maintained so internal and start page actions never disconnect. */
     private fun setBridgeEnabled(webView: WebView?, url: String?) {
         if (webView == null) return
-        val isAssetPage = isHomePageUrl(url) || url?.startsWith("file:///android_asset/") == true
-        if (isAssetPage) {
+        try {
             webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
-        } else {
-            webView.removeJavascriptInterface("FokkShieldBridge")
-        }
+        } catch (_: Exception) {}
         if (url?.startsWith(OFFLINE_PAGE_BASE_URL) != true) {
-            webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
-            val isSnifferEnabled = prefs.getBoolean(PREF_VIDEO_SNIFFER, true)
-            if (isSnifferEnabled) {
-                webView.addJavascriptInterface(FokkVideoBridge(this), "FokkVideoBridge")
-            }
+            try {
+                webView.addJavascriptInterface(MediaPlaybackBridge(this), "FokkMediaBridge")
+                val isSnifferEnabled = prefs.getBoolean(PREF_VIDEO_SNIFFER, true)
+                if (isSnifferEnabled) {
+                    webView.addJavascriptInterface(FokkVideoBridge(this), "FokkVideoBridge")
+                }
+            } catch (_: Exception) {}
         }
     }
 

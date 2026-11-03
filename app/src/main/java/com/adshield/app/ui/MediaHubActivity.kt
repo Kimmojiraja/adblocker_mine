@@ -1029,6 +1029,13 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun openSearchEngineDialog() {
+            activity.runOnUiThread {
+                activity.showSearchEngineDialog()
+            }
+        }
+
+        @JavascriptInterface
         fun pickWallpaperImage() {
             activity.runOnUiThread {
                 activity.openWallpaperGalleryPicker()

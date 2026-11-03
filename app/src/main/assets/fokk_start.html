@@ -6,7 +6,7 @@
     <title>Fokk Browser</title>
     <style>
         :root {
-            --bg-color: #080D1A;
+            --bg-color: #000000;
             --surface-card: #121824;
             --card-border: rgba(255, 255, 255, 0.08);
             --fokk-purple: #8B5CF6;
@@ -20,7 +20,7 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #080D1A;
+                --bg-color: #000000;
                 --surface-card: #121824;
                 --card-border: rgba(255, 255, 255, 0.08);
                 --fokk-purple: #8B5CF6;
@@ -44,11 +44,9 @@
 
         body {
             position: relative;
-            background: #090E1A;
+            background: #000000;
             background-image: 
-                radial-gradient(ellipse 100% 65% at 50% -5%, #1C3560 0%, #0F1E38 45%, transparent 80%),
-                radial-gradient(ellipse 85% 55% at 50% 105%, #132442 0%, transparent 70%),
-                radial-gradient(circle at 50% 50%, #0B1426 0%, #070B14 100%);
+                radial-gradient(ellipse 100% 55% at 50% -5%, #0B1220 0%, #04070D 45%, #000000 85%);
             background-size: cover;
             background-position: center center;
             background-attachment: fixed;
@@ -1720,8 +1718,8 @@
                     </svg>
                     <span class="wp-title" style="font-size: 11px; font-weight: 700; color: var(--fokk-cyan);">Upload Image</span>
                 </div>
-                <div class="wallpaper-card active" onclick="setWallpaper('default')" style="background: #090E1A; color: #fff;">
-                    <span class="wp-title">Midnight Sapphire</span>
+                <div class="wallpaper-card active" onclick="setWallpaper('default')" style="background: #000000; color: #fff;">
+                    <span class="wp-title">Obsidian Noir</span>
                 </div>
                 <div class="wallpaper-card" onclick="setWallpaper('pure_obsidian')" style="background: #11131C; color: #fff;">
                     <span class="wp-title">Obsidian Dark</span>
@@ -1816,6 +1814,11 @@
                 name: 'Brave',
                 url: 'https://search.brave.com/search?q=',
                 icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FB542B"/><path fill="#FFFFFF" d="M7 8l2.5-2h5L17 8l1.5 4-2.5 5.5-4 1.5-4-1.5L5.5 12z"/><path fill="#FB542B" d="M10 10h4v2h-4z"/></svg>`
+            },
+            startpage: {
+                name: 'Startpage',
+                url: 'https://www.startpage.com/sp/search?query=',
+                icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0033CC"/><circle cx="10" cy="11" r="3.5" fill="none" stroke="#FFFFFF" stroke-width="2"/><path stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M13 14l3.5 3.5"/></svg>`
             },
             bing: {
                 name: 'Bing',

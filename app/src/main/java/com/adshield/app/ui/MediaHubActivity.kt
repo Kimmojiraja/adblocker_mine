@@ -132,7 +132,8 @@ open class MediaHubActivity : AppCompatActivity() {
         BRAVE("Brave Search", "https://search.brave.com/search?q=", R.drawable.ic_engine_brave),
         DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q=", R.drawable.ic_engine_duckduckgo),
         ECOSIA("Ecosia", "https://www.ecosia.org/search?q=", R.drawable.ic_engine_ecosia),
-        STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query=", R.drawable.ic_engine_startpage)
+        STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query=", R.drawable.ic_engine_startpage),
+        BING("Bing", "https://www.bing.com/search?q=", R.drawable.ic_engine_bing)
     }
 
     data class BrowserTab(
@@ -3723,6 +3724,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     SearchEngine.BRAVE -> "Independent Web Index • Ad-Free"
                     SearchEngine.GOOGLE -> "Comprehensive Global Index"
                     SearchEngine.STARTPAGE -> "Google Results with Absolute Privacy"
+                    SearchEngine.BING -> "Microsoft Bing • Global Web & AI Copilot"
                 }
                 radioBtn.isChecked = (engine == currentSearchEngine)
                 return row

@@ -1,6 +1,6 @@
 {
-  "versionCode": 86,
-  "versionName": "1.0.86",
+  "versionCode": 87,
+  "versionName": "1.0.87",
   "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk",
-  "changelog": "- Cosmic Midnight Sapphire Background: Upgraded homescreen from generic flat dark theme to a custom Arc-inspired midnight sapphire ambient gradient depth.\n- Sleek Truth Pulse Capsule: Removed the glowing cyan dot and neon pulse glow, replacing it with a clean vector heartbeat pulse SVG icon matching the Ghost Mode capsule aesthetic.\n- Dynamic Theme Restoration: Selecting default theme cleanly restores the native CSS ambient cosmic gradient."
+  "changelog": "- Deep Obsidian Noir Background: Shifted background to pitch black with subtle top atmospheric noir ambiance, seamlessly matching the Fokk emblem disc.\n- Search Engine Matrix: Added Bing and Startpage support across both native Android SearchEngine and the start page Command Input Card dropdown."
 }

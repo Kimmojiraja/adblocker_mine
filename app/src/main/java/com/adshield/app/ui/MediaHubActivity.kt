@@ -1252,6 +1252,48 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun downloadFile(url: String, filename: String) {
+            activity.runOnUiThread {
+                try {
+                    val name = if (filename.isNotBlank()) filename else URLUtil.guessFileName(url, null, null)
+                    val req = DownloadManager.Request(Uri.parse(url)).apply {
+                        setTitle(name)
+                        setDescription("Downloading via Fokk Shield")
+                        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
+                        setAllowedOverMetered(true)
+                        setAllowedOverRoaming(true)
+                    }
+                    val dm = activity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    dm.enqueue(req)
+                    Toast.makeText(activity, "Download started: $name", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        activity.startActivity(intent)
+                    } catch (ex: Exception) {
+                        Toast.makeText(activity, "Unable to start download", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun shareContent(text: String, title: String) {
+            activity.runOnUiThread {
+                try {
+                    val sendIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        if (title.isNotBlank()) putExtra(Intent.EXTRA_TITLE, title)
+                        type = "text/plain"
+                    }
+                    activity.startActivity(Intent.createChooser(sendIntent, if (title.isNotBlank()) title else "Share via"))
+                } catch (e: Exception) {}
+            }
+        }
+
+        @JavascriptInterface
         fun openPrivateTabs() {
             activity.runOnUiThread {
                 activity.authenticateForPrivateTabs {

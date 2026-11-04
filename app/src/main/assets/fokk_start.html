@@ -1908,13 +1908,28 @@
         .audio-scroll-content {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 16px 80px 16px;
+            padding: 12px 16px 80px 16px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             max-width: 680px;
             width: 100%;
             margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .audio-hub-header-fixed {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 16px 10px 16px;
+            background: #181818;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            box-sizing: border-box;
+            z-index: 20;
         }
         .audio-search-box {
             display: flex;
@@ -1948,25 +1963,38 @@
             display: flex;
             gap: 8px;
             overflow-x: auto;
+            overflow-y: hidden;
             scrollbar-width: none;
-            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
+            flex-shrink: 0;
+            min-height: 44px;
+            align-items: center;
+            padding: 4px 2px 6px 2px;
+            width: 100%;
+            box-sizing: border-box;
         }
         .audio-tags-strip::-webkit-scrollbar { display: none; }
         .audio-tag-btn {
-            background: #282828;
-            border: none;
+            background: #242424;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #B3B3B3;
             border-radius: 9999px;
-            padding: 6px 13px;
+            padding: 7px 14px;
             font-size: 12px;
             font-weight: 700;
             white-space: nowrap;
             cursor: pointer;
+            flex-shrink: 0;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.15s ease;
         }
         .audio-tag-btn.active {
             background: #1DB954;
             color: #000000;
+            border-color: #1DB954;
             font-weight: 800;
         }
         .audio-tracks-list {
@@ -1979,9 +2007,9 @@
             align-items: center;
             gap: 12px;
             padding: 8px 10px;
-            border-radius: 10px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             cursor: pointer;
             transition: background 0.15s ease;
         }
@@ -2025,15 +2053,50 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .audio-track-artist-link {
+            cursor: pointer;
+            text-decoration: underline transparent;
+            transition: color 0.15s ease;
+        }
+        .audio-track-artist-link:hover {
+            color: #1DB954;
+            text-decoration: underline;
+        }
         .audio-track-duration {
             font-size: 11px;
             color: #71717A;
             font-weight: 600;
             margin-right: 2px;
         }
-        .audio-play-circle-btn {
+        .audio-track-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .audio-track-action-btn {
             width: 32px;
             height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .audio-track-action-btn:active {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .audio-track-action-btn.liked {
+            color: #1DB954;
+        }
+        .audio-play-circle-btn {
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: #1DB954;
             color: #000000;
@@ -2043,6 +2106,276 @@
             border: none;
             cursor: pointer;
             flex-shrink: 0;
+        }
+
+        /* LIVE PLAYING MUSIC CARD ON HOME SCREEN */
+        .home-live-music-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(18, 18, 18, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 10px 14px;
+            margin: 12px auto 0 auto;
+            max-width: 440px;
+            width: calc(100% - 28px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            animation: fadeInCard 0.25s ease-out;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .live-music-art {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #282828;
+            flex-shrink: 0;
+        }
+        .live-music-meta {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            cursor: pointer;
+        }
+        .live-music-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .live-music-tag {
+            font-size: 9.5px;
+            font-weight: 800;
+            color: #1DB954;
+            letter-spacing: 0.8px;
+        }
+        .equalizer-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 10px;
+        }
+        .eq-bar {
+            width: 2px;
+            background: #1DB954;
+            border-radius: 1px;
+            animation: eqBounce 0.8s ease-in-out infinite alternate;
+        }
+        .eq-bar:nth-child(1) { height: 3px; animation-delay: 0.1s; }
+        .eq-bar:nth-child(2) { height: 9px; animation-delay: 0.3s; }
+        .eq-bar:nth-child(3) { height: 6px; animation-delay: 0.2s; }
+        @keyframes eqBounce {
+            0% { height: 2px; }
+            100% { height: 10px; }
+        }
+        .equalizer-bars.paused .eq-bar {
+            animation: none;
+            height: 2px;
+        }
+        .live-music-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .live-music-artist {
+            font-size: 11px;
+            color: #A1A1AA;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .live-music-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .live-music-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .live-music-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .live-music-btn.close {
+            color: #94A3B8;
+        }
+
+        /* FULLSCREEN LIGHTBOX IMAGE VIEWER */
+        .visual-lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            z-index: 10010;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .lightbox-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 2;
+        }
+        .lightbox-close-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #FFFFFF;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .lightbox-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50%;
+        }
+        .lightbox-action-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .lightbox-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 8px;
+        }
+        .lightbox-body img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .lightbox-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 14px 16px;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 10px;
+            z-index: 2;
+        }
+        .lightbox-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            font-size: 12.5px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .lightbox-btn.primary {
+            background: #00E5FF;
+            color: #000000;
+            border: none;
+            font-weight: 800;
+        }
+
+        /* VIDEO CARDS & FOOTER */
+        .video-card-footer {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 10px 12px;
+            gap: 8px;
+            background: #141824;
+        }
+        .video-card-meta {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            cursor: pointer;
+        }
+        .video-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .video-card-channel {
+            font-size: 11px;
+            color: #94A3B8;
+        }
+        .video-card-more-btn {
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            padding: 4px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .video-card-more-btn:active {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.12);
         }
         .audio-mini-player {
             position: fixed;
@@ -2517,6 +2850,34 @@
             <button class="home-essential" onclick="openAudioHub(event)" title="Music & Audio" aria-label="Audio"><svg viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
         </div>
 
+        <!-- LIVE PLAYING MUSIC CARD ON HOME SCREEN -->
+        <div class="home-live-music-card" id="homeLiveMusicCard" style="display:none;">
+            <img class="live-music-art" id="homeLiveMusicArt" src="" alt="Album Art">
+            <div class="live-music-meta" onclick="openAudioHub()">
+                <div class="live-music-header">
+                    <span class="live-music-tag">NOW PLAYING</span>
+                    <div class="equalizer-bars paused" id="homeEqualizerBars">
+                        <div class="eq-bar"></div>
+                        <div class="eq-bar"></div>
+                        <div class="eq-bar"></div>
+                    </div>
+                </div>
+                <span class="live-music-title" id="homeLiveMusicTitle">Track Title</span>
+                <span class="live-music-artist" id="homeLiveMusicArtist">Artist Name</span>
+            </div>
+            <div class="live-music-actions">
+                <button class="live-music-btn" id="homeLivePlayBtn" onclick="toggleAudioPlayState(event)" title="Play / Pause">
+                    <svg id="homeLivePlayIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <button class="live-music-btn" onclick="stopAudioPlayback(event)" title="Stop">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+                </button>
+                <button class="live-music-btn close" onclick="dismissLiveMusicCard(event)" title="Close">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+
         <!-- FLEX SPACER TO PUSH SHORTCUTS TO BOTTOM -->
         <div class="hero-spacer"></div>
 
@@ -2678,23 +3039,27 @@
             </div>
             <button class="pulse-customize-btn" style="background: rgba(29, 185, 84, 0.2); border-color: #1DB954; color: #1DB954;" onclick="showPreviewToast('HQ 320kbps Open-Source Audio Streams')" title="Audio Info">HQ 320k</button>
         </div>
-        <div class="audio-scroll-content" id="audioScrollContent">
+        <div class="audio-hub-header-fixed">
             <div class="audio-search-box">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input type="text" id="audioSearchInput" class="audio-search-input" placeholder="Search any artist, song, lofi, acoustic, peace, zen..." onkeydown="if(event.key==='Enter') searchAudio()">
                 <button class="audio-search-go" onclick="searchAudio()">Search</button>
             </div>
             <div class="audio-tags-strip">
-                <button class="audio-tag-btn active" onclick="filterAudio('trending', this)">🔥 Trending</button>
-                <button class="audio-tag-btn" onclick="filterAudio('lofi', this)">☕ Lo-Fi Beats</button>
-                <button class="audio-tag-btn" onclick="filterAudio('acoustic', this)">🎸 Raw Acoustic</button>
-                <button class="audio-tag-btn" onclick="filterAudio('peace', this)">🧘 Peace &amp; Zen (432Hz)</button>
-                <button class="audio-tag-btn" onclick="filterAudio('piano', this)">🎹 Soft Piano</button>
-                <button class="audio-tag-btn" onclick="filterAudio('jazz', this)">🎷 Chill Jazz</button>
-                <button class="audio-tag-btn" onclick="filterAudio('electronic', this)">⚡ Deep Synth</button>
-                <button class="audio-tag-btn" onclick="filterAudio('sleep', this)">🌙 Deep Sleep</button>
+                <button class="audio-tag-btn active" onclick="filterAudio('trending', this)">Trending</button>
+                <button class="audio-tag-btn" onclick="filterAudio('liked', this)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#1DB954" stroke="none" style="vertical-align: middle; margin-right: 4px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Liked Songs
+                </button>
+                <button class="audio-tag-btn" onclick="filterAudio('lofi', this)">Lo-Fi Beats</button>
+                <button class="audio-tag-btn" onclick="filterAudio('acoustic', this)">Raw Acoustic</button>
+                <button class="audio-tag-btn" onclick="filterAudio('peace', this)">Peace &amp; Zen</button>
+                <button class="audio-tag-btn" onclick="filterAudio('piano', this)">Piano</button>
+                <button class="audio-tag-btn" onclick="filterAudio('jazz', this)">Smooth Jazz</button>
+                <button class="audio-tag-btn" onclick="filterAudio('synthwave', this)">Synthwave</button>
+                <button class="audio-tag-btn" onclick="filterAudio('sleep', this)">Deep Sleep</button>
             </div>
-            
+        </div>
+        <div class="audio-scroll-content" id="audioScrollContent">
             <div class="audio-tracks-list" id="audioTracksList">
                 <!-- Dynamically loaded Spotify-style audio tracks -->
             </div>
@@ -2717,6 +3082,37 @@
         </div>
     </div>
 
+    <!-- FULLSCREEN PINTEREST LIGHTBOX IMAGE VIEWER -->
+    <div class="visual-lightbox-modal" id="visualLightboxModal" style="display:none;" onclick="closeVisualLightbox(event)">
+        <div class="lightbox-header" onclick="event.stopPropagation()">
+            <button class="lightbox-close-btn" onclick="closeVisualLightbox()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Back</span>
+            </button>
+            <span class="lightbox-title" id="lightboxTitle">Wallpaper</span>
+            <button class="lightbox-action-icon-btn" onclick="shareWallpaperFromLightbox()" title="Share">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+        </div>
+        <div class="lightbox-body">
+            <img id="lightboxImg" src="" alt="Full view" onclick="event.stopPropagation()">
+        </div>
+        <div class="lightbox-footer" onclick="event.stopPropagation()">
+            <button class="lightbox-btn primary" onclick="applyWallpaperFromLightbox()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Set Wallpaper</span>
+            </button>
+            <button class="lightbox-btn" onclick="downloadWallpaperFromLightbox()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span>Download</span>
+            </button>
+            <button class="lightbox-btn" onclick="boostVibeFromLightbox()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span>Favorite</span>
+            </button>
+        </div>
+    </div>
+
     <!-- VISUAL PINTEREST 3-DOTS ACTION SHEET MODAL -->
     <div class="visual-action-overlay" id="visualActionSheet" style="display:none;" onclick="closeVisualActionSheet(event)">
         <div class="visual-action-sheet" onclick="event.stopPropagation()">
@@ -2728,13 +3124,21 @@
                 </div>
             </div>
             <div class="visual-sheet-actions">
+                <button class="visual-sheet-btn" onclick="openLightboxFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                    <span>View Full Image</span>
+                </button>
                 <button class="visual-sheet-btn primary" onclick="applyWallpaperFromSheet()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <span>Apply as Fokk Startpage Wallpaper</span>
                 </button>
-                <button class="visual-sheet-btn" onclick="openWallpaperFullRes()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    <span>Open Ultra 4K High-Res</span>
+                <button class="visual-sheet-btn" onclick="downloadWallpaperFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    <span>Download Image</span>
+                </button>
+                <button class="visual-sheet-btn" onclick="shareWallpaperFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    <span>Share Image</span>
                 </button>
                 <button class="visual-sheet-btn" onclick="boostVibeFromSheet()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -2742,6 +3146,34 @@
                 </button>
             </div>
             <button class="visual-sheet-cancel" onclick="closeVisualActionSheet()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- VIDEO 3-DOTS ACTION SHEET MODAL -->
+    <div class="visual-action-overlay" id="videoActionSheet" style="display:none;" onclick="closeVideoActionSheet(event)">
+        <div class="visual-action-sheet" onclick="event.stopPropagation()">
+            <div class="visual-sheet-preview">
+                <img id="videoSheetThumb" src="" alt="Preview">
+                <div class="visual-sheet-meta">
+                    <span id="videoSheetTitle">Video Title</span>
+                    <span id="videoSheetChannel">Channel</span>
+                </div>
+            </div>
+            <div class="visual-sheet-actions">
+                <button class="visual-sheet-btn primary" onclick="playVideoFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Play Ad-Free Video</span>
+                </button>
+                <button class="visual-sheet-btn" onclick="shareVideoFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    <span>Share Video</span>
+                </button>
+                <button class="visual-sheet-btn" onclick="copyVideoLinkFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <span>Copy Link</span>
+                </button>
+            </div>
+            <button class="visual-sheet-cancel" onclick="closeVideoActionSheet()">Cancel</button>
         </div>
     </div>
 
@@ -4959,10 +5391,51 @@
             ]
         };
 
+        // Procedural verified high-resolution unique seeds for endless deduplicated infinite scrolling
+        const proceduralPhotoSeeds = [
+            { id: 10, title: "Deep Forest Mist", cat: "nature", sub: "8K UHD Nature" },
+            { id: 11, title: "Ethereal Lake Reflection", cat: "nature", sub: "Alpine Serenity" },
+            { id: 15, title: "Nordic Waterfall Cascade", cat: "nature", sub: "Wild Nature" },
+            { id: 16, title: "Pacific Shore Horizon", cat: "nature", sub: "Ocean Breeze" },
+            { id: 28, title: "Alpine Mountain Ridge", cat: "nature", sub: "Dolomites Peak" },
+            { id: 29, title: "Lush Bamboo Trail", cat: "nature", sub: "Kyoto Solitude" },
+            { id: 37, title: "Monochrome Minimalist Horizon", cat: "minimal", sub: "Clean Lines" },
+            { id: 42, title: "Abstract Geometric Flow", cat: "minimal", sub: "OLED Minimal" },
+            { id: 49, title: "Iridescent Prism Wave", cat: "minimal", sub: "Liquid Glass 4K" },
+            { id: 54, title: "Midnight Cyber Boulevard", cat: "cyberpunk", sub: "Neon Raytraced" },
+            { id: 58, title: "Tokyo Rain Reflections", cat: "cyberpunk", sub: "Cyber Shinjuku" },
+            { id: 64, title: "Neon Cybernetic Core", cat: "cyberpunk", sub: "Synthetic Future" },
+            { id: 75, title: "Retro Synthwave Highway", cat: "cyberpunk", sub: "Outrun Sunset" },
+            { id: 82, title: "Deep Sky Pillars of Creation", cat: "space", sub: "James Webb Deep Space" },
+            { id: 88, title: "Cosmic Nebula Glow", cat: "space", sub: "Orion Observatory" },
+            { id: 96, title: "Starlight Over Desert Horizon", cat: "space", sub: "Atacama Clear Sky" },
+            { id: 106, title: "Eclipse Ring of Fire", cat: "space", sub: "Astrophotography" },
+            { id: 110, title: "Futuristic Glass Titanium Pavilion", cat: "architecture", sub: "Modern Design" },
+            { id: 116, title: "Spiral Geometric Atrium", cat: "architecture", sub: "Pure Symmetry" },
+            { id: 122, title: "Brutalist Concrete Horizon", cat: "architecture", sub: "Structural Form" },
+            { id: 133, title: "Anime Whispering Meadow", cat: "anime", sub: "Studio Ghibli Aesthetic" },
+            { id: 142, title: "Shinkai Twilight Skyline", cat: "anime", sub: "Anime Scenery" },
+            { id: 146, title: "Lantern Canal Spring Evening", cat: "anime", sub: "Kyoto Concept" },
+            { id: 152, title: "Aurora Emerald Night Sky", cat: "wallpapers", sub: "Tromso 4K Ultra" },
+            { id: 160, title: "Obsidian OLED Dark Waves", cat: "wallpapers", sub: "True Black OLED" },
+            { id: 164, title: "Emerald Glacial Fjord", cat: "wallpapers", sub: "Nordic Cinematic" },
+            { id: 175, title: "Crimson Autumn Japanese Maple", cat: "nature", sub: "Serene Autumn" },
+            { id: 180, title: "Cybernetic Neon Alleyway", cat: "cyberpunk", sub: "Dystopian Tokyo" },
+            { id: 188, title: "Celestial Galaxy Core", cat: "space", sub: "Hubble Ultra Deep" },
+            { id: 193, title: "Floating Cloud Horizon", cat: "nature", sub: "Summit View" },
+            { id: 204, title: "Sculpted Architecture Arch", cat: "architecture", sub: "Geometric Masterpiece" },
+            { id: 211, title: "Liquid Chrome Distortion", cat: "minimal", sub: "3D Digital Art" },
+            { id: 218, title: "Anime Evening Train Platform", cat: "anime", sub: "Cinematic Anime" },
+            { id: 225, title: "Midnight Urban Express", cat: "cyberpunk", sub: "Cyber Matrix" },
+            { id: 237, title: "Serene Mountain Solitude", cat: "nature", sub: "Rocky Mountains" },
+            { id: 244, title: "Supernova Remnant Shell", cat: "space", sub: "Cosmic Wonder" }
+        ];
+
         let currentVisualCategory = 'all';
         let visualPage = 1;
         let isVisualLoading = false;
         let visualHasMore = true;
+        const seenVisualUrls = new Set();
 
         function openVisualHub(e) {
             if (e) {
@@ -5020,7 +5493,7 @@
                 </div>
                 <div class="visual-curated-scroll">
                     ${items.map(it => `
-                        <div class="visual-curated-item" onclick="selectVisualWallpaper('${it.title.replace(/'/g, "\\'")}', '${it.img}', '${catName}')">
+                        <div class="visual-curated-item" onclick="openVisualLightbox('${it.title.replace(/'/g, "\\'")}', '${it.img}', '${catName}', '${it.sub || '4K UHD'}')">
                             <img src="${it.img}" alt="${it.title}" loading="lazy">
                         </div>
                     `).join('')}
@@ -5038,27 +5511,32 @@
                 pool = visualSeedLibrary[cat].map(item => ({ ...item, category: cat }));
             }
 
+            // Also include matching procedural seeds for vast non-duplicate variety
+            const matchingProcedural = proceduralPhotoSeeds.filter(p => cat === 'all' || p.cat === cat || cat === 'wallpapers');
+            matchingProcedural.forEach(p => {
+                pool.push({
+                    title: p.title,
+                    category: p.cat,
+                    sub: p.sub,
+                    img: `https://picsum.photos/id/${p.id}/1080/1920`,
+                    ratio: "1.3"
+                });
+            });
+
             if (query) {
                 const q = query.toLowerCase();
                 pool = pool.filter(v => v.title.toLowerCase().includes(q) || v.sub.toLowerCase().includes(q) || v.category.includes(q));
             }
 
-            // Procedurally expand pool for infinite scrolling with unique photo seeds
+            // Return strictly deduplicated batch
             const results = [];
             const count = 12;
-            const startIndex = (page - 1) * count;
-            for (let i = 0; i < count; i++) {
-                const baseItem = pool[(startIndex + i) % pool.length];
-                if (!baseItem) continue;
-                // Add unique cache-busting seed for endless dynamic visual variety
-                const seedUrl = baseItem.img + (baseItem.img.includes('?') ? `&sig=${page * 100 + i}` : `?sig=${page * 100 + i}`);
-                results.push({
-                    title: page > 1 ? `${baseItem.title} #${(page - 1) * 12 + i + 1}` : baseItem.title,
-                    category: baseItem.category,
-                    sub: baseItem.sub,
-                    img: seedUrl,
-                    ratio: baseItem.ratio || "1.2"
-                });
+            for (let i = 0; i < pool.length; i++) {
+                const item = pool[i];
+                if (!seenVisualUrls.has(item.img)) {
+                    results.push(item);
+                    if (results.length >= count) break;
+                }
             }
             return results;
         }
@@ -5069,6 +5547,7 @@
             if (reset) {
                 grid.innerHTML = '';
                 visualPage = 1;
+                seenVisualUrls.clear();
             }
 
             let items = [];
@@ -5100,9 +5579,13 @@
                 console.log("[VisualHub] Network fetch notice:", err);
             }
 
-            // 2. Fallback to procedural seed expansion if network unreachable
-            if (items.length === 0) {
-                items = getUnlimitedVisualBatch(cat, visualPage, query);
+            // Filter out any already seen URLs to eliminate duplicates completely
+            items = items.filter(it => !seenVisualUrls.has(it.fullImg || it.img));
+
+            // 2. Fallback or augment with procedural batch if needed
+            if (items.length < 6) {
+                const fallbackItems = getUnlimitedVisualBatch(cat, visualPage, query);
+                items.push(...fallbackItems);
             }
 
             if (items.length === 0 && reset) {
@@ -5111,17 +5594,20 @@
             }
 
             items.forEach(item => {
+                const dlUrl = item.fullImg || item.img;
+                if (seenVisualUrls.has(dlUrl)) return;
+                seenVisualUrls.add(dlUrl);
+
                 const card = document.createElement('div');
                 card.className = 'visual-card';
-                const dlUrl = item.fullImg || item.img;
                 const safeTitle = (item.title || '4K Wallpaper').replace(/'/g, "\\'");
                 const safeUrl = dlUrl.replace(/'/g, "\\'");
                 const safeCat = (item.category || 'wallpapers').replace(/'/g, "\\'");
                 const safeSub = (item.sub || 'Ultra 4K').replace(/'/g, "\\'");
                 card.innerHTML = `
-                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${safeTitle}', '${safeUrl}', '${safeCat}')">
+                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="openVisualLightbox('${safeTitle}', '${safeUrl}', '${safeCat}', '${safeSub}')">
                     <div class="visual-card-footer">
-                        <div class="visual-card-text" onclick="selectVisualWallpaper('${safeTitle}', '${safeUrl}', '${safeCat}')">
+                        <div class="visual-card-text" onclick="openVisualLightbox('${safeTitle}', '${safeUrl}', '${safeCat}', '${safeSub}')">
                             <span class="visual-card-title">${item.title}</span>
                             <span class="visual-card-sub">${item.sub}</span>
                         </div>
@@ -5134,6 +5620,47 @@
             });
         }
 
+        // FULLSCREEN PINTEREST LIGHTBOX CONTROLLER
+        let activeLightboxData = null;
+        function openVisualLightbox(title, imgUrl, cat, res) {
+            activeLightboxData = { title, imgUrl, cat, res };
+            const modal = document.getElementById('visualLightboxModal');
+            const img = document.getElementById('lightboxImg');
+            const titleEl = document.getElementById('lightboxTitle');
+            if (img) img.src = imgUrl;
+            if (titleEl) titleEl.textContent = title;
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeVisualLightbox(e) {
+            if (e && e.target && e.target !== e.currentTarget && !e.target.closest('.lightbox-close-btn')) return;
+            const modal = document.getElementById('visualLightboxModal');
+            if (modal) modal.style.display = 'none';
+            activeLightboxData = null;
+        }
+
+        function applyWallpaperFromLightbox() {
+            if (!activeLightboxData) return;
+            const data = activeLightboxData;
+            selectVisualWallpaper(data.title, data.imgUrl, data.cat);
+        }
+
+        function downloadWallpaperFromLightbox() {
+            if (!activeLightboxData) return;
+            downloadImageFile(activeLightboxData.imgUrl, activeLightboxData.title);
+        }
+
+        function shareWallpaperFromLightbox() {
+            if (!activeLightboxData) return;
+            shareImageFile(activeLightboxData.imgUrl, activeLightboxData.title);
+        }
+
+        function boostVibeFromLightbox() {
+            if (!activeLightboxData) return;
+            boostVisualVibe(null, activeLightboxData.cat || 'wallpapers');
+        }
+
+        // VISUAL 3-DOTS ACTION SHEET CONTROLLER
         let activeSheetData = null;
         function openVisualActionSheet(e, title, imgUrl, cat, res) {
             if (e) e.stopPropagation();
@@ -5155,6 +5682,13 @@
             activeSheetData = null;
         }
 
+        function openLightboxFromSheet() {
+            if (!activeSheetData) return;
+            const data = activeSheetData;
+            closeVisualActionSheet();
+            openVisualLightbox(data.title, data.imgUrl, data.cat, data.res);
+        }
+
         function applyWallpaperFromSheet() {
             if (!activeSheetData) return;
             const data = activeSheetData;
@@ -5162,11 +5696,18 @@
             selectVisualWallpaper(data.title, data.imgUrl, data.cat);
         }
 
-        function openWallpaperFullRes() {
+        function downloadWallpaperFromSheet() {
             if (!activeSheetData) return;
-            const url = activeSheetData.imgUrl;
+            const data = activeSheetData;
             closeVisualActionSheet();
-            openDialUrl(url);
+            downloadImageFile(data.imgUrl, data.title);
+        }
+
+        function shareWallpaperFromSheet() {
+            if (!activeSheetData) return;
+            const data = activeSheetData;
+            closeVisualActionSheet();
+            shareImageFile(data.imgUrl, data.title);
         }
 
         function boostVibeFromSheet() {
@@ -5176,11 +5717,40 @@
             closeVisualActionSheet();
         }
 
+        function downloadImageFile(url, title) {
+            const cleanTitle = (title || 'wallpaper').toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 32);
+            const filename = `fokk_${cleanTitle}.jpg`;
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.downloadFile === 'function') {
+                window.FokkShieldBridge.downloadFile(url, filename);
+                showPreviewToast(`Download started: ${filename}`);
+            } else {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showPreviewToast(`Download started: ${filename}`);
+            }
+        }
+
+        function shareImageFile(url, title) {
+            const shareText = `${title}\n${url}\nShared via Fokk Start`;
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.shareContent === 'function') {
+                window.FokkShieldBridge.shareContent(shareText, title || 'Share Wallpaper');
+            } else if (navigator.share) {
+                navigator.share({ title: title || 'Wallpaper', text: shareText, url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showPreviewToast('Image link copied to clipboard'));
+            }
+        }
+
         function boostVisualVibe(e, cat) {
             if (e) e.stopPropagation();
             recordInterest(cat, 5);
             if (navigator.vibrate) try { navigator.vibrate([20, 40, 20]); } catch (err) {}
-            showPreviewToast(`❤️ Saved to your taste profile! (${cat.toUpperCase()})`);
+            showPreviewToast(`Saved to taste profile (${cat.toUpperCase()})`);
             renderVisualCuratedShelf();
         }
 
@@ -5230,11 +5800,12 @@
                     if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setGlobalTheme === 'function') {
                         window.FokkShieldBridge.setGlobalTheme('custom');
                     }
-                    showPreviewToast('✨ 4K Wallpaper Applied Successfully!');
+                    showPreviewToast('Wallpaper applied to startpage');
+                    closeVisualLightbox();
                     closeVisualHub();
                 } catch (e) {
                     console.error("selectVisualWallpaper error", e);
-                    showPreviewToast('✨ Wallpaper Applied!');
+                    showPreviewToast('Wallpaper applied to startpage');
                 }
             }
         }
@@ -5267,6 +5838,30 @@
                     duration: "1:24:50",
                     thumb: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=synthwave+chillwave+study+beats"
+                },
+                {
+                    title: "Cozy Coffee Shop Ambience with Warm Piano Lo-Fi",
+                    category: "lofi",
+                    channel: "Cafe Chillhop Sessions",
+                    duration: "2:15:30",
+                    thumb: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=cozy+coffee+shop+ambience+piano+lofi"
+                },
+                {
+                    title: "Midnight Drive in Shibuya - Lo-Fi Chillhop Mix",
+                    category: "lofi",
+                    channel: "Midnight Beatmakers",
+                    duration: "1:55:00",
+                    thumb: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=midnight+drive+shibuya+lofi+chillhop"
+                },
+                {
+                    title: "Rainy Day Study Session with Soft Guitar Lo-Fi",
+                    category: "lofi",
+                    channel: "Cozy Beats Studio",
+                    duration: "4:10:00",
+                    thumb: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=rainy+day+study+session+soft+guitar+lofi"
                 }
             ],
             peace: [
@@ -5293,6 +5888,30 @@
                     duration: "10:00:00",
                     thumb: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=gentle+forest+rain+meditation+deep+sleep"
+                },
+                {
+                    title: "528Hz DNA Repair & Positive Miracle Frequency Bath",
+                    category: "peace",
+                    channel: "Solfeggio Sound Lab",
+                    duration: "3:00:00",
+                    thumb: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=528hz+dna+repair+miracle+frequency"
+                },
+                {
+                    title: "Calming Alpine River Water & Pine Forest Serenity",
+                    category: "peace",
+                    channel: "Earth Zen Audio",
+                    duration: "5:30:00",
+                    thumb: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=calming+river+water+pine+forest+soundscape"
+                },
+                {
+                    title: "Delta Waves for Deep Rapid Sleep & Anxiety Relief",
+                    category: "peace",
+                    channel: "Binaural Sleep Therapy",
+                    duration: "8:00:00",
+                    thumb: "https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=delta+waves+deep+sleep+anxiety+relief"
                 }
             ],
             acoustic: [
@@ -5319,6 +5938,30 @@
                     duration: "3:05:00",
                     thumb: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=coffeehouse+acoustic+live+sessions+chill"
+                },
+                {
+                    title: "Celtic Harp & Acoustic Nylon Guitar in Ancient Woods",
+                    category: "acoustic",
+                    channel: "Folk Sanctuary Sessions",
+                    duration: "1:30:00",
+                    thumb: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=celtic+harp+acoustic+nylon+guitar+ancient+woods"
+                },
+                {
+                    title: "Warm Fingerpicking Folk Guitar Instrumental Journey",
+                    category: "acoustic",
+                    channel: "Acoustic Voyage",
+                    duration: "2:00:00",
+                    thumb: "https://images.unsplash.com/photo-1445307806294-bff7f67ff225?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=warm+fingerpicking+folk+guitar+instrumental"
+                },
+                {
+                    title: "Campfire Acoustic Guitar & Soft Wilderness Crickets",
+                    category: "acoustic",
+                    channel: "Cabin Fireside Acoustic",
+                    duration: "4:00:00",
+                    thumb: "https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=campfire+acoustic+guitar+wilderness+crickets"
                 }
             ],
             cinema: [
@@ -5345,6 +5988,30 @@
                     duration: "38:40",
                     thumb: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=dolomites+alps+drone+4k+nature+cinematic"
+                },
+                {
+                    title: "Swiss Alps Aerial 4K Drone Flight Above Peaks & Glaciers",
+                    category: "cinema",
+                    channel: "Alpine Cinematic",
+                    duration: "50:15",
+                    thumb: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=swiss+alps+aerial+4k+drone+flight"
+                },
+                {
+                    title: "Deep Pacific Coral Reef in 4K HDR Drone & Underwater Odyssey",
+                    category: "cinema",
+                    channel: "Blue Planet Films",
+                    duration: "42:20",
+                    thumb: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=deep+pacific+coral+reef+4k+hdr+underwater"
+                },
+                {
+                    title: "Sahara Desert Golden Dunes Sunset Drone Odyssey",
+                    category: "cinema",
+                    channel: "Desert Aerials Studio",
+                    duration: "35:00",
+                    thumb: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=sahara+desert+golden+dunes+sunset+drone"
                 }
             ],
             soundscapes: [
@@ -5371,6 +6038,30 @@
                     duration: "10:00:00",
                     thumb: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=deep+brown+noise+binaural+focus+sleep"
+                },
+                {
+                    title: "Ocean Waves Lapping Gentle Sand at Twilight",
+                    category: "soundscapes",
+                    channel: "Sea Zen Ambience",
+                    duration: "7:00:00",
+                    thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=ocean+waves+lapping+gentle+sand+twilight"
+                },
+                {
+                    title: "Wind in the Bamboo Forest with Rain Droplets",
+                    category: "soundscapes",
+                    channel: "Zen Soundscapes",
+                    duration: "4:45:00",
+                    thumb: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=wind+in+bamboo+forest+rain+droplets"
+                },
+                {
+                    title: "Train Journey Rain Ambience Inside Sleeper Car",
+                    category: "soundscapes",
+                    channel: "Night Travel Sounds",
+                    duration: "6:00:00",
+                    thumb: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=train+journey+rain+ambience+sleeper+car"
                 }
             ],
             trending: [
@@ -5397,6 +6088,30 @@
                     duration: "02:45",
                     thumb: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=480&q=80",
                     url: "https://www.youtube.com/results?search_query=official+movie+trailer+sci-fi+epic"
+                },
+                {
+                    title: "Deep Sea Exploration: Discoveries 10,000 Meters Under Mariana Trench",
+                    category: "trending",
+                    channel: "Ocean Explorer",
+                    duration: "28:10",
+                    thumb: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=deep+sea+exploration+mariana+trench+discoveries"
+                },
+                {
+                    title: "James Webb Telescope New Findings: Deepest Space Mysteries",
+                    category: "trending",
+                    channel: "NASA Science",
+                    duration: "19:45",
+                    thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=james+webb+telescope+new+findings+deep+space"
+                },
+                {
+                    title: "The Architecture of Hypercars: Engineering Without Limits",
+                    category: "trending",
+                    channel: "TopGear Lab",
+                    duration: "24:15",
+                    thumb: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=480&q=80",
+                    url: "https://www.youtube.com/results?search_query=architecture+of+hypercars+engineering+without+limits"
                 }
             ]
         };
@@ -5404,6 +6119,7 @@
         let currentVideoCategory = 'lofi';
         let videoPage = 1;
         let isVideoLoading = false;
+        const seenVideoUrls = new Set();
 
         function openMediaVideoHub(e) {
             if (e) {
@@ -5483,19 +6199,11 @@
                 pool = pool.filter(v => v.title.toLowerCase().includes(q) || v.channel.toLowerCase().includes(q));
             }
             const results = [];
-            const count = 6;
-            const startIndex = (page - 1) * count;
-            for (let i = 0; i < count; i++) {
-                const baseItem = pool[(startIndex + i) % pool.length];
-                if (!baseItem) continue;
-                results.push({
-                    title: page > 1 ? `${baseItem.title} (Part ${page})` : baseItem.title,
-                    category: baseItem.category,
-                    channel: baseItem.channel,
-                    duration: baseItem.duration,
-                    thumb: baseItem.thumb + (baseItem.thumb.includes('?') ? `&sig=${page * 50 + i}` : `?sig=${page * 50 + i}`),
-                    url: baseItem.url
-                });
+            for (let i = 0; i < pool.length; i++) {
+                const baseItem = pool[i];
+                if (!seenVideoUrls.has(baseItem.url)) {
+                    results.push(baseItem);
+                }
             }
             return results;
         }
@@ -5506,6 +6214,7 @@
             if (reset) {
                 grid.innerHTML = '';
                 videoPage = 1;
+                seenVideoUrls.clear();
             }
             const items = getUnlimitedVideoBatch(cat, videoPage, query);
             if (items.length === 0 && reset) {
@@ -5514,25 +6223,87 @@
             }
 
             items.forEach(v => {
+                if (seenVideoUrls.has(v.url)) return;
+                seenVideoUrls.add(v.url);
+
                 const card = document.createElement('div');
                 card.className = 'video-card';
-                card.onclick = () => {
-                    recordInterest(v.category, 3);
-                    closeVideoHub();
-                    openDialUrl(v.url);
-                };
+                const safeTitle = v.title.replace(/'/g, "\\'");
+                const safeChannel = v.channel.replace(/'/g, "\\'");
+                const safeThumb = v.thumb.replace(/'/g, "\\'");
+                const safeUrl = v.url.replace(/'/g, "\\'");
+                const safeCat = (v.category || 'lofi').replace(/'/g, "\\'");
+
                 card.innerHTML = `
-                    <div class="video-thumb-wrap">
+                    <div class="video-thumb-wrap" onclick="playCuratedVideo('${safeUrl}', '${safeCat}')">
                         <img src="${v.thumb}" alt="${v.title}" loading="lazy">
                         <span class="video-duration">${v.duration}</span>
                     </div>
                     <div class="video-card-body">
-                        <div class="video-card-title">${v.title}</div>
-                        <div class="video-card-meta">${v.channel} &bull; Ad-Free Stream</div>
+                        <div class="video-card-info" onclick="playCuratedVideo('${safeUrl}', '${safeCat}')" style="flex:1; min-width:0; cursor:pointer;">
+                            <div class="video-card-title">${v.title}</div>
+                            <div class="video-card-meta">${v.channel} &bull; Ad-Free Stream</div>
+                        </div>
+                        <button class="visual-card-more-btn" title="Options" onclick="openVideoActionSheet(event, '${safeTitle}', '${safeChannel}', '${safeThumb}', '${safeUrl}')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
+                        </button>
                     </div>
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        // VIDEO ACTION SHEET CONTROLLER
+        let activeVideoSheetData = null;
+        function openVideoActionSheet(e, title, channel, thumb, url) {
+            if (e) e.stopPropagation();
+            activeVideoSheetData = { title, channel, thumb, url };
+            const overlay = document.getElementById('videoActionSheet');
+            const thumbEl = document.getElementById('videoSheetThumb');
+            const titleEl = document.getElementById('videoSheetTitle');
+            const chanEl = document.getElementById('videoSheetChannel');
+            if (thumbEl) thumbEl.src = thumb;
+            if (titleEl) titleEl.textContent = title;
+            if (chanEl) chanEl.textContent = channel;
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function closeVideoActionSheet(e) {
+            if (e && e.target && e.target !== e.currentTarget && !e.target.classList.contains('visual-sheet-cancel')) return;
+            const overlay = document.getElementById('videoActionSheet');
+            if (overlay) overlay.style.display = 'none';
+            activeVideoSheetData = null;
+        }
+
+        function playVideoFromSheet() {
+            if (!activeVideoSheetData) return;
+            const url = activeVideoSheetData.url;
+            closeVideoActionSheet();
+            closeVideoHub();
+            openDialUrl(url);
+        }
+
+        function shareVideoFromSheet() {
+            if (!activeVideoSheetData) return;
+            const { title, url } = activeVideoSheetData;
+            const text = `${title}\n${url}\nWatch ad-free on Fokk Shield`;
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.shareContent === 'function') {
+                window.FokkShieldBridge.shareContent(text, title);
+            } else if (navigator.share) {
+                navigator.share({ title, text, url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showPreviewToast('Video link copied to clipboard'));
+            }
+            closeVideoActionSheet();
+        }
+
+        function copyVideoLinkFromSheet() {
+            if (!activeVideoSheetData) return;
+            const url = activeVideoSheetData.url;
+            navigator.clipboard.writeText(url).then(() => {
+                showPreviewToast('Video stream link copied');
+            });
+            closeVideoActionSheet();
         }
 
         function setupVideoInfiniteScroll() {
@@ -5576,6 +6347,13 @@
         let audioPage = 1;
         let isAudioLoading = false;
         let currentPlayingTrack = null;
+        let currentPlaylist = [];
+        let likedTracks = [];
+        try {
+            likedTracks = JSON.parse(localStorage.getItem('fokk_liked_tracks') || '[]');
+        } catch (e) {
+            likedTracks = [];
+        }
 
         const defaultSeedTracks = [
             {
@@ -5622,6 +6400,24 @@
                 duration: 242,
                 artwork: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=300&q=80',
                 audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3'
+            },
+            {
+                id: 'jazz-1',
+                title: 'Smooth Sunday Morning Lounge',
+                artist: 'Blue Note Collective',
+                genre: 'Smooth Jazz',
+                duration: 228,
+                artwork: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c3527a0058.mp3'
+            },
+            {
+                id: 'sleep-1',
+                title: 'Deep Delta Waves & Soft Night Breeze',
+                artist: 'Sleep Sanctuary',
+                genre: 'Deep Sleep',
+                duration: 310,
+                artwork: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_c5df001cfa.mp3'
             }
         ];
 
@@ -5666,6 +6462,61 @@
             renderAudioTracks(currentAudioCategory, q, true);
         }
 
+        function searchByArtist(e, artistName) {
+            if (e) e.stopPropagation();
+            const input = document.getElementById('audioSearchInput');
+            if (input) input.value = artistName;
+            recordInterest('lofi', 2);
+            renderAudioTracks('', artistName, true);
+            showPreviewToast(`Showing tracks by ${artistName}`);
+        }
+
+        function downloadTrack(e, track) {
+            if (e) e.stopPropagation();
+            const cleanTitle = (track.title || 'track').toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 32);
+            const cleanArtist = (track.artist || 'artist').toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 24);
+            const filename = `fokk_${cleanTitle}_${cleanArtist}.mp3`;
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.downloadFile === 'function') {
+                window.FokkShieldBridge.downloadFile(track.audioUrl, filename);
+                showPreviewToast(`Download started: ${track.title}`);
+            } else {
+                const a = document.createElement('a');
+                a.href = track.audioUrl;
+                a.download = filename;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showPreviewToast(`Download started: ${track.title}`);
+            }
+        }
+
+        function toggleLikeTrack(e, track) {
+            if (e) e.stopPropagation();
+            const index = likedTracks.findIndex(t => t.id === track.id);
+            const isNowLiked = index < 0;
+            if (isNowLiked) {
+                likedTracks.unshift(track);
+                showPreviewToast(`Saved to Liked Songs`);
+            } else {
+                likedTracks.splice(index, 1);
+                showPreviewToast(`Removed from Liked Songs`);
+            }
+            try {
+                localStorage.setItem('fokk_liked_tracks', JSON.stringify(likedTracks));
+            } catch (err) {}
+
+            const btn = document.getElementById(`likeBtn_${track.id}`);
+            if (btn) {
+                btn.classList.toggle('liked', isNowLiked);
+                btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="${isNowLiked ? '#1DB954' : 'none'}" stroke="${isNowLiked ? '#1DB954' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+            }
+
+            if (currentAudioCategory === 'liked') {
+                renderAudioTracks('liked', '', true);
+            }
+        }
+
         async function renderAudioTracks(cat, query = '', reset = false) {
             const list = document.getElementById('audioTracksList');
             if (!list) return;
@@ -5675,46 +6526,64 @@
             }
 
             let tracks = [];
-            const searchQuery = query || (cat === 'trending' ? '' : cat);
 
-            try {
-                let raw = '';
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.fetchAudioTracks === 'function') {
-                    raw = window.FokkShieldBridge.fetchAudioTracks(searchQuery, audioPage);
+            // Liked Songs Tab
+            if (cat === 'liked') {
+                tracks = likedTracks.slice();
+                if (query) {
+                    const q = query.toLowerCase();
+                    tracks = tracks.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q));
                 }
-                if (!raw) {
-                    const endpoint = searchQuery
-                        ? `https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(searchQuery)}&limit=20&app_name=FokkShield`
-                        : `https://api.audius.co/v1/tracks/trending?limit=20&app_name=FokkShield`;
-                    const res = await fetch(endpoint);
-                    if (res.ok) raw = await res.text();
+                if (tracks.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; color: #a1a1aa; padding: 40px 16px; font-size: 13px;">No liked songs yet.<br><span style="font-size:11.5px; color:#71717a; margin-top:4px; display:inline-block;">Tap the heart icon on any song to save it here.</span></div>';
+                    return;
                 }
-                if (raw) {
-                    const json = JSON.parse(raw);
-                    const rawData = json.data || json.results || [];
-                    if (Array.isArray(rawData) && rawData.length > 0) {
-                        tracks = rawData.map(t => {
-                            const trackId = t.id || t.track_id;
-                            const artObj = t.artwork || {};
-                            const artUrl = artObj['480x480'] || artObj['150x150'] || t.album_image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80';
-                            return {
-                                id: String(trackId),
-                                title: t.title || 'Unknown Title',
-                                artist: (t.user && t.user.name) || t.artist_name || 'Open Artist',
-                                genre: t.genre || cat.toUpperCase(),
-                                duration: t.duration || 180,
-                                artwork: artUrl,
-                                audioUrl: `https://api.audius.co/v1/tracks/${trackId}/stream?app_name=FokkShield`
-                            };
-                        });
+            } else {
+                const searchQuery = query || (cat === 'trending' ? '' : cat);
+
+                try {
+                    let raw = '';
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.fetchAudioTracks === 'function') {
+                        raw = window.FokkShieldBridge.fetchAudioTracks(searchQuery, audioPage);
                     }
+                    if (!raw) {
+                        const endpoint = searchQuery
+                            ? `https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(searchQuery)}&limit=20&app_name=FokkShield`
+                            : `https://api.audius.co/v1/tracks/trending?limit=20&app_name=FokkShield`;
+                        const res = await fetch(endpoint);
+                        if (res.ok) raw = await res.text();
+                    }
+                    if (raw) {
+                        const json = JSON.parse(raw);
+                        const rawData = json.data || json.results || [];
+                        if (Array.isArray(rawData) && rawData.length > 0) {
+                            tracks = rawData.map(t => {
+                                const trackId = t.id || t.track_id;
+                                const artObj = t.artwork || {};
+                                const artUrl = artObj['480x480'] || artObj['150x150'] || t.album_image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80';
+                                return {
+                                    id: String(trackId),
+                                    title: t.title || 'Unknown Title',
+                                    artist: (t.user && t.user.name) || t.artist_name || 'Open Artist',
+                                    genre: t.genre || cat.toUpperCase(),
+                                    duration: t.duration || 180,
+                                    artwork: artUrl,
+                                    audioUrl: `https://api.audius.co/v1/tracks/${trackId}/stream?app_name=FokkShield`
+                                };
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.log("[AudioHub] Online fetch notice:", err);
                 }
-            } catch (err) {
-                console.log("[AudioHub] Online fetch notice:", err);
-            }
 
-            if (tracks.length === 0) {
-                tracks = defaultSeedTracks;
+                if (tracks.length === 0) {
+                    const fallback = defaultSeedTracks.filter(t => {
+                        if (cat === 'trending') return true;
+                        return t.genre.toLowerCase().includes(cat.toLowerCase()) || (query && (t.title.toLowerCase().includes(query.toLowerCase()) || t.artist.toLowerCase().includes(query.toLowerCase())));
+                    });
+                    tracks = fallback.length > 0 ? fallback : defaultSeedTracks;
+                }
             }
 
             if (tracks.length === 0 && reset) {
@@ -5722,29 +6591,48 @@
                 return;
             }
 
+            if (reset) {
+                currentPlaylist = tracks;
+            } else {
+                tracks.forEach(t => {
+                    if (!currentPlaylist.some(p => p.id === t.id)) currentPlaylist.push(t);
+                });
+            }
+
             tracks.forEach(track => {
                 const item = document.createElement('div');
                 const isPlaying = currentPlayingTrack && currentPlayingTrack.id === track.id && !document.getElementById('fokkGlobalAudioPlayer').paused;
+                const isLiked = likedTracks.some(t => t.id === track.id);
                 item.className = `audio-track-item ${isPlaying ? 'playing' : ''}`;
                 item.id = `trackItem_${track.id}`;
                 const m = Math.floor(track.duration / 60);
                 const s = Math.floor(track.duration % 60).toString().padStart(2, '0');
                 const durStr = `${m}:${s}`;
-                
+                const safeArtist = track.artist.replace(/'/g, "\\'");
+
                 item.innerHTML = `
-                    <img class="audio-track-thumb" src="${track.artwork}" alt="${track.title}" loading="lazy">
-                    <div class="audio-track-info">
+                    <img class="audio-track-thumb" src="${track.artwork}" alt="${track.title}" loading="lazy" onclick="playAudioTrack(${JSON.stringify(track).replace(/"/g, '&quot;')})">
+                    <div class="audio-track-info" onclick="playAudioTrack(${JSON.stringify(track).replace(/"/g, '&quot;')})">
                         <span class="audio-track-title">${track.title}</span>
-                        <span class="audio-track-meta">${track.artist} &bull; ${track.genre}</span>
+                        <span class="audio-track-meta">
+                            <span class="audio-track-artist-link" onclick="searchByArtist(event, '${safeArtist}')">${track.artist}</span> &bull; ${track.genre}
+                        </span>
                     </div>
                     <span class="audio-track-duration">${durStr}</span>
-                    <button class="audio-play-circle-btn" aria-label="Play Track">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                            ${isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<polygon points="5 3 19 12 5 21 5 3"/>'}
-                        </svg>
-                    </button>
+                    <div class="audio-track-actions">
+                        <button class="audio-track-action-btn ${isLiked ? 'liked' : ''}" id="likeBtn_${track.id}" title="Like Song" onclick="toggleLikeTrack(event, ${JSON.stringify(track).replace(/"/g, '&quot;')})">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="${isLiked ? '#1DB954' : 'none'}" stroke="${isLiked ? '#1DB954' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        </button>
+                        <button class="audio-track-action-btn" title="Download Audio" onclick="downloadTrack(event, ${JSON.stringify(track).replace(/"/g, '&quot;')})">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </button>
+                        <button class="audio-play-circle-btn" aria-label="Play Track" onclick="playAudioTrack(${JSON.stringify(track).replace(/"/g, '&quot;')})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                ${isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<polygon points="5 3 19 12 5 21 5 3"/>'}
+                            </svg>
+                        </button>
+                    </div>
                 `;
-                item.onclick = () => playAudioTrack(track);
                 list.appendChild(item);
             });
         }
@@ -5766,6 +6654,7 @@
             if (title) title.textContent = track.title;
             if (artist) artist.textContent = track.artist;
             updatePlayIcons(true);
+            updateHomeLiveMusicCard(track, true);
 
             // Highlight in list
             document.querySelectorAll('.audio-track-item').forEach(el => el.classList.remove('playing'));
@@ -5788,12 +6677,14 @@
             if (player.paused) {
                 player.play();
                 updatePlayIcons(true);
+                updateHomeLiveMusicCard(currentPlayingTrack, true);
                 if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
                     window.FokkShieldBridge.reportMediaPlayback(true, false, currentPlayingTrack ? currentPlayingTrack.title : 'Fokk Audio');
                 }
             } else {
                 player.pause();
                 updatePlayIcons(false);
+                updateHomeLiveMusicCard(currentPlayingTrack, false);
                 if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
                     window.FokkShieldBridge.reportMediaPlayback(false, false, '');
                 }
@@ -5807,6 +6698,62 @@
                     ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
                     : '<polygon points="5 3 19 12 5 21 5 3"/>';
             }
+            const homeIcon = document.getElementById('homeLivePlayIcon');
+            if (homeIcon) {
+                homeIcon.innerHTML = isPlaying
+                    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+                    : '<polygon points="5 3 19 12 5 21 5 3"/>';
+            }
+            const eq = document.getElementById('homeEqualizerBars');
+            if (eq) {
+                if (isPlaying) eq.classList.remove('paused');
+                else eq.classList.add('paused');
+            }
+        }
+
+        function updateHomeLiveMusicCard(track, isPlaying) {
+            const card = document.getElementById('homeLiveMusicCard');
+            if (!card) return;
+            if (!track) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'flex';
+            const art = document.getElementById('homeLiveMusicArt');
+            const title = document.getElementById('homeLiveMusicTitle');
+            const artist = document.getElementById('homeLiveMusicArtist');
+            if (art) art.src = track.artwork;
+            if (title) title.textContent = track.title;
+            if (artist) artist.textContent = track.artist;
+            updatePlayIcons(isPlaying);
+        }
+
+        function stopAudioPlayback(e) {
+            if (e) e.stopPropagation();
+            const player = document.getElementById('fokkGlobalAudioPlayer');
+            if (player) {
+                player.pause();
+                player.currentTime = 0;
+            }
+            updatePlayIcons(false);
+            const card = document.getElementById('homeLiveMusicCard');
+            if (card) card.style.display = 'none';
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
+                window.FokkShieldBridge.reportMediaPlayback(false, false, '');
+            }
+        }
+
+        function dismissLiveMusicCard(e) {
+            if (e) e.stopPropagation();
+            const card = document.getElementById('homeLiveMusicCard');
+            if (card) card.style.display = 'none';
+        }
+
+        function playNextTrack() {
+            if (!currentPlaylist || currentPlaylist.length === 0) return;
+            const currentIndex = currentPlaylist.findIndex(t => t.id === (currentPlayingTrack ? currentPlayingTrack.id : null));
+            const nextIndex = (currentIndex + 1) % currentPlaylist.length;
+            playAudioTrack(currentPlaylist[nextIndex]);
         }
 
         function initAudioPlayerListeners() {
@@ -5814,13 +6761,17 @@
             if (!player || player.__fokk_bound) return;
             player.__fokk_bound = true;
 
-            player.addEventListener('play', () => updatePlayIcons(true));
-            player.addEventListener('pause', () => updatePlayIcons(false));
+            player.addEventListener('play', () => {
+                updatePlayIcons(true);
+                updateHomeLiveMusicCard(currentPlayingTrack, true);
+            });
+            player.addEventListener('pause', () => {
+                updatePlayIcons(false);
+                updateHomeLiveMusicCard(currentPlayingTrack, false);
+            });
             player.addEventListener('ended', () => {
                 updatePlayIcons(false);
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
-                    window.FokkShieldBridge.reportMediaPlayback(false, false, '');
-                }
+                playNextTrack();
             });
         }
 

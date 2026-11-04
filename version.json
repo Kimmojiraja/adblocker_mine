@@ -1,6 +1,6 @@
 {
-  "versionCode": 200,
-  "versionName": "2.0.0",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.0/app-debug.apk",
+  "versionCode": 201,
+  "versionName": "2.0.1",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.1/app-debug.apk",
   "changelog": "- Restored Authentic Fokk Brand Logo on startpage and menu sheet.\n- Cleaned Navigation & Top Bar Icons: Removed incognito hat white border artifact, eliminated cyan glow on news icon, and perfected microphone visibility.\n- Dark Obsidian Menu Bottom Sheet: Removed all blue/navy tints in favor of neutral dark charcoal, with solid black icons on crisp white badges for maximum clarity.\n- Resilient Background & Screen-Off Audio Playback: Added explicit user pause tracking, webview timer guards, audio focus management, and service debounce so audio never cuts out when switching apps or locking phone.\n- Truth Pulse News Overhaul: Completely removed outdated sports cards/categories, fixed card layouts, and implemented strict duplicate image prevention across editorial feeds.\n- Add to Home Screen & Shortcuts: Pin any webpage directly to the Android launcher or Fokk Start speed dial."
 }

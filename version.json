@@ -1,6 +1,6 @@
 {
-  "versionCode": 202,
-  "versionName": "2.0.2",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.2/app-debug.apk",
-  "changelog": "- Incognito Stealth Screen Transformation: In Ghost/Private mode, the entire screen converts into solid black, completely hides action discs and shortcuts below the command card, and displays a dedicated stealth privacy hero card.\n- Incognito Logo Border Fix: Removed all white borders and halo outlines from the incognito fedora/glasses logo and added official vector ic_incognito.\n- Default Dark Obsidian Background: Set sleek neutral dark theme as the default background for all users.\n- Google Play Store Policy Readiness: Added YouTube download restriction guards to ensure 100% compliance with Google Play Developer Policies while maintaining unrestricted sniffing and downloading across all other web platforms."
+  "versionCode": 203,
+  "versionName": "2.0.3",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.3/app-debug.apk",
+  "changelog": "- Native Home Buttons & Menu: Permanently resolved unresponsive buttons and preview toasts by ensuring native bridge binding in the app environment.\n- Dual-Screen Multi-Deck Split View: Added interactive control bar with dedicated close button, deck swap button, and smooth touch-drag split resize.\n- Webpage Scrolling Glitch Fix: Static viewport bounds during scrolling to eliminate touch-coordinate stutter when the toolbar is positioned at the top.\n- Expanding Command Card & Search Suggestions: Dynamic input expansion on focus and instant autocomplete suggestions dropdown from browsing history.\n- On-Device AI Executive Summary & TTS: Flowing paragraph summary layout with clear headings and a toggleable Male/Female voice TTS engine.\n- Anti-Fingerprint Neural Cloak: Mathematical micro-perturbations on canvas and audio contexts to defeat browser fingerprinting.\n- X (Twitter) & Instagram Fixes: Preserved activity notifications and resolved external app intent navigation loops."
 }

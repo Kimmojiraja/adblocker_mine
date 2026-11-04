@@ -1533,7 +1533,7 @@ open class MediaHubActivity : AppCompatActivity() {
             if (q.isBlank()) return "[]"
             val results = mutableListOf<String>()
             try {
-                val historyJson = activity.prefs.getString(PREF_BROWSER_HISTORY, "[]") ?: "[]"
+                val historyJson = activity.localPrefs.getString(PREF_BROWSING_HISTORY, "[]") ?: "[]"
                 val histArray = JSONArray(historyJson)
                 for (i in 0 until minOf(histArray.length(), 40)) {
                     val item = histArray.getJSONObject(i)

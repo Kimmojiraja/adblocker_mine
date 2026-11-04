@@ -5194,7 +5194,7 @@ open class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
             val url = activeTab?.url.orEmpty()
             val title = activeTab?.title.orEmpty()
-            val favicon = activeTab?.favicon
+            val favicon = activeWebView?.favicon
             pinWebPageToLauncher(url, title, favicon)
         }
 

@@ -394,6 +394,10 @@ open class MediaHubActivity : AppCompatActivity() {
 
     fun getCustomWallpaperDataUri(): String {
         return try {
+            val prefWp = prefs.getString("fokk_custom_wallpaper", "")
+            if (!prefWp.isNullOrBlank()) {
+                return prefWp
+            }
             val file = File(filesDir, "custom_wallpaper.jpg")
             if (file.exists() && file.length() > 0) {
                 val bytes = file.readBytes()
@@ -1190,8 +1194,14 @@ open class MediaHubActivity : AppCompatActivity() {
         @JavascriptInterface
         fun setCustomWallpaper(wallpaperUri: String) {
             activity.runOnUiThread {
-                activity.prefs.edit().putString(PREF_CUSTOM_WALLPAPER, wallpaperUri).apply()
+                activity.prefs.edit().putString("fokk_custom_wallpaper", wallpaperUri).apply()
                 activity.prefs.edit().putString(PREF_ACTIVE_THEME, "custom").apply()
+                activity.tabs.forEach { tab ->
+                    tab.webView?.evaluateJavascript(
+                        "if (typeof applyThemeFromNative === 'function') applyThemeFromNative('custom', '$wallpaperUri');",
+                        null
+                    )
+                }
                 Toast.makeText(activity, "Wallpaper applied to Fokk Startpage!", Toast.LENGTH_SHORT).show()
             }
         }

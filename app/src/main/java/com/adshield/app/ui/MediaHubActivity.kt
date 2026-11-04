@@ -1188,6 +1188,15 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun setCustomWallpaper(wallpaperUri: String) {
+            activity.runOnUiThread {
+                activity.prefs.edit().putString(PREF_CUSTOM_WALLPAPER, wallpaperUri).apply()
+                activity.prefs.edit().putString(PREF_ACTIVE_THEME, "custom").apply()
+                Toast.makeText(activity, "Wallpaper applied to Fokk Startpage!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        @JavascriptInterface
         fun fetchOnlineWallpapers(query: String, page: Int): String {
             return try {
                 val q = if (query.isBlank()) "wallpapers" else query
@@ -1197,6 +1206,31 @@ open class MediaHubActivity : AppCompatActivity() {
                 conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) FokkShield/1.0")
                 conn.connectTimeout = 7000
                 conn.readTimeout = 7000
+                if (conn.responseCode == 200) {
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    ""
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        @JavascriptInterface
+        fun fetchAudioTracks(query: String, page: Int): String {
+            return try {
+                val q = query.trim()
+                val offset = (maxOf(1, page) - 1) * 20
+                val targetUrl = if (q.isBlank() || q.equals("trending", ignoreCase = true) || q.equals("all", ignoreCase = true)) {
+                    "https://api.audius.co/v1/tracks/trending?limit=20&offset=$offset&app_name=FokkShield"
+                } else {
+                    "https://api.audius.co/v1/tracks/search?query=${java.net.URLEncoder.encode(q, "UTF-8")}&limit=20&offset=$offset&app_name=FokkShield"
+                }
+                val conn = URL(targetUrl).openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) FokkShield/1.0")
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
                 if (conn.responseCode == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
                 } else {
@@ -6386,6 +6420,8 @@ open class MediaHubActivity : AppCompatActivity() {
         if (!title.isNullOrBlank()) {
             currentMediaTitle = title
         }
+        val host = activeTab?.url?.let { runCatching { Uri.parse(it).host }.getOrNull() } ?: "Fokk Shield"
+        val bgAudio = prefs.getBoolean("fokk_background_audio", true)
         if (isPlaying || hasActiveVideo) {
             lastMediaPlayingTime = System.currentTimeMillis()
             if (hasActiveVideo) {
@@ -6395,12 +6431,17 @@ open class MediaHubActivity : AppCompatActivity() {
                 try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
             }
             updateMediaSessionPlaybackState(isPlaying = isPlaying)
-            updateMediaPlaybackNotification(isPlaying = isPlaying, title = currentMediaTitle)
+            if (bgAudio) {
+                com.adshield.app.service.FokkMediaPlaybackService.start(this, currentMediaTitle, host, isPlaying)
+            } else {
+                updateMediaPlaybackNotification(isPlaying = isPlaying, title = currentMediaTitle)
+            }
         } else {
             if (mediaWakeLock?.isHeld == true) {
                 try { mediaWakeLock?.release() } catch (e: Exception) {}
             }
             updateMediaSessionPlaybackState(isPlaying = false)
+            com.adshield.app.service.FokkMediaPlaybackService.stop(this)
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             notificationManager?.cancel(NOTIFICATION_ID_MEDIA_PLAYBACK)
         }

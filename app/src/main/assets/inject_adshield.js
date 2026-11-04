@@ -543,30 +543,34 @@
                 Object.defineProperty(document, 'webkitVisibilityState', { get: function() { return 'visible'; }, configurable: true });
                 try { document.hasFocus = function() { return true; }; } catch (e) {}
 
-                ['visibilitychange', 'webkitvisibilitychange', 'blur', 'pagehide'].forEach(function(evt) {
+                // Unconditionally stop visibilitychange and blur from pausing media
+                ['visibilitychange', 'webkitvisibilitychange', 'pagehide'].forEach(function(evt) {
                     window.addEventListener(evt, function(e) {
-                        if (window.__fokk_is_background || document.hidden) e.stopImmediatePropagation();
+                        e.stopImmediatePropagation();
                     }, true);
                     document.addEventListener(evt, function(e) {
-                        if (window.__fokk_is_background || document.hidden) e.stopImmediatePropagation();
+                        e.stopImmediatePropagation();
                     }, true);
                 });
 
                 // Detect actual user tap on player controls
                 let userTapTimer = null;
-                document.addEventListener('pointerdown', function(e) {
-                    const target = e.target;
-                    if (target && target.closest && target.closest('video, .ytp-play-button, .player-control-play-pause-icon, button[aria-label*="Pause" i], button[aria-label*="Play" i]')) {
-                        userExplicitPaused = true;
-                        if (userTapTimer) clearTimeout(userTapTimer);
-                        userTapTimer = setTimeout(function() { userExplicitPaused = false; }, 1200);
-                    }
-                }, true);
+                ['pointerdown', 'touchstart', 'click'].forEach(function(evt) {
+                    document.addEventListener(evt, function(e) {
+                        const target = e.target;
+                        if (target && target.closest && target.closest('video, .ytp-play-button, .player-control-play-pause-icon, button[aria-label*="Pause" i], button[aria-label*="Play" i]')) {
+                            userExplicitPaused = true;
+                            if (userTapTimer) clearTimeout(userTapTimer);
+                            userTapTimer = setTimeout(function() { userExplicitPaused = false; }, 2000);
+                        }
+                    }, true);
+                });
 
                 // Intercept HTMLMediaElement.prototype.pause
                 const origMediaPause = HTMLMediaElement.prototype.pause;
                 HTMLMediaElement.prototype.pause = function() {
-                    if (window.__fokk_is_background && !userExplicitPaused) {
+                    // If pause was NOT triggered by an explicit user touch/click, disarm it!
+                    if (!userExplicitPaused) {
                         return;
                     }
                     return origMediaPause.apply(this, arguments);
@@ -1323,11 +1327,12 @@
             if (ytTitle && ytTitle.textContent) {
                 title = ytTitle.textContent.trim();
             }
-            if (window.FokkMediaBridge) {
-                if (typeof window.FokkMediaBridge.reportMediaPlayback === 'function') {
-                    window.FokkMediaBridge.reportMediaPlayback(isPlaying, hasActiveVideo, title);
-                } else if (typeof window.FokkMediaBridge.onMediaPlaybackChanged === 'function') {
-                    window.FokkMediaBridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
+            const bridge = window.FokkMediaBridge || window.FokkShieldBridge;
+            if (bridge) {
+                if (typeof bridge.reportMediaPlayback === 'function') {
+                    bridge.reportMediaPlayback(isPlaying, hasActiveVideo, title);
+                } else if (typeof bridge.onMediaPlaybackChanged === 'function') {
+                    bridge.onMediaPlaybackChanged(isPlaying, hasActiveVideo);
                 }
             }
         } catch (e) {}

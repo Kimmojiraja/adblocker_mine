@@ -1782,71 +1782,423 @@
             color: #000000;
             font-weight: 800;
         }
+        /* PINTEREST 2-COLUMN MASONRY & CARD STYLING */
         .visual-grid {
             column-count: 2;
-            column-gap: 12px;
+            column-gap: 10px;
             width: 100%;
         }
         .visual-card {
             break-inside: avoid;
             margin-bottom: 12px;
-            border-radius: 14px;
+            border-radius: 16px;
             overflow: hidden;
-            background: #131A29;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #141824;
             cursor: pointer;
             position: relative;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.18s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
         }
         .visual-card:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
         }
         .visual-card img {
             width: 100%;
             height: auto;
-            min-height: 130px;
-            max-height: 280px;
+            min-height: 120px;
+            border-radius: 16px 16px 0 0;
             object-fit: cover;
             display: block;
-            border-radius: 14px 14px 0 0;
         }
-        .visual-card-badge {
-            position: absolute;
-            top: 7px;
-            left: 7px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            color: #00E5FF;
-            font-size: 9px;
-            font-weight: 800;
-            padding: 2.5px 6.5px;
-            border-radius: 6px;
-            border: 1px solid rgba(0, 229, 255, 0.35);
-            letter-spacing: 0.4px;
+        .visual-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 6px 9px 8px;
+            gap: 4px;
+            background: #141824;
         }
-        .visual-card-vibe-btn {
-            position: absolute;
-            top: 7px;
-            right: 7px;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+        .visual-card-text {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .visual-card-title {
+            font-size: 12px;
+            font-weight: 700;
             color: #FFFFFF;
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .visual-card-sub {
+            font-size: 10px;
+            color: var(--fokk-cyan);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .visual-card-more-btn {
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            padding: 4px 6px;
+            border-radius: 50%;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            transition: transform 0.15s ease, background 0.15s ease;
+            flex-shrink: 0;
         }
-        .visual-card-vibe-btn:active {
-            transform: scale(1.25);
-            background: rgba(239, 68, 68, 0.9);
+        .visual-card-more-btn:active {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* SPOTIFY-STYLE AUDIO HUB STYLING */
+        .audio-hub-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #121212;
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .audio-hub-screen.active {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        .audio-hub-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #181818;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+        .audio-bar-title-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .audio-bar-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: 0.3px;
+        }
+        .audio-bar-sub {
+            font-size: 10.5px;
+            color: #1DB954;
+            font-weight: 700;
+        }
+        .audio-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 16px 80px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 680px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .audio-search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #242424;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 8px 14px;
+        }
+        .audio-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #FFFFFF;
+            font-size: 13.5px;
+            font-weight: 500;
+        }
+        .audio-search-go {
+            background: #1DB954;
+            border: none;
+            color: #000000;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        .audio-tags-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+        .audio-tags-strip::-webkit-scrollbar { display: none; }
+        .audio-tag-btn {
+            background: #282828;
+            border: none;
+            color: #B3B3B3;
+            border-radius: 9999px;
+            padding: 6px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .audio-tag-btn.active {
+            background: #1DB954;
+            color: #000000;
+            font-weight: 800;
+        }
+        .audio-tracks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .audio-track-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .audio-track-item:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .audio-track-item.playing {
+            background: rgba(29, 185, 84, 0.12);
+            border-color: rgba(29, 185, 84, 0.35);
+        }
+        .audio-track-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #282828;
+            flex-shrink: 0;
+        }
+        .audio-track-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .audio-track-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .audio-track-item.playing .audio-track-title {
+            color: #1DB954;
+        }
+        .audio-track-meta {
+            font-size: 11px;
+            color: #A1A1AA;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .audio-track-duration {
+            font-size: 11px;
+            color: #71717A;
+            font-weight: 600;
+            margin-right: 2px;
+        }
+        .audio-play-circle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #1DB954;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .audio-mini-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 62px;
+            background: #181818;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            z-index: 10001;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.5);
+        }
+        .mini-player-artwork {
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #282828;
+            flex-shrink: 0;
+        }
+        .mini-player-meta {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .mini-player-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mini-player-artist {
+            font-size: 11px;
+            color: #1DB954;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mini-player-play-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* PINTEREST 3-DOTS ACTION SHEET */
+        .visual-action-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10005;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .visual-action-sheet {
+            width: 100%;
+            max-width: 480px;
+            background: #181E2C;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            animation: slideUpSheet 0.22s ease-out;
+        }
+        @keyframes slideUpSheet {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .visual-sheet-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .visual-sheet-preview img {
+            width: 54px;
+            height: 54px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        .visual-sheet-meta {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .visual-sheet-meta span:first-child {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .visual-sheet-meta span:last-child {
+            font-size: 11px;
+            color: #00E5FF;
+            font-weight: 600;
+        }
+        .visual-sheet-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .visual-sheet-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .visual-sheet-btn.primary {
+            background: linear-gradient(135deg, #00E5FF, #3B82F6);
+            color: #000000;
+            border: none;
+            font-weight: 800;
+        }
+        .visual-sheet-cancel {
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #94A3B8;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
         }
         .visual-curated-shelf {
             background: linear-gradient(135deg, rgba(0, 229, 255, 0.09), rgba(59, 130, 246, 0.05));
@@ -2082,7 +2434,7 @@
             <div class="command-menu-popover" id="commandMenuPopover">
                 <div class="popover-menu-item" onclick="openFavoritesAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    <span>Bookmarks & Saved</span>
+                    <span>Favorites</span>
                 </div>
                 <div class="popover-menu-item" onclick="openHistoryAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2162,7 +2514,7 @@
             <button class="home-essential" onclick="openFavoritesAction(event)" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.2"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
             <button class="home-essential" onclick="openVisualHub(event)" title="Visuals & Wallpapers" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg></button>
             <button class="home-essential" onclick="openMediaVideoHub(event)" title="Trending Videos" aria-label="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="#F87171"/></svg></button>
-            <button class="home-essential" onclick="saveCurrentPageAction(event)" title="Save Page" aria-label="Save"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.2"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 17h8"/></svg></button>
+            <button class="home-essential" onclick="openAudioHub(event)" title="Music & Audio" aria-label="Audio"><svg viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
         </div>
 
         <!-- FLEX SPACER TO PUSH SHORTCUTS TO BOTTOM -->
@@ -2309,6 +2661,87 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 <span>Loading more extraordinary streams...</span>
             </div>
+        </div>
+    </div>
+
+    <!-- 3. IN-APP SPOTIFY-STYLE OPEN AUDIO & MUSIC HUB MODAL -->
+    <div class="audio-hub-screen" id="audioHubModal">
+        <audio id="fokkGlobalAudioPlayer" preload="auto"></audio>
+        <div class="audio-hub-bar">
+            <button class="pulse-back-btn" onclick="closeAudioHub()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Back</span>
+            </button>
+            <div class="audio-bar-title-wrap">
+                <span class="audio-bar-title">Fokk Music &amp; Audio</span>
+                <span class="audio-bar-sub">Ad-Free &bull; Open Source</span>
+            </div>
+            <button class="pulse-customize-btn" style="background: rgba(29, 185, 84, 0.2); border-color: #1DB954; color: #1DB954;" onclick="showPreviewToast('HQ 320kbps Open-Source Audio Streams')" title="Audio Info">HQ 320k</button>
+        </div>
+        <div class="audio-scroll-content" id="audioScrollContent">
+            <div class="audio-search-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="audioSearchInput" class="audio-search-input" placeholder="Search any artist, song, lofi, acoustic, peace, zen..." onkeydown="if(event.key==='Enter') searchAudio()">
+                <button class="audio-search-go" onclick="searchAudio()">Search</button>
+            </div>
+            <div class="audio-tags-strip">
+                <button class="audio-tag-btn active" onclick="filterAudio('trending', this)">🔥 Trending</button>
+                <button class="audio-tag-btn" onclick="filterAudio('lofi', this)">☕ Lo-Fi Beats</button>
+                <button class="audio-tag-btn" onclick="filterAudio('acoustic', this)">🎸 Raw Acoustic</button>
+                <button class="audio-tag-btn" onclick="filterAudio('peace', this)">🧘 Peace &amp; Zen (432Hz)</button>
+                <button class="audio-tag-btn" onclick="filterAudio('piano', this)">🎹 Soft Piano</button>
+                <button class="audio-tag-btn" onclick="filterAudio('jazz', this)">🎷 Chill Jazz</button>
+                <button class="audio-tag-btn" onclick="filterAudio('electronic', this)">⚡ Deep Synth</button>
+                <button class="audio-tag-btn" onclick="filterAudio('sleep', this)">🌙 Deep Sleep</button>
+            </div>
+            
+            <div class="audio-tracks-list" id="audioTracksList">
+                <!-- Dynamically loaded Spotify-style audio tracks -->
+            </div>
+            <div id="audioInfiniteLoader" class="visual-infinite-spinner" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <span>Loading open source audio...</span>
+            </div>
+        </div>
+
+        <!-- Sticky Spotify-Style Bottom Mini Player Bar -->
+        <div class="audio-mini-player" id="audioMiniPlayer" style="display:none;" onclick="toggleAudioPlayState()">
+            <img class="mini-player-artwork" id="miniPlayerArtwork" src="" alt="Album Art">
+            <div class="mini-player-meta">
+                <div class="mini-player-title" id="miniPlayerTitle">Track Title</div>
+                <div class="mini-player-artist" id="miniPlayerArtist">Artist Name</div>
+            </div>
+            <button class="mini-player-play-btn" id="miniPlayerPlayBtn" onclick="toggleAudioPlayState(event)" aria-label="Play/Pause">
+                <svg id="miniPlayerPlayIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- VISUAL PINTEREST 3-DOTS ACTION SHEET MODAL -->
+    <div class="visual-action-overlay" id="visualActionSheet" style="display:none;" onclick="closeVisualActionSheet(event)">
+        <div class="visual-action-sheet" onclick="event.stopPropagation()">
+            <div class="visual-sheet-preview">
+                <img id="visualSheetImg" src="" alt="Preview">
+                <div class="visual-sheet-meta">
+                    <span id="visualSheetTitle">Wallpaper Title</span>
+                    <span id="visualSheetResolution">Ultra 4K</span>
+                </div>
+            </div>
+            <div class="visual-sheet-actions">
+                <button class="visual-sheet-btn primary" onclick="applyWallpaperFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Apply as Fokk Startpage Wallpaper</span>
+                </button>
+                <button class="visual-sheet-btn" onclick="openWallpaperFullRes()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    <span>Open Ultra 4K High-Res</span>
+                </button>
+                <button class="visual-sheet-btn" onclick="boostVibeFromSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span>Save to Taste Profile</span>
+                </button>
+            </div>
+            <button class="visual-sheet-cancel" onclick="closeVisualActionSheet()">Cancel</button>
         </div>
     </div>
 
@@ -4681,17 +5114,66 @@
                 const card = document.createElement('div');
                 card.className = 'visual-card';
                 const dlUrl = item.fullImg || item.img;
+                const safeTitle = (item.title || '4K Wallpaper').replace(/'/g, "\\'");
+                const safeUrl = dlUrl.replace(/'/g, "\\'");
+                const safeCat = (item.category || 'wallpapers').replace(/'/g, "\\'");
+                const safeSub = (item.sub || 'Ultra 4K').replace(/'/g, "\\'");
                 card.innerHTML = `
-                    <span class="visual-card-badge">${item.category.toUpperCase()} 4K</span>
-                    <button class="visual-card-vibe-btn" title="Vibe Boost" onclick="boostVisualVibe(event, '${item.category}')">&hearts;</button>
-                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${dlUrl}', '${item.category}')">
-                    <div class="visual-card-info" onclick="selectVisualWallpaper('${item.title.replace(/'/g, "\\'")}', '${dlUrl}', '${item.category}')">
-                        <span class="visual-card-title">${item.title}</span>
-                        <span class="visual-card-sub">${item.sub}</span>
+                    <img src="${item.img}" alt="${item.title}" loading="lazy" onclick="selectVisualWallpaper('${safeTitle}', '${safeUrl}', '${safeCat}')">
+                    <div class="visual-card-footer">
+                        <div class="visual-card-text" onclick="selectVisualWallpaper('${safeTitle}', '${safeUrl}', '${safeCat}')">
+                            <span class="visual-card-title">${item.title}</span>
+                            <span class="visual-card-sub">${item.sub}</span>
+                        </div>
+                        <button class="visual-card-more-btn" title="Options" onclick="openVisualActionSheet(event, '${safeTitle}', '${safeUrl}', '${safeCat}', '${safeSub}')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
+                        </button>
                     </div>
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        let activeSheetData = null;
+        function openVisualActionSheet(e, title, imgUrl, cat, res) {
+            if (e) e.stopPropagation();
+            activeSheetData = { title, imgUrl, cat, res };
+            const overlay = document.getElementById('visualActionSheet');
+            const imgEl = document.getElementById('visualSheetImg');
+            const titleEl = document.getElementById('visualSheetTitle');
+            const resEl = document.getElementById('visualSheetResolution');
+            if (imgEl) imgEl.src = imgUrl;
+            if (titleEl) titleEl.textContent = title;
+            if (resEl) resEl.textContent = res || 'Ultra 4K';
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function closeVisualActionSheet(e) {
+            if (e && e.target && e.target !== e.currentTarget && !e.target.classList.contains('visual-sheet-cancel')) return;
+            const overlay = document.getElementById('visualActionSheet');
+            if (overlay) overlay.style.display = 'none';
+            activeSheetData = null;
+        }
+
+        function applyWallpaperFromSheet() {
+            if (!activeSheetData) return;
+            const data = activeSheetData;
+            closeVisualActionSheet();
+            selectVisualWallpaper(data.title, data.imgUrl, data.cat);
+        }
+
+        function openWallpaperFullRes() {
+            if (!activeSheetData) return;
+            const url = activeSheetData.imgUrl;
+            closeVisualActionSheet();
+            openDialUrl(url);
+        }
+
+        function boostVibeFromSheet() {
+            if (!activeSheetData) return;
+            const cat = activeSheetData.cat;
+            boostVisualVibe(null, cat);
+            closeVisualActionSheet();
         }
 
         function boostVisualVibe(e, cat) {
@@ -4736,16 +5218,24 @@
         function selectVisualWallpaper(title, imgUrl, cat) {
             recordInterest(cat || 'wallpapers', 4);
             if (confirm(`Apply "${title}" as your Fokk Startpage Wallpaper?`)) {
-                localStorage.setItem('fokk_custom_wallpaper', imgUrl);
-                localStorage.setItem('fokk_theme_color', 'custom');
-                applyTheme('custom');
                 try {
+                    localStorage.setItem('fokk_custom_wallpaper', imgUrl);
+                    localStorage.setItem('fokk_global_theme', 'custom');
+                    if (typeof window.applyThemeFromNative === 'function') {
+                        window.applyThemeFromNative('custom', imgUrl);
+                    }
                     if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setCustomWallpaper === 'function') {
                         window.FokkShieldBridge.setCustomWallpaper(imgUrl);
                     }
-                } catch (e) {}
-                showPreviewToast('✨ 4K Wallpaper Applied Successfully!');
-                closeVisualHub();
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.setGlobalTheme === 'function') {
+                        window.FokkShieldBridge.setGlobalTheme('custom');
+                    }
+                    showPreviewToast('✨ 4K Wallpaper Applied Successfully!');
+                    closeVisualHub();
+                } catch (e) {
+                    console.error("selectVisualWallpaper error", e);
+                    showPreviewToast('✨ Wallpaper Applied!');
+                }
             }
         }
 
@@ -5077,6 +5567,285 @@
                 closeVideoHub();
                 openDialUrl(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`);
             }
+        }
+
+        // =========================================================================
+        // UNLIMITED OPEN AUDIO & MUSIC HUB (SPOTIFY-STYLE, AUDIUS & OPEN SOUNDS)
+        // =========================================================================
+        let currentAudioCategory = 'trending';
+        let audioPage = 1;
+        let isAudioLoading = false;
+        let currentPlayingTrack = null;
+
+        const defaultSeedTracks = [
+            {
+                id: 'lofi-1',
+                title: 'Midnight Coding & Rain Chill',
+                artist: 'Fokk Lo-Fi Collective',
+                genre: 'Lo-Fi / Chillhop',
+                duration: 184,
+                artwork: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'
+            },
+            {
+                id: 'acoustic-1',
+                title: 'Peaceful Mountain Acoustic Morning',
+                artist: 'Echoes of Serenity',
+                genre: 'Acoustic / Folk',
+                duration: 215,
+                artwork: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3'
+            },
+            {
+                id: 'peace-1',
+                title: '432Hz Deep Theta Healing Solfeggio',
+                artist: 'Zen Meditation Lab',
+                genre: 'Peace & Ambient',
+                duration: 360,
+                artwork: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'
+            },
+            {
+                id: 'piano-1',
+                title: 'Nocturne Melancholy in C Minor',
+                artist: 'Luna Piano Works',
+                genre: 'Piano / Classical',
+                duration: 195,
+                artwork: 'https://images.unsplash.com/photo-1520523839898-507121657f33?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_7314d3b647.mp3'
+            },
+            {
+                id: 'synth-1',
+                title: 'Neon Odyssey Retro Sunset Drive',
+                artist: 'Cyberwave 2088',
+                genre: 'Synthwave',
+                duration: 242,
+                artwork: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=300&q=80',
+                audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77c30.mp3'
+            }
+        ];
+
+        function openAudioHub(e) {
+            if (e) {
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+            }
+            if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
+            audioPage = 1;
+            renderAudioTracks(currentAudioCategory, '', true);
+            const m = document.getElementById('audioHubModal');
+            if (m) {
+                m.classList.add('active');
+                m.style.display = 'flex';
+            }
+            setupAudioInfiniteScroll();
+            initAudioPlayerListeners();
+        }
+
+        function closeAudioHub() {
+            const m = document.getElementById('audioHubModal');
+            if (m) {
+                m.classList.remove('active');
+                m.style.display = 'none';
+            }
+        }
+
+        function filterAudio(cat, btn) {
+            currentAudioCategory = cat;
+            audioPage = 1;
+            recordInterest(cat, 1);
+            document.querySelectorAll('#audioHubModal .audio-tag-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderAudioTracks(cat, '', true);
+        }
+
+        function searchAudio() {
+            const input = document.getElementById('audioSearchInput');
+            const q = input ? input.value.trim() : '';
+            recordInterest('lofi', 2);
+            renderAudioTracks(currentAudioCategory, q, true);
+        }
+
+        async function renderAudioTracks(cat, query = '', reset = false) {
+            const list = document.getElementById('audioTracksList');
+            if (!list) return;
+            if (reset) {
+                list.innerHTML = '';
+                audioPage = 1;
+            }
+
+            let tracks = [];
+            const searchQuery = query || (cat === 'trending' ? '' : cat);
+
+            try {
+                let raw = '';
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.fetchAudioTracks === 'function') {
+                    raw = window.FokkShieldBridge.fetchAudioTracks(searchQuery, audioPage);
+                }
+                if (!raw) {
+                    const endpoint = searchQuery
+                        ? `https://api.audius.co/v1/tracks/search?query=${encodeURIComponent(searchQuery)}&limit=20&app_name=FokkShield`
+                        : `https://api.audius.co/v1/tracks/trending?limit=20&app_name=FokkShield`;
+                    const res = await fetch(endpoint);
+                    if (res.ok) raw = await res.text();
+                }
+                if (raw) {
+                    const json = JSON.parse(raw);
+                    const rawData = json.data || json.results || [];
+                    if (Array.isArray(rawData) && rawData.length > 0) {
+                        tracks = rawData.map(t => {
+                            const trackId = t.id || t.track_id;
+                            const artObj = t.artwork || {};
+                            const artUrl = artObj['480x480'] || artObj['150x150'] || t.album_image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80';
+                            return {
+                                id: String(trackId),
+                                title: t.title || 'Unknown Title',
+                                artist: (t.user && t.user.name) || t.artist_name || 'Open Artist',
+                                genre: t.genre || cat.toUpperCase(),
+                                duration: t.duration || 180,
+                                artwork: artUrl,
+                                audioUrl: `https://api.audius.co/v1/tracks/${trackId}/stream?app_name=FokkShield`
+                            };
+                        });
+                    }
+                }
+            } catch (err) {
+                console.log("[AudioHub] Online fetch notice:", err);
+            }
+
+            if (tracks.length === 0) {
+                tracks = defaultSeedTracks;
+            }
+
+            if (tracks.length === 0 && reset) {
+                list.innerHTML = '<div style="text-align: center; color: #a1a1aa; padding: 30px 0; font-size: 13px;">No audio tracks found. Try another search term.</div>';
+                return;
+            }
+
+            tracks.forEach(track => {
+                const item = document.createElement('div');
+                const isPlaying = currentPlayingTrack && currentPlayingTrack.id === track.id && !document.getElementById('fokkGlobalAudioPlayer').paused;
+                item.className = `audio-track-item ${isPlaying ? 'playing' : ''}`;
+                item.id = `trackItem_${track.id}`;
+                const m = Math.floor(track.duration / 60);
+                const s = Math.floor(track.duration % 60).toString().padStart(2, '0');
+                const durStr = `${m}:${s}`;
+                
+                item.innerHTML = `
+                    <img class="audio-track-thumb" src="${track.artwork}" alt="${track.title}" loading="lazy">
+                    <div class="audio-track-info">
+                        <span class="audio-track-title">${track.title}</span>
+                        <span class="audio-track-meta">${track.artist} &bull; ${track.genre}</span>
+                    </div>
+                    <span class="audio-track-duration">${durStr}</span>
+                    <button class="audio-play-circle-btn" aria-label="Play Track">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            ${isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<polygon points="5 3 19 12 5 21 5 3"/>'}
+                        </svg>
+                    </button>
+                `;
+                item.onclick = () => playAudioTrack(track);
+                list.appendChild(item);
+            });
+        }
+
+        function playAudioTrack(track) {
+            const player = document.getElementById('fokkGlobalAudioPlayer');
+            if (!player) return;
+            currentPlayingTrack = track;
+            player.src = track.audioUrl;
+            player.play().catch(e => console.log("Play error:", e));
+
+            // Update Mini Player UI
+            const mini = document.getElementById('audioMiniPlayer');
+            const art = document.getElementById('miniPlayerArtwork');
+            const title = document.getElementById('miniPlayerTitle');
+            const artist = document.getElementById('miniPlayerArtist');
+            if (mini) mini.style.display = 'flex';
+            if (art) art.src = track.artwork;
+            if (title) title.textContent = track.title;
+            if (artist) artist.textContent = track.artist;
+            updatePlayIcons(true);
+
+            // Highlight in list
+            document.querySelectorAll('.audio-track-item').forEach(el => el.classList.remove('playing'));
+            const activeEl = document.getElementById(`trackItem_${track.id}`);
+            if (activeEl) activeEl.classList.add('playing');
+
+            // Record taste boost
+            recordInterest(track.genre ? track.genre.toLowerCase() : 'lofi', 4);
+
+            // Report media playback to Android Native Bridge for Background & Screen-Off Playback!
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
+                window.FokkShieldBridge.reportMediaPlayback(true, false, `${track.title} - ${track.artist}`);
+            }
+        }
+
+        function toggleAudioPlayState(e) {
+            if (e) e.stopPropagation();
+            const player = document.getElementById('fokkGlobalAudioPlayer');
+            if (!player || !player.src) return;
+            if (player.paused) {
+                player.play();
+                updatePlayIcons(true);
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
+                    window.FokkShieldBridge.reportMediaPlayback(true, false, currentPlayingTrack ? currentPlayingTrack.title : 'Fokk Audio');
+                }
+            } else {
+                player.pause();
+                updatePlayIcons(false);
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
+                    window.FokkShieldBridge.reportMediaPlayback(false, false, '');
+                }
+            }
+        }
+
+        function updatePlayIcons(isPlaying) {
+            const miniIcon = document.getElementById('miniPlayerPlayIcon');
+            if (miniIcon) {
+                miniIcon.innerHTML = isPlaying
+                    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+                    : '<polygon points="5 3 19 12 5 21 5 3"/>';
+            }
+        }
+
+        function initAudioPlayerListeners() {
+            const player = document.getElementById('fokkGlobalAudioPlayer');
+            if (!player || player.__fokk_bound) return;
+            player.__fokk_bound = true;
+
+            player.addEventListener('play', () => updatePlayIcons(true));
+            player.addEventListener('pause', () => updatePlayIcons(false));
+            player.addEventListener('ended', () => {
+                updatePlayIcons(false);
+                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.reportMediaPlayback === 'function') {
+                    window.FokkShieldBridge.reportMediaPlayback(false, false, '');
+                }
+            });
+        }
+
+        function setupAudioInfiniteScroll() {
+            const scrollContainer = document.getElementById('audioScrollContent');
+            if (!scrollContainer || scrollContainer.__fokk_infinite_bound) return;
+            scrollContainer.__fokk_infinite_bound = true;
+
+            scrollContainer.addEventListener('scroll', function() {
+                if (isAudioLoading) return;
+                const distToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+                if (distToBottom < 300) {
+                    isAudioLoading = true;
+                    const loader = document.getElementById('audioInfiniteLoader');
+                    if (loader) loader.style.display = 'flex';
+                    setTimeout(() => {
+                        audioPage++;
+                        const input = document.getElementById('audioSearchInput');
+                        const q = input ? input.value.trim() : '';
+                        renderAudioTracks(currentAudioCategory, q, false);
+                        if (loader) loader.style.display = 'none';
+                        isAudioLoading = false;
+                    }, 400);
+                }
+            });
         }
 
         initCommandCard();

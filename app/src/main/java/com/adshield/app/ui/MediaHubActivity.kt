@@ -1587,6 +1587,13 @@ open class MediaHubActivity : AppCompatActivity() {
         @JavascriptInterface
         fun onVideoFound(url: String, title: String) {
             if (url.isBlank()) return
+            // Google Play Store Policy Compliance: Do not sniff or offer downloads for YouTube streams
+            val activeHost = runCatching { Uri.parse(activity.activeWebView?.url.orEmpty()).host?.lowercase(Locale.ROOT) }.getOrNull().orEmpty()
+            val streamHost = runCatching { Uri.parse(url).host?.lowercase(Locale.ROOT) }.getOrNull().orEmpty()
+            if (activeHost.contains("youtube.com") || activeHost.contains("youtu.be") ||
+                streamHost.contains("youtube.com") || streamHost.contains("googlevideo.com")) {
+                return
+            }
             activity.runOnUiThread {
                 activity.currentDetectedVideoStream = DetectedVideoStream(url, title)
                 activity.binding.btnMediaDetectedAction.visibility = View.VISIBLE
@@ -2886,6 +2893,14 @@ open class MediaHubActivity : AppCompatActivity() {
         return tab
     }
 
+    private fun isRestrictedMediaDownloadSource(sourceUrl: String, downloadUrl: String, mimeType: String?): Boolean {
+        if (mimeType != null && !mimeType.startsWith("video") && !mimeType.startsWith("audio") && mimeType != "application/octet-stream") return false
+        val sHost = runCatching { Uri.parse(sourceUrl).host?.lowercase(Locale.ROOT) }.getOrNull().orEmpty()
+        val dHost = runCatching { Uri.parse(downloadUrl).host?.lowercase(Locale.ROOT) }.getOrNull().orEmpty()
+        return sHost.contains("youtube.com") || sHost.contains("youtu.be") ||
+               dHost.contains("youtube.com") || dHost.contains("googlevideo.com")
+    }
+
     private fun showDownloadOptions(
         downloadUrl: String,
         userAgent: String,
@@ -2895,6 +2910,14 @@ open class MediaHubActivity : AppCompatActivity() {
         sourceUrl: String,
         allowThirdPartyCookies: Boolean
     ) {
+        if (isRestrictedMediaDownloadSource(sourceUrl, downloadUrl, mimeType)) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Download Restricted")
+                .setMessage("In compliance with Google Play Store Policies, downloading videos directly from YouTube is not supported. In-browser streaming remains fully enabled.")
+                .setPositiveButton("Understood", null)
+                .show()
+            return
+        }
         val privateNotice = if (isPrivate) {
             " Fokk may send cookies scoped to the download URL to Android Downloads. The file and download record remain after private tabs close."
         } else ""
@@ -2961,6 +2984,10 @@ open class MediaHubActivity : AppCompatActivity() {
         allowThirdPartyCookies: Boolean,
         wifiOnly: Boolean
     ) {
+        if (isRestrictedMediaDownloadSource(sourceUrl, downloadUrl, mimeType)) {
+            Toast.makeText(this, "Downloading from YouTube is restricted under Google Play Store policies", Toast.LENGTH_LONG).show()
+            return
+        }
         try {
             val downloadUri = Uri.parse(downloadUrl)
             val downloadScheme = downloadUri.scheme?.lowercase(Locale.ROOT)

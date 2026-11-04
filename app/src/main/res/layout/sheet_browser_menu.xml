@@ -356,7 +356,7 @@
                             android:layout_height="26dp"
                             android:background="@drawable/bg_white_disc"
                             android:padding="5dp"
-                            android:src="@drawable/ic_lock"
+                            android:src="@drawable/ic_incognito"
                             app:tint="#000000" />
 
                         <TextView

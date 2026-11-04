@@ -109,9 +109,9 @@
 
         body {
             position: relative;
-            background: #000000;
+            background: #0A0A0C;
             background-image: 
-                radial-gradient(ellipse 100% 55% at 50% -5%, #0B1220 0%, #04070D 45%, #000000 85%);
+                radial-gradient(ellipse 100% 55% at 50% -5%, #16161B 0%, #0A0A0C 50%, #000000 100%);
             background-size: cover;
             background-position: center center;
             background-attachment: fixed;
@@ -126,6 +126,23 @@
             transition: background 0.3s ease, color 0.3s ease;
             overflow-x: hidden;
             overscroll-behavior: none;
+        }
+
+        /* INCOGNITO STEALTH FULL SCREEN MODE */
+        body.incognito-stealth-mode {
+            background: #000000 !important;
+            background-image: none !important;
+        }
+        body.incognito-stealth-mode .home-essentials-strip,
+        body.incognito-stealth-mode .features-strip,
+        body.incognito-stealth-mode .home-live-music-card,
+        body.incognito-stealth-mode .hero-spacer,
+        body.incognito-stealth-mode .shortcuts-bottom-section,
+        body.incognito-stealth-mode .live-pulse-section {
+            display: none !important;
+        }
+        body.incognito-stealth-mode .incognito-stealth-hero {
+            display: flex !important;
         }
 
         body.has-custom-wp::before {
@@ -1019,29 +1036,98 @@
             height: 42px;
             min-width: 42px;
             background: #FFFFFF !important;
-            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            border: none !important;
+            outline: none !important;
             border-radius: 50% !important;
             padding: 0;
             color: #000000 !important;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .hero-privacy-btn.ghost-mode-active {
-            border-color: #A855F7 !important;
+            border: none !important;
+            outline: none !important;
             background: #A855F7 !important;
             color: #FFFFFF !important;
-            box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+            box-shadow: 0 0 16px rgba(168, 85, 247, 0.5) !important;
         }
-        .hero-privacy-btn.ghost-mode-active svg {
-            color: #FFFFFF !important;
+        .hero-privacy-btn.ghost-mode-active svg path[stroke],
+        .hero-privacy-btn.ghost-mode-active svg circle {
             stroke: #FFFFFF !important;
+        }
+        .hero-privacy-btn.ghost-mode-active svg path[fill] {
+            fill: #FFFFFF !important;
+            stroke: none !important;
         }
 
         .hero-privacy-btn:active, .hero-livepulse-btn:active {
             transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.14) !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+        }
+
+        /* INCOGNITO STEALTH HERO CARD */
+        .incognito-stealth-hero {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 36px 16px 28px;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 480px;
+            animation: stealthFadeIn 0.25s ease-out;
+        }
+        @keyframes stealthFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stealth-hat-badge {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 24px rgba(168, 85, 247, 0.2);
+        }
+        .stealth-hero-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #F8FAFC;
+            margin-bottom: 8px;
+            letter-spacing: -0.2px;
+        }
+        .stealth-hero-subtitle {
+            font-size: 13px;
+            line-height: 1.55;
+            color: #94A3B8;
+            max-width: 320px;
+            margin-bottom: 22px;
+        }
+        .stealth-features-badges {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .stealth-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #E2E8F0;
         }
 
         /* LIVE PULSE HUB CARD BUTTON ON HOMESCREEN */
@@ -1628,18 +1714,19 @@
 
         .hero-privacy-btn,
         .hero-livepulse-btn {
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50% !important;
+            background: #FFFFFF !important;
+            border: none !important;
+            outline: none !important;
             color: #000000;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
             cursor: pointer;
         }
 
@@ -2714,11 +2801,16 @@
             </button>
             <button class="hero-privacy-btn" id="heroGhostBtn" onclick="toggleGhostMode()" title="Toggle Ghost Mode" aria-label="Toggle Ghost Mode">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <!-- Fedora Crown -->
+                    <path d="M6 11.5 L7.8 4.8 C8.2 3.8 9.5 3.8 12 3.8 C14.5 3.8 15.8 3.8 16.2 4.8 L18 11.5 Z" fill="#000000" stroke="none"/>
+                    <!-- Fedora Brim -->
                     <path d="M2.5 12 C6.5 10.5 17.5 10.5 21.5 12" stroke="#000000" stroke-width="2.2" stroke-linecap="round"/>
-                    <path d="M6 11 L7.8 5.5 C8.3 4.2 9.5 4 12 4 C14.5 4 15.7 4.2 16.2 5.5 L18 11 Z" fill="#000000"/>
-                    <circle cx="8" cy="16.5" r="2.8" stroke="#000000" stroke-width="2"/>
-                    <circle cx="16" cy="16.5" r="2.8" stroke="#000000" stroke-width="2"/>
-                    <path d="M10.8 16.5 Q12 15.2 13.2 16.5" stroke="#000000" stroke-width="2"/>
+                    <!-- Left Glass -->
+                    <circle cx="8" cy="16.5" r="2.8" stroke="#000000" stroke-width="2" fill="none"/>
+                    <!-- Right Glass -->
+                    <circle cx="16" cy="16.5" r="2.8" stroke="#000000" stroke-width="2" fill="none"/>
+                    <!-- Bridge -->
+                    <path d="M10.8 16.5 Q12 15.2 13.2 16.5" stroke="#000000" stroke-width="2" fill="none"/>
                 </svg>
             </button>
         </div>
@@ -2819,6 +2911,35 @@
                 <div class="popover-menu-item" onclick="triggerNewTabAction(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>New Tab</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- INCOGNITO STEALTH HERO (AUTOMATICALLY REPLACES ACTIONS & SHORTCUTS IN PRIVATE MODE) -->
+        <div class="incognito-stealth-hero" id="incognitoStealthHero">
+            <div class="stealth-hat-badge">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 11.5 L7.8 4.8 C8.2 3.8 9.5 3.8 12 3.8 C14.5 3.8 15.8 3.8 16.2 4.8 L18 11.5 Z" fill="#A855F7" stroke="none"/>
+                    <path d="M2.5 12 C6.5 10.5 17.5 10.5 21.5 12" stroke="#A855F7" stroke-width="2.2" stroke-linecap="round"/>
+                    <circle cx="8" cy="16.5" r="2.8" stroke="#A855F7" stroke-width="2" fill="none"/>
+                    <circle cx="16" cy="16.5" r="2.8" stroke="#A855F7" stroke-width="2" fill="none"/>
+                    <path d="M10.8 16.5 Q12 15.2 13.2 16.5" stroke="#A855F7" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+            <h2 class="stealth-hero-title">Incognito Mode Active</h2>
+            <p class="stealth-hero-subtitle">You are browsing in private stealth mode. Your browsing history, search records, and cookies are never saved.</p>
+            <div class="stealth-features-badges">
+                <div class="stealth-chip">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Zero History</span>
+                </div>
+                <div class="stealth-chip">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Isolated Cookies</span>
+                </div>
+                <div class="stealth-chip">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    <span>No Cache Tracking</span>
                 </div>
             </div>
         </div>
@@ -4448,18 +4569,27 @@
                 }
                 const btn = document.getElementById('heroGhostBtn');
                 const txt = document.getElementById('heroGhostText');
-                if (btn) {
-                    if (isGhost) {
+                const body = document.getElementById('pageBody') || document.body;
+                const stealthHero = document.getElementById('incognitoStealthHero');
+
+                if (isGhost) {
+                    if (body) body.classList.add('incognito-stealth-mode');
+                    if (btn) {
                         btn.classList.add('ghost-mode-active');
                         btn.setAttribute('title', 'Ghost Mode: ON');
                         btn.setAttribute('aria-label', 'Ghost Mode: ON');
-                        if (txt) txt.textContent = "Ghost Mode: ON";
-                    } else {
+                    }
+                    if (txt) txt.textContent = "Ghost Mode: ON";
+                    if (stealthHero) stealthHero.style.display = 'flex';
+                } else {
+                    if (body) body.classList.remove('incognito-stealth-mode');
+                    if (btn) {
                         btn.classList.remove('ghost-mode-active');
                         btn.setAttribute('title', 'Ghost Mode: OFF');
                         btn.setAttribute('aria-label', 'Ghost Mode: OFF');
-                        if (txt) txt.textContent = "Ghost Mode: OFF";
                     }
+                    if (txt) txt.textContent = "Ghost Mode: OFF";
+                    if (stealthHero) stealthHero.style.display = 'none';
                 }
             } catch (e) {}
         }

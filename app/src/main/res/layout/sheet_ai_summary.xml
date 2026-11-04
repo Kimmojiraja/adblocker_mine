@@ -76,13 +76,84 @@
             android:textColor="@color/text_secondary"
             android:textSize="11.5sp" />
 
+        <!-- Voice Selector & Reading Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTtsVoiceToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="0dp"
+                android:text="🎙️ Voice: Male"
+                android:textColor="@color/fokk_cyan"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                app:backgroundTint="#131B2B"
+                app:strokeColor="#24344D"
+                app:strokeWidth="1dp"
+                app:cornerRadius="18dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/textTtsStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginVertical="14dp"
+            android:layout_marginVertical="12dp"
             android:background="#1E293B" />
 
-        <!-- Bullets Container -->
+        <!-- Executive Paragraph Summary -->
+        <TextView
+            android:id="@+id/textAiExecutiveHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="EXECUTIVE SUMMARY"
+            android:textColor="@color/fokk_cyan"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textAiExecutiveSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14.5sp"
+            android:lineSpacingExtra="5dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textAiKeyInsightsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="KEY INSIGHTS &amp; ANALYSIS"
+            android:textColor="@color/text_secondary"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08" />
+
+        <!-- Bullets / Sections Container -->
         <LinearLayout
             android:id="@+id/layoutSummaryBullets"
             android:layout_width="match_parent"

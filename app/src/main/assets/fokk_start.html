@@ -241,11 +241,85 @@
             box-sizing: border-box;
         }
 
-        .start-command-card:focus-within,
-        .start-command-card:hover {
-            background: #0E1424;
-            border-color: rgba(56, 189, 248, 0.55);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9), 0 0 16px rgba(56, 189, 248, 0.22);
+        /* Expanding command card when focused / typing */
+        .start-command-card.typing-active .engine-caret,
+        .start-command-card.typing-active #commandVoiceBtn,
+        .start-command-card.typing-active .command-action-divider,
+        .start-command-card.typing-active #commandMenuBtn {
+            display: none !important;
+        }
+
+        .start-command-card.typing-active {
+            border-color: #00E5FF;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.95), 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+        .start-command-card.typing-active .start-command-input {
+            font-size: 16px;
+            padding: 0 8px;
+        }
+
+        /* Search suggestions dropdown */
+        .search-suggestions-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: #0B0F19;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1.5px solid rgba(255, 255, 255, 0.16);
+            border-radius: 22px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+            padding: 6px;
+        }
+
+        .search-suggestions-dropdown.active {
+            display: flex;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #F8FAFC;
+            font-size: 14.5px;
+            font-weight: 500;
+        }
+
+        .suggestion-item:active, .suggestion-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #00E5FF;
+        }
+
+        .suggestion-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94A3B8;
+            flex-shrink: 0;
+        }
+
+        .suggestion-text {
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggestion-arrow {
+            color: #64748B;
+            font-size: 16px;
+            padding: 2px 6px;
         }
 
 
@@ -2908,6 +2982,8 @@
                 <input type="text" class="start-command-input" id="startCommandInput"
                        placeholder="Search or enter address"
                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                       onfocus="onCommandInputFocus()"
+                       onblur="onCommandInputBlur()"
                        onkeydown="onCommandInputKey(event)"
                        oninput="onCommandInputChange(this.value)">
 
@@ -2947,6 +3023,9 @@
 
             <!-- Search Engine Dropdown Popover -->
             <div class="engine-dropdown-popover" id="engineDropdownPopover"></div>
+
+            <!-- Search Suggestions & Autocomplete Dropdown -->
+            <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown"></div>
 
             <!-- Three-Dots Quick Menu Popover -->
             <div class="command-menu-popover" id="commandMenuPopover">
@@ -3534,10 +3613,11 @@
 
         const isAppEnvironment = location.href.includes('android_asset') || location.protocol === 'file:';
 
-        if (!window.FokkShieldBridge) {
+        // Only install mock bridge in desktop preview browser, NEVER in Android App!
+        if (!window.FokkShieldBridge && !isAppEnvironment) {
             let ghostModeState = localStorage.getItem('fokk_ghost_mode') === 'true';
             window.FokkShieldBridge = {
-                isAndroidNative: function() { return isAppEnvironment; },
+                isAndroidNative: function() { return false; },
                 isGhostModeActive: function() { return ghostModeState; },
                 toggleGhostMode: function() {
                     ghostModeState = !ghostModeState;
@@ -3802,20 +3882,137 @@
             showPreviewToast('Search Engine: ' + searchEngines[engKey].name);
         }
 
+        function onCommandInputFocus() {
+            const card = document.getElementById('startCommandCard');
+            if (card) card.classList.add('typing-active');
+            const input = document.getElementById('startCommandInput');
+            if (input && input.value.trim().length > 0) {
+                fetchSuggestions(input.value);
+            }
+        }
+
+        function onCommandInputBlur() {
+            setTimeout(() => {
+                const input = document.getElementById('startCommandInput');
+                const card = document.getElementById('startCommandCard');
+                if (input && card && input.value.trim().length === 0) {
+                    card.classList.remove('typing-active');
+                }
+                hideSuggestions();
+            }, 260);
+        }
+
+        let suggestionDebounceTimer = null;
+
         function onCommandInputChange(val) {
             const hasText = val.trim().length > 0;
             const clearBtn = document.getElementById('commandClearBtn');
             const voiceBtn = document.getElementById('commandVoiceBtn');
             const input = document.getElementById('startCommandInput');
+            const card = document.getElementById('startCommandCard');
+            if (card) {
+                if (hasText) card.classList.add('typing-active');
+            }
             if (clearBtn) clearBtn.style.display = hasText ? 'flex' : 'none';
             if (voiceBtn) voiceBtn.style.display = hasText ? 'none' : 'flex';
             if (input) {
                 if (val.length > 26) {
-                    input.style.fontSize = '13.5px';
+                    input.style.fontSize = '14px';
                 } else {
-                    input.style.fontSize = '15px';
+                    input.style.fontSize = '15.5px';
                 }
             }
+            if (hasText) {
+                fetchSuggestions(val);
+            } else {
+                hideSuggestions();
+            }
+        }
+
+        function fetchSuggestions(query) {
+            clearTimeout(suggestionDebounceTimer);
+            const trimmed = (query || '').trim();
+            if (!trimmed) {
+                hideSuggestions();
+                return;
+            }
+            suggestionDebounceTimer = setTimeout(() => {
+                // 1. Check Native Bridge first
+                try {
+                    if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getSearchSuggestions === 'function') {
+                        const nativeJson = window.FokkShieldBridge.getSearchSuggestions(trimmed);
+                        if (nativeJson) {
+                            const parsed = JSON.parse(nativeJson);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                renderSuggestions(parsed, trimmed);
+                                return;
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                // 2. Query search suggestion API (DuckDuckGo instant list)
+                const url = 'https://duckduckgo.com/ac/?q=' + encodeURIComponent(trimmed) + '&type=list';
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        const items = (data && data[1]) ? data[1] : [];
+                        renderSuggestions(items, trimmed);
+                    })
+                    .catch(() => {
+                        renderSuggestions([trimmed], trimmed);
+                    });
+            }, 120);
+        }
+
+        function renderSuggestions(items, query) {
+            const dropdown = document.getElementById('searchSuggestionsDropdown');
+            if (!dropdown) return;
+            if (!items || items.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            dropdown.innerHTML = '';
+            const maxItems = items.slice(0, 6);
+            maxItems.forEach(item => {
+                const text = typeof item === 'string' ? item : (item.phrase || item.title || item.url || '');
+                if (!text) return;
+                const row = document.createElement('div');
+                row.className = 'suggestion-item';
+                row.onmousedown = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectSuggestion(text);
+                };
+                row.innerHTML = `
+                    <span class="suggestion-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </span>
+                    <span class="suggestion-text">${escapeHtml(text)}</span>
+                    <span class="suggestion-arrow">↗</span>
+                `;
+                dropdown.appendChild(row);
+            });
+            dropdown.classList.add('active');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function selectSuggestion(text) {
+            const input = document.getElementById('startCommandInput');
+            if (input) input.value = text;
+            hideSuggestions();
+            submitCommandSearch();
+        }
+
+        function hideSuggestions() {
+            const dropdown = document.getElementById('searchSuggestionsDropdown');
+            if (dropdown) dropdown.classList.remove('active');
         }
 
         function clearCommandInput(e) {
@@ -4181,15 +4378,11 @@
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
-            try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openBookmarks === 'function') {
-                    window.FokkShieldBridge.openBookmarks();
-                    return;
-                }
-            } catch (err) {
-                console.error("openBookmarks error", err);
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openBookmarks === 'function') {
+                window.FokkShieldBridge.openBookmarks();
+                return;
             }
-            showPreviewToast('Bookmarks & Saved Pages');
+            if (!isAppEnvironment) showPreviewToast('Bookmarks & Saved Pages');
         }
 
         function openHistoryAction(e) {
@@ -4200,15 +4393,11 @@
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
-            try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openHistory === 'function') {
-                    window.FokkShieldBridge.openHistory();
-                    return;
-                }
-            } catch (err) {
-                console.error("openHistory error", err);
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openHistory === 'function') {
+                window.FokkShieldBridge.openHistory();
+                return;
             }
-            showPreviewToast('Browsing History');
+            if (!isAppEnvironment) showPreviewToast('Browsing History');
         }
 
         function openShieldAction(e) {
@@ -4219,15 +4408,11 @@
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
-            try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openShieldDashboard === 'function') {
-                    window.FokkShieldBridge.openShieldDashboard();
-                    return;
-                }
-            } catch (err) {
-                console.error("openShieldDashboard error", err);
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openShieldDashboard === 'function') {
+                window.FokkShieldBridge.openShieldDashboard();
+                return;
             }
-            showPreviewToast('AdShield Defense');
+            if (!isAppEnvironment) showPreviewToast('AdShield Defense');
         }
 
         function openSettingsAction(e) {
@@ -4238,16 +4423,13 @@
             if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
             const popover = document.getElementById('commandMenuPopover');
             if (popover) popover.classList.remove('active');
-            try {
-                if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openSettings === 'function') {
-                    window.FokkShieldBridge.openSettings();
-                    return;
-                }
-            } catch (err) {
-                console.error("openSettings error", err);
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openSettings === 'function') {
+                window.FokkShieldBridge.openSettings();
+                return;
             }
-            showPreviewToast('Browser Settings');
+            if (!isAppEnvironment) showPreviewToast('Settings');
         }
+
 
         function openWallpapersCustomizer(e) {
             if (e) {
@@ -4617,12 +4799,14 @@
                 btn.style.transform = 'scale(0.92)';
                 setTimeout(() => { btn.style.transform = ''; }, 180);
             }
-            const isNative = window.FokkShieldBridge && typeof window.FokkShieldBridge.isAndroidNative === 'function' && window.FokkShieldBridge.isAndroidNative();
-            if (isNative && typeof window.FokkShieldBridge.toggleGhostMode === 'function') {
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.toggleGhostMode === 'function') {
                 window.FokkShieldBridge.toggleGhostMode();
-            } else if (isNative && typeof window.FokkShieldBridge.openPrivateTabs === 'function') {
+                return;
+            } else if (window.FokkShieldBridge && typeof window.FokkShieldBridge.openPrivateTabs === 'function') {
                 window.FokkShieldBridge.openPrivateTabs();
-            } else {
+                return;
+            }
+            if (!isAppEnvironment) {
                 const current = localStorage.getItem('fokk_ghost_mode') === 'true';
                 const next = !current;
                 localStorage.setItem('fokk_ghost_mode', String(next));

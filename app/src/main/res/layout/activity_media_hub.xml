@@ -29,19 +29,47 @@
                     android:layout_height="0dp"
                     android:layout_weight="1" />
 
-                <!-- Dual-Deck Split Divider -->
+                <!-- Dual-Deck Interactive Split Control Divider -->
                 <LinearLayout
                     android:id="@+id/splitDivider"
                     android:layout_width="match_parent"
-                    android:layout_height="20dp"
-                    android:background="#162238"
-                    android:gravity="center"
+                    android:layout_height="34dp"
+                    android:background="#0F172A"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
                     android:visibility="gone">
 
-                    <View
-                        android:layout_width="48dp"
-                        android:layout_height="4dp"
-                        android:background="@drawable/bg_stat_chip" />
+                    <ImageButton
+                        android:id="@+id/btnSwapSplitDecks"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_swap_vertical"
+                        app:tint="#94A3B8"
+                        android:contentDescription="Swap Upper and Lower Decks" />
+
+                    <LinearLayout
+                        android:id="@+id/dragSplitHandleContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center">
+
+                        <View
+                            android:layout_width="54dp"
+                            android:layout_height="5dp"
+                            android:background="@drawable/bg_stat_chip" />
+                    </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnCloseSplitDeck"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_close"
+                        app:tint="#EF4444"
+                        android:contentDescription="Exit Dual Deck View" />
                 </LinearLayout>
 
                 <!-- Secondary Split Viewport Frame -->

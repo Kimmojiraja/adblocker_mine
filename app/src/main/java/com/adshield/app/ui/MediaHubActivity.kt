@@ -1527,6 +1527,28 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
+        @JavascriptInterface
+        fun getSearchSuggestions(query: String): String {
+            val q = query.trim().lowercase(Locale.ROOT)
+            if (q.isBlank()) return "[]"
+            val results = mutableListOf<String>()
+            try {
+                val historyJson = activity.prefs.getString(PREF_BROWSER_HISTORY, "[]") ?: "[]"
+                val histArray = JSONArray(historyJson)
+                for (i in 0 until minOf(histArray.length(), 40)) {
+                    val item = histArray.getJSONObject(i)
+                    val title = item.optString("title", "")
+                    val url = item.optString("url", "")
+                    if (title.lowercase(Locale.ROOT).contains(q) || url.lowercase(Locale.ROOT).contains(q)) {
+                        val display = if (title.isNotBlank()) title else url
+                        if (!results.contains(display)) results.add(display)
+                    }
+                    if (results.size >= 5) break
+                }
+            } catch (_: Exception) {}
+            return JSONArray(results).toString()
+        }
+
 
         @JavascriptInterface
         fun onPaywallDetected(url: String) {
@@ -1860,8 +1882,15 @@ open class MediaHubActivity : AppCompatActivity() {
                     return true
                 }
                 val fallbackUrl = parsedIntent.getStringExtra("browser_fallback_url")
-                if (fallbackUrl != null && isWebUrl(fallbackUrl)) {
-                    loadUrlInWebView(webView, fallbackUrl)
+                val webTarget = fallbackUrl ?: parsedIntent.dataString?.takeIf { isWebUrl(it) } ?: run {
+                    val scheme = parsedIntent.scheme ?: "https"
+                    if (scheme == "http" || scheme == "https") {
+                        val hostAndPath = rawUrl.substringAfter("intent://").substringBefore("#Intent;")
+                        if (hostAndPath.isNotBlank() && hostAndPath.contains(".")) "$scheme://$hostAndPath" else null
+                    } else null
+                }
+                if (webTarget != null && isWebUrl(webTarget) && webView != null) {
+                    loadUrlInWebView(webView, webTarget)
                     return true
                 }
                 val pkg = parsedIntent.`package`
@@ -2315,11 +2344,6 @@ open class MediaHubActivity : AppCompatActivity() {
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
-            containerLp?.let {
-                it.topMargin = if (isTop) (56 * density).toInt() else 0
-                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
-                binding.mainContentLayout.layoutParams = it
-            }
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
             binding.topBar.animate()
@@ -2331,11 +2355,6 @@ open class MediaHubActivity : AppCompatActivity() {
         } else {
             if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
-            containerLp?.let {
-                it.topMargin = 0
-                it.bottomMargin = 0
-                binding.mainContentLayout.layoutParams = it
-            }
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
@@ -5776,21 +5795,36 @@ open class MediaHubActivity : AppCompatActivity() {
     fun toggleDualDeckMode() {
         isDualDeckMode = !isDualDeckMode
         if (isDualDeckMode) {
+            val primaryIndex = activeTabIndex
             secondaryTabIndex = if (tabs.size > 1) {
-                tabs.indices.firstOrNull { it != activeTabIndex } ?: -1
+                tabs.indices.firstOrNull { it != primaryIndex } ?: -1
             } else -1
 
             if (secondaryTabIndex == -1) {
                 addNewTab("file:///android_asset/fokk_start.html", isPrivate = activeTab?.isPrivate == true)
+                switchToTab(primaryIndex)
                 secondaryTabIndex = tabs.lastIndex
             }
 
+            val primaryTab = tabs.getOrNull(primaryIndex)
+            val primaryWebView = primaryTab?.webView
             val secondaryTab = tabs.getOrNull(secondaryTabIndex)
             val secondaryWebView = secondaryTab?.webView
 
             binding.splitDivider.visibility = View.VISIBLE
             binding.tabContainerSecondary.visibility = View.VISIBLE
             binding.tabContainerSecondary.removeAllViews()
+
+            if (primaryWebView != null) {
+                (primaryWebView.parent as? ViewGroup)?.removeView(primaryWebView)
+                primaryWebView.visibility = View.VISIBLE
+                primaryWebView.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                binding.tabContainer.removeAllViews()
+                binding.tabContainer.addView(primaryWebView)
+            }
 
             if (secondaryWebView != null) {
                 (secondaryWebView.parent as? ViewGroup)?.removeView(secondaryWebView)
@@ -5802,7 +5836,83 @@ open class MediaHubActivity : AppCompatActivity() {
                 binding.tabContainerSecondary.addView(secondaryWebView)
             }
 
-            Toast.makeText(this, "Dual-Deck Split View Active", Toast.LENGTH_SHORT).show()
+            val topLp = binding.tabContainer.layoutParams as? LinearLayout.LayoutParams
+            val bottomLp = binding.tabContainerSecondary.layoutParams as? LinearLayout.LayoutParams
+            topLp?.weight = 1.0f
+            bottomLp?.weight = 1.0f
+            binding.tabContainer.layoutParams = topLp
+            binding.tabContainerSecondary.layoutParams = bottomLp
+
+            binding.btnCloseSplitDeck.setOnClickListener {
+                toggleDualDeckMode()
+            }
+
+            binding.btnSwapSplitDecks.setOnClickListener {
+                if (!isDualDeckMode) return@setOnClickListener
+                val currentPrimary = activeTabIndex
+                val currentSecondary = secondaryTabIndex
+                if (currentPrimary == -1 || currentSecondary == -1) return@setOnClickListener
+
+                val topTab = tabs.getOrNull(currentPrimary)
+                val bottomTab = tabs.getOrNull(currentSecondary)
+                val topWv = topTab?.webView
+                val bottomWv = bottomTab?.webView
+
+                binding.tabContainer.removeAllViews()
+                binding.tabContainerSecondary.removeAllViews()
+
+                if (bottomWv != null) {
+                    (bottomWv.parent as? ViewGroup)?.removeView(bottomWv)
+                    bottomWv.visibility = View.VISIBLE
+                    bottomWv.layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    binding.tabContainer.addView(bottomWv)
+                }
+
+                if (topWv != null) {
+                    (topWv.parent as? ViewGroup)?.removeView(topWv)
+                    topWv.visibility = View.VISIBLE
+                    topWv.layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    binding.tabContainerSecondary.addView(topWv)
+                }
+
+                activeTabIndex = currentSecondary
+                secondaryTabIndex = currentPrimary
+                updateUrlBar(activeTab?.url, activeTab?.title)
+                Toast.makeText(this, "Decks Swapped", Toast.LENGTH_SHORT).show()
+            }
+
+            binding.splitDivider.setOnTouchListener { _, event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> true
+                    MotionEvent.ACTION_MOVE -> {
+                        val totalHeight = binding.mainContentLayout.height.toFloat()
+                        if (totalHeight > 200) {
+                            val loc = IntArray(2)
+                            binding.mainContentLayout.getLocationOnScreen(loc)
+                            val relativeY = (event.rawY - loc[1]).coerceIn(totalHeight * 0.2f, totalHeight * 0.8f)
+                            val weightTop = relativeY / totalHeight
+                            val weightBottom = 1.0f - weightTop
+
+                            val pTop = binding.tabContainer.layoutParams as? LinearLayout.LayoutParams
+                            val pBottom = binding.tabContainerSecondary.layoutParams as? LinearLayout.LayoutParams
+                            pTop?.weight = weightTop
+                            pBottom?.weight = weightBottom
+                            binding.tabContainer.layoutParams = pTop
+                            binding.tabContainerSecondary.layoutParams = pBottom
+                        }
+                        true
+                    }
+                    else -> true
+                }
+            }
+
+            Toast.makeText(this, "Dual-Deck Split View Active (Drag bar to resize)", Toast.LENGTH_SHORT).show()
         } else {
             binding.splitDivider.visibility = View.GONE
             binding.tabContainerSecondary.visibility = View.GONE
@@ -5812,15 +5922,13 @@ open class MediaHubActivity : AppCompatActivity() {
             if (secondaryWebView != null) {
                 binding.tabContainerSecondary.removeView(secondaryWebView)
                 secondaryWebView.visibility = View.GONE
-                if (binding.tabContainer.indexOfChild(secondaryWebView) == -1) {
-                    secondaryWebView.layoutParams = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    binding.tabContainer.addView(secondaryWebView)
-                }
             }
             secondaryTabIndex = -1
+
+            val topLp = binding.tabContainer.layoutParams as? LinearLayout.LayoutParams
+            topLp?.weight = 1.0f
+            binding.tabContainer.layoutParams = topLp
+
             Toast.makeText(this, "Single View Restored", Toast.LENGTH_SHORT).show()
         }
     }
@@ -5841,39 +5949,81 @@ open class MediaHubActivity : AppCompatActivity() {
             sheetDialog.setContentView(sheetBinding.root)
 
             sheetBinding.textSummaryTitle.text = title
-            sheetBinding.textSummaryMeta.text = "$readingTime • 100% On-Device • Zero Server Latency"
+            sheetBinding.textSummaryMeta.text = "$readingTime • 100% On-Device AI • Zero Server Latency"
+
+            var isMale = prefs.getBoolean("pref_tts_male_voice", true)
+            val updateVoiceBtn = {
+                sheetBinding.btnTtsVoiceToggle.text = if (isMale) "🎙️ Voice: Male" else "🎙️ Voice: Female"
+            }
+            updateVoiceBtn()
+
+            sheetBinding.btnTtsVoiceToggle.setOnClickListener {
+                isMale = !isMale
+                prefs.edit().putBoolean("pref_tts_male_voice", isMale).apply()
+                updateVoiceBtn()
+                configureTtsVoice(isMale)
+                Toast.makeText(this, if (isMale) "Male Voice Selected" else "Female Voice Selected", Toast.LENGTH_SHORT).show()
+            }
+
+            val fullText = StringBuilder()
+            val bulletsCount = bulletsArray.length()
+
+            // Executive Summary Paragraph
+            val explicitSummary = json.optString("summary", "").trim()
+            val execSummary = if (explicitSummary.isNotBlank()) {
+                explicitSummary
+            } else if (bulletsCount > 0) {
+                val firstB = bulletsArray.getString(0)
+                if (bulletsCount > 1 && firstB.length < 90) {
+                    firstB + " " + bulletsArray.getString(1)
+                } else {
+                    firstB
+                }
+            } else {
+                ""
+            }
+
+            if (execSummary.isNotBlank()) {
+                sheetBinding.textAiExecutiveHeader.visibility = View.VISIBLE
+                sheetBinding.textAiExecutiveSummary.visibility = View.VISIBLE
+                sheetBinding.textAiExecutiveSummary.text = execSummary
+                fullText.append("Executive Summary: ").append(execSummary).append("\n\n")
+            }
+
+            // Key Insights Section
+            val startBulletIndex = if (explicitSummary.isBlank() && execSummary.isNotBlank()) {
+                if (bulletsCount > 1 && bulletsArray.getString(0).length < 90) 2 else 1
+            } else 0
 
             sheetBinding.layoutSummaryBullets.removeAllViews()
             val density = resources.displayMetrics.density
-            val fullText = StringBuilder()
 
-            for (i in 0 until bulletsArray.length()) {
+            for (i in startBulletIndex until bulletsCount) {
                 val bullet = bulletsArray.getString(i)
                 fullText.append("• ").append(bullet).append("\n\n")
 
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    setPadding((12 * density).toInt(), (10 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
-                    setBackgroundResource(R.drawable.bg_search_chip)
+                    setPadding((8 * density).toInt(), (6 * density).toInt(), (8 * density).toInt(), (6 * density).toInt())
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        bottomMargin = (8 * density).toInt()
+                        bottomMargin = (6 * density).toInt()
                     }
                 }
 
                 val dot = TextView(this).apply {
                     text = "• "
                     setTextColor(getColor(R.color.fokk_cyan))
-                    textSize = 14f
+                    textSize = 15f
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                 }
 
                 val textTv = TextView(this).apply {
                     text = bullet
                     setTextColor(getColor(R.color.text_primary))
-                    textSize = 13.5f
+                    textSize = 14f
                     setLineSpacing(0f, 1.35f)
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                 }
@@ -5914,8 +6064,9 @@ open class MediaHubActivity : AppCompatActivity() {
             }
 
             sheetBinding.btnListenSummary.setOnClickListener {
+                configureTtsVoice(isMale)
                 startTextToSpeech(fullText.toString().trim())
-                Toast.makeText(this, "Reading summary aloud...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Reading summary aloud (${if (isMale) "Male" else "Female"} voice)...", Toast.LENGTH_SHORT).show()
             }
 
             sheetDialog.show()
@@ -5924,11 +6075,37 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    private fun configureTtsVoice(isMale: Boolean) {
+        textToSpeech?.let { tts ->
+            if (isMale) {
+                tts.setPitch(0.85f)
+                tts.setSpeechRate(0.96f)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val male = tts.voices?.firstOrNull {
+                        it.name.contains("male", ignoreCase = true) || it.name.contains("#male", ignoreCase = true)
+                    }
+                    if (male != null) tts.voice = male
+                }
+            } else {
+                tts.setPitch(1.05f)
+                tts.setSpeechRate(1.0f)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val female = tts.voices?.firstOrNull {
+                        it.name.contains("female", ignoreCase = true) || it.name.contains("#female", ignoreCase = true)
+                    }
+                    if (female != null) tts.voice = female
+                }
+            }
+        }
+    }
+
     private fun initTextToSpeech() {
         if (textToSpeech == null) {
             textToSpeech = TextToSpeech(this) { status ->
                 if (status == TextToSpeech.SUCCESS) {
                     textToSpeech?.language = Locale.getDefault()
+                    val isMale = prefs.getBoolean("pref_tts_male_voice", true)
+                    configureTtsVoice(isMale)
                 }
             }
         }
@@ -5936,6 +6113,8 @@ open class MediaHubActivity : AppCompatActivity() {
 
     fun startTextToSpeech(text: String) {
         initTextToSpeech()
+        val isMale = prefs.getBoolean("pref_tts_male_voice", true)
+        configureTtsVoice(isMale)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "fokk_tts")
         } else {

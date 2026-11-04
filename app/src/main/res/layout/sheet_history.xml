@@ -89,8 +89,9 @@
     <!-- Scrollable container for history items -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:maxHeight="380dp">
+        android:layout_height="380dp"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls">
 
         <LinearLayout
             android:id="@+id/layoutHistoryList"

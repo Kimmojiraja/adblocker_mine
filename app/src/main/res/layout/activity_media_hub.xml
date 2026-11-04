@@ -515,12 +515,19 @@
                 android:layout_height="1dp"
                 android:background="#24344D" />
 
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:fillViewport="true"
+                android:overScrollMode="ifContentScrolls">
+
             <LinearLayout
                 android:id="@+id/layoutSuggestionsList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="8dp" />
+            </androidx.core.widget.NestedScrollView>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

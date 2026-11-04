@@ -2621,6 +2621,13 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
+                // Social apps are tightly coupled SPAs. Blocking their boot/runtime
+                // resources or rewriting their API payloads leaves blank feeds and
+                // broken notification routes.
+                if (isSocialAppHost(pageHost) || isSocialAppHost(host)) {
+                    return super.shouldInterceptRequest(view, request)
+                }
+
                 val urlStr = request.url.toString().lowercase()
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
@@ -3385,6 +3392,8 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun injectAdblockScript(webView: WebView?, pageUrl: String? = webView?.url) {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
+        val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
+        if (isSocialAppHost(pageHost)) return
 
         // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true
@@ -3458,6 +3467,15 @@ open class MediaHubActivity : AppCompatActivity() {
                 webView.evaluateJavascript(fokkoScript, null)
             }
         }
+    }
+
+    private fun isSocialAppHost(host: String?): Boolean {
+        val normalized = host?.lowercase(Locale.ROOT).orEmpty()
+        return normalized == "x.com" || normalized.endsWith(".x.com") ||
+            normalized == "twitter.com" || normalized.endsWith(".twitter.com") ||
+            normalized == "instagram.com" || normalized.endsWith(".instagram.com") ||
+            normalized == "threads.net" || normalized.endsWith(".threads.net") ||
+            normalized == "facebook.com" || normalized.endsWith(".facebook.com")
     }
 
     /** The native bridge is permanently maintained so internal and start page actions never disconnect. */
@@ -4872,22 +4890,12 @@ open class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
-        // 4. Bookmark & Save Page button
-        val currentUrl = activeWebView?.url.orEmpty()
-        val isAlreadyBookmarked = if (isWebUrl(currentUrl)) offlinePageStore.list().any { it.url == currentUrl } else false
-        if (isAlreadyBookmarked) {
-            sheetBinding.btnMenuSave.imageTintList = android.content.res.ColorStateList.valueOf(0xFFFBBF24.toInt())
-        }
-        sheetBinding.btnMenuSave.alpha = if (isStartPage) 0.85f else 1.0f
-        sheetBinding.btnMenuSave.isEnabled = !isPrivateProfile
-        sheetBinding.btnMenuSave.contentDescription = if (isStartPage) "Favorites & Bookmarks" else "Favorite This Page"
-        sheetBinding.btnMenuSave.setOnClickListener {
+        // 4. History belongs beside navigation; saving remains available from the page star.
+        sheetBinding.btnMenuHistory.isEnabled = !isPrivateProfile
+        sheetBinding.btnMenuHistory.alpha = if (isPrivateProfile) 0.35f else 1.0f
+        sheetBinding.btnMenuHistory.setOnClickListener {
             dialog.dismiss()
-            if (isStartPage) {
-                showSavedPagesDialog()
-            } else {
-                saveCurrentPage()
-            }
+            showHistoryDialog()
         }
 
         // 5. Downloads button (opens standard downloads manager)
@@ -4906,6 +4914,7 @@ open class MediaHubActivity : AppCompatActivity() {
         // The private process has a separate WebView profile, but these stores are shared.
         if (isPrivateProfile) {
             sheetBinding.btnMenuDownloads.visibility = View.GONE
+            sheetBinding.btnMenuHistory.visibility = View.GONE
             sheetBinding.rowSavedPages.visibility = View.GONE
         }
 
@@ -4945,7 +4954,20 @@ open class MediaHubActivity : AppCompatActivity() {
             prefs.edit().putBoolean(PREF_AI_FILTER, nextState).apply()
             updateAiBlockerUi(nextState)
             activeWebView?.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled($nextState);", null)
-            Toast.makeText(this, if (nextState) "AI Trap Defuser: ON" else "AI Trap Defuser: OFF", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                if (nextState) "AI Trap Defuser: ON · popups, trap overlays and scroll locks" else "AI Trap Defuser: OFF",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        sheetBinding.btnToolAiBlocker.setOnLongClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("AI Trap Defuser")
+                .setMessage("Runs locally in the current page. It removes deceptive popunders, anti-adblock overlays and forced scroll locks, and hides supported Google or Bing AI overview panels. It does not send page text to a server.")
+                .setPositiveButton("Got it", null)
+                .show()
+            true
         }
 
         sheetBinding.btnToolDiagnostics.setOnClickListener {
@@ -5773,6 +5795,10 @@ open class MediaHubActivity : AppCompatActivity() {
             if (secondaryWebView != null) {
                 (secondaryWebView.parent as? ViewGroup)?.removeView(secondaryWebView)
                 secondaryWebView.visibility = View.VISIBLE
+                secondaryWebView.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 binding.tabContainerSecondary.addView(secondaryWebView)
             }
 
@@ -5787,6 +5813,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 binding.tabContainerSecondary.removeView(secondaryWebView)
                 secondaryWebView.visibility = View.GONE
                 if (binding.tabContainer.indexOfChild(secondaryWebView) == -1) {
+                    secondaryWebView.layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
                     binding.tabContainer.addView(secondaryWebView)
                 }
             }

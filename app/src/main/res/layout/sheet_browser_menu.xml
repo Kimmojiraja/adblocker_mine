@@ -71,7 +71,7 @@
                 app:tint="@color/text_secondary" />
         </LinearLayout>
 
-        <!-- 1. TOP BAR QUICK NAVIGATION: Back, Forward, Refresh, Home, Save, Downloads -->
+        <!-- 1. TOP BAR QUICK NAVIGATION: Back, Forward, Refresh, Home, History, Downloads -->
         <LinearLayout
             android:id="@+id/layoutMenuQuickNav"
             android:layout_width="match_parent"
@@ -123,14 +123,14 @@
                 android:contentDescription="Go Home" />
 
             <ImageButton
-                android:id="@+id/btnMenuSave"
+                android:id="@+id/btnMenuHistory"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_bookmark"
+                android:src="@drawable/ic_clock"
                 app:tint="#000000"
-                android:contentDescription="Save Page" />
+                android:contentDescription="Browsing History" />
 
             <ImageButton
                 android:id="@+id/btnMenuDownloads"

@@ -1603,10 +1603,10 @@
             align-items: center;
             justify-content: center;
             padding: 0;
-            color: var(--text-primary);
-            background: rgba(15, 23, 42, 0.92);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            color: #000000;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             touch-action: manipulation;
@@ -1618,16 +1618,14 @@
         .home-essential svg { width: 22px; height: 22px; flex: 0 0 auto; pointer-events: none; }
         .home-essential:active {
             transform: translateY(1px) scale(0.94);
-            background: rgba(30, 41, 59, 1);
-            border-color: rgba(0, 229, 255, 0.4);
+            background: rgba(240, 240, 240, 1);
         }
 
         @media (hover: hover) and (pointer: fine) {
             .home-essential:hover {
                 transform: translateY(-2px) scale(1.05);
-                background: rgba(30, 41, 59, 0.96);
-                border-color: rgba(255, 255, 255, 0.28);
-                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+                background: #FFFFFF;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
             }
         }
 
@@ -1644,24 +1642,54 @@
 
         .hero-privacy-btn,
         .hero-livepulse-btn {
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
             padding: 0;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #000000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
         }
 
         .hero-livepulse-btn { order: 1; }
         .hero-privacy-btn { order: 2; }
 
         .pulse-news-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-        .pulse-news-card { display: block; min-width: 0; overflow: hidden; border-radius: 14px; }
-        .pulse-news-img { width: 100%; height: 128px; object-fit: cover; display: block; }
-        .pulse-news-body { padding: 10px 11px 12px; }
-        .pulse-news-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; }
-        .pulse-news-tag { display: none; }
-        .pulse-news-footer { gap: 5px; flex-wrap: wrap; line-height: 1.3; }
+        .pulse-news-card {
+            display: flex !important;
+            flex-direction: column !important;
+            min-width: 0;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #171b27 !important;
+            border: 1px solid rgba(148, 163, 184, 0.18) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .pulse-news-card:active {
+            transform: scale(0.98);
+            border-color: rgba(0, 229, 255, 0.4) !important;
+        }
+        .pulse-news-img { width: 100%; height: 124px; object-fit: cover; display: block; background: #0f131f; }
+        .pulse-news-body { padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .pulse-news-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.35; font-size: 13px; font-weight: 700; color: #FFFFFF; }
+        .pulse-news-tag {
+            background: rgba(0, 229, 255, 0.12) !important;
+            color: var(--fokk-cyan) !important;
+            border: 1px solid rgba(0, 229, 255, 0.25) !important;
+            border-radius: 6px !important;
+            padding: 1px 6px !important;
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            display: inline-block !important;
+        }
+        .pulse-news-footer { gap: 5px; flex-wrap: wrap; line-height: 1.3; font-size: 11px; color: var(--text-secondary); margin-top: auto; }
         .pulse-customize-btn {
             border: none !important;
             background: transparent !important;
@@ -2684,28 +2712,42 @@
 <body id="pageBody">
 
     <div class="main-container">
-        <!-- Prominent top controls: Cyber Ghost and Truth Pulse with distinctive icons and generous touch targets -->
+        <!-- Prominent top controls: Cyber Ghost and Truth Pulse with distinctive icons matching reference image -->
         <div class="hero-top-bar">
-            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Truth Pulse Hub" aria-label="Open Truth Pulse">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12h4l3-8 4 16 3-8h7"/>
-                    <circle cx="21" cy="12" r="1.5" fill="currentColor"/>
+            <button class="hero-livepulse-btn" onclick="openLivePulseHub()" title="Truth Pulse News Hub" aria-label="Open Truth Pulse">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v16H6.5a2.5 2.5 0 0 0-2.5 2.5z"/>
+                    <path d="M6 2v17.5a2.5 2.5 0 0 0 2.5 2.5H20"/>
+                    <rect x="9.5" y="5.5" width="3.5" height="3.5" fill="#000000" stroke="none"/>
+                    <line x1="15" y1="6" x2="18" y2="6"/>
+                    <line x1="15" y1="8.5" x2="18" y2="8.5"/>
+                    <line x1="9.5" y1="11.5" x2="18" y2="11.5"/>
+                    <line x1="9.5" y1="14" x2="18" y2="14"/>
+                    <line x1="9.5" y1="16.5" x2="18" y2="16.5"/>
                 </svg>
             </button>
             <button class="hero-privacy-btn" id="heroGhostBtn" onclick="toggleGhostMode()" title="Toggle Ghost Mode" aria-label="Toggle Ghost Mode">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 10h.01M15 10h.01"/>
-                    <path d="M12 2a8 8 0 0 0-8 8v11l3-2 3 2 2-2 2 2 3-2 3 2V10a8 8 0 0 0-8-8z"/>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M2.5 12 C6.5 10.5 17.5 10.5 21.5 12" stroke="#000000" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M6 11 L7.8 5.5 C8.3 4.2 9.5 4 12 4 C14.5 4 15.7 4.2 16.2 5.5 L18 11 Z" fill="#000000"/>
+                    <circle cx="8" cy="16.5" r="2.8" stroke="#000000" stroke-width="2"/>
+                    <circle cx="16" cy="16.5" r="2.8" stroke="#000000" stroke-width="2"/>
+                    <path d="M10.8 16.5 Q12 15.2 13.2 16.5" stroke="#000000" stroke-width="2"/>
                 </svg>
             </button>
         </div>
 
         <!-- 1. CENTERED HERO BRANDING -->
         <div class="brand-hero-center">
-            <div class="brand-logo-disc">
-                <img src="fokk_logo.png" alt="Fokk Logo" class="brand-logo-img" onerror="this.src='ic_fokk_logo.png'">
+            <div class="brand-logo-disc" style="background: transparent; box-shadow: none;">
+                <svg width="52" height="52" viewBox="0 0 100 100">
+                    <rect width="100" height="100" rx="26" fill="#000000"/>
+                    <path d="M 47 18 C 37 38 31 56 22 72 L 47 72 Z" fill="#FFFFFF"/>
+                    <path d="M 52 18 L 78 72 L 52 72 Z" fill="#FFFFFF"/>
+                    <path d="M 18 78 Q 50 94 84 78 Q 50 85 18 78 Z" fill="#FFFFFF"/>
+                </svg>
             </div>
-            <span class="brand-title-hero">Fokk</span>
+            <span class="brand-title-hero" style="font-weight: 800; letter-spacing: 0.5px;">FOKK</span>
         </div>
 
         <!-- 2. ULTRA-MODERN SQUIRCLE COMMAND INPUT CARD -->
@@ -2731,13 +2773,14 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
 
-                <!-- Voice Search Button -->
+                <!-- Voice Search Button (Mic icon matching reference image) -->
                 <button class="command-icon-btn" id="commandVoiceBtn" onclick="triggerVoiceAction()" title="Voice Search">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="23"/>
-                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="#000000" stroke-width="1.8"/>
+                        <rect x="10" y="6" width="4" height="7.5" rx="2" fill="#000000"/>
+                        <path d="M7.8 11.2 C7.8 14 9.6 15.8 12 15.8 C14.4 15.8 16.2 14 16.2 11.2" stroke="#000000" stroke-width="1.6" stroke-linecap="round"/>
+                        <line x1="12" y1="15.8" x2="12" y2="18.5" stroke="#000000" stroke-width="1.6"/>
+                        <line x1="9.5" y1="18.5" x2="14.5" y2="18.5" stroke="#000000" stroke-width="1.6" stroke-linecap="round"/>
                     </svg>
                 </button>
 
@@ -2749,18 +2792,17 @@
                     <span class="tab-badge-num" id="tabBadgeNumber">1</span>
                 </button>
 
-                <!-- Three-Dots Menu -->
+                <!-- Three-Dots Menu (Triangular 3-dots matching reference image) -->
                 <button class="command-icon-btn menu-dots-btn" id="commandMenuBtn" onclick="toggleCommandMenu(event)" title="Options Menu">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
-                        <circle cx="12" cy="12" r="1.8" fill="#FFFFFF"/>
-                        <circle cx="12" cy="5" r="1.8" fill="#FFFFFF"/>
-                        <circle cx="12" cy="19" r="1.8" fill="#FFFFFF"/>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#000000">
+                        <circle cx="12" cy="6.5" r="2.8" fill="#000000"/>
+                        <circle cx="6.5" cy="16.5" r="2.8" fill="#000000"/>
+                        <circle cx="17.5" cy="16.5" r="2.8" fill="#000000"/>
                     </svg>
                 </button>
             </div>
 
             <!-- Search Engine Dropdown Popover -->
-            <!-- Search Engine Dropdown Popover (dynamically rendered with official brand SVGs) -->
             <div class="engine-dropdown-popover" id="engineDropdownPopover"></div>
 
             <!-- Three-Dots Quick Menu Popover -->
@@ -2790,7 +2832,7 @@
                     <span>Downloads</span>
                 </div>
                 <div class="popover-menu-item" onclick="openSettingsAction(event)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     <span>Settings</span>
                 </div>
                 <div class="popover-menu-item" onclick="triggerNewTabAction(event)">
@@ -2842,12 +2884,38 @@
             </div>
         </div>
 
-        <!-- FOUR HOME ESSENTIALS: sleek circular action discs -->
+        <!-- FOUR HOME ESSENTIALS: sleek circular action discs with strictly black icons matching reference image -->
         <div class="home-essentials-strip" aria-label="Quick actions">
-            <button class="home-essential" onclick="openFavoritesAction(event)" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.2"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
-            <button class="home-essential" onclick="openVisualHub(event)" title="Visuals & Wallpapers" aria-label="Images"><svg viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 3"/></svg></button>
-            <button class="home-essential" onclick="openMediaVideoHub(event)" title="Trending Videos" aria-label="Videos"><svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2.2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="#F87171"/></svg></button>
-            <button class="home-essential" onclick="openAudioHub(event)" title="Music & Audio" aria-label="Audio"><svg viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
+            <button class="home-essential" onclick="openFavoritesAction(event)" title="Favorites" aria-label="Favorites">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="#000000">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+            </button>
+            <button class="home-essential" onclick="openVisualHub(event)" title="Visuals & Wallpapers" aria-label="Images">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                    <rect x="2.5" y="3.5" width="19" height="17" rx="4" stroke="#000000" stroke-width="2.2"/>
+                    <circle cx="16.5" cy="8.5" r="1.6" fill="#000000"/>
+                    <path d="M 3.5 17.5 L 9 11.5 L 13.5 16 L 16 13.5 L 20.5 18 C 20.5 19.5 19.5 20.5 18 20.5 L 6 20.5 C 4.5 20.5 3.5 19.5 3.5 18 Z" fill="#000000"/>
+                </svg>
+            </button>
+            <button class="home-essential" onclick="openMediaVideoHub(event)" title="Trending Videos" aria-label="Videos">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="#000000" stroke-width="2.2"/>
+                    <polygon points="10,8 17,12 10,16" fill="#000000"/>
+                </svg>
+            </button>
+            <button class="home-essential" onclick="openAudioHub(event)" title="Music & Audio" aria-label="Audio">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14v-2a8 8 0 0 1 16 0v2"/>
+                    <rect x="2.5" y="13.5" width="3" height="6.5" rx="1.5" fill="#000000" stroke="none"/>
+                    <rect x="18.5" y="13.5" width="3" height="6.5" rx="1.5" fill="#000000" stroke="none"/>
+                    <line x1="8.5" y1="12" x2="8.5" y2="16"/>
+                    <line x1="10.25" y1="10" x2="10.25" y2="18"/>
+                    <line x1="12" y1="8.5" x2="12" y2="19.5"/>
+                    <line x1="13.75" y1="10" x2="13.75" y2="18"/>
+                    <line x1="15.5" y1="12" x2="15.5" y2="16"/>
+                </svg>
+            </button>
         </div>
 
         <!-- LIVE PLAYING MUSIC CARD ON HOME SCREEN -->
@@ -3203,7 +3271,6 @@
                 <label><input type="checkbox" data-pulse-section="weather" checked onchange="applyPulsePreferences()"> Weather</label>
                 <label><input type="checkbox" data-pulse-section="markets" checked onchange="applyPulsePreferences()"> Markets</label>
                 <label><input type="checkbox" data-pulse-section="news" checked onchange="applyPulsePreferences()"> Breaking news</label>
-                <label><input type="checkbox" data-pulse-section="sports" checked onchange="applyPulsePreferences()"> Sports</label>
             </div>
             <!-- Weather Widget Card with Clean Non-Overlapping Layout -->
             <div class="pulse-weather-card">
@@ -3237,14 +3304,13 @@
                 <div class="weather-sub" id="weatherSubDetails">Humidity 42% &bull; Wind 11 km/h &bull; Air Quality: Good (AQI 24)</div>
             </div>
 
-            <!-- News & Content Category Selector -->
+            <!-- News & Content Category Selector (Sports removed completely) -->
             <div class="pulse-segments">
-                <button class="pulse-seg-btn active" id="catAll" onclick="selectNewsCategory('all')">All</button>
+                <button class="pulse-seg-btn active" id="catAll" onclick="selectNewsCategory('all')">All News</button>
                 <button class="pulse-seg-btn" id="catTech" onclick="selectNewsCategory('tech')">Tech &amp; AI</button>
                 <button class="pulse-seg-btn" id="catBusiness" onclick="selectNewsCategory('business')">Markets &amp; Finance</button>
                 <button class="pulse-seg-btn" id="catWorld" onclick="selectNewsCategory('world')">World News</button>
                 <button class="pulse-seg-btn" id="catScience" onclick="selectNewsCategory('science')">Science &amp; Space</button>
-                <button class="pulse-seg-btn" id="catSports" onclick="selectNewsCategory('sports')">Sports</button>
                 <button class="pulse-seg-btn" id="catCulture" onclick="selectNewsCategory('culture')">Entertainment</button>
             </div>
 
@@ -3259,20 +3325,11 @@
 
             <!-- Breaking News with Images -->
             <div class="pulse-section-header" data-seg="news">
-                <span>Breaking News</span>
+                <span>Top Stories</span>
                 <span class="pulse-header-sub" id="newsRegionTag">Global Feed</span>
             </div>
             <div class="pulse-news-list" id="pulseNewsList" data-seg="news">
                 <!-- Dynamically populated or loaded -->
-            </div>
-
-            <!-- Sports Live & Highlights -->
-            <div class="pulse-section-header" data-seg="sports">
-                <span>Sports Highlights</span>
-                <span class="pulse-header-sub">Latest Scores</span>
-            </div>
-            <div class="pulse-sports-list" id="pulseSportsList" data-seg="sports">
-                <!-- Dynamically populated -->
             </div>
 
             <div style="margin-top: 18px; text-align: center; padding-bottom: 24px;">
@@ -3872,6 +3929,21 @@
             } catch (e) {
                 speedDials = defaultDials;
             }
+            if (window.FokkShieldBridge && typeof window.FokkShieldBridge.getCustomShortcuts === 'function') {
+                try {
+                    const extra = JSON.parse(window.FokkShieldBridge.getCustomShortcuts());
+                    if (Array.isArray(extra)) {
+                        extra.forEach(item => {
+                            if (item.url && !speedDials.some(d => d.url === item.url)) {
+                                let domain = '';
+                                try { domain = new URL(item.url).hostname; } catch(e) { domain = item.url; }
+                                const fav = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '';
+                                speedDials.push({ id: 'c_' + Date.now(), title: item.title || domain || 'Shortcut', url: item.url, icon: 'globe', favicon: fav, pinned: false });
+                            }
+                        });
+                    }
+                } catch (e) {}
+            }
             sortSpeedDials();
             renderSpeedDials();
         }
@@ -4184,6 +4256,38 @@
             document.getElementById('newShortcutUrl').value = '';
         }
 
+        window.addStartpageShortcut = function(title, url) {
+            if (!url) return;
+            const lower = (url || '').toLowerCase();
+            let icon = 'globe';
+            if (lower.includes('youtube.') || lower.includes('youtu.be')) icon = 'youtube';
+            else if (lower.includes('twitter.') || lower.includes('x.com')) icon = 'x';
+            else if (lower.includes('reddit.')) icon = 'reddit';
+            else if (lower.includes('instagram.')) icon = 'instagram';
+            else if (lower.includes('wikipedia.')) icon = 'wikipedia';
+            else if (lower.includes('spotify.')) icon = 'spotify';
+            else if (lower.includes('github.')) icon = 'github';
+            else if (lower.includes('netflix.')) icon = 'netflix';
+            else if (lower.includes('amazon.')) icon = 'amazon';
+            else if (lower.includes('discord.')) icon = 'discord';
+            else if (lower.includes('linkedin.')) icon = 'linkedin';
+
+            let domain = '';
+            try {
+                domain = new URL(url).hostname;
+            } catch (e) {
+                domain = url.replace(/^https?:\/\//, '').split('/')[0];
+            }
+            const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : '';
+            if (!speedDials.some(d => d.url === url)) {
+                speedDials.push({ id: 'c_' + Date.now(), title: title || domain || 'Shortcut', url, icon, favicon: faviconUrl, pinned: false });
+                saveSpeedDials();
+                sortSpeedDials();
+                renderSpeedDials();
+                if (typeof renderShortcutsManagerList === 'function') renderShortcutsManagerList();
+            }
+        };
+
         function openThemeModal() {
             document.getElementById('themeModal').classList.add('active');
         }
@@ -4493,7 +4597,7 @@
                 tag: "Hardware",
                 source: "TechCrunch",
                 time: "1h ago",
-                img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=640&q=80",
                 query: "Silicon photonics breakthrough optical computing interconnects"
             },
             {
@@ -4502,7 +4606,7 @@
                 tag: "Privacy",
                 source: "Wired",
                 time: "2h ago",
-                img: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=640&q=80",
                 query: "Post quantum cryptography mobile end to end encryption"
             },
 
@@ -4513,7 +4617,7 @@
                 tag: "Crypto",
                 source: "Bloomberg",
                 time: "25m ago",
-                img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?auto=format&fit=crop&w=640&q=80",
                 query: "Bitcoin ETF inflows crypto market rally today"
             },
             {
@@ -4522,7 +4626,7 @@
                 tag: "Economy",
                 source: "Financial Times",
                 time: "55m ago",
-                img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=640&q=80",
                 query: "Federal Reserve interest rate cuts global markets economy"
             },
             {
@@ -4531,7 +4635,7 @@
                 tag: "Industry",
                 source: "Wall Street Journal",
                 time: "2h ago",
-                img: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=640&q=80",
                 query: "Global semiconductor foundries investment expansion 2026"
             },
 
@@ -4542,7 +4646,7 @@
                 tag: "Global Accord",
                 source: "Reuters",
                 time: "35m ago",
-                img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=640&q=80",
                 query: "International renewable energy expansion summit accord"
             },
             {
@@ -4551,7 +4655,7 @@
                 tag: "Infrastructure",
                 source: "BBC News",
                 time: "1h ago",
-                img: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=640&q=80",
                 query: "High speed rail megaproject construction transit"
             },
             {
@@ -4560,7 +4664,7 @@
                 tag: "Policy",
                 source: "The Guardian",
                 time: "3h ago",
-                img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=640&q=82",
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=640&q=82",
                 query: "Digital sovereignty consumer data privacy regulations"
             },
 
@@ -4580,7 +4684,7 @@
                 tag: "Aerospace",
                 source: "SpaceNews",
                 time: "1h ago",
-                img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=640&q=80",
                 query: "SpaceX Starship orbital catch booster flight test"
             },
             {
@@ -4589,64 +4693,8 @@
                 tag: "Clean Tech",
                 source: "Science Magazine",
                 time: "4h ago",
-                img: "https://images.unsplash.com/photo-1558441719-8d48980f89a6?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1558441719-8d48980f89a6?auto=format&fit=crop&w=640&q=80",
                 query: "Solid state battery commercial manufacturing electric vehicles"
-            },
-
-            // SPORTS
-            {
-                title: "Champions League Knockout Stage: Stunning 94th-Minute Decider Lights Up Europe",
-                category: "sports",
-                tag: "Football",
-                source: "ESPN FC",
-                time: "20m ago",
-                img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=640&q=80",
-                query: "Champions League knockout stage match highlights results"
-            },
-            {
-                title: "Formula 1 2026 Season: Next-Gen Active Aero & Sustainable Biofuels Debut on Track",
-                category: "sports",
-                tag: "Motorsport",
-                source: "Motorsport.com",
-                time: "45m ago",
-                img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=80",
-                query: "Formula 1 grand prix qualifying standings 2026"
-            },
-            {
-                title: "NBA Championship Race: 48-Point Triple-Double Sensation Seals Overtime Victory",
-                category: "sports",
-                tag: "Basketball",
-                source: "The Athletic",
-                time: "1h ago",
-                img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=640&q=80",
-                query: "NBA scores standings highlights basketball today"
-            },
-            {
-                title: "Premier League Title Race Heats Up as Top Contenders Separated by Single Goal",
-                category: "sports",
-                tag: "Premier League",
-                source: "Sky Sports",
-                time: "2h ago",
-                img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=640&q=80",
-                query: "Premier League football table results highlights"
-            },
-            {
-                title: "ICC T20 Championship: Record Run Chase Shatters Records in Thrilling Super Over",
-                category: "sports",
-                tag: "Cricket",
-                source: "Cricinfo",
-                time: "3h ago",
-                img: "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=640&q=80",
-                query: "Cricket T20 championship scores match results"
-            },
-            {
-                title: "Grand Slam Tennis: 5-Set Classic Under Stadium Lights Caps Off Unforgettable Final",
-                category: "sports",
-                tag: "Tennis",
-                source: "Tennis Channel",
-                time: "4h ago",
-                img: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=640&q=80",
-                query: "Grand Slam tennis championship finals scores"
             },
 
             // ENTERTAINMENT
@@ -4656,7 +4704,7 @@
                 tag: "Cinema",
                 source: "Variety",
                 time: "50m ago",
-                img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=640&q=80",
                 query: "Global box office new movie release premiere"
             },
             {
@@ -4665,7 +4713,7 @@
                 tag: "Gaming",
                 source: "IGN",
                 time: "1h ago",
-                img: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=640&q=80",
                 query: "Unreal Engine next gen gaming neural rendering graphics"
             },
             {
@@ -4674,7 +4722,7 @@
                 tag: "Music",
                 source: "Rolling Stone",
                 time: "3h ago",
-                img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=360&q=80",
+                img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=640&q=80",
                 query: "Music industry awards spatial audio album releases"
             }
         ];
@@ -4925,7 +4973,6 @@
                 business: 'catBusiness',
                 world: 'catWorld',
                 science: 'catScience',
-                sports: 'catSports',
                 culture: 'catCulture'
             };
             const btn = document.getElementById(catMap[cat]);
@@ -4950,24 +4997,22 @@
                     "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=640&q=80"
+                    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=640&q=80"
                 ],
                 business: [
+                    "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=640&q=80"
-                ],
-                sports: [
-                    "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=640&q=80"
+                    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=640&q=80"
                 ],
                 world: [
+                    "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=640&q=80",
@@ -4975,16 +5020,19 @@
                     "https://images.unsplash.com/photo-1572949645841-094f3a9c4c94?auto=format&fit=crop&w=640&q=80"
                 ],
                 science: [
-                    "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=640&q=80"
+                    "https://images.unsplash.com/photo-1517976487508-b80c32607f2a?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1558441719-8d48980f89a6?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=640&q=80"
                 ],
                 culture: [
+                    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=640&q=80",
+                    "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=640&q=80",
                     "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=640&q=80",
-                    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=640&q=80"
+                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=640&q=80"
                 ],
                 all: [
                     "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=640&q=80",
@@ -4995,19 +5043,24 @@
                 ]
             };
 
+            const usedPhotoUrls = new Set();
             function getDynamicArticlePhoto(item, idx) {
-                if (item.img && typeof item.img === 'string' && item.img.startsWith('http')) {
+                if (item.img && typeof item.img === 'string' && item.img.startsWith('http') && !usedPhotoUrls.has(item.img)) {
+                    usedPhotoUrls.add(item.img);
                     return item.img;
                 }
-                const cat = (item.category || '').toLowerCase();
+                const cat = (item.category || currentNewsCategory || 'all').toLowerCase();
                 const pool = editorialPhotoPool[cat] || editorialPhotoPool.all;
-                let hash = 0;
-                const str = (item.title || '') + (item.source || '') + idx;
-                for (let i = 0; i < str.length; i++) {
-                    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                    hash |= 0;
+                for (let i = 0; i < pool.length; i++) {
+                    const candidate = pool[(idx + i) % pool.length];
+                    if (!usedPhotoUrls.has(candidate)) {
+                        usedPhotoUrls.add(candidate);
+                        return candidate;
+                    }
                 }
-                return pool[Math.abs(hash) % pool.length];
+                const uniqueFallback = `https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=640&q=80&sig=${idx}`;
+                usedPhotoUrls.add(uniqueFallback);
+                return uniqueFallback;
             }
 
             items.forEach((item, index) => {
@@ -5171,9 +5224,8 @@
                 });
             }
 
-            // Render News and Sports
+            // Render News
             renderFilteredNews();
-            renderPulseSports();
         }
 
         function openPulseQuery(query) {
@@ -5267,33 +5319,6 @@
             });
         }
 
-        const sampleSports = [
-            { league: "Champions League", match: "Arsenal 2 - 1 PSG (Aggregate 3-2)", status: "FT" },
-            { league: "NBA Championship", match: "Lakers 118 - 114 Nuggets (OT)", status: "FT" },
-            { league: "Formula 1 2026", match: "Silverstone GP: McLaren P1 • Ferrari P2", status: "Race Day" },
-            { league: "Premier League", match: "Liverpool 3 - 2 Man City (90+4')", status: "FT" },
-            { league: "IPL / T20 Cricket", match: "Mumbai 198/4 beat Chennai 195/6", status: "FT" },
-            { league: "Grand Slam Final", match: "Alcaraz def. Sinner 6-4, 4-6, 7-6, 6-3", status: "FT" }
-        ];
-
-        function renderPulseSports() {
-            const list = document.getElementById('pulseSportsList');
-            if (!list) return;
-            list.innerHTML = '';
-            sampleSports.forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'pulse-sport-card';
-                card.onclick = () => openPulseQuery(s.league + ' ' + s.match);
-                card.innerHTML = `
-                    <div>
-                        <div class="sport-league-tag">${s.league}</div>
-                        <div class="sport-team-score" style="margin-top:2px;">${s.match}</div>
-                    </div>
-                    <span class="sport-status-badge">${s.status}</span>
-                `;
-                list.appendChild(card);
-            });
-        }
 
         // =========================================================================
         // ON-DEVICE PRIVACY INTEREST INTELLIGENCE ENGINE (ZERO CLOUD, 100% LOCAL)
@@ -6637,9 +6662,25 @@
             });
         }
 
+        let isUserExplicitPaused = false;
+
+        // Anti-suspension guard: keep audio running when screen turns off or app is backgrounded
+        try {
+            Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+            Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+            const _origAddEventListener = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'visibilitychange' || type === 'webkitvisibilitychange' || type === 'pagehide') {
+                    return;
+                }
+                return _origAddEventListener.call(this, type, listener, options);
+            };
+        } catch(e) {}
+
         function playAudioTrack(track) {
             const player = document.getElementById('fokkGlobalAudioPlayer');
             if (!player) return;
+            isUserExplicitPaused = false;
             currentPlayingTrack = track;
             player.src = track.audioUrl;
             player.play().catch(e => console.log("Play error:", e));
@@ -6675,6 +6716,7 @@
             const player = document.getElementById('fokkGlobalAudioPlayer');
             if (!player || !player.src) return;
             if (player.paused) {
+                isUserExplicitPaused = false;
                 player.play();
                 updatePlayIcons(true);
                 updateHomeLiveMusicCard(currentPlayingTrack, true);
@@ -6682,6 +6724,7 @@
                     window.FokkShieldBridge.reportMediaPlayback(true, false, currentPlayingTrack ? currentPlayingTrack.title : 'Fokk Audio');
                 }
             } else {
+                isUserExplicitPaused = true;
                 player.pause();
                 updatePlayIcons(false);
                 updateHomeLiveMusicCard(currentPlayingTrack, false);
@@ -6730,6 +6773,7 @@
 
         function stopAudioPlayback(e) {
             if (e) e.stopPropagation();
+            isUserExplicitPaused = true;
             const player = document.getElementById('fokkGlobalAudioPlayer');
             if (player) {
                 player.pause();
@@ -6766,6 +6810,15 @@
                 updateHomeLiveMusicCard(currentPlayingTrack, true);
             });
             player.addEventListener('pause', () => {
+                if (!isUserExplicitPaused && currentPlayingTrack) {
+                    // Prevent pause caused by WebView backgrounding, screen off, or transient window invisibility
+                    setTimeout(() => {
+                        if (!isUserExplicitPaused && player.paused) {
+                            player.play().catch(() => {});
+                        }
+                    }, 40);
+                    return;
+                }
                 updatePlayIcons(false);
                 updateHomeLiveMusicCard(currentPlayingTrack, false);
             });

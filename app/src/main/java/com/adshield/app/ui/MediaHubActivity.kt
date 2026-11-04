@@ -24,6 +24,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ShortcutManager
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -240,6 +244,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private var lastMediaPlayingTime = 0L
     private var isFullscreenCustomView = false
+    private var stopPlaybackRunnable: Runnable? = null
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingWebPermission: PendingWebPermission? = null
@@ -549,6 +554,74 @@ open class MediaHubActivity : AppCompatActivity() {
         }
     }
 
+    fun pinWebPageToLauncher(url: String, title: String, favicon: Bitmap?) {
+        if (url.isBlank() || url.contains("fokk_start.html")) {
+            Toast.makeText(this, "Open a website to pin it to home screen", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val shortcutManager = getSystemService(ShortcutManager::class.java)
+            if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                    setClass(this@MediaHubActivity, MediaHubActivity::class.java)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                val icon = if (favicon != null && !favicon.isRecycled) {
+                    IconCompat.createWithBitmap(favicon)
+                } else {
+                    IconCompat.createWithResource(this, R.drawable.ic_fokk_logo)
+                }
+                val pinShortcutInfo = ShortcutInfoCompat.Builder(this, "shortcut_${url.hashCode()}")
+                    .setShortLabel(if (title.isNotBlank()) title.take(24) else "Webpage")
+                    .setLongLabel(title.ifBlank { url })
+                    .setIcon(icon)
+                    .setIntent(intent)
+                    .build()
+                ShortcutManagerCompat.requestPinShortcut(this, pinShortcutInfo, null)
+                Toast.makeText(this, "Pinning shortcut to home screen...", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+        Toast.makeText(this, "Launcher shortcut not supported on this device", Toast.LENGTH_SHORT).show()
+    }
+
+    fun addStartpageShortcut(url: String, title: String) {
+        if (url.isBlank() || url.contains("fokk_start.html")) {
+            Toast.makeText(this, "Open a website to add to startpage shortcuts", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val cleanTitle = if (title.isNotBlank()) title else url
+        val currentShortcuts = prefs.getString("custom_startpage_shortcuts", "[]") ?: "[]"
+        try {
+            val array = org.json.JSONArray(currentShortcuts)
+            var exists = false
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i)
+                if (obj?.optString("url") == url) {
+                    exists = true
+                    break
+                }
+            }
+            if (!exists) {
+                val item = org.json.JSONObject()
+                item.put("title", cleanTitle)
+                item.put("url", url)
+                array.put(item)
+                prefs.edit().putString("custom_startpage_shortcuts", array.toString()).apply()
+            }
+        } catch (e: Exception) {}
+
+        tabs.forEach { tab ->
+            val safeTitle = org.json.JSONObject.quote(cleanTitle)
+            val safeUrl = org.json.JSONObject.quote(url)
+            tab.webView?.evaluateJavascript(
+                "if (typeof addStartpageShortcut === 'function') addStartpageShortcut($safeTitle, $safeUrl);",
+                null
+            )
+        }
+        Toast.makeText(this, "Added to Startpage Shortcuts", Toast.LENGTH_SHORT).show()
+    }
+
     private val prefs: SharedPreferences by lazy {
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
@@ -655,7 +728,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     "tech" -> "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-US&gl=US&ceid=US:en"
                     "business", "markets" -> "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en"
                     "science" -> "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=en-US&gl=US&ceid=US:en"
-                    "sports" -> "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-US&gl=US&ceid=US:en"
+                    "world" -> "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en"
                     "culture", "entertainment" -> "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-US&gl=US&ceid=US:en"
                     else -> "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
                 }
@@ -1179,6 +1252,11 @@ open class MediaHubActivity : AppCompatActivity() {
             activity.runOnUiThread {
                 activity.onMediaPlaybackUpdated(isPlaying, hasActiveVideo, title)
             }
+        }
+
+        @JavascriptInterface
+        fun getCustomShortcuts(): String {
+            return activity.prefs.getString("custom_startpage_shortcuts", "[]") ?: "[]"
         }
 
         @JavascriptInterface
@@ -1965,8 +2043,10 @@ open class MediaHubActivity : AppCompatActivity() {
             callback.invoke(rawOrigin.orEmpty(), false, false)
             return
         }
-        val currentOrigin = getWebOrigin(webView.url)
-        if (getWebOrigin(origin) != origin || currentOrigin == null || webView !== activeWebView ||
+        val isStartPage = webView.url?.contains("fokk_start.html") == true || origin.startsWith("file://")
+        val currentOrigin = if (isStartPage) "file://android_asset" else getWebOrigin(webView.url)
+        val validOrigin = if (isStartPage) true else (getWebOrigin(origin) == origin)
+        if (!validOrigin || currentOrigin == null || webView !== activeWebView ||
             pendingLocationPermission != null || pendingWebPermission != null) {
             callback.invoke(origin, false, false)
             return
@@ -1979,8 +2059,23 @@ open class MediaHubActivity : AppCompatActivity() {
         val hasLocation = locationPermissions.any {
             ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
         }
-        if (sitePermissionKey(origin, currentOrigin) in approvedLocationOrigins && hasLocation) {
+        if ((isStartPage || sitePermissionKey(origin, currentOrigin) in approvedLocationOrigins) && hasLocation) {
             callback.invoke(origin, true, false)
+            return
+        }
+
+        if (isStartPage) {
+            val pending = PendingLocationPermission(callback, origin, webView, currentOrigin)
+            pendingLocationPermission = pending
+            val missing = locationPermissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isEmpty()) {
+                pendingLocationPermission = null
+                callback.invoke(origin, true, false)
+            } else {
+                locationPermissionLauncher.launch(missing.toTypedArray())
+            }
             return
         }
 
@@ -5095,6 +5190,21 @@ open class MediaHubActivity : AppCompatActivity() {
             openShortcutsCustomizer()
         }
 
+        sheetBinding.rowAddToHomeScreen.setOnClickListener {
+            dialog.dismiss()
+            val url = activeTab?.url.orEmpty()
+            val title = activeTab?.title.orEmpty()
+            val favicon = activeTab?.favicon
+            pinWebPageToLauncher(url, title, favicon)
+        }
+
+        sheetBinding.rowAddToStartpageShortcuts.setOnClickListener {
+            dialog.dismiss()
+            val url = activeTab?.url.orEmpty()
+            val title = activeTab?.title.orEmpty()
+            addStartpageShortcut(url, title)
+        }
+
         sheetBinding.rowClearData.setOnClickListener {
             clearBrowsingData()
             dialog.dismiss()
@@ -5994,9 +6104,11 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
         if (isMediaPlaying && bgAudio) {
-            activeWebView?.onResume()
-            activeWebView?.resumeTimers()
-            activeWebView?.evaluateJavascript("window.__fokk_is_background = true;", null)
+            tabs.forEach { tab ->
+                tab.webView?.onResume()
+                tab.webView?.resumeTimers()
+                tab.webView?.evaluateJavascript("window.__fokk_is_background = true;", null)
+            }
             if (mediaWakeLock?.isHeld == false) {
                 try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
             }
@@ -6014,9 +6126,11 @@ open class MediaHubActivity : AppCompatActivity() {
         updateGhostModeNotification()
         val bgAudio = prefs.getBoolean("fokk_background_audio", true)
         if (isMediaPlaying && bgAudio) {
-            activeWebView?.onResume()
-            activeWebView?.resumeTimers()
-            activeWebView?.evaluateJavascript("window.__fokk_is_background = true;", null)
+            tabs.forEach { tab ->
+                tab.webView?.onResume()
+                tab.webView?.resumeTimers()
+                tab.webView?.evaluateJavascript("window.__fokk_is_background = true;", null)
+            }
             if (mediaWakeLock?.isHeld == false) {
                 try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
             }
@@ -6475,6 +6589,8 @@ open class MediaHubActivity : AppCompatActivity() {
         val host = activeTab?.url?.let { runCatching { Uri.parse(it).host }.getOrNull() } ?: "Fokk Shield"
         val bgAudio = prefs.getBoolean("fokk_background_audio", true)
         if (isPlaying || hasActiveVideo) {
+            stopPlaybackRunnable?.let { mainHandler.removeCallbacks(it) }
+            stopPlaybackRunnable = null
             lastMediaPlayingTime = System.currentTimeMillis()
             if (hasActiveVideo) {
                 collapseCommandBar(animated = true)
@@ -6489,13 +6605,20 @@ open class MediaHubActivity : AppCompatActivity() {
                 updateMediaPlaybackNotification(isPlaying = isPlaying, title = currentMediaTitle)
             }
         } else {
-            if (mediaWakeLock?.isHeld == true) {
-                try { mediaWakeLock?.release() } catch (e: Exception) {}
+            stopPlaybackRunnable?.let { mainHandler.removeCallbacks(it) }
+            val runnable = Runnable {
+                if (!isMediaPlaying && !hasActiveVideo) {
+                    if (mediaWakeLock?.isHeld == true) {
+                        try { mediaWakeLock?.release() } catch (e: Exception) {}
+                    }
+                    updateMediaSessionPlaybackState(isPlaying = false)
+                    com.adshield.app.service.FokkMediaPlaybackService.stop(this)
+                    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                    notificationManager?.cancel(NOTIFICATION_ID_MEDIA_PLAYBACK)
+                }
             }
-            updateMediaSessionPlaybackState(isPlaying = false)
-            com.adshield.app.service.FokkMediaPlaybackService.stop(this)
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-            notificationManager?.cancel(NOTIFICATION_ID_MEDIA_PLAYBACK)
+            stopPlaybackRunnable = runnable
+            mainHandler.postDelayed(runnable, 2000L)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

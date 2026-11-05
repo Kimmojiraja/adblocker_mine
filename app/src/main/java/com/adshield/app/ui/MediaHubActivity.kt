@@ -5701,7 +5701,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         b.cardContributeCode.setOnClickListener {
             dialog.dismiss()
-            addNewTab("https://github.com/Kimmojiraja/adblocker_mine", isPrivate = false)
+            addNewTab("https://github.com/Kimmojiraja/fokk-project", isPrivate = false)
         }
 
         dialog.show()

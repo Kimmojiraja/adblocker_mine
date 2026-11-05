@@ -19,8 +19,8 @@ import kotlin.concurrent.thread
 
 object AppUpdateManager {
 
-    private const val VERSION_JSON_URL = "https://raw.githubusercontent.com/Kimmojiraja/adblocker_mine/main/version.json"
-    private const val GITHUB_RELEASE_API = "https://api.github.com/repos/Kimmojiraja/adblocker_mine/releases/latest"
+    private const val VERSION_JSON_URL = "https://raw.githubusercontent.com/Kimmojiraja/fokk-project/main/version.json"
+    private const val GITHUB_RELEASE_API = "https://api.github.com/repos/Kimmojiraja/fokk-project/releases/latest"
 
     fun checkForUpdates(activity: Activity, manualCheck: Boolean = false) {
         val currentCode = getCurrentVersionCode(activity)
@@ -104,7 +104,7 @@ object AppUpdateManager {
 
     fun openReleasesPage(activity: Activity) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/adblocker_mine/releases")).apply {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/fokk-project/releases")).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             activity.startActivity(intent)

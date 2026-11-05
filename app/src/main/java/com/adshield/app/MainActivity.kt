@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Fokk Shield Support")
             .setMessage("Version: 1.1.0\nArchitecture: Android WebView browser with local website filters\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.")
             .setPositiveButton("GitHub Repository") { _, _ ->
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/adblocker_mine"))
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/fokk-project"))
                 try {
                     startActivity(browserIntent)
                 } catch (e: Exception) {

@@ -2624,7 +2624,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     urlStr.contains("/videoplayback") ||
                     listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
                         .any { urlStr.substringBefore('?').endsWith(it) }
-                                val isAdScript = AD_PATTERNS.any { urlStr.contains(it) }
+                val isAdScript = AD_PATTERNS.any { urlStr.contains(it) }
 
                 // Dedicated YouTube handler: block known YouTube ad endpoints, but NEVER touch
                 // legitimate video streams (googlevideo.com) or player infrastructure (youtube.com, ytimg.com).
@@ -2641,11 +2641,6 @@ open class MediaHubActivity : AppCompatActivity() {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
                     }
-                    return super.shouldInterceptRequest(view, request)
-                }
-
-                // Fast-path: media requests (video/audio streams) bypass all blocking
-                if (isMediaRequest) {
                     return super.shouldInterceptRequest(view, request)
                 }
 

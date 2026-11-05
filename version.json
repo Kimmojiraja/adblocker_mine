@@ -1,6 +1,6 @@
 {
-  "versionCode": 204,
-  "versionName": "2.0.4",
-  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.4/app-debug.apk",
-  "changelog": "- Home Page Controls: Resolved intermittent button unresponsiveness (3-dot menu, tabs, ghost mode, favorites) and added missing native bridge methods.\n- Dual-Screen Split View: Hydrated suspended secondary tabs on-demand to eliminate blank white viewports.\n- Video Playback Screen-On: Integrated FLAG_KEEP_SCREEN_ON during fullscreen and inline video playback to prevent screen timeouts.\n- Fullscreen Video Overlap Fix: Corrected onResume topBar re-display conflict and increased fullscreen container elevation to 20dp.\n- Modern Docked Command Bar: Switched to edge-to-edge docked UI with 1dp border and adjusted content margins.\n- Performance & Stability: Scoped JSON.parse defuser to YouTube only and eliminated high-frequency Instagram DOM polling.\n- Web App Prompts & Deceptive Overlays: Scrubbed Bing mobile 'Open App' banners and fully wired AI Trap Defuser into live mutation checks."
+  "versionCode": 205,
+  "versionName": "2.0.5",
+  "downloadUrl": "https://github.com/Kimmojiraja/adblocker_mine/releases/download/v2.0.5/app-debug.apk",
+  "changelog": "- Fullscreen Webpage Auto-Expansion: When the command bar collapses on scroll, the webpage dynamically expands to fill 100% of the display for both top and bottom command bar positions.\n- Seamless Viewport Transition: Webpage bounds restore smoothly when the command bar reappears, ensuring no content is obstructed or cropped.\n- Complete v2.0.4 fixes: Video screen-on lock, dual-screen hydration, unblocked start page buttons, edge-to-edge docked styling, and Bing app banner defusal."
 }

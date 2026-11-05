@@ -2318,9 +2318,7 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         binding.layoutCollapsedBar.visibility = View.GONE
         commandBarCollapsed = false
-        binding.topBar.visibility = View.VISIBLE
-        binding.topBar.alpha = 1f
-        binding.topBar.translationY = 0f
+        setBrowserChromeVisible(true)
     }
 
     private val showChromeOnIdleRunnable = Runnable {
@@ -2353,6 +2351,14 @@ open class MediaHubActivity : AppCompatActivity() {
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
+
+            // Restore margin so the command bar docks cleanly without covering page content
+            containerLp?.let {
+                it.topMargin = if (isTop) (56 * density).toInt() else 0
+                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
+                binding.mainContentLayout.layoutParams = it
+            }
+
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
             binding.topBar.animate()
@@ -2364,6 +2370,14 @@ open class MediaHubActivity : AppCompatActivity() {
         } else {
             if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
+
+            // Automatically expand the webpage to fill the entire screen when command card collapses
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
+
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)

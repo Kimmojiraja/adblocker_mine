@@ -90,6 +90,19 @@ The output APK will be generated at:
 
 ---
 
+
+### ☕ Support My Work
+
+I've been spending the past several months building and improving this project, with a focus on creating something genuinely useful.
+
+If you enjoy using it or appreciate the effort behind it, consider buying me a coffee. Your support will help me keep working on new features, maintain the project, improve its overall quality, and explore things like Fokk AI and more advanced AI-powered tools.
+
+Every little contribution means a lot and motivates me to keep building.
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/k_raja)
+
+Thanks for being here and supporting independent development! ❤️
+
 ## License & Fair Use
 
 Fokk Browser Project is built using Android Jetpack, Kotlin Coroutines, and open-source ad-blocking specifications under Apache 2.0 / MIT licenses. All content filtering and DOM sanitization operate locally on content delivered to your device under user autonomy principles. All trademarks and brand names belong to their respective owners.

@@ -1,6 +1,6 @@
 {
-  "versionCode": 205,
-  "versionName": "2.0.5",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.5/app-debug.apk",
-  "changelog": "- Fullscreen Webpage Auto-Expansion: When the command bar collapses on scroll, the webpage dynamically expands to fill 100% of the display for both top and bottom command bar positions.\n- Seamless Viewport Transition: Webpage bounds restore smoothly when the command bar reappears, ensuring no content is obstructed or cropped.\n- Complete v2.0.4 fixes: Video screen-on lock, dual-screen hydration, unblocked start page buttons, edge-to-edge docked styling, and Bing app banner defusal."
+  "versionCode": 206,
+  "versionName": "2.0.6",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.6/app-debug.apk",
+  "changelog": "- Fundraising & Contributing: Dedicated shortcut in the browser menu and About dialog to sponsor development via GitHub Sponsors or Buy Me a Coffee.\n- Open to Code Contributors: Community contribution pathways directly linked to help report issues, build extensions, and submit PRs.\n- Social App & Video Engine Stability: Resolved video audio issues and feed interruptions across YouTube, X (Twitter), and Instagram.\n- Multi-Pane Focus Isolation: Enhanced text-input routing and touch dispatch in dual-deck multitasking mode."
 }

@@ -74,14 +74,14 @@ The application contains no analytics libraries, tracking SDKs, or background te
 
 ### Releases
 Download the latest APK release:
-- [Download Fokk.apk](https://github.com/Kimmojiraja/adblocker_mine/releases/latest/download/Fokk.apk)
+- [Download Fokk.apk](https://github.com/Kimmojiraja/fokk-project/releases/latest/download/Fokk.apk)
 
 ### Building from Source
 Requirements: JDK 17, Android SDK 34.
 
 ```bash
-git clone https://github.com/Kimmojiraja/adblocker_mine.git
-cd adblocker_mine
+git clone https://github.com/Kimmojiraja/fokk-project.git
+cd fokk-project
 ./gradlew assembleDebug
 ```
 
@@ -90,18 +90,19 @@ The output APK will be generated at:
 
 ---
 
+## Support & Contributing
 
-### ☕ Support My Work
+We are seamlessly working on fixing bugs, improving product quality, introducing new advanced privacy features, and actively developing **Fokk AI** and **Fokk Extensions**.
 
-I've been spending the past several months building and improving this project, with a focus on creating something genuinely useful.
+Every contribution means a lot and directly powers independent, tracker-free development:
 
-If you enjoy using it or appreciate the effort behind it, consider buying me a coffee. Your support will help me keep working on new features, maintain the project, improve its overall quality, and explore things like Fokk AI and more advanced AI-powered tools.
+- **GitHub Sponsors**: [Sponsor @Kimmojiraja on GitHub](https://github.com/sponsors/Kimmojiraja) (Monthly or one-time)
+- **Buy Me a Coffee**: [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/k_raja)
+- **Open to Code Contributors**: We welcome pull requests, bug fixes, performance optimizations, and extension ideas! Feel free to open an issue or submit a PR on this repository.
 
-Every little contribution means a lot and motivates me to keep building.
+Thanks for supporting independent development! ❤️
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/k_raja)
-
-Thanks for being here and supporting independent development! ❤️
+---
 
 ## License & Fair Use
 

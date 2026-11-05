@@ -4,10 +4,19 @@
     if (window.__fokkshield_loaded) return;
     window.__fokkshield_loaded = true;
 
-    const currentHost = (window.location && window.location.hostname) || '';
+    const currentHost = ((window.location && window.location.hostname) || '').toLowerCase();
     if (currentHost.includes('webxprt') || currentHost.includes('principledtechnologies') || currentHost.includes('browserbench')) {
         return; // Zero overhead on performance benchmarking suites!
     }
+
+    function hostIs(name) {
+        return currentHost === name || currentHost.endsWith('.' + name);
+    }
+    // These apps detect tampered canvas, WebGL, JSON, and visibility and then
+    // render "Something went wrong. Try again." Leave their runtime alone.
+    const isFragileSocialApp = hostIs('x.com') || hostIs('twitter.com') || hostIs('instagram.com') ||
+        hostIs('threads.net') || hostIs('facebook.com');
+    const isYouTube = hostIs('youtube.com') || hostIs('youtu.be') || currentHost.endsWith('.youtube.com');
 
     // =========================================================================
     // NEXT-GEN INNOVATION: Dynamic Per-Session Anti-Fingerprint Neural Cloak
@@ -212,24 +221,17 @@
                 const origResponseJson = Response.prototype.json;
                 Response.prototype.json = async function() {
                     const data = await origResponseJson.apply(this, arguments);
-                    if (data && typeof data === 'object') {
-                        if (window.location.hostname.includes('youtube.com')) {
-                            sanitizeYtPlayerResponse(data);
-                        } else if (window.location.hostname.includes('instagram.com')) {
-                            const path = (window.location.pathname || '').toLowerCase();
-                            if (!path.includes('/news/inbox') && !path.includes('/notifications') && !path.includes('/direct/')) {
-                                sanitizeInstagramData(data);
-                            }
-                        }
+                    if (data && typeof data === 'object' && window.location.hostname.indexOf('youtube.com') !== -1) {
+                        sanitizeYtPlayerResponse(data);
                     }
                     return data;
                 };
             }
         } catch (e) {}
 
-        // Anti-Fingerprint Neural Cloak (Randomized Canvas & WebGL Entropy)
+        // Canvas and WebGL noise trips bot checks on social apps and dirties YouTube frames.
         try {
-            installAntiFingerprintCloak();
+            if (!isFragileSocialApp && !isYouTube) installAntiFingerprintCloak();
         } catch(e) {}
 
         // 3. XMLHttpRequest.prototype.response getter (for responseType === 'json')
@@ -240,7 +242,8 @@
                     Object.defineProperty(XMLHttpRequest.prototype, 'response', {
                         get: function() {
                             const res = origXhrGetter.apply(this);
-                            if (this.responseType === 'json' && res && typeof res === 'object') {
+                            if (this.responseType === 'json' && res && typeof res === 'object' &&
+                                window.location.hostname.indexOf('youtube.com') !== -1) {
                                 sanitizeYtPlayerResponse(res);
                             }
                             return res;
@@ -362,8 +365,9 @@
                 Object.defineProperty(HTMLMediaElement.prototype, 'muted', {
                     get: origMutedDescriptor.get,
                     set: function(val) {
-                        // Prevent YouTube mobile player from forcing mute on video load unless user manually tapped mute
-                        if (window.location.hostname.includes('youtube.com') && !userInteractedMute && val === true) {
+                        // Only the real watch player may be forced audible. Feed and
+                        // thumbnail previews stay muted so scrolling the home page is quiet.
+                        if (val === true && isPrimaryYouTubeVideo(this) && !userInteractedMute) {
                             return origMutedDescriptor.set.call(this, false);
                         }
                         return origMutedDescriptor.set.call(this, val);
@@ -373,12 +377,27 @@
             }
         } catch (e) {}
 
+        function isPrimaryYouTubeVideo(video) {
+            if (!video || video.tagName !== 'VIDEO') return false;
+            if (!window.location.hostname || window.location.hostname.indexOf('youtube.com') === -1) return false;
+            const path = window.location.pathname || '';
+            if (path.indexOf('/watch') !== 0 && path.indexOf('/shorts/') !== 0) return false;
+            if (video.closest('ytd-thumbnail, ytd-video-preview, ytd-rich-item-renderer, ytd-compact-video-renderer, ytm-video-with-context-renderer, ytm-compact-video-renderer, ytm-shorts-lockup-view-model, ytd-rich-shelf-renderer')) {
+                return false;
+            }
+            const rect = video.getBoundingClientRect();
+            return rect.width >= 200 && rect.height >= 120;
+        }
+
         function unmuteYouTubeVideo() {
             if (!window.location.hostname.includes('youtube.com')) return;
             if (userInteractedMute) return;
+            if (!window.location.pathname.startsWith('/watch') && !window.location.pathname.startsWith('/shorts/')) return;
             try {
-                const video = document.querySelector('video');
-                if (video) {
+                const videos = document.querySelectorAll('video');
+                for (let i = 0; i < videos.length; i++) {
+                    const video = videos[i];
+                    if (!isPrimaryYouTubeVideo(video)) continue;
                     if (video.muted) video.muted = false;
                     if (video.defaultMuted) video.defaultMuted = false;
                     if (video.volume < 1.0) video.volume = 1.0;

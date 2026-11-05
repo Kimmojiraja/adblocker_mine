@@ -101,6 +101,7 @@ import com.adshield.app.databinding.SheetShieldSettingsBinding
 import com.adshield.app.databinding.SheetMediaHubSettingsBinding
 import com.adshield.app.databinding.SheetVaultSettingsBinding
 import com.adshield.app.databinding.SheetAboutCommunityBinding
+import com.adshield.app.databinding.SheetFundraisingContributeBinding
 import com.adshield.app.model.DnsOverHttpsEngine
 import android.media.AudioManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -1034,6 +1035,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun setupRefreshControl() {
         binding.swipeRefreshLayout.setColorSchemeResources(R.color.fokk_cyan)
         binding.swipeRefreshLayout.isEnabled = false
+        binding.swipeRefreshLayout.isNestedScrollingEnabled = false
         binding.swipeRefreshLayout.setOnRefreshListener {
             binding.swipeRefreshLayout.isRefreshing = false
         }
@@ -1817,24 +1819,11 @@ open class MediaHubActivity : AppCompatActivity() {
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
                 val isExplicitUserNav = userGesture || hasRecentUserInteraction()
 
-                // Completely disarm YouTube Shorts: convert any /shorts/<id> into normal video /watch?v=<id>
-                if (targetHost.contains("youtube.com") && rawUrl.contains("/shorts/")) {
-                    val shortsId = rawUrl.substringAfter("/shorts/").substringBefore("?").substringBefore("/").substringBefore("#")
-                    if (shortsId.isNotBlank() && webView != null) {
-                        val query = if (rawUrl.contains("?")) "&" + rawUrl.substringAfter("?").substringBefore("#") else ""
-                        val normalWatchUrl = "https://m.youtube.com/watch?v=$shortsId$query"
-                        Log.d(TAG, "Redirected YouTube Shorts to standard watch URL: $normalWatchUrl")
-                        loadUrlInWebView(webView, normalWatchUrl)
-                        return true
-                    } else if (webView != null) {
-                        loadUrlInWebView(webView, "https://m.youtube.com/")
-                        return true
-                    }
-                }
-
                 // Only block rogue unsolicited redirects (e.g. pop-unders or unauthorized script redirects)
                 // NEVER block navigation when the user explicitly tapped or navigated!
-                if (!isExplicitUserNav && targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
+                val isSocialNavigation = isSocialAppHost(targetHost) || isSocialInfrastructureHost(targetHost) ||
+                    targetHost.contains("youtube.com") || targetHost.contains("youtu.be")
+                if (!isExplicitUserNav && !isSocialNavigation && targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
                     val isBlockedByBrave = AdShieldApp.instance.braveEngine.checkNetworkRequest(rawUrl, webView?.url ?: "", "document").matched
                     if (isBlockedByBrave || AdShieldApp.instance.blocklistEngine.isDomainBlocked(targetHost)) {
                         recordFilteredRequest(webView, targetHost)
@@ -2331,7 +2320,8 @@ open class MediaHubActivity : AppCompatActivity() {
         if (customView != null || isFullscreenCustomView) return
         val isTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
         val density = resources.displayMetrics.density
-        val slideDistance = binding.topBar.height.toFloat() + (24 * density)
+        val barHeight = if (binding.topBar.height > 0) binding.topBar.height.toFloat() else 56 * density
+        val slideDistance = barHeight + (16 * density)
 
         binding.layoutCollapsedBar.visibility = View.GONE
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
@@ -2345,44 +2335,36 @@ open class MediaHubActivity : AppCompatActivity() {
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
+            binding.mainContentLayout.translationY = 0f
             return
         }
+
+        // The page viewport stays put. Moving it while a finger is down fights the
+        // WebView scroller and shows up as jitter, especially with the bar on top.
+        binding.mainContentLayout.animate().cancel()
+        binding.mainContentLayout.translationY = 0f
 
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
-
-            // Restore margin so the command bar docks cleanly without covering page content
-            containerLp?.let {
-                it.topMargin = if (isTop) (56 * density).toInt() else 0
-                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
-                binding.mainContentLayout.layoutParams = it
-            }
 
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
             binding.topBar.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .setDuration(200)
+                .setDuration(180)
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         } else {
-            if (browserChromeHidden || binding.urlInput.hasFocus()) return
+            if (isTop || browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
-
-            // Automatically expand the webpage to fill the entire screen when command card collapses
-            containerLp?.let {
-                it.topMargin = 0
-                it.bottomMargin = 0
-                binding.mainContentLayout.layoutParams = it
-            }
 
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
-                .translationY(if (isTop) -slideDistance else slideDistance)
-                .setDuration(220)
+                .translationY(slideDistance)
+                .setDuration(180)
                 .setInterpolator(android.view.animation.AccelerateInterpolator())
                 .withEndAction {
                     if (browserChromeHidden) binding.topBar.visibility = View.GONE
@@ -2393,7 +2375,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     private fun createTab(url: String, isPrivate: Boolean = false): BrowserTab {
-        val webView = WebView(this)
+        val webView = FocusedPaneWebView(this)
         webView.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
@@ -2415,10 +2397,23 @@ open class MediaHubActivity : AppCompatActivity() {
 
         webView.clipToPadding = false
         webView.setPadding(0, 0, 0, 0)
+        webView.isNestedScrollingEnabled = false
+        webView.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+        webView.isFocusable = true
+        webView.isFocusableInTouchMode = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
 
         webView.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN || event.actionMasked == MotionEvent.ACTION_MOVE) {
+                webView.parent?.requestDisallowInterceptTouchEvent(true)
+            }
             if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_UP) {
                 lastUserInteractionTime = System.currentTimeMillis()
+            }
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                activateBrowsingPane(webView)
             }
             if (binding.urlInput.hasFocus()) {
                 binding.urlInput.clearFocus()
@@ -2666,7 +2661,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 // Social apps are tightly coupled SPAs. Blocking their boot/runtime
                 // resources or rewriting their API payloads leaves blank feeds and
                 // broken notification routes.
-                if (isSocialAppHost(pageHost) || isSocialAppHost(host)) {
+                if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -2923,6 +2918,8 @@ open class MediaHubActivity : AppCompatActivity() {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 if (customView != null || isFullscreenCustomView) return@setOnScrollChangeListener
+                val toolbarOnTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
+                if (toolbarOnTop || isDualDeckMode) return@setOnScrollChangeListener
                 val currentUrl = activeWebView?.url.orEmpty()
                 val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
                 val dy = scrollY - oldScrollY
@@ -3185,9 +3182,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 Toast.makeText(this, "Reloaded this background tab to free memory", Toast.LENGTH_SHORT).show()
             }
         }
-        for (i in tabs.indices) {
-            tabs[i].webView?.visibility = if (i == index) View.VISIBLE else View.GONE
-        }
+        applyWebViewVisibility()
         checkAndHibernateBackgroundTabs()
         if (current.shouldLoadOnSelect) {
             current.shouldLoadOnSelect = false
@@ -3515,12 +3510,26 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun isSocialAppHost(host: String?): Boolean {
-        val normalized = host?.lowercase(Locale.ROOT).orEmpty()
+        val normalized = host?.lowercase(Locale.ROOT)?.substringBefore(':').orEmpty()
+        if (normalized.isEmpty()) return false
         return normalized == "x.com" || normalized.endsWith(".x.com") ||
             normalized == "twitter.com" || normalized.endsWith(".twitter.com") ||
             normalized == "instagram.com" || normalized.endsWith(".instagram.com") ||
             normalized == "threads.net" || normalized.endsWith(".threads.net") ||
             normalized == "facebook.com" || normalized.endsWith(".facebook.com")
+    }
+
+    /** CDNs and API hosts these apps need. Filtering them surfaces a generic "try again" error. */
+    private fun isSocialInfrastructureHost(host: String?): Boolean {
+        val normalized = host?.lowercase(Locale.ROOT)?.substringBefore(':').orEmpty()
+        if (isSocialAppHost(normalized)) return true
+        return normalized == "t.co" || normalized.endsWith(".t.co") ||
+            normalized.endsWith(".twimg.com") || normalized == "twimg.com" ||
+            normalized.endsWith(".cdninstagram.com") || normalized == "cdninstagram.com" ||
+            normalized.endsWith(".fbcdn.net") || normalized == "fbcdn.net" ||
+            normalized.endsWith(".fbsbx.com") || normalized == "fbsbx.com" ||
+            normalized.endsWith(".facebook.net") || normalized == "facebook.net" ||
+            normalized.endsWith(".xx.fbcdn.net")
     }
 
     /** The native bridge is permanently maintained so internal and start page actions never disconnect. */
@@ -5348,7 +5357,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.rowFundraising.setOnClickListener {
             dialog.dismiss()
-            openAboutPage("fundraising")
+            showFundraisingContributingDialog()
         }
 
         sheetBinding.rowPrivacyPolicy.setOnClickListener {
@@ -5389,6 +5398,11 @@ open class MediaHubActivity : AppCompatActivity() {
         sheetBinding.rowNavAbout.setOnClickListener {
             dialog.dismiss()
             showAboutCommunityDialog()
+        }
+
+        sheetBinding.rowNavFundraising.setOnClickListener {
+            dialog.dismiss()
+            showFundraisingContributingDialog()
         }
 
         dialog.show()
@@ -5657,12 +5671,37 @@ open class MediaHubActivity : AppCompatActivity() {
 
         b.cardCommunityFundraising.setOnClickListener {
             dialog.dismiss()
-            openAboutPage("fundraising")
+            showFundraisingContributingDialog()
         }
 
         b.cardOpenSource.setOnClickListener {
             dialog.dismiss()
             openAboutPage("licenses")
+        }
+
+        dialog.show()
+    }
+
+    private fun showFundraisingContributingDialog() {
+        val dialog = BottomSheetDialog(this)
+        val b = SheetFundraisingContributeBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseFundraising.setOnClickListener { dialog.dismiss() }
+
+        b.cardSponsorGitHub.setOnClickListener {
+            dialog.dismiss()
+            addNewTab("https://github.com/sponsors/Kimmojiraja", isPrivate = false)
+        }
+
+        b.cardBuyMeCoffee.setOnClickListener {
+            dialog.dismiss()
+            addNewTab("https://www.buymeacoffee.com/k_raja", isPrivate = false)
+        }
+
+        b.cardContributeCode.setOnClickListener {
+            dialog.dismiss()
+            addNewTab("https://github.com/Kimmojiraja/adblocker_mine", isPrivate = false)
         }
 
         dialog.show()
@@ -5815,6 +5854,50 @@ open class MediaHubActivity : AppCompatActivity() {
             }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    /**
+     * One WebView reports itself as the text editor. Otherwise the keyboard
+     * commits the same characters into every open pane.
+     */
+    private class FocusedPaneWebView(context: Context) : WebView(context) {
+        override fun onCheckIsTextEditor(): Boolean = isFocused
+    }
+
+    private fun applyWebViewVisibility() {
+        for (i in tabs.indices) {
+            val webView = tabs[i].webView ?: continue
+            val visible = if (isDualDeckMode) {
+                i == activeTabIndex || i == secondaryTabIndex
+            } else {
+                i == activeTabIndex
+            }
+            webView.visibility = if (visible) View.VISIBLE else View.GONE
+        }
+    }
+
+    /** Touching a pane makes that pane the only focused editor and the URL-bar target. */
+    private fun activateBrowsingPane(webView: WebView) {
+        val index = tabs.indexOfFirst { it.webView === webView }
+        if (index < 0) return
+        if (isDualDeckMode && index != activeTabIndex && (index == secondaryTabIndex || secondaryTabIndex == -1)) {
+            val previousActive = activeTabIndex
+            activeTabIndex = index
+            if (secondaryTabIndex == index) secondaryTabIndex = previousActive
+            applyWebViewVisibility()
+            val pane = tabs[index]
+            updateUrlBar(pane.url, pane.title)
+        }
+        tabs.forEach { tab ->
+            val pane = tab.webView ?: return@forEach
+            val focused = pane === webView
+            pane.isFocusable = focused
+            pane.isFocusableInTouchMode = focused
+            if (!focused) pane.clearFocus()
+        }
+        webView.isFocusable = true
+        webView.isFocusableInTouchMode = true
+        if (!webView.isFocused) webView.requestFocus()
     }
 
     // =========================================================================

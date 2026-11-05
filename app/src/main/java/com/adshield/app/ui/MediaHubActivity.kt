@@ -201,8 +201,6 @@ open class MediaHubActivity : AppCompatActivity() {
     private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
     private var injectionScript = ""
-    private var fokkoScript = ""
-    private var fokkoCss = ""
     private var readerScript = ""
     private var readerCss = ""
     private var summarizerScript = ""
@@ -1050,20 +1048,6 @@ open class MediaHubActivity : AppCompatActivity() {
             Log.e(TAG, "Failed to load injection script", e)
         }
         try {
-            assets.open("fokko_content.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    fokkoScript = reader.readText()
-                }
-            }
-            assets.open("fokko_content.css").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    fokkoCss = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load Fokko AI assets", e)
-        }
-        try {
             assets.open("fokk_reader.js").use { stream ->
                 BufferedReader(InputStreamReader(stream)).use { reader ->
                     readerScript = reader.readText()
@@ -1788,21 +1772,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 val targetHost = uri.host?.lowercase(Locale.ROOT).orEmpty()
                 val isExplicitUserNav = userGesture || hasRecentUserInteraction()
 
-                // Completely disarm YouTube Shorts: convert any /shorts/<id> into normal video /watch?v=<id>
-                if (targetHost.contains("youtube.com") && rawUrl.contains("/shorts/")) {
-                    val shortsId = rawUrl.substringAfter("/shorts/").substringBefore("?").substringBefore("/").substringBefore("#")
-                    if (shortsId.isNotBlank() && webView != null) {
-                        val query = if (rawUrl.contains("?")) "&" + rawUrl.substringAfter("?").substringBefore("#") else ""
-                        val normalWatchUrl = "https://m.youtube.com/watch?v=$shortsId$query"
-                        Log.d(TAG, "Redirected YouTube Shorts to standard watch URL: $normalWatchUrl")
-                        loadUrlInWebView(webView, normalWatchUrl)
-                        return true
-                    } else if (webView != null) {
-                        loadUrlInWebView(webView, "https://m.youtube.com/")
-                        return true
-                    }
-                }
-
                 // Only block rogue unsolicited redirects (e.g. pop-unders or unauthorized script redirects)
                 // NEVER block navigation when the user explicitly tapped or navigated!
                 if (!isExplicitUserNav && targetHost.isNotEmpty() && isShieldEnabledFor(targetHost)) {
@@ -2298,28 +2267,24 @@ open class MediaHubActivity : AppCompatActivity() {
         val slideDistance = binding.topBar.height.toFloat() + (24 * density)
 
         binding.layoutCollapsedBar.visibility = View.GONE
-        val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
 
         val isHome = isHomePageUrl(activeWebView?.url)
         if (isHome) {
             binding.topBar.visibility = View.GONE
             browserChromeHidden = false
-            containerLp?.let {
-                it.topMargin = 0
-                it.bottomMargin = 0
-                binding.mainContentLayout.layoutParams = it
-            }
+            binding.mainContentLayout.translationY = 0f
             return
         }
 
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
-            containerLp?.let {
-                it.topMargin = if (isTop) (56 * density).toInt() else 0
-                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
-                binding.mainContentLayout.layoutParams = it
-            }
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(0f)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
             binding.topBar.animate()
@@ -2331,11 +2296,13 @@ open class MediaHubActivity : AppCompatActivity() {
         } else {
             if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
-            containerLp?.let {
-                it.topMargin = 0
-                it.bottomMargin = 0
-                binding.mainContentLayout.layoutParams = it
-            }
+            val targetY = if (isTop) slideDistance else -slideDistance
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(targetY)
+                .setDuration(220)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .start()
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
@@ -2356,6 +2323,10 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        // Hardware acceleration for smooth rendering
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        }
         if (injectionScript.isEmpty()) loadInjectionScript()
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             try {
@@ -2410,6 +2381,13 @@ open class MediaHubActivity : AppCompatActivity() {
             allowUniversalAccessFromFileURLs = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = cleanMobileUa
+            // Performance optimizations
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
+            }
         }
 
         webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
@@ -2881,14 +2859,13 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 if (customView != null || isFullscreenCustomView) return@setOnScrollChangeListener
                 val currentUrl = activeWebView?.url.orEmpty()
-                val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
                 val dy = scrollY - oldScrollY
                 binding.topBar.removeCallbacks(showChromeOnIdleRunnable)
 
                 if (dy > 18 && scrollY > 100) {
                     setBrowserChromeVisible(false)
                     binding.cardSuggestions.visibility = View.GONE
-                } else if (!isShorts && (dy < -18 || scrollY < 25)) {
+                } else if (dy < -18 || scrollY < 25) {
                     setBrowserChromeVisible(true)
                 }
             }
@@ -3450,23 +3427,6 @@ open class MediaHubActivity : AppCompatActivity() {
             webView.evaluateJavascript(customJs, null)
         }
 
-        // Fokko AI Fact Checker (X/Twitter, Reddit, Threads, Bluesky, LinkedIn, Web)
-        if (prefs.getBoolean(PREF_FOKKO_AI, true) && fokkoScript.isNotEmpty()) {
-            val host = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull() ?: ""
-            val urlLower = pageUrl?.lowercase(Locale.ROOT) ?: ""
-            val isAuthFlow = urlLower.contains("/login") || urlLower.contains("/signup") ||
-                urlLower.contains("/i/flow/login") || urlLower.contains("/oauth") ||
-                urlLower.contains("accounts.google.com") || urlLower.contains("appleid.apple.com")
-            val isExcluded = isAuthFlow || host.contains("spotify.com") || host.contains("netflix.com")
-            if (!isExcluded && (pageUrl?.startsWith("http://") == true || pageUrl?.startsWith("https://") == true)) {
-                if (fokkoCss.isNotEmpty()) {
-                    val safeCss = fokkoCss.replace("'", "\\'").replace("\n", " ").replace("\r", " ")
-                    val cssJs = "javascript:(function(){let s=document.getElementById('__fokk_ai_css');if(!s){s=document.createElement('style');s.id='__fokk_ai_css';(document.head||document.documentElement).appendChild(s);}s.innerHTML='$safeCss';})();"
-                    webView.evaluateJavascript(cssJs, null)
-                }
-                webView.evaluateJavascript(fokkoScript, null)
-            }
-        }
     }
 
     private fun isSocialAppHost(host: String?): Boolean {
@@ -4065,14 +4025,18 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
 
-        if (animated && binding.root is ViewGroup) {
-            val transition = TransitionSet().apply {
-                ordering = TransitionSet.ORDERING_TOGETHER
-                addTransition(ChangeBounds())
-                duration = 240
-                interpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
-            }
-            TransitionManager.beginDelayedTransition(binding.root as ViewGroup, transition)
+        // Animate translationY for smooth, glitch-free transition instead of changing margins
+        val targetTranslationY = if (isTop) (64 * density).toFloat() else -(64 * density).toFloat()
+        
+        if (animated) {
+            binding.mainContentLayout.animate().cancel()
+            binding.mainContentLayout.animate()
+                .translationY(targetTranslationY)
+                .setDuration(240)
+                .setInterpolator(android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f))
+                .start()
+        } else {
+            binding.mainContentLayout.translationY = targetTranslationY
         }
 
         if (isTop) {
@@ -4095,7 +4059,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = 0f
 
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
@@ -4125,7 +4088,6 @@ open class MediaHubActivity : AppCompatActivity() {
                 it.bottomMargin = (64 * density).toInt()
                 binding.mainContentLayout.layoutParams = it
             }
-            binding.mainContentLayout.translationY = 0f
 
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
@@ -4217,7 +4179,6 @@ open class MediaHubActivity : AppCompatActivity() {
 
         sheetBinding.switchStrictAdblock.isChecked = prefs.getBoolean(PREF_STRICT_ADBLOCK, true)
         sheetBinding.switchSocialWidgets.isChecked = prefs.getBoolean(PREF_SOCIAL_WIDGETS, false)
-        sheetBinding.switchFokkoAi.isChecked = prefs.getBoolean(PREF_FOKKO_AI, true)
         sheetBinding.editCustomJs.setText(prefs.getString(PREF_CUSTOM_JS, "") ?: "")
         sheetBinding.editCustomCss.setText(prefs.getString(PREF_CUSTOM_CSS, "") ?: "")
 
@@ -4225,7 +4186,6 @@ open class MediaHubActivity : AppCompatActivity() {
             prefs.edit()
                 .putBoolean(PREF_STRICT_ADBLOCK, sheetBinding.switchStrictAdblock.isChecked)
                 .putBoolean(PREF_SOCIAL_WIDGETS, sheetBinding.switchSocialWidgets.isChecked)
-                .putBoolean(PREF_FOKKO_AI, sheetBinding.switchFokkoAi.isChecked)
                 .putString(PREF_CUSTOM_JS, sheetBinding.editCustomJs.text.toString().trim())
                 .putString(PREF_CUSTOM_CSS, sheetBinding.editCustomCss.text.toString().trim())
                 .apply()
@@ -6127,8 +6087,8 @@ open class MediaHubActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 val currentUrl = activeTab?.url.orEmpty()
-                val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
-                val ratio = if (isShorts) Rational(9, 16) else Rational(16, 9)
+                val isVerticalMedia = currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels") || currentUrl.contains("/shorts/")
+                val ratio = if (isVerticalMedia) Rational(9, 16) else Rational(16, 9)
                 val builder = PictureInPictureParams.Builder()
                     .setAspectRatio(ratio)
 
@@ -6904,7 +6864,6 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_BIOMETRIC_PRIVATE_TABS = "fokk_biometric_private_tabs"
         private const val PREF_AI_FILTER = "fokk_ai_filter_enabled"
         private const val PREF_HTTPS_ONLY = "fokk_https_only_enabled"
-        private const val PREF_FOKKO_AI = "fokk_fokko_ai_enabled"
         private const val PREF_ACTIVE_THEME = "fokk_active_theme"
         private const val PREF_USER_AVATAR = "fokk_user_avatar"
         private const val PREF_USER_ALIAS = "fokk_user_alias"

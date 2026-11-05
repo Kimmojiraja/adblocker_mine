@@ -2388,6 +2388,16 @@ open class MediaHubActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
             }
+            // Enable DOM storage caching for faster repeat visits
+            settings.setDomStorageCacheMode(WebSettings.LOAD_CACHE_EVERYWHERE)
+            // Reduce memory overhead on low-end devices
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                settings.safeBrowsingEnabled = true
+            }
+            // Disable unnecessary features for speed
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
+            settings.setSupportZoom(false)
         }
 
         webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")
@@ -2585,7 +2595,7 @@ open class MediaHubActivity : AppCompatActivity() {
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                // Never replace a requested document with a synthetic empty response.
+                // Fast-path: main frame requests bypass interception (document navigation)
                 if (request?.isForMainFrame == true) return super.shouldInterceptRequest(view, request)
 
                 val pageUrl = view?.let { pageUrlsByWebView[it] }
@@ -2607,42 +2617,14 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
 
                 val urlStr = request.url.toString().lowercase()
-                val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
+                val acceptHeader = (request?.requestHeaders?.get("Accept") ?: "").lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
                     acceptHeader.contains("audio/") ||
                     host.contains("googlevideo.com") ||
                     urlStr.contains("/videoplayback") ||
                     listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
                         .any { urlStr.substringBefore('?').endsWith(it) }
-                val isAdScript = urlStr.contains("/pagead/") ||
-                        urlStr.contains("adsbygoogle.js") ||
-                        urlStr.contains("/adsbygoogle/") ||
-                        urlStr.contains("googletagservices.com") ||
-                        urlStr.contains("googleadservices.com") ||
-                        urlStr.contains("/gpt.js") ||
-                        urlStr.contains("adservice.google.") ||
-                        urlStr.contains("/api/stats/ads") ||
-                        urlStr.contains("/youtubei/v1/player/ad_break") ||
-                        urlStr.contains("taboola.com") ||
-                        urlStr.contains("outbrain.com") ||
-                        urlStr.contains("criteo.") ||
-                        urlStr.contains("amazon-adsystem.com") ||
-                        urlStr.contains("prebid") ||
-                        urlStr.contains("pubmatic.com") ||
-                        urlStr.contains("rubiconproject.com") ||
-                        urlStr.contains("openx.net") ||
-                        urlStr.contains("adnxs.com") ||
-                        urlStr.contains("casalemedia.com") ||
-                        urlStr.contains("smartadserver.com") ||
-                        urlStr.contains("yieldmo.com") ||
-                        urlStr.contains("revcontent.com") ||
-                        urlStr.contains("mgid.com") ||
-                        urlStr.contains("media.net") ||
-                        urlStr.contains("ezoic.net") ||
-                        urlStr.contains("mediavine.com") ||
-                        urlStr.contains("adthrive.com") ||
-                        urlStr.contains("scorecardresearch.com") ||
-                        urlStr.contains("quantserve.com")
+                                val isAdScript = AD_PATTERNS.any { urlStr.contains(it) }
 
                 // Dedicated YouTube handler: block known YouTube ad endpoints, but NEVER touch
                 // legitimate video streams (googlevideo.com) or player infrastructure (youtube.com, ytimg.com).
@@ -2659,6 +2641,11 @@ open class MediaHubActivity : AppCompatActivity() {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
                     }
+                    return super.shouldInterceptRequest(view, request)
+                }
+
+                // Fast-path: media requests (video/audio streams) bypass all blocking
+                if (isMediaRequest) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -6787,6 +6774,17 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     companion object {
+        // Pre-built ad pattern set for O(1) substring matching
+        private val AD_PATTERNS = setOf(
+            "/pagead/", "adsbygoogle.js", "/adsbygoogle/", "googletagservices.com",
+            "googleadservices.com", "/gpt.js", "adservice.google.", "/api/stats/ads",
+            "/youtubei/v1/player/ad_break", "/tblp.com", "outbrain.com", "criteo.",
+            "amazon-adsystem.com", "prebid", "pubmatic.com", "rubiconproject.com",
+            "openx.net", "adnxs.com", "casalemedia.com", "smartadserver.com",
+            "yieldmo.com", "revcontent.com", "mgid.com", "media.net", "ezoic.net",
+            "mediavine.com", "adthrive.com", "scorecardresearch.com", "quantserve.com"
+        )
+
         private val THIRD_PARTY_MEDIA_SERVICE_DOMAINS = setOf(
             "youtube.com", "youtube-nocookie.com", "youtu.be",
             "spotify.com", "spotify.link", "scdn.co", "spotifycdn.com",

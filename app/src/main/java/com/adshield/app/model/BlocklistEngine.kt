@@ -19,6 +19,7 @@ class BlocklistEngine(private val context: Context) {
     private val customWhitelistDomains = ConcurrentHashMap.newKeySet<String>()
     private val isReady = AtomicBoolean(false)
     private val decisionCache = ConcurrentHashMap<String, Boolean>()
+    private val normalizedCache = ConcurrentHashMap<String, String>()
 
     @Synchronized
     fun initialize() {
@@ -112,7 +113,13 @@ class BlocklistEngine(private val context: Context) {
         if (!isReady.get()) initialize()
         if (!isReady.get()) return false
 
-        val domain = normalizeDomain(rawDomain)
+        // Fast-path: exact match on raw domain (most common case)
+        if (coreBlockedDomains.contains(rawDomain)) {
+            decisionCache[rawDomain] = true
+            return true
+        }
+
+        val domain = normalizedCache.getOrPut(rawDomain) { normalizeDomain(rawDomain) }
         if (domain.isEmpty()) {
             decisionCache[rawDomain] = false
             return false

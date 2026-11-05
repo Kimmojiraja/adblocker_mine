@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "bird-aftershave" ]
   workflow_dispatch:
 
 jobs:

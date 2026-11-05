@@ -99,9 +99,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_floating_command_bar"
+        android:background="@drawable/bg_docked_command_bar_bottom"
         android:elevation="14dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -565,6 +563,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#000000"
+        android:elevation="20dp"
         android:visibility="gone" />
 
 </RelativeLayout>

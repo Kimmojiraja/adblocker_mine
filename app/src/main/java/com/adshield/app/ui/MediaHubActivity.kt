@@ -1436,6 +1436,13 @@ open class MediaHubActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun openFavorites() {
+            activity.runOnUiThread {
+                activity.showSavedPagesDialog()
+            }
+        }
+
+        @JavascriptInterface
         fun openHistory() {
             activity.runOnUiThread {
                 activity.showHistoryDialog()
@@ -2273,6 +2280,8 @@ open class MediaHubActivity : AppCompatActivity() {
         if (previousWindowWasFullscreen == false) {
             window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
         }
+        // Always clear KEEP_SCREEN_ON when exiting fullscreen; onMediaPlaybackUpdated will re-apply if needed
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         previousRequestedOrientation?.let { requestedOrientation = it } ?: run {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
@@ -2859,6 +2868,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 customView = view
                 customViewCallback = callback
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 decor.systemUiVisibility = decor.systemUiVisibility or
                     View.SYSTEM_UI_FLAG_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
@@ -3175,11 +3185,13 @@ open class MediaHubActivity : AppCompatActivity() {
         // Apply Private Tab styling if active
         binding.imgEngineIcon.imageTintList = null
         binding.imgEngineIcon.setImageResource(currentSearchEngine.iconRes)
+        val toolbarPos = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") ?: "bottom"
+        val isTop = toolbarPos.equals("top", ignoreCase = true)
         if (current.isPrivate) {
-            binding.topBar.setBackgroundResource(R.drawable.bg_floating_command_bar_private)
+            binding.topBar.setBackgroundResource(if (isTop) R.drawable.bg_docked_command_bar_top_private else R.drawable.bg_docked_command_bar_bottom_private)
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#120A1C"))
         } else {
-            binding.topBar.setBackgroundResource(R.drawable.bg_floating_command_bar)
+            binding.topBar.setBackgroundResource(if (isTop) R.drawable.bg_docked_command_bar_top else R.drawable.bg_docked_command_bar_bottom)
             binding.bottomNav.setBackgroundColor(android.graphics.Color.parseColor("#0C101A"))
         }
 
@@ -4096,21 +4108,22 @@ open class MediaHubActivity : AppCompatActivity() {
 
         if (isTop) {
             binding.topBar.visibility = View.VISIBLE
+            binding.topBar.setBackgroundResource(R.drawable.bg_docked_command_bar_top)
             lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-            lp.topMargin = (6 * density).toInt()
+            lp.topMargin = 0
             lp.bottomMargin = 0
 
             collapsedLp?.let {
                 it.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 it.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                it.topMargin = (6 * density).toInt()
+                it.topMargin = 0
                 it.bottomMargin = 0
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
             containerLp?.let {
-                it.topMargin = (64 * density).toInt()
+                it.topMargin = (56 * density).toInt()
                 it.bottomMargin = 0
                 binding.mainContentLayout.layoutParams = it
             }
@@ -4119,29 +4132,30 @@ open class MediaHubActivity : AppCompatActivity() {
             if (cardLp != null) {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
-                cardLp.topMargin = (64 * density).toInt()
+                cardLp.topMargin = (56 * density).toInt()
                 cardLp.bottomMargin = 0
                 binding.cardSuggestions.layoutParams = cardLp
             }
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
         } else {
             binding.topBar.visibility = View.VISIBLE
+            binding.topBar.setBackgroundResource(R.drawable.bg_docked_command_bar_bottom)
             lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
             lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
             lp.topMargin = 0
-            lp.bottomMargin = (6 * density).toInt()
+            lp.bottomMargin = 0
 
             collapsedLp?.let {
                 it.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 it.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 it.topMargin = 0
-                it.bottomMargin = (6 * density).toInt()
+                it.bottomMargin = 0
                 binding.layoutCollapsedBar.layoutParams = it
             }
 
             containerLp?.let {
                 it.topMargin = 0
-                it.bottomMargin = (64 * density).toInt()
+                it.bottomMargin = (56 * density).toInt()
                 binding.mainContentLayout.layoutParams = it
             }
             binding.mainContentLayout.translationY = 0f
@@ -4150,7 +4164,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 cardLp.removeRule(RelativeLayout.ALIGN_PARENT_TOP)
                 cardLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                 cardLp.topMargin = 0
-                cardLp.bottomMargin = (64 * density).toInt()
+                cardLp.bottomMargin = (56 * density).toInt()
                 binding.cardSuggestions.layoutParams = cardLp
             }
             tabs.forEach { it.webView?.setPadding(0, 0, 0, 0) }
@@ -5809,6 +5823,19 @@ open class MediaHubActivity : AppCompatActivity() {
             val primaryTab = tabs.getOrNull(primaryIndex)
             val primaryWebView = primaryTab?.webView
             val secondaryTab = tabs.getOrNull(secondaryTabIndex)
+
+            // Hydrate secondary tab if it was suspended (webView == null)
+            if (secondaryTab != null && secondaryTab.webView == null) {
+                val hydratedView = createTab(
+                    secondaryTab.url.ifBlank { "file:///android_asset/fokk_start.html" },
+                    secondaryTab.isPrivate
+                )
+                secondaryTab.webView = hydratedView.webView
+                secondaryTab.isSuspended = false
+                secondaryTab.suspendedForMemory = false
+                val urlToLoad = secondaryTab.url.ifBlank { "file:///android_asset/fokk_start.html" }
+                loadUrlInWebView(secondaryTab.webView, urlToLoad)
+            }
             val secondaryWebView = secondaryTab?.webView
 
             binding.splitDivider.visibility = View.VISIBLE
@@ -6259,7 +6286,8 @@ open class MediaHubActivity : AppCompatActivity() {
             val isHome = isHomePageUrl(activeWebView?.url)
             if (isHome) {
                 binding.topBar.visibility = View.GONE
-            } else {
+            } else if (customView == null && !isFullscreenCustomView) {
+                // Only show topBar if not in fullscreen video mode
                 binding.topBar.visibility = View.VISIBLE
             }
             binding.layoutCollapsedBar.visibility = View.GONE
@@ -6831,6 +6859,10 @@ open class MediaHubActivity : AppCompatActivity() {
             if (hasActiveVideo) {
                 collapseCommandBar(animated = true)
             }
+            // Keep screen on during active video/audio playback
+            if (customView == null && !isFullscreenCustomView) {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
             if (mediaWakeLock?.isHeld == false) {
                 try { mediaWakeLock?.acquire(3 * 60 * 60 * 1000L) } catch (e: Exception) {}
             }
@@ -6846,6 +6878,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (!isMediaPlaying && !hasActiveVideo) {
                     if (mediaWakeLock?.isHeld == true) {
                         try { mediaWakeLock?.release() } catch (e: Exception) {}
+                    }
+                    // Release screen-on lock when no media is playing
+                    if (customView == null && !isFullscreenCustomView) {
+                        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     }
                     updateMediaSessionPlaybackState(isPlaying = false)
                     com.adshield.app.service.FokkMediaPlaybackService.stop(this)

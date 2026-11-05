@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Bottom 1dp divider line separating top docked bar from webpage below -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1E293B" />
+        </shape>
+    </item>
+    <!-- Sleek obsidian dark body -->
+    <item android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#F80B0F19" />
+        </shape>
+    </item>
+</layer-list>

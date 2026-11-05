@@ -192,16 +192,18 @@
         } catch (e) {}
 
         // uBlock Origin standard: Defuses YouTube ad data across ALL response parsing methods:
-        // 1. window.JSON.parse
+        // 1. window.JSON.parse — scoped to YouTube only to avoid blocking other sites
         try {
-            const origJSONParse = JSON.parse;
-            JSON.parse = function(text, reviver) {
-                const data = origJSONParse.apply(this, arguments);
-                if (data && typeof data === 'object') {
-                    sanitizeYtPlayerResponse(data);
-                }
-                return data;
-            };
+            if (window.location.hostname.includes('youtube.com')) {
+                const origJSONParse = JSON.parse;
+                JSON.parse = function(text, reviver) {
+                    const data = origJSONParse.apply(this, arguments);
+                    if (data && typeof data === 'object') {
+                        sanitizeYtPlayerResponse(data);
+                    }
+                    return data;
+                };
+            }
         } catch (e) {}
 
         // 2. Response.prototype.json (Critical for Chromium / Android WebView — Response.json does NOT call window.JSON.parse)
@@ -1299,9 +1301,8 @@
     }
 
     if (window.location.hostname.includes('instagram.com')) {
-        // Run immediately and often — Instagram renders lazily
+        // Run immediately on load; MutationObserver handles dynamic content
         scrubInstagramAds();
-        setInterval(scrubInstagramAds, 500);
         // Also run on DOM changes for dynamically loaded feed items
         try {
             const igObserver = new MutationObserver(function(mutations) {
@@ -1479,6 +1480,30 @@
 
     function scrubAiContent() {
         try { scrubAiOverviewsAndWidgets(); } catch (e) {}
+        // Remove Bing "Open in App" / "Continue Web" banner that appears on bing.com mobile
+        try {
+            const host = window.location.hostname;
+            if (host.includes('bing.com')) {
+                document.querySelectorAll(
+                    '#b_header_banner, .b_appBanner, [id*="appBanner"], [class*="appBanner"], ' +
+                    '[id*="app-banner"], [class*="app-banner"], ' +
+                    'div:has(> a[href*="microsoft.com/en-us/bing-app"]), ' +
+                    'div:has(> a[href*="bing.com/app"]), ' +
+                    'a[href*="bingapp://"], a[href*="bing://"]'
+                ).forEach(function(el) {
+                    try { el.style.setProperty('display', 'none', 'important'); el.remove(); } catch(e) {}
+                });
+                // Also hide any top-fixed banners with "Open app" text
+                document.querySelectorAll('div[style*="position: fixed"], div[style*="position:fixed"]').forEach(function(el) {
+                    try {
+                        const txt = (el.innerText || '').toLowerCase();
+                        if ((txt.includes('open') && txt.includes('app')) || txt.includes('continue in')) {
+                            el.style.setProperty('display', 'none', 'important');
+                        }
+                    } catch(e) {}
+                });
+            }
+        } catch (e) {}
     }
 
     function hookVideoPlayback(video) {
@@ -1640,6 +1665,9 @@
                     scrubAppPromos();
                     scrubCookieBanners();
                     scrubAdultAndStreamingAds();
+                    defuseClickjackingOverlays();
+                    defuseAntiAdblockModals();
+                    defuseDeceptiveButtons();
                     unlockPageScrolling();
                 }
                 document.querySelectorAll('video').forEach(hookVideoPlayback);
@@ -1664,6 +1692,9 @@
             scrubAppPromos();
             scrubCookieBanners();
             scrubAdultAndStreamingAds();
+            defuseClickjackingOverlays();
+            defuseAntiAdblockModals();
+            defuseDeceptiveButtons();
             unlockPageScrolling();
         }
         document.querySelectorAll('video').forEach(hookVideoPlayback);

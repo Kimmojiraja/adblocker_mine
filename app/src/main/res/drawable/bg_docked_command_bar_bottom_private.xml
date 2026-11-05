@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top 1dp divider line separating bottom docked bar from webpage above (private purple) -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#3D1A5C" />
+        </shape>
+    </item>
+    <!-- Deep purple private mode body -->
+    <item android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#F8120A1C" />
+        </shape>
+    </item>
+</layer-list>

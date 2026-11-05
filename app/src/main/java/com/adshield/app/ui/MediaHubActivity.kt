@@ -2383,21 +2383,21 @@ open class MediaHubActivity : AppCompatActivity() {
             userAgentString = cleanMobileUa
             // Performance optimizations
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
+                setRenderPriority(WebSettings.RenderPriority.HIGH)
             }
             // Enable DOM storage caching for faster repeat visits
-            settings.setDomStorageCacheMode(WebSettings.LOAD_CACHE_EVERYWHERE)
+            setDomStorageCacheMode(WebSettings.LOAD_CACHE_EVERYWHERE)
             // Reduce memory overhead on low-end devices
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                settings.safeBrowsingEnabled = true
+                safeBrowsingEnabled = true
             }
             // Disable unnecessary features for speed
-            settings.builtInZoomControls = false
-            settings.displayZoomControls = false
-            settings.setSupportZoom(false)
+            builtInZoomControls = false
+            displayZoomControls = false
+            setSupportZoom(false)
         }
 
         webView.addJavascriptInterface(WebAppInterface(this), "FokkShieldBridge")

@@ -2413,7 +2413,10 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
             try {
-                WebSettingsCompat.setRequestedWithHeaderAllowList(webView.settings, emptySet())
+                val method = WebSettingsCompat::class.java.methods.firstOrNull {
+                    it.name == "setRequestedWithHeaderOriginAllowList" || it.name == "setRequestedWithHeaderAllowList"
+                }
+                method?.invoke(null, webView.settings, emptySet<String>())
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to configure requested with header allow list", e)
             }

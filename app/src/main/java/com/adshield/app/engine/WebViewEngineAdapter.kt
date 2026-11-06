@@ -86,7 +86,10 @@ class WebViewEngineSession(
         // Suppress X-Requested-With header to stop anti-bot & news paywall blocks
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
             try {
-                WebSettingsCompat.setRequestedWithHeaderAllowList(webView.settings, emptySet())
+                val method = WebSettingsCompat::class.java.methods.firstOrNull {
+                    it.name == "setRequestedWithHeaderOriginAllowList" || it.name == "setRequestedWithHeaderAllowList"
+                }
+                method?.invoke(null, webView.settings, emptySet<String>())
             } catch (e: Exception) {
                 Log.w("WebViewEngineSession", "Could not set requested with header allow list", e)
             }

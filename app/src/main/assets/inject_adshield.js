@@ -19,66 +19,14 @@
     const isYouTube = hostIs('youtube.com') || hostIs('youtu.be') || currentHost.endsWith('.youtube.com');
 
     // =========================================================================
-    // NEXT-GEN INNOVATION: Dynamic Per-Session Anti-Fingerprint Neural Cloak
-    // Neutralizes Canvas, AudioContext & WebGL device fingerprinting
+    // Dynamic Anti-Fingerprint Cloak: Safe Protections (Non-destructive to bot checkers)
+    // Avoids altering Canvas prototypes which triggers Cloudflare/Kasada/PerimeterX bot blocks.
     // =========================================================================
     function installAntiFingerprintCloak() {
         if (window.__fokk_cloak_active) return;
         window.__fokk_cloak_active = true;
 
-        const sessionNoise = (function() {
-            let s = 0;
-            const key = 'fokk_noise_' + (window.location.hostname || 'global');
-            try {
-                const stored = sessionStorage.getItem(key);
-                if (stored) s = parseFloat(stored);
-                else {
-                    s = (Math.random() * 0.0004) - 0.0002;
-                    sessionStorage.setItem(key, String(s));
-                }
-            } catch(e) {
-                s = (Math.random() * 0.0004) - 0.0002;
-            }
-            return s;
-        })();
-
-        // 1. Canvas toDataURL Perturbation
-        try {
-            if (HTMLCanvasElement.prototype.toDataURL) {
-                const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
-                HTMLCanvasElement.prototype.toDataURL = function() {
-                    try {
-                        const ctx = this.getContext('2d');
-                        if (ctx && this.width > 0 && this.height > 0 && this.width <= 320 && this.height <= 320) {
-                            const img = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
-                            if (img && img.data && img.data.length > 4) {
-                                img.data[0] = (img.data[0] + (sessionNoise > 0 ? 1 : -1)) & 255;
-                                ctx.putImageData(img, 0, 0);
-                            }
-                        }
-                    } catch(e) {}
-                    return origToDataURL.apply(this, arguments);
-                };
-            }
-        } catch(e) {}
-
-        // 2. Canvas getImageData 1-bit Entropy Defense
-        try {
-            if (CanvasRenderingContext2D.prototype.getImageData) {
-                const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
-                CanvasRenderingContext2D.prototype.getImageData = function(sx, sy, sw, sh) {
-                    const img = origGetImageData.apply(this, arguments);
-                    try {
-                        if (img && img.data && img.data.length >= 4) {
-                            img.data[3] = Math.max(1, Math.min(255, img.data[3] + (sessionNoise > 0 ? 1 : 0)));
-                        }
-                    } catch(e) {}
-                    return img;
-                };
-            }
-        } catch(e) {}
-
-        // 3. AudioContext Fingerprint Neutralizer
+        // AudioContext Fingerprint Neutralizer (Safe & Non-intrusive)
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (AudioCtx && AudioCtx.prototype.createAnalyser) {
@@ -90,8 +38,8 @@
                         if (origGetFloatFreq) {
                             analyser.getFloatFrequencyData = function(array) {
                                 origGetFloatFreq.apply(this, arguments);
-                                for (let i = 0; i < array.length; i += 8) {
-                                    array[i] += sessionNoise * 0.01;
+                                for (let i = 0; i < array.length; i += 16) {
+                                    array[i] += 0.00001;
                                 }
                             };
                         }

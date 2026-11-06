@@ -201,6 +201,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var previousRequestedOrientation: Int? = null
     private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
+    private var defusersScript = ""
     private var injectionScript = ""
     private var fokkoScript = ""
     private var fokkoCss = ""
@@ -1042,6 +1043,15 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun loadInjectionScript() {
+        try {
+            assets.open("adblock_defusers.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    defusersScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load adblock defusers script", e)
+        }
         try {
             assets.open("inject_adshield.js").use { stream ->
                 BufferedReader(InputStreamReader(stream)).use { reader ->
@@ -2380,9 +2390,16 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
-        if (injectionScript.isEmpty()) loadInjectionScript()
+        if (injectionScript.isEmpty() || defusersScript.isEmpty()) loadInjectionScript()
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             try {
+                if (defusersScript.isNotEmpty()) {
+                    WebViewCompat.addDocumentStartJavaScript(
+                        webView,
+                        defusersScript,
+                        setOf("*")
+                    )
+                }
                 if (injectionScript.isNotEmpty()) {
                     WebViewCompat.addDocumentStartJavaScript(
                         webView,
@@ -2392,6 +2409,13 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to register document start script", e)
+            }
+        }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
+            try {
+                WebSettingsCompat.setRequestedWithHeaderAllowList(webView.settings, emptySet())
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to configure requested with header allow list", e)
             }
         }
 
@@ -2434,7 +2458,7 @@ open class MediaHubActivity : AppCompatActivity() {
             domStorageEnabled = true
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
-            javaScriptCanOpenWindowsAutomatically = true
+            javaScriptCanOpenWindowsAutomatically = false
             setSupportMultipleWindows(true)
             loadsImagesAutomatically = true
             useWideViewPort = true
@@ -2813,7 +2837,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 val sourceHost = view?.url?.let { runCatching { Uri.parse(it).host?.lowercase(Locale.ROOT) }.getOrNull() }.orEmpty()
                 val isAuthOrTrustedHost = isThirdPartyMediaServiceHost(sourceHost) ||
                     sourceHost.contains("google.") || sourceHost.contains("apple.") || sourceHost.contains("x.com") || sourceHost.contains("twitter.com")
-                val hasInteraction = isUserGesture || isDialog || isAuthOrTrustedHost || hasRecentUserInteraction()
+                // Block unauthorized popups: only allow genuine user gesture, dialog, or trusted auth flow
+                val hasInteraction = isUserGesture || isDialog || (isAuthOrTrustedHost && hasRecentUserInteraction())
                 if (!hasInteraction) return false
 
                 val sourceTab = tabs.firstOrNull { it.webView === view }
@@ -3459,6 +3484,10 @@ open class MediaHubActivity : AppCompatActivity() {
                     webView.evaluateJavascript(cosmetic.js, null)
                 }
             }
+        }
+
+        if (defusersScript.isNotEmpty()) {
+            webView.evaluateJavascript(defusersScript, null)
         }
 
         if (injectionScript.isNotEmpty()) {

@@ -1,6 +1,6 @@
 {
-  "versionCode": 206,
-  "versionName": "2.0.6",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.6/app-debug.apk",
-  "changelog": "- Fundraising & Contributing: Dedicated shortcut in the browser menu and About dialog to sponsor development via GitHub Sponsors or Buy Me a Coffee.\n- Open to Code Contributors: Community contribution pathways directly linked to help report issues, build extensions, and submit PRs.\n- Social App & Video Engine Stability: Resolved video audio issues and feed interruptions across YouTube, X (Twitter), and Instagram.\n- Multi-Pane Focus Isolation: Enhanced text-input routing and touch dispatch in dual-deck multitasking mode."
+  "versionCode": 207,
+  "versionName": "2.0.7",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.7/app-debug.apk",
+  "changelog": "- Unblock News Articles & Anti-Adblock Bypass: Suppressed WebView X-Requested-With header to stop anti-bot blocks, added document_start scriptlet stubs for adsbygoogle/googletag/pbjs/analytics, and neutralized canvas tampering.\n- Aggressive Pop-up & Tab Hijack Protection: Locked onCreateWindow to genuine user gestures and disabled automatic window opening.\n- Browser Engine Abstraction: Established IBrowserEngine / IEngineSession architecture laying the foundation for future Ladybird engine integration."
 }

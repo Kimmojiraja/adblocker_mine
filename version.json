@@ -1,6 +1,6 @@
 {
-  "versionCode": 207,
-  "versionName": "2.0.7",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.7/app-debug.apk",
-  "changelog": "- Unblock News Articles & Anti-Adblock Bypass: Suppressed WebView X-Requested-With header to stop anti-bot blocks, added document_start scriptlet stubs for adsbygoogle/googletag/pbjs/analytics, and neutralized canvas tampering.\n- Aggressive Pop-up & Tab Hijack Protection: Locked onCreateWindow to genuine user gestures and disabled automatic window opening.\n- Browser Engine Abstraction: Established IBrowserEngine / IEngineSession architecture laying the foundation for future Ladybird engine integration."
+  "versionCode": 208,
+  "versionName": "2.0.8",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.8/app-debug.apk",
+  "changelog": "- X.com / Twitter Fix: Completely isolated fragile social SPAs from scriptlet hooks, restored third-party session cookies to eliminate 'Something went wrong. Try again.' errors.\n- Fox News & Anti-Adblock Defusers: Injected complete anti-adblock flag mocks and automatic DOM scrapers to defuse 'ad or script blocking software is interfering' banners.\n- Zero-Nag & App-Promos: Neutralized 'Open in App' smart banners, sticky promo modals, and cookie curtains across sites.\n- UI Fullscreen Auto-Expansion: Restored dynamic webpage margin adjustments on command bar collapse for both top and bottom toolbar configurations."
 }

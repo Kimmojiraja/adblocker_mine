@@ -3,6 +3,18 @@
 (function() {
     'use strict';
     if (window.__fokk_defusers_active) return;
+
+    var host = ((window.location && window.location.hostname) || '').toLowerCase();
+    var href = ((window.location && window.location.href) || '').toLowerCase();
+    var isFragileSocial = host === 'x.com' || host.endsWith('.x.com') ||
+                          host === 'twitter.com' || host.endsWith('.twitter.com') ||
+                          host === 'instagram.com' || host.endsWith('.instagram.com') ||
+                          host === 'threads.net' || host.endsWith('.threads.net') ||
+                          host === 'facebook.com' || host.endsWith('.facebook.com') ||
+                          href.includes('//x.com') || href.includes('//twitter.com');
+    if (isFragileSocial) {
+        return; // Zero tampering on X (Twitter), Instagram, etc.
+    }
     window.__fokk_defusers_active = true;
 
     var noop = function() {};
@@ -197,10 +209,36 @@
         }
     } catch(e) {}
 
-    // 6. Anti-Adblock Trap Flags (BlockAdBlock, canRunAds, etc.)
+    // 6. Anti-Adblock Trap Flags (Fox News, BlockAdBlock, canRunAds, etc.)
     try {
         window.canRunAds = true;
         window.isAdBlockActive = false;
+        window.isAdBlocked = false;
+        window.isAdBlockOn = false;
+        window.adBlock = false;
+        window.adblock = false;
+        window.adsBlocked = false;
+        window.adBlockEnabled = false;
+        window.adblockDetected = false;
+        window.adBlockerDetected = false;
+
+        try {
+            Object.defineProperty(window, 'adBlockEnabled', {
+                get: function() { return false; },
+                set: function() {},
+                configurable: true
+            });
+            Object.defineProperty(window, 'adblockDetected', {
+                get: function() { return false; },
+                set: function() {},
+                configurable: true
+            });
+            Object.defineProperty(window, 'canRunAds', {
+                get: function() { return true; },
+                set: function() {},
+                configurable: true
+            });
+        } catch(e) {}
 
         var fakeBab = {
             check: function() { return false; },
@@ -259,6 +297,61 @@
             checkCount++;
             if (checkCount > 10) clearInterval(scrollTimer);
         }, 800);
+    } catch(e) {}
+
+    // 8. Zero-Nag: Scrubber for Anti-Adblock Warning Banners (Fox News, etc.) & "Open in App" Overlays
+    try {
+        var scrubNagElements = function() {
+            var nagPhrases = [
+                'ad or script blocking',
+                'interfering with this page',
+                'disable any ad or script',
+                'ad blocker detected',
+                'disable your ad blocker',
+                'turn off your ad blocker',
+                'please allow ads'
+            ];
+
+            // 1. Scrape and remove anti-adblock message banners
+            var candidates = document.querySelectorAll('div, p, section, aside');
+            for (var i = 0; i < candidates.length; i++) {
+                var el = candidates[i];
+                if (!el || el.children.length > 5) continue;
+                var text = (el.innerText || el.textContent || '').toLowerCase();
+                for (var j = 0; j < nagPhrases.length; j++) {
+                    if (text.indexOf(nagPhrases[j]) !== -1) {
+                        var banner = el.closest('div[class*="adblock"], div[id*="adblock"], div[class*="modal"], div[class*="dialog"], div[class*="overlay"], div[class*="banner"], div[role="dialog"]') || el;
+                        banner.style.setProperty('display', 'none', 'important');
+                        banner.style.setProperty('visibility', 'hidden', 'important');
+                        restoreScroll();
+                        break;
+                    }
+                }
+            }
+
+            // 2. Remove Open-in-App and App Promo Banners
+            var appNags = document.querySelectorAll('.smartbanner, .app-banner, .smart-app-banner, [class*="open-in-app" i], [class*="openInApp"], [class*="getTheApp" i], [class*="install-app" i], [class*="app-upsell" i], reddit-bottom-sheet, xpromo-app-selector, .XPromoPopup, .qu-open-in-app, .qu-app-banner');
+            for (var k = 0; k < appNags.length; k++) {
+                appNags[k].style.setProperty('display', 'none', 'important');
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scrubNagElements);
+        } else {
+            scrubNagElements();
+        }
+
+        var nagObserver = new MutationObserver(function() {
+            scrubNagElements();
+        });
+        if (document.body) {
+            nagObserver.observe(document.body, { childList: true, subtree: true });
+        } else {
+            document.addEventListener('DOMContentLoaded', function() {
+                if (document.body) nagObserver.observe(document.body, { childList: true, subtree: true });
+            });
+        }
     } catch(e) {}
 
 })();

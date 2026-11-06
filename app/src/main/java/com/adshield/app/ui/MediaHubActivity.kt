@@ -2302,9 +2302,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var commandBarCollapsed = false
 
     private fun collapseCommandBar(animated: Boolean = true) {
-        // Disabled: The user requested only the regular command bar, no auto-minimizing micro-pill
-        binding.layoutCollapsedBar.visibility = View.GONE
-        commandBarCollapsed = false
+        setBrowserChromeVisible(false)
     }
 
     private fun expandCommandBar(animated: Boolean = true) {
@@ -2349,14 +2347,19 @@ open class MediaHubActivity : AppCompatActivity() {
             return
         }
 
-        // The page viewport stays put. Moving it while a finger is down fights the
-        // WebView scroller and shows up as jitter, especially with the bar on top.
         binding.mainContentLayout.animate().cancel()
         binding.mainContentLayout.translationY = 0f
 
         if (visible) {
             if (!browserChromeHidden) return
             browserChromeHidden = false
+
+            // Restore margin so the command bar docks cleanly without covering page content
+            containerLp?.let {
+                it.topMargin = if (isTop) (56 * density).toInt() else 0
+                it.bottomMargin = if (isTop) 0 else (56 * density).toInt()
+                binding.mainContentLayout.layoutParams = it
+            }
 
             binding.topBar.animate().cancel()
             binding.topBar.visibility = View.VISIBLE
@@ -2367,13 +2370,21 @@ open class MediaHubActivity : AppCompatActivity() {
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         } else {
-            if (isTop || browserChromeHidden || binding.urlInput.hasFocus()) return
+            if (browserChromeHidden || binding.urlInput.hasFocus()) return
             browserChromeHidden = true
 
+            // Automatically expand the webpage to fill the entire screen when command card collapses
+            containerLp?.let {
+                it.topMargin = 0
+                it.bottomMargin = 0
+                binding.mainContentLayout.layoutParams = it
+            }
+
+            val targetY = if (isTop) -slideDistance else slideDistance
             binding.topBar.animate().cancel()
             binding.topBar.animate()
                 .alpha(0f)
-                .translationY(slideDistance)
+                .translationY(targetY)
                 .setDuration(180)
                 .setInterpolator(android.view.animation.AccelerateInterpolator())
                 .withEndAction {
@@ -2453,8 +2464,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        // First-party cookies stay available. Third-party cookies are limited to supported service pages.
-        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate && isThirdPartyMediaService(url))
+        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -2531,7 +2541,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     val tabIsPrivate = tabs.firstOrNull { it.webView === view }?.isPrivate == true
                     CookieManager.getInstance().setAcceptThirdPartyCookies(
                         view,
-                        !tabIsPrivate && isThirdPartyMediaService(pageUrl)
+                        !tabIsPrivate
                     )
                 }
                 setBridgeEnabled(view, pageUrl)
@@ -2946,8 +2956,7 @@ open class MediaHubActivity : AppCompatActivity() {
             webView.setOnScrollChangeListener { scrolledView, _, scrollY, _, oldScrollY ->
                 if (scrolledView !== activeWebView) return@setOnScrollChangeListener
                 if (customView != null || isFullscreenCustomView) return@setOnScrollChangeListener
-                val toolbarOnTop = prefs.getString(PREF_TOOLBAR_POSITION, "bottom") == "top"
-                if (toolbarOnTop || isDualDeckMode) return@setOnScrollChangeListener
+                if (isDualDeckMode) return@setOnScrollChangeListener
                 val currentUrl = activeWebView?.url.orEmpty()
                 val isShorts = currentUrl.contains("/shorts/") || currentUrl.contains("tiktok.com") || currentUrl.contains("instagram.com/reels")
                 val dy = scrollY - oldScrollY

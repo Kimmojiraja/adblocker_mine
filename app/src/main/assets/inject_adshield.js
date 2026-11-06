@@ -12,10 +12,12 @@
     function hostIs(name) {
         return currentHost === name || currentHost.endsWith('.' + name);
     }
-    // These apps detect tampered canvas, WebGL, JSON, and visibility and then
-    // render "Something went wrong. Try again." Leave their runtime alone.
+    const href = ((window.location && window.location.href) || '').toLowerCase();
     const isFragileSocialApp = hostIs('x.com') || hostIs('twitter.com') || hostIs('instagram.com') ||
-        hostIs('threads.net') || hostIs('facebook.com');
+        hostIs('threads.net') || hostIs('facebook.com') || href.includes('//x.com') || href.includes('//twitter.com');
+    if (isFragileSocialApp) {
+        return; // Zero tampering on X (Twitter), Instagram, etc.
+    }
     const isYouTube = hostIs('youtube.com') || hostIs('youtu.be') || currentHost.endsWith('.youtube.com');
 
     // =========================================================================

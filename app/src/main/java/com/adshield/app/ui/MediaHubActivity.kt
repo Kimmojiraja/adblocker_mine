@@ -199,11 +199,11 @@ open class MediaHubActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var previousSystemUiVisibility: Int? = null
     private var previousRequestedOrientation: Int? = null
-    private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
-    private var mediaEnhancerScript = ""
-    private var newsDefuserScript = ""
-    private var adblockDefuserScript = ""
+    private var defusersScript = ""
+    private var injectionScript = ""
+    private var fokkoScript = ""
+    private var fokkoCss = ""
     private var readerScript = ""
     private var readerCss = ""
     private var summarizerScript = ""
@@ -1043,31 +1043,36 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun loadInjectionScript() {
         try {
-            assets.open("fokk_media_enhancer.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    mediaEnhancerScript = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load media enhancer script", e)
-        }
-        try {
-            assets.open("fokk_news_defuser.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    newsDefuserScript = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load news defuser script", e)
-        }
-        try {
             assets.open("adblock_defusers.js").use { stream ->
                 BufferedReader(InputStreamReader(stream)).use { reader ->
-                    adblockDefuserScript = reader.readText()
+                    defusersScript = reader.readText()
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load adblock defuser script", e)
+            Log.e(TAG, "Failed to load adblock defusers script", e)
+        }
+        try {
+            assets.open("inject_adshield.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    injectionScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load injection script", e)
+        }
+        try {
+            assets.open("fokko_content.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    fokkoScript = reader.readText()
+                }
+            }
+            assets.open("fokko_content.css").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    fokkoCss = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load Fokko AI assets", e)
         }
         try {
             assets.open("fokk_reader.js").use { stream ->
@@ -2400,7 +2405,27 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
-        if (readerScript.isEmpty()) loadInjectionScript()
+        if (injectionScript.isEmpty() || defusersScript.isEmpty()) loadInjectionScript()
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            try {
+                if (defusersScript.isNotEmpty()) {
+                    WebViewCompat.addDocumentStartJavaScript(
+                        webView,
+                        defusersScript,
+                        setOf("*")
+                    )
+                }
+                if (injectionScript.isNotEmpty()) {
+                    WebViewCompat.addDocumentStartJavaScript(
+                        webView,
+                        injectionScript,
+                        setOf("*")
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to register document start script", e)
+            }
+        }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
             try {
                 val method = WebSettingsCompat::class.java.methods.firstOrNull {
@@ -2682,25 +2707,20 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
+                // Social apps are tightly coupled SPAs. Blocking their boot/runtime
+                // resources or rewriting their API payloads leaves blank feeds and
+                // broken notification routes.
+                if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
+                    return super.shouldInterceptRequest(view, request)
+                }
+
                 val urlStr = request.url.toString().lowercase()
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
                     acceptHeader.contains("audio/") ||
-                    acceptHeader.contains("application/x-mpegurl") ||
-                    acceptHeader.contains("application/vnd.apple.mpegurl") ||
-                    acceptHeader.contains("application/dash+xml") ||
                     host.contains("googlevideo.com") ||
                     urlStr.contains("/videoplayback") ||
-                    urlStr.contains(".m3u8") ||
-                    urlStr.contains(".mpd") ||
-                    urlStr.contains(".mp4") ||
-                    urlStr.contains(".m4s") ||
-                    urlStr.contains(".webm") ||
-                    urlStr.contains(".ts") ||
-                    urlStr.contains("mime=video") ||
-                    urlStr.contains("mime=audio") ||
-                    urlStr.contains("format=m3u8") ||
-                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts", ".aac", ".mp3", ".ogg")
+                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
                         .any { urlStr.substringBefore('?').endsWith(it) }
                 val isAdScript = urlStr.contains("/pagead/") ||
                         urlStr.contains("adsbygoogle.js") ||
@@ -2740,87 +2760,44 @@ open class MediaHubActivity : AppCompatActivity() {
                                     host.contains("youtube.com") || host.contains("googlevideo.com") || host.contains("ytimg.com")
                 if (isYouTubePage) {
                     val isYtAdUrl = urlStr.contains("/pagead/") ||
-                        urlStr.contains("doubleclick.net") ||
-                        urlStr.contains("googlesyndication.com")
+                        urlStr.contains("/api/stats/ads") ||
+                        urlStr.contains("ad_break") ||
+                        urlStr.contains("doubleclick.net")
                     if (isYtAdUrl && !isMediaRequest) {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
                     }
-                    if (isMediaRequest || host.contains("googlevideo.com") || host.contains("youtube.com") || host.contains("ytimg.com")) {
-                        return super.shouldInterceptRequest(view, request)
-                    }
-                }
-
-                // Legitimate media and video streaming infrastructure (YouTube, Brightcove, JWPlayer, Yahoo Video, Connatix, Vimeo, etc.)
-                // must never be blocked by generic EasyList tracker or ad filters.
-                if (isMediaRequest || isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                // 0. Intercept CMP consent banners and anti-adblock detection scripts at the network level
-                val isCmpOrNagScript = host.contains("cookielaw.org") ||
-                    host.contains("onetrust.com") ||
-                    host.contains("cookiebot.com") ||
-                    host.contains("consensu.org") ||
-                    host.contains("fundingchoicesmessages.google.com") ||
-                    host.contains("privacy-center.org") ||
-                    host.contains("didomi.io") ||
-                    host.contains("usercentrics.eu") ||
-                    host.contains("trustarc.com") ||
-                    host.contains("civiccomputing.com") ||
-                    host.contains("sp-prod.net") ||
-                    host.contains("getadmiral.com") ||
-                    host.contains("admiral.com") ||
-                    host.contains("blockadblock.com") ||
-                    urlStr.contains("sp_message") ||
-                    urlStr.contains("/otbanner") ||
-                    urlStr.contains("cookie-banner")
-                if (isCmpOrNagScript && !isMediaRequest) {
-                    recordFilteredRequest(view, host)
-                    return createBlockedResourceResponse(urlStr)
-                }
-
-                val isSocialAdRequest =
-                    urlStr.contains("/api/v1/ads/") ||
-                    urlStr.contains("/api/v1/injected_story_units/") ||
-                    urlStr.contains("/api/stats/ads") ||
-                    urlStr.contains("/pagead/") ||
-                    urlStr.contains("/ad_break") ||
-                    host == "ads.facebook.com" ||
-                    host == "ads.instagram.com" ||
-                    host == "alb.reddit.com"
-
-                // Social apps have fragile boot and feed APIs. Keep those requests
-                // intact, while allowing explicit ad endpoints through the filters.
-                if ((isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) &&
-                    !isSocialAdRequest && !isAdScript
-                ) {
-                    return super.shouldInterceptRequest(view, request)
-                }
-
-                // 1. Check native Brave adblock-rust Engine for ordinary pages and
-                // explicit social ad requests.
-                val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
-                    url = requestUrl ?: "",
-                    sourceUrl = pageUrl ?: "",
-                    mimeOrType = acceptHeader
-                )
-                if (braveDecision.matched) {
-                    recordFilteredRequest(view, host)
-                    val redirectUrl = braveDecision.redirect
-                    if (redirectUrl != null) {
-                        val redirectRes = createRedirectResponse(redirectUrl)
-                        if (redirectRes != null) return redirectRes
+                // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
+                if (!isMediaRequest) {
+                    val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
+                        url = requestUrl ?: "",
+                        sourceUrl = pageUrl ?: "",
+                        mimeOrType = acceptHeader
+                    )
+                    if (braveDecision.matched) {
+                        recordFilteredRequest(view, host)
+                        val redirectUrl = braveDecision.redirect
+                        if (redirectUrl != null) {
+                            val redirectRes = createRedirectResponse(redirectUrl)
+                            if (redirectRes != null) return redirectRes
+                        }
+                        return createBlockedResourceResponse(urlStr)
                     }
-                    return createBlockedResourceResponse(urlStr)
                 }
 
-                if (isAdScript) {
+                if (isAdScript && !isMediaRequest) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
 
                 if (pageHost != null && !isCrossSiteRequest) {
+                    return super.shouldInterceptRequest(view, request)
+                }
+
+                if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -3522,15 +3499,11 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
         val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
-        if (isSocialAppHost(pageHost) && pageHost?.contains("instagram.com") != true) return
+        if (isSocialAppHost(pageHost)) return
 
-        if (adblockDefuserScript.isNotEmpty()) {
-            webView.evaluateJavascript(adblockDefuserScript, null)
-        }
-
-        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (all supported pages)
+        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true
-        if (pageUrl != null && !pageUrl.startsWith("file:///android_asset/")) {
+        if (pageUrl != null && !isYt && !pageUrl.startsWith("file:///android_asset/")) {
             val cosmetic = AdShieldApp.instance.braveEngine.getCosmeticResources(pageUrl)
             if (cosmetic != null) {
                 if (cosmetic.selectors.isNotEmpty()) {
@@ -3554,58 +3527,19 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Scoped YouTube Media Enhancer (SponsorBlock + clean native skipper + mobile promo collapse)
-        if (isYt) {
-            val ytAdCollapseJs = """
-                (function() {
-                    var el = document.getElementById('__fokk_yt_collapse_style');
-                    if (!el) {
-                        el = document.createElement('style');
-                        el.id = '__fokk_yt_collapse_style';
-                        (document.head || document.documentElement).appendChild(el);
-                    }
-                    el.textContent = `
-                        ytm-promoted-sparkles-web-renderer,
-                        ytm-companion-ad-renderer,
-                        ytm-companion-slot,
-                        ytm-promoted-video-renderer,
-                        ytm-compact-promoted-item-renderer,
-                        .ytm-promoted-sparkles-web-renderer,
-                        ad-slot-renderer,
-                        ytm-ad-badge,
-                        .ytp-ad-overlay-container,
-                        .ytp-ad-message-container,
-                        .ytp-ad-action-interstitial,
-                        .ytp-ad-image-overlay,
-                        #player-ads,
-                        #masthead-ad,
-                        ytd-promoted-sparkles-web-renderer,
-                        ytd-companion-slot-renderer,
-                        ytd-promoted-video-renderer,
-                        ytd-banner-promo-renderer,
-                        ytd-ad-slot-renderer,
-                        ytd-in-feed-ad-layout-renderer {
-                            display: none !important;
-                            visibility: hidden !important;
-                            height: 0 !important;
-                            min-height: 0 !important;
-                            max-height: 0 !important;
-                            overflow: hidden !important;
-                            pointer-events: none !important;
-                        }
-                    `;
-                })();
-            """.trimIndent()
-            webView.evaluateJavascript(ytAdCollapseJs, null)
-            if (mediaEnhancerScript.isNotEmpty()) {
-                webView.evaluateJavascript(mediaEnhancerScript, null)
+        val supportsDocStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+        if (!supportsDocStart) {
+            if (defusersScript.isNotEmpty()) {
+                webView.evaluateJavascript(defusersScript, null)
+            }
+            if (injectionScript.isNotEmpty()) {
+                webView.evaluateJavascript(injectionScript, null)
             }
         }
 
-        // Scoped News & Publisher CMP Defuser (unlocks scroll & dismisses modals without layout distortion)
-        val isNewsSite = isNewsOrPublisherHost(pageHost.orEmpty())
-        if (isNewsSite && newsDefuserScript.isNotEmpty()) {
-            webView.evaluateJavascript(newsDefuserScript, null)
+        val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
+        if (!isAiFilter) {
+            webView.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled(false);", null)
         }
 
         // Custom User CSS

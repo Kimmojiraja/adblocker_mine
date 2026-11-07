@@ -3511,7 +3511,7 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
         val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
-        if (isSocialAppHost(pageHost)) return
+        if (isSocialAppHost(pageHost) && pageHost?.contains("instagram.com") != true) return
 
         // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true

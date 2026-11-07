@@ -555,3 +555,40 @@ ads.mixdrop.co
 ads.filelions.com
 ads.supervideo.tv
 ads.streamwish.to
+
+# ==============================================================================
+# Strengthened: video-platform ads, social ad telemetry & attribution
+# (googlevideo.com video streams and ytimg.com thumbnails are intentionally NOT blocked)
+# ==============================================================================
+
+# YouTube / Google ad serving
+2mdn.net
+googleads.g.doubleclick.net
+pubads.g.doubleclick.net
+securepubads.g.doubleclick.net
+
+# Reddit ads & telemetry (promoted posts are also scrubbed client-side)
+ads.reddit.com
+advertising.reddit.com
+redditads.com
+
+# TikTok / Snapchat / Pinterest / LinkedIn ad & attribution (main site domains left intact)
+ads.tiktok.com
+ads.snapchat.com
+ads.pinterest.com
+ads.linkedin.com
+analytics.linkedin.com
+
+# Extra trackers, session replay & attribution collectors
+datadoghq.com
+app.datadoghq.com
+logrocket.com
+sizmek.com
+
+# Header bidding & display networks
+indexexchange.com
+ix.be
+secure.ix
+
+# Path-scoped rules: block Facebook pixel without breaking facebook.com login
+||facebook.com^tr

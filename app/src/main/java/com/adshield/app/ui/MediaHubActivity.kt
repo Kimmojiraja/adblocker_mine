@@ -2730,7 +2730,8 @@ open class MediaHubActivity : AppCompatActivity() {
                         urlStr.contains("amazon-adsystem.com") ||
                         urlStr.contains("criteo.") ||
                         urlStr.contains("taboola.com") ||
-                        urlStr.contains("outbrain.com")
+                        urlStr.contains("outbrain.com") ||
+                        AdShieldApp.instance.blocklistEngine.isUrlBlocked(requestUrl ?: "")
                     if (isAdOrTracker && !isMediaRequest) {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
@@ -2777,7 +2778,11 @@ open class MediaHubActivity : AppCompatActivity() {
                     val isYtAdUrl = urlStr.contains("/pagead/") ||
                         urlStr.contains("/api/stats/ads") ||
                         urlStr.contains("ad_break") ||
-                        urlStr.contains("doubleclick.net")
+                        urlStr.contains("get_midroll_info") ||
+                        urlStr.contains("doubleclick.net") ||
+                        urlStr.contains("googlesyndication.com") ||
+                        urlStr.contains("googleadservices.com") ||
+                        urlStr.contains("adservice.google.")
                     if (isYtAdUrl && !isMediaRequest) {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
@@ -2837,7 +2842,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
                 if (isStrictAdblock && (
                             isAdScript && !isMediaRequest ||
-                            (!isMediaRequest && (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))
+                            (!isMediaRequest && (AdShieldApp.instance.blocklistEngine.isUrlBlocked(requestUrl ?: "") || isEliteBlocked))
                         )) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)

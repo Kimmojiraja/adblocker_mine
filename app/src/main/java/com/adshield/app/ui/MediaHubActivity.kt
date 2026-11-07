@@ -203,6 +203,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var browserChromeHidden = false
     private var mediaEnhancerScript = ""
     private var newsDefuserScript = ""
+    private var adblockDefuserScript = ""
     private var readerScript = ""
     private var readerCss = ""
     private var summarizerScript = ""
@@ -1058,6 +1059,15 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load news defuser script", e)
+        }
+        try {
+            assets.open("adblock_defusers.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    adblockDefuserScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load adblock defuser script", e)
         }
         try {
             assets.open("fokk_reader.js").use { stream ->
@@ -2433,7 +2443,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(webView, !isPrivate)
+        cookieManager.setAcceptThirdPartyCookies(webView, false)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -2507,10 +2517,9 @@ open class MediaHubActivity : AppCompatActivity() {
                     }
                 }
                 if (view != null) {
-                    val tabIsPrivate = tabs.firstOrNull { it.webView === view }?.isPrivate == true
                     CookieManager.getInstance().setAcceptThirdPartyCookies(
                         view,
-                        !tabIsPrivate
+                        false
                     )
                 }
                 setBridgeEnabled(view, pageUrl)
@@ -2673,13 +2682,6 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                // Social apps are tightly coupled SPAs. Blocking their boot/runtime
-                // resources or rewriting their API payloads leaves blank feeds and
-                // broken notification routes.
-                if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
-                    return super.shouldInterceptRequest(view, request)
-                }
-
                 val urlStr = request.url.toString().lowercase()
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
@@ -2738,18 +2740,13 @@ open class MediaHubActivity : AppCompatActivity() {
                                     host.contains("youtube.com") || host.contains("googlevideo.com") || host.contains("ytimg.com")
                 if (isYouTubePage) {
                     val isYtAdUrl = urlStr.contains("/pagead/") ||
-                        urlStr.contains("/api/stats/ads") ||
-                        urlStr.contains("ad_break") ||
                         urlStr.contains("doubleclick.net") ||
-                        urlStr.contains("googlesyndication.com") ||
-                        urlStr.contains("/ptracking") ||
-                        urlStr.contains("adformat=") ||
-                        (urlStr.contains("/youtubei/v1/log_event") && urlStr.contains("ad"))
+                        urlStr.contains("googlesyndication.com")
                     if (isYtAdUrl && !isMediaRequest) {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
                     }
-                    if (isMediaRequest || host.contains("googlevideo.com")) {
+                    if (isMediaRequest || host.contains("googlevideo.com") || host.contains("youtube.com") || host.contains("ytimg.com")) {
                         return super.shouldInterceptRequest(view, request)
                     }
                 }
@@ -2783,7 +2780,26 @@ open class MediaHubActivity : AppCompatActivity() {
                     return createBlockedResourceResponse(urlStr)
                 }
 
-                // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
+                val isSocialAdRequest =
+                    urlStr.contains("/api/v1/ads/") ||
+                    urlStr.contains("/api/v1/injected_story_units/") ||
+                    urlStr.contains("/api/stats/ads") ||
+                    urlStr.contains("/pagead/") ||
+                    urlStr.contains("/ad_break") ||
+                    host == "ads.facebook.com" ||
+                    host == "ads.instagram.com" ||
+                    host == "alb.reddit.com"
+
+                // Social apps have fragile boot and feed APIs. Keep those requests
+                // intact, while allowing explicit ad endpoints through the filters.
+                if ((isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) &&
+                    !isSocialAdRequest && !isAdScript
+                ) {
+                    return super.shouldInterceptRequest(view, request)
+                }
+
+                // 1. Check native Brave adblock-rust Engine for ordinary pages and
+                // explicit social ad requests.
                 val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
                     url = requestUrl ?: "",
                     sourceUrl = pageUrl ?: "",
@@ -3507,6 +3523,10 @@ open class MediaHubActivity : AppCompatActivity() {
         if (!isShieldEnabledFor(pageUrl)) return
         val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
         if (isSocialAppHost(pageHost) && pageHost?.contains("instagram.com") != true) return
+
+        if (adblockDefuserScript.isNotEmpty()) {
+            webView.evaluateJavascript(adblockDefuserScript, null)
+        }
 
         // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (all supported pages)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true

@@ -2708,6 +2708,15 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
+                val urlStr = request.url.toString().lowercase()
+                val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
+                val isMediaRequest = acceptHeader.contains("video/") ||
+                    acceptHeader.contains("audio/") ||
+                    host.contains("googlevideo.com") ||
+                    urlStr.contains("/videoplayback") ||
+                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
+                        .any { urlStr.substringBefore('?').endsWith(it) }
+
                 // Social apps are tightly coupled SPAs. Allow core social infrastructure & feeds,
                 // but block known third-party ad networks, telemetry trackers, and ad pixels.
                 if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
@@ -2728,15 +2737,6 @@ open class MediaHubActivity : AppCompatActivity() {
                     }
                     return super.shouldInterceptRequest(view, request)
                 }
-
-                val urlStr = request.url.toString().lowercase()
-                val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
-                val isMediaRequest = acceptHeader.contains("video/") ||
-                    acceptHeader.contains("audio/") ||
-                    host.contains("googlevideo.com") ||
-                    urlStr.contains("/videoplayback") ||
-                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
-                        .any { urlStr.substringBefore('?').endsWith(it) }
                 val isAdScript = urlStr.contains("/pagead/") ||
                         urlStr.contains("adsbygoogle.js") ||
                         urlStr.contains("/adsbygoogle/") ||

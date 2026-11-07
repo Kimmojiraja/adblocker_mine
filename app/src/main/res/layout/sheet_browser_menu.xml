@@ -210,17 +210,6 @@
                                 android:textSize="9sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/textMenuBlockedInfo"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:ellipsize="end"
-                            android:maxLines="2"
-                            android:text="Always ON · Compile-level native C++ filter trie active"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="11.5sp" />
                     </LinearLayout>
 
                     <ImageView
@@ -235,6 +224,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:visibility="gone">
+                    <TextView android:id="@+id/textMenuBlockedInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchMenuShield"
                         android:layout_width="wrap_content"
@@ -475,7 +465,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
-                            android:text="Dark Web"
+                            android:text="Dark Mode"
                             android:textColor="@color/text_primary"
                             android:textSize="12.5sp" />
 

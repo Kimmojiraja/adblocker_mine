@@ -8,15 +8,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.adshield.app.databinding.ActivityMainBinding
+import com.adshield.app.databinding.SheetFundraisingContributeBinding
 import com.adshield.app.model.BrandOptimizationHelper
 import com.adshield.app.ui.BrandGuideActivity
 import com.adshield.app.ui.MediaHubActivity
 import com.adshield.app.ui.SettingsActivity
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +26,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupListeners()
+        updateDashboard()
+    }
+
+    override fun onResume() {
+        super.onResume()
         updateDashboard()
     }
 
@@ -119,16 +126,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun showDisclaimerDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Legal Disclaimer")
-            .setMessage("Fokk Shield is an independent browser privacy utility. It is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube, Spotify AB, Meta Platforms, Inc., or related entities. All brand names and trademarks belong to their respective owners.")
+            .setTitle("Legal Disclaimer & Apache 2.0")
+            .setMessage("Fokk Shield is open-source software distributed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).\n\nIt is an independent browser privacy utility and is not affiliated with, endorsed by, or sponsored by Google LLC, YouTube, Spotify AB, Meta Platforms, Inc., or Microsoft Corporation. All brand names and trademarks belong to their respective owners.")
             .setPositiveButton("Close", null)
             .show()
     }
 
     private fun showSupportDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Fokk Shield Support")
-            .setMessage("Version: 1.1.0\nArchitecture: Android WebView browser with local website filters\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.")
+            .setTitle("Fokk Shield Support & License")
+            .setMessage("Version: 2.1.0\nLicense: Apache License 2.0\nArchitecture: Android WebView browser with local Rust/EasyList website filters\nSupported OS: Android 10, 11, 12, 13, 14, 15\n\nFor bug reports, pull requests, or feature inquiries, visit our official repository or contact the project maintainers.")
             .setPositiveButton("GitHub Repository") { _, _ ->
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/fokk-project"))
                 try {
@@ -142,15 +149,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFundraisingDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Community Development")
-            .setMessage("Fokk Shield is committed to remaining 100% free with zero paywalls and zero data monetization.\n\n• Organization & Supporter Channels: Official donation accounts and contribution methods will be published here in an upcoming release.\n\nThank you for supporting open, independent digital privacy tools!")
-            .setPositiveButton("Got It", null)
-            .show()
+        val dialog = BottomSheetDialog(this)
+        val b = SheetFundraisingContributeBinding.inflate(layoutInflater)
+        dialog.setContentView(b.root)
+
+        b.btnCloseFundraising.setOnClickListener { dialog.dismiss() }
+
+        b.cardSponsorGitHub.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sponsors/Kimmojiraja")))
+        }
+
+        b.cardBuyMeCoffee.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.buymeacoffee.com/k_raja")))
+        }
+
+        b.cardContributeCode.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Kimmojiraja/fokk-project")))
+        }
+
+        val copyAddress: (String, String) -> Unit = { label, text ->
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+            Toast.makeText(this, "$label address copied to clipboard!", Toast.LENGTH_SHORT).show()
+        }
+
+        val btcAddress = "bc1qwxnv6uphj0ke8q50gdx6ew8j3lgvwhk6k2kaet"
+        val ethAddress = "0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525"
+        val bnbAddress = "0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525"
+        val solAddress = "DqgAgDj4PjvR4K1wtYfpaZuYNeNZgj2fQoKnXApWKuTj"
+
+        b.cardCryptoBtc.setOnClickListener { copyAddress("Bitcoin", btcAddress) }
+        b.btnCopyBtc.setOnClickListener { copyAddress("Bitcoin", btcAddress) }
+
+        b.cardCryptoEth.setOnClickListener { copyAddress("Ethereum", ethAddress) }
+        b.btnCopyEth.setOnClickListener { copyAddress("Ethereum", ethAddress) }
+
+        b.cardCryptoBnb.setOnClickListener { copyAddress("BNB Smart Chain", bnbAddress) }
+        b.btnCopyBnb.setOnClickListener { copyAddress("BNB Smart Chain", bnbAddress) }
+
+        b.cardCryptoSol.setOnClickListener { copyAddress("Solana", solAddress) }
+        b.btnCopySol.setOnClickListener { copyAddress("Solana", solAddress) }
+
+        dialog.show()
     }
 
     private fun updateDashboard() {
-        binding.textTotalAdsCount.text = AdShieldApp.instance.getBlockedAdsCount().toString()
+        val total = AdShieldApp.instance.getBlockedAdsCount()
+        val crossSite = AdShieldApp.instance.getCrossSiteTrackersCount()
+        val social = AdShieldApp.instance.getSocialTrackersCount()
+        val traps = AdShieldApp.instance.getDeceptiveTrapsCount()
+
+        binding.textTotalAdsCount.text = String.format(Locale.US, "%,d", total)
+        binding.textCrossSiteCount.text = String.format(Locale.US, "%,d", crossSite)
+        binding.textSocialTrackersCount.text = String.format(Locale.US, "%,d", social)
+        binding.textDeceptiveTrapsCount.text = String.format(Locale.US, "%,d", traps)
 
         val brandName = BrandOptimizationHelper.getBrandName()
         val isIgnoring = BrandOptimizationHelper.isIgnoringBatteryOptimizations(this)

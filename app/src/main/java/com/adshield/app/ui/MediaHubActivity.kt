@@ -1171,6 +1171,10 @@ open class MediaHubActivity : AppCompatActivity() {
         if (total > 0 && !isIsolatedPrivateProfile) {
             AdShieldApp.instance.incrementBlockedAds(total)
         }
+        val thirdPartyTotal = snapshot.values.sumOf { it.thirdPartyCount }
+        if (thirdPartyTotal > 0 && !isIsolatedPrivateProfile) {
+            AdShieldApp.instance.incrementCrossSiteTrackers(thirdPartyTotal)
+        }
 
         pendingFilteredCountFlush.set(false)
         val hasMorePending = synchronized(filteredCountLock) {
@@ -2824,10 +2828,16 @@ open class MediaHubActivity : AppCompatActivity() {
                     host.contains("pixel.wp.com")
                 )
 
-                if (isSocialTracker || (isStrictAdblock && (
+                if (isSocialTracker) {
+                    if (!isIsolatedPrivateProfile) AdShieldApp.instance.incrementSocialTrackers(1)
+                    recordFilteredRequest(view, host)
+                    return createBlockedResourceResponse(urlStr)
+                }
+
+                if (isStrictAdblock && (
                             isAdScript && !isMediaRequest ||
                             (!isMediaRequest && (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host) || isEliteBlocked))
-                        ))) {
+                        )) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
@@ -2874,7 +2884,10 @@ open class MediaHubActivity : AppCompatActivity() {
                     sourceHost.contains("google.") || sourceHost.contains("apple.") || sourceHost.contains("x.com") || sourceHost.contains("twitter.com")
                 // Block unauthorized popups: only allow genuine user gesture, dialog, or trusted auth flow
                 val hasInteraction = isUserGesture || isDialog || (isAuthOrTrustedHost && hasRecentUserInteraction())
-                if (!hasInteraction) return false
+                if (!hasInteraction) {
+                    if (!isIsolatedPrivateProfile) AdShieldApp.instance.incrementDeceptiveTraps(1)
+                    return false
+                }
 
                 val sourceTab = tabs.firstOrNull { it.webView === view }
                 val newTab = createTab("about:blank", isPrivate = sourceTab?.isPrivate == true)
@@ -5772,6 +5785,29 @@ open class MediaHubActivity : AppCompatActivity() {
             dialog.dismiss()
             addNewTab("https://github.com/Kimmojiraja/fokk-project", isPrivate = false)
         }
+
+        val copyAddress: (String, String) -> Unit = { label, text ->
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+            Toast.makeText(this, "$label address copied to clipboard!", Toast.LENGTH_SHORT).show()
+        }
+
+        val btcAddress = "bc1qwxnv6uphj0ke8q50gdx6ew8j3lgvwhk6k2kaet"
+        val ethAddress = "0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525"
+        val bnbAddress = "0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525"
+        val solAddress = "DqgAgDj4PjvR4K1wtYfpaZuYNeNZgj2fQoKnXApWKuTj"
+
+        b.cardCryptoBtc.setOnClickListener { copyAddress("Bitcoin", btcAddress) }
+        b.btnCopyBtc.setOnClickListener { copyAddress("Bitcoin", btcAddress) }
+
+        b.cardCryptoEth.setOnClickListener { copyAddress("Ethereum", ethAddress) }
+        b.btnCopyEth.setOnClickListener { copyAddress("Ethereum", ethAddress) }
+
+        b.cardCryptoBnb.setOnClickListener { copyAddress("BNB Smart Chain", bnbAddress) }
+        b.btnCopyBnb.setOnClickListener { copyAddress("BNB Smart Chain", bnbAddress) }
+
+        b.cardCryptoSol.setOnClickListener { copyAddress("Solana", solAddress) }
+        b.btnCopySol.setOnClickListener { copyAddress("Solana", solAddress) }
 
         dialog.show()
     }

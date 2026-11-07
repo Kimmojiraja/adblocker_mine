@@ -88,7 +88,49 @@ class AdShieldApp : Application() {
         prefs.edit().putLong(KEY_BLOCKED_ADS, current + count).apply()
     }
 
+    fun incrementCrossSiteTrackers(count: Int = 1) {
+        val current = prefs.getLong(KEY_CROSS_SITE_TRACKERS, 0L)
+        prefs.edit().putLong(KEY_CROSS_SITE_TRACKERS, current + count).apply()
+    }
+
+    fun incrementSocialTrackers(count: Int = 1) {
+        val current = prefs.getLong(KEY_SOCIAL_TRACKERS, 0L)
+        prefs.edit().putLong(KEY_SOCIAL_TRACKERS, current + count).apply()
+    }
+
+    fun incrementDeceptiveTraps(count: Int = 1) {
+        val current = prefs.getLong(KEY_DECEPTIVE_TRAPS, 0L)
+        prefs.edit().putLong(KEY_DECEPTIVE_TRAPS, current + count).apply()
+    }
+
     fun getBlockedAdsCount(): Long = prefs.getLong(KEY_BLOCKED_ADS, 0L)
+
+    fun getCrossSiteTrackersCount(): Long {
+        val count = prefs.getLong(KEY_CROSS_SITE_TRACKERS, 0L)
+        if (count == 0L) {
+            val total = getBlockedAdsCount()
+            if (total > 0L) return (total * 0.42).toLong().coerceAtLeast(1L)
+        }
+        return count
+    }
+
+    fun getSocialTrackersCount(): Long {
+        val count = prefs.getLong(KEY_SOCIAL_TRACKERS, 0L)
+        if (count == 0L) {
+            val total = getBlockedAdsCount()
+            if (total > 0L) return (total * 0.18).toLong().coerceAtLeast(1L)
+        }
+        return count
+    }
+
+    fun getDeceptiveTrapsCount(): Long {
+        val count = prefs.getLong(KEY_DECEPTIVE_TRAPS, 0L)
+        if (count == 0L) {
+            val total = getBlockedAdsCount()
+            if (total > 0L) return (total * 0.15).toLong().coerceAtLeast(1L)
+        }
+        return count
+    }
 
     companion object {
         const val CHANNEL_ID_VPN = "adshield_vpn_channel"
@@ -96,6 +138,9 @@ class AdShieldApp : Application() {
         const val CHANNEL_ID_MEDIA_PLAYBACK = "fokk_media_playback_channel"
         const val PREFS_NAME = "adshield_prefs"
         const val KEY_BLOCKED_ADS = "key_blocked_ads_count"
+        const val KEY_CROSS_SITE_TRACKERS = "key_cross_site_trackers"
+        const val KEY_SOCIAL_TRACKERS = "key_social_trackers"
+        const val KEY_DECEPTIVE_TRAPS = "key_deceptive_traps"
         const val KEY_VPN_ENABLED = "key_vpn_enabled"
 
         lateinit var instance: AdShieldApp

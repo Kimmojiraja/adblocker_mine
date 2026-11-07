@@ -47,9 +47,13 @@ Fokk Browser Project is designed to give users complete control over their mobil
 - Hardware-accelerated dark engine that formats web backgrounds to true #000000 black.
 - Enhances contrast and reduces display power consumption on OLED screens.
 
+### Default Search Engine & Quick Switching
+- Ships with **Microsoft Bing** as default for privacy-preserving web lookups and fast image indexing.
+- 1-tap instant switcher between Bing, DuckDuckGo, Brave Search, Google, Startpage, and Ecosia directly from the address bar or settings.
+
 ### Lightweight Native Footprint
 - Installs under 20 MB with near-instant cold launch times.
-- Zero crypto bloat, zero background sync services, and minimal memory usage.
+- Zero analytics bloat, zero background sync services, and minimal memory usage.
 
 ---
 
@@ -94,17 +98,32 @@ The output APK will be generated at:
 
 We are seamlessly working on fixing bugs, improving product quality, introducing new advanced privacy features, and actively developing **Fokk AI** and **Fokk Extensions**.
 
-Every contribution means a lot and directly powers independent, tracker-free development:
+Every contribution directly powers independent, tracker-free development:
 
+### Online Sponsoring
 - **GitHub Sponsors**: [Sponsor @Kimmojiraja on GitHub](https://github.com/sponsors/Kimmojiraja) (Monthly or one-time)
 - **Buy Me a Coffee**: [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/k_raja)
-- **Open to Code Contributors**: We welcome pull requests, bug fixes, performance optimizations, and extension ideas! Feel free to open an issue or submit a PR on this repository.
 
-Thanks for supporting independent development! ❤️
+### Direct Cryptocurrency Support
+You can also back development directly via decentralized cryptocurrency transfers:
+
+| Cryptocurrency | Network | Receiving Address |
+| :--- | :--- | :--- |
+| **Bitcoin (BTC)** | Bitcoin Native | `bc1qwxnv6uphj0ke8q50gdx6ew8j3lgvwhk6k2kaet` |
+| **Ethereum (ETH)** | ERC20 | `0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525` |
+| **BNB Smart Chain (BNB)** | BEP20 | `0x54BB111a33Cae41F63Bad6E9D1Eb65341f561525` |
+| **Solana (SOL)** | Solana SPL | `DqgAgDj4PjvR4K1wtYfpaZuYNeNZgj2fQoKnXApWKuTj` |
+
+### Open to Code Contributors
+We welcome pull requests, bug fixes, performance optimizations, and extension ideas! Feel free to open an issue or submit a PR on this repository.
+
+Thanks for supporting independent open-source development! ❤️
 
 ---
 
-## License & Fair Use
+## License
 
-Fokk Browser Project is built using Android Jetpack, Kotlin Coroutines, and open-source ad-blocking specifications under Apache 2.0 / MIT licenses. All content filtering and DOM sanitization operate locally on content delivered to your device under user autonomy principles. All trademarks and brand names belong to their respective owners.
+Fokk Browser Project is open-source software licensed under the **Apache License, Version 2.0**. See the [LICENSE](LICENSE) file for complete details.
+
+Unless required by applicable law or agreed to in writing, software distributed under the Apache License 2.0 is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. All trademarks and brand names belong to their respective owners.
 

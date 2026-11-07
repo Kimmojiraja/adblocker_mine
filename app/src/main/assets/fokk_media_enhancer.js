@@ -148,14 +148,6 @@
         if (player && typeof player.skipAd === 'function') {
             try { player.skipAd(); } catch(e) {}
         }
-
-        // B. If an ad stream is actively playing, fast-advance past the ad segment cleanly
-        if (isAdShowing()) {
-            const video = document.querySelector('video');
-            if (video && !isNaN(video.duration) && isFinite(video.duration) && video.duration > 0) {
-                video.currentTime = video.duration - 0.05;
-            }
-        }
     }
 
     // 7. Video Playback Monitor: SponsorBlock Skipper

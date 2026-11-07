@@ -250,7 +250,7 @@ object AppUpdateManager {
                 }
 
                 val fileLength = conn.contentLength
-                val updateDirectory = File(activity.cacheDir, "updates")
+                val updateDirectory = File(activity.externalCacheDir ?: activity.cacheDir, "updates")
                 if (!updateDirectory.isDirectory && !updateDirectory.mkdirs()) {
                     throw IllegalStateException("Could not create update cache directory")
                 }
@@ -330,8 +330,18 @@ object AppUpdateManager {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
             }
+
+            // Explicitly grant URI read permission to all matching package installer handlers
+            val resolveInfos = activity.packageManager.queryIntentActivities(intent, 0)
+            for (resolveInfo in resolveInfos) {
+                val pkg = resolveInfo.activityInfo.packageName
+                activity.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
             activity.startActivity(intent)
         } catch (e: Exception) {
             AlertDialog.Builder(activity)

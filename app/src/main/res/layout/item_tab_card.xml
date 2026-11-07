@@ -5,10 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="170dp"
     android:layout_margin="4dp"
-    app:cardBackgroundColor="#0F1523"
+    app:cardBackgroundColor="#121212"
     app:cardCornerRadius="18dp"
-    app:cardElevation="3dp"
-    app:strokeColor="#1E2A3E"
+    app:cardElevation="2dp"
+    app:strokeColor="#27272A"
     app:strokeWidth="1.2dp">
 
     <LinearLayout
@@ -21,7 +21,7 @@
             android:id="@+id/layoutCardHeader"
             android:layout_width="match_parent"
             android:layout_height="34dp"
-            android:background="#161F32"
+            android:background="#18181B"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="10dp">
@@ -31,7 +31,7 @@
                 android:layout_width="15dp"
                 android:layout_height="15dp"
                 android:src="@drawable/ic_launch"
-                app:tint="@color/fokk_cyan" />
+                app:tint="#FFFFFF" />
 
             <TextView
                 android:id="@+id/textTabTitle"
@@ -42,7 +42,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="New Tab"
-                android:textColor="@color/text_primary"
+                android:textColor="#FFFFFF"
                 android:textSize="11.5sp"
                 android:textStyle="bold" />
 
@@ -52,7 +52,7 @@
                 android:layout_height="22dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_close"
-                app:tint="@color/text_secondary"
+                app:tint="#A1A1AA"
                 android:contentDescription="Close Tab" />
         </LinearLayout>
 
@@ -61,7 +61,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#080C14"
+            android:background="#0A0A0A"
             android:padding="8dp">
 
             <!-- Watermark / URL in Preview -->
@@ -75,9 +75,9 @@
                     android:id="@+id/imgPreviewLogo"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:alpha="0.65"
+                    android:alpha="0.4"
                     android:src="@drawable/ic_shield_check"
-                    app:tint="@color/fokk_cyan" />
+                    app:tint="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/textTabUrl"
@@ -88,7 +88,7 @@
                     android:maxLines="1"
                     android:paddingHorizontal="8dp"
                     android:text="fokk://home"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="#71717A"
                     android:textSize="10.5sp" />
             </LinearLayout>
 
@@ -102,7 +102,7 @@
                 android:paddingHorizontal="7dp"
                 android:paddingVertical="2dp"
                 android:text="ACTIVE"
-                android:textColor="@color/fokk_cyan"
+                android:textColor="#FFFFFF"
                 android:textSize="8.5sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
@@ -113,11 +113,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
-                android:background="#4A148C"
+                android:background="#2E1644"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
                 android:text="GHOST"
-                android:textColor="#E1BEE7"
+                android:textColor="#D8B4FE"
                 android:textSize="8sp"
                 android:textStyle="bold"
                 android:visibility="gone" />

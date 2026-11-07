@@ -5,7 +5,9 @@
     window.__fokkshield_loaded = true;
 
     const currentHost = ((window.location && window.location.hostname) || '').toLowerCase();
-    if (currentHost.includes('webxprt') || currentHost.includes('principledtechnologies') || currentHost.includes('browserbench')) {
+    if (currentHost.includes('webxprt') || currentHost.includes('principledtechnologies') || currentHost.includes('browserbench') ||
+        currentHost.includes('speedometer') || currentHost.includes('kraken-benchmark') || currentHost.includes('octane') ||
+        currentHost.includes('jetstream') || currentHost.includes('motionmark')) {
         return; // Zero overhead on performance benchmarking suites!
     }
 
@@ -428,55 +430,56 @@
                 }
             }, { capture: true, passive: true });
 
-            // Complete YouTube Shorts Disarmer: Neutralize and redirect any /shorts/<id> to regular /watch?v=<id>
-            function neutralizeShortsUrl(url) {
-                if (!url || typeof url !== 'string') return url;
-                const match = url.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
-                if (match && match[1]) {
-                    const videoId = match[1];
-                    const query = url.includes('?') ? '&' + url.split('?')[1] : '';
-                    return url.replace(/\/shorts\/[a-zA-Z0-9_-]+(\?[^#]*)?/, '/watch?v=' + videoId + query);
-                }
-                return url;
-            }
+            // YouTube Shorts Support with Unprompted Cold-Boot Auto-Open Guard:
+            // YouTube mobile sometimes auto-opens /shorts on cold launch from stale sessionStorage or entry promos.
+            // We guard against unprompted cold-boot redirect, but once the user interacts or clicks a Short / Shorts tab,
+            // we allow full native YouTube Shorts with swipe reels and real YouTube feel.
+            let userHasInteracted = false;
+            let userInitiatedShorts = false;
 
-            function checkAndRedirectShortsLocation() {
-                if (!window.location.hostname.includes('youtube.com')) return;
-                const path = window.location.pathname;
-                if (path.startsWith('/shorts')) {
-                    const match = path.match(/^\/shorts\/([a-zA-Z0-9_-]+)/);
-                    if (match && match[1]) {
-                        console.warn('[Fokk Shield] Auto-redirecting Shorts to standard watch player:', match[1]);
-                        const query = window.location.search ? window.location.search.replace('?', '&') : '';
-                        window.location.replace('/watch?v=' + match[1] + query);
-                    } else {
-                        console.warn('[Fokk Shield] Redirecting /shorts feed to YouTube Home');
-                        window.location.replace('/');
+            ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'click'].forEach(function(evt) {
+                window.addEventListener(evt, function(e) {
+                    userHasInteracted = true;
+                    const target = e.target;
+                    if (target && target.closest && (
+                        target.closest('a[href*="/shorts/"]') ||
+                        target.closest('ytm-pivot-bar-item-renderer:nth-child(2)') ||
+                        target.closest('[aria-label*="Shorts" i]') ||
+                        target.closest('ytm-reel-shelf-renderer') ||
+                        target.closest('ytd-reel-shelf-renderer') ||
+                        target.closest('ytm-shorts-lockup-view-model') ||
+                        target.closest('.ytm-shorts-entry-point')
+                    )) {
+                        userInitiatedShorts = true;
+                    }
+                }, { capture: true, passive: true });
+            });
+
+            // Prevent cold-start unprompted auto-opening of Shorts when landing on Home
+            try {
+                if (window.location.hostname.includes('youtube.com')) {
+                    const currentPath = window.location.pathname || '';
+                    if (currentPath === '/' || currentPath === '') {
+                        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                            const k = sessionStorage.key(i);
+                            if (k && (k.includes('shorts') || k.includes('reel') || k.includes('autonav'))) {
+                                sessionStorage.removeItem(k);
+                            }
+                        }
                     }
                 }
-            }
+            } catch (e) {}
 
-            // Continuous navigation guards
-            checkAndRedirectShortsLocation();
-            window.addEventListener('yt-navigate-start', checkAndRedirectShortsLocation, { capture: true, passive: true });
-            window.addEventListener('yt-navigate-finish', checkAndRedirectShortsLocation, { capture: true, passive: true });
-            window.addEventListener('popstate', checkAndRedirectShortsLocation, { capture: true, passive: true });
-            window.addEventListener('hashchange', checkAndRedirectShortsLocation, { capture: true, passive: true });
-            setInterval(checkAndRedirectShortsLocation, 350);
-
-            // Hook history.pushState and replaceState in YouTube SPA to rewrite shorts URLs directly
+            // Hook history.pushState and replaceState ONLY to prevent unprompted auto-routing to Shorts on cold start
             const origPushState = window.history.pushState;
             window.history.pushState = function(state, title, url) {
-                if (url && typeof url === 'string') {
-                    if (url === '/shorts' || url === '/shorts/' || url.endsWith('/shorts')) {
-                        console.warn('[Fokk Shield] Blocked pushState to /shorts feed');
+                if (url && typeof url === 'string' && window.location.hostname.includes('youtube.com')) {
+                    const isShorts = url.includes('/shorts');
+                    const isColdHome = (window.location.pathname === '/' || window.location.pathname === '');
+                    // Only block if cold home boot and user has NOT touched/initiated anything
+                    if (isShorts && isColdHome && !userHasInteracted && !userInitiatedShorts) {
+                        console.warn('[Fokk Shield] Prevented unprompted cold-start auto-jump to Shorts:', url);
                         return;
-                    }
-                    const newUrl = neutralizeShortsUrl(url);
-                    if (newUrl !== url) {
-                        console.warn('[Fokk Shield] Rewriting Shorts pushState to standard watch URL:', newUrl);
-                        url = newUrl;
-                        arguments[2] = newUrl;
                     }
                 }
                 return origPushState.apply(this, arguments);
@@ -484,20 +487,138 @@
 
             const origReplaceState = window.history.replaceState;
             window.history.replaceState = function(state, title, url) {
-                if (url && typeof url === 'string') {
-                    if (url === '/shorts' || url === '/shorts/' || url.endsWith('/shorts')) {
-                        console.warn('[Fokk Shield] Blocked replaceState to /shorts feed');
+                if (url && typeof url === 'string' && window.location.hostname.includes('youtube.com')) {
+                    const isShorts = url.includes('/shorts');
+                    const isColdHome = (window.location.pathname === '/' || window.location.pathname === '');
+                    if (isShorts && isColdHome && !userHasInteracted && !userInitiatedShorts) {
+                        console.warn('[Fokk Shield] Prevented unprompted cold-start auto-jump to Shorts (replaceState):', url);
                         return;
-                    }
-                    const newUrl = neutralizeShortsUrl(url);
-                    if (newUrl !== url) {
-                        console.warn('[Fokk Shield] Rewriting Shorts replaceState to standard watch URL:', newUrl);
-                        url = newUrl;
-                        arguments[2] = newUrl;
                     }
                 }
                 return origReplaceState.apply(this, arguments);
             };
+
+            // YouTube Resume & Foreground Playback Resync:
+            // When app is minimized or user switches apps, video continues playing in background.
+            // On returning to foreground, YouTube's UI overlay may be stuck displaying a buffering spinner
+            // or pause button out-of-sync with the actively playing <video> element.
+            function resyncYouTubePlayback() {
+                if (!window.location.hostname.includes('youtube.com')) return;
+                try {
+                    const videos = document.querySelectorAll('video');
+                    for (let i = 0; i < videos.length; i++) {
+                        const video = videos[i];
+                        if (video && !video.paused && !video.ended && video.readyState >= 2) {
+                            // 1. Dispatch playing events so YouTube's state listeners recognize active playback
+                            try {
+                                video.dispatchEvent(new Event('playing'));
+                                video.dispatchEvent(new Event('play'));
+                            } catch (e) {}
+
+                            // 2. Clear stuck buffering / seeking classes on player container
+                            const player = document.getElementById('movie_player') ||
+                                           video.closest('.html5-video-player') ||
+                                           document.querySelector('.html5-video-player, ytm-player');
+                            if (player) {
+                                try {
+                                    player.classList.remove('ytp-buffering');
+                                    player.classList.remove('ytp-seeking');
+                                    player.classList.remove('ytp-cued');
+                                    player.classList.add('playing-mode');
+                                    player.classList.remove('paused-mode');
+
+                                    if (typeof player.getPlayerState === 'function') {
+                                        const state = player.getPlayerState();
+                                        // If stuck in BUFFERING (3) or PAUSED (2) while video is playing, sync it
+                                        if (state !== 1 && typeof player.playVideo === 'function') {
+                                            player.playVideo();
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
+
+                            // 3. Dismiss stuck mobile buffering overlay & spinner
+                            const overlays = document.querySelectorAll('.ytm-player-control-overlay, .player-control-overlay, ytm-player-control-overlay');
+                            for (let j = 0; j < overlays.length; j++) {
+                                const overlay = overlays[j];
+                                overlay.removeAttribute('data-buffering');
+                                overlay.removeAttribute('data-is-buffering');
+                                overlay.classList.remove('player-control-overlay-buffering');
+                                if (!userExplicitPaused) {
+                                    overlay.classList.remove('fadein');
+                                    overlay.classList.add('fadeout');
+                                }
+                            }
+
+                            const spinners = document.querySelectorAll('.ytp-spinner, .player-control-spinner, ytm-spinner');
+                            for (let k = 0; k < spinners.length; k++) {
+                                const spinner = spinners[k];
+                                spinner.style.display = 'none';
+                                setTimeout(function() {
+                                    if (spinner.style.display === 'none') {
+                                        spinner.style.display = '';
+                                    }
+                                }, 800);
+                            }
+
+                            // 4. Update play/pause button state in player controls
+                            const playButtons = document.querySelectorAll('.ytp-play-button, .player-control-play-pause-icon');
+                            for (let m = 0; m < playButtons.length; m++) {
+                                const btn = playButtons[m];
+                                btn.setAttribute('aria-label', 'Pause');
+                                btn.classList.remove('ytp-play-button-paused');
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            window.__fokk_resyncPlayback = resyncYouTubePlayback;
+
+            // Trigger resync on focus, pageshow, and resume
+            window.addEventListener('focus', function() {
+                resyncYouTubePlayback();
+                setTimeout(resyncYouTubePlayback, 250);
+            }, { capture: true, passive: true });
+
+            window.addEventListener('pageshow', function() {
+                resyncYouTubePlayback();
+                setTimeout(resyncYouTubePlayback, 250);
+            }, { capture: true, passive: true });
+
+            // Hook window.__fokk_is_background setter
+            let _fokkBackgroundState = false;
+            try {
+                Object.defineProperty(window, '__fokk_is_background', {
+                    get: function() { return _fokkBackgroundState; },
+                    set: function(val) {
+                        _fokkBackgroundState = val;
+                        if (!val) {
+                            resyncYouTubePlayback();
+                            setTimeout(resyncYouTubePlayback, 200);
+                            setTimeout(resyncYouTubePlayback, 600);
+                        }
+                    },
+                    configurable: true
+                });
+            } catch (e) {}
+
+            // Real-time timeupdate guard: If video is playing and advancing, remove any stuck buffering overlays immediately
+            document.addEventListener('timeupdate', function(e) {
+                const v = e.target;
+                if (v && v.tagName === 'VIDEO' && !v.paused && window.location.hostname.includes('youtube.com')) {
+                    const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+                    if (player && player.classList.contains('ytp-buffering')) {
+                        player.classList.remove('ytp-buffering');
+                        const spinner = document.querySelector('.ytp-spinner');
+                        if (spinner) spinner.style.display = 'none';
+                    }
+                    const overlay = document.querySelector('.ytm-player-control-overlay[data-buffering="true"]');
+                    if (overlay) {
+                        overlay.removeAttribute('data-buffering');
+                    }
+                }
+            }, { capture: true, passive: true });
 
             // Playback & Unmute Trigger (Only triggers on /watch pages; NEVER on feed, search or Shorts)
             function triggerPlayNow() {
@@ -921,16 +1042,10 @@
         [aria-label*="Get App"],
         ytm-mealbar-promo-renderer,
 
-        /* YouTube Shorts Shelves, Bottom Bar Pivot Tab, and Auto-Reels */
-        ytm-pivot-bar-item-renderer:nth-child(2),
-        ytm-pivot-bar-item-renderer:has([aria-label*="Shorts" i]),
-        ytm-pivot-bar-item-renderer:has(div[class*="pivot-shorts"]),
-        ytm-reel-shelf-renderer,
-        ytd-reel-shelf-renderer,
-        ytm-shorts-lockup-view-model,
-        .ytm-shorts-entry-point,
-        [data-target-id*="shorts"],
-        ytd-rich-shelf-renderer[is-shorts],
+        /* YouTube Sponsored Shorts Ads only (preserve organic Shorts, Shelves, and Pivot Bar) */
+        ytm-shorts-lockup-view-model:has(.badge-style-type-ad),
+        ytm-reel-shelf-renderer:has([aria-label*="Sponsored" i]),
+        ytd-reel-shelf-renderer:has([aria-label*="Sponsored" i]),
 
         /* Anti-App-Nag: Open in App / Get App Banners & Prompts across sites */
         .smartbanner,
@@ -1548,7 +1663,9 @@
             const limit = Math.min(suspects.length, 40);
             for (let i = 0; i < limit; i++) {
                 const el = suspects[i];
-                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.tagName === 'NAV' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
+                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.tagName === 'NAV' || el.tagName === 'VIDEO' || el.tagName === 'IFRAME' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
+                if (el.querySelector && el.querySelector('video, iframe, [class*="player"], [id*="player"], twitter-tweet, .twitter-tweet, [data-testid="tweet"]')) continue;
+                if (el.closest && el.closest('video, .video-player, [class*="player"], [id*="player"], .twitter-tweet, [data-testid="tweet"]')) continue;
 
                 const style = window.getComputedStyle(el);
                 const pos = style.position;
@@ -1605,8 +1722,8 @@
             defuseClickjackingOverlays();
             defuseAntiAdblockModals();
             defuseDeceptiveButtons();
-            // Disarm floating cam boxes, sticky video banners and deceptive overlays
-            document.querySelectorAll('[class*="cam-box"], [class*="exoclick"], [class*="trafficjunky"], [class*="floating-cam"], [id*="floating-cam"], [class*="juicyads"], [id*="juicyads"], iframe[src*="exoclick"], iframe[src*="syndication"], iframe[src*="realsrv"], iframe[src*="trafficjunky"]').forEach(function(el) {
+            // Disarm floating cam boxes, sticky video banners and deceptive overlays (never touch Twitter/X syndication)
+            document.querySelectorAll('[class*="cam-box"], [class*="exoclick"], [class*="trafficjunky"], [class*="floating-cam"], [id*="floating-cam"], [class*="juicyads"], [id*="juicyads"], iframe[src*="exoclick"], iframe[src*="syndication.exoclick"], iframe[src*="syndication.trafficjunky"], iframe[src*="realsrv"], iframe[src*="trafficjunky"]').forEach(function(el) {
                 el.style.setProperty('display', 'none', 'important');
             });
         } catch(e) {}

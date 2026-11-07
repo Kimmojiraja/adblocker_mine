@@ -37,6 +37,7 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 # Paths
 ROOT_DIR = Path(__file__).resolve().parent.parent
 INJECT_JS_PATH = ROOT_DIR / "app" / "src" / "main" / "assets" / "inject_adshield.js"
+DEFUSERS_JS_PATH = ROOT_DIR / "app" / "src" / "main" / "assets" / "adblock_defusers.js"
 
 MOBILE_UA = (
     "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/UD1A.230805.019; wv) "
@@ -286,8 +287,19 @@ class DesktopTestBrowser(QMainWindow):
     def install_adshield_script(self):
         scripts = self.profile.scripts()
         for s in scripts.toList():
-            if s.name() == "__fokk_adshield__":
+            if s.name() in ["__fokk_adshield__", "__fokk_defusers__"]:
                 scripts.remove(s)
+
+        if DEFUSERS_JS_PATH.exists():
+            defusers_code = DEFUSERS_JS_PATH.read_text(encoding="utf-8")
+            s_defusers = QWebEngineScript()
+            s_defusers.setName("__fokk_defusers__")
+            s_defusers.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
+            s_defusers.setWorldId(QWebEngineScript.ScriptWorldId.MainWorld)
+            s_defusers.setSourceCode(defusers_code)
+            s_defusers.setRunsOnSubFrames(True)
+            scripts.insert(s_defusers)
+            print(f"\033[92m[FokkShield]\033[0m Loaded defusers {DEFUSERS_JS_PATH} ({len(defusers_code)} bytes)")
 
         if INJECT_JS_PATH.exists():
             js_code = INJECT_JS_PATH.read_text(encoding="utf-8")

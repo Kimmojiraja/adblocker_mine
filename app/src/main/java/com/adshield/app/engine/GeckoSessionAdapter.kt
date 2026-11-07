@@ -82,7 +82,7 @@ class GeckoSessionAdapter(
 
         session.contentBlockingDelegate = object : ContentBlocking.Delegate {
             override fun onContentBlocked(s: GeckoSession, event: ContentBlocking.BlockEvent) {
-                listener.onTrackerBlocked(event.categories)
+                listener.onTrackerBlocked(event.antiTrackingCategory)
             }
         }
     }

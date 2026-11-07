@@ -1,6 +1,6 @@
 {
-  "versionCode": 208,
-  "versionName": "2.0.8",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.8/app-debug.apk",
-  "changelog": "- X.com / Twitter Fix: Completely isolated fragile social SPAs from scriptlet hooks, restored third-party session cookies to eliminate 'Something went wrong. Try again.' errors.\n- Fox News & Anti-Adblock Defusers: Injected complete anti-adblock flag mocks and automatic DOM scrapers to defuse 'ad or script blocking software is interfering' banners.\n- Zero-Nag & App-Promos: Neutralized 'Open in App' smart banners, sticky promo modals, and cookie curtains across sites.\n- UI Fullscreen Auto-Expansion: Restored dynamic webpage margin adjustments on command bar collapse for both top and bottom toolbar configurations."
+  "versionCode": 209,
+  "versionName": "2.0.9",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.9/app-debug.apk",
+  "changelog": "- YouTube Shorts Restored: Re-enabled native Shorts shelves, swipe reels, and bottom navigation pivot tab with cold-boot unprompted auto-open guard.\n- YouTube Minimize/Resume Sync: Resolved playback desync where video played behind stuck buffering spinners or pause overlays when returning to the app.\n- Tab Switcher Redesign: Moved Close All, + Ghost, and New Tab buttons to a pinned top header for permanent visibility with 7+ or 12+ tabs, styled in sleek AMOLED obsidian pure dark theme.\n- Anti-Adblock & Twitter/X Embed Fix: Defused publisher anti-adblock detection traps and fixed embedded Twitter/X videos (syndication.twitter.com)."
 }

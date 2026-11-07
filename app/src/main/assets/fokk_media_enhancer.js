@@ -1,5 +1,5 @@
-// Fokk Shield Media Enhancer - Scoped Strictly to YouTube
-// Provides Native Ad Skipping & Crowdsourced SponsorBlock Segment Skipping with Zero Buffering Delay.
+// Fokk Shield Media Enhancer - Universal YouTube Mobile (m.youtube.com) & Desktop
+// Seamless Native Ad Skipping, Promo Banner Collapse & Open-Source SponsorBlock.
 (function() {
     'use strict';
 
@@ -13,7 +13,46 @@
     let isSkipping = false;
     let toastTimeout = null;
 
-    // 1. Subtle On-Screen SponsorBlock Toast
+    // 1. GPU/Blink Static CSS Ad Cleaner (Hides Bajaj Electronics, Promoted Cards & Banners)
+    function ensureAdStyles() {
+        if (!document.getElementById('__fokk_yt_cleaner')) {
+            const st = document.createElement('style');
+            st.id = '__fokk_yt_cleaner';
+            st.textContent = `
+                ytm-promoted-sparkles-web-renderer,
+                ytm-companion-ad-renderer,
+                ytm-companion-slot,
+                ytm-promoted-video-renderer,
+                ytm-compact-promoted-item-renderer,
+                .ytm-promoted-sparkles-web-renderer,
+                ad-slot-renderer,
+                ytm-ad-badge,
+                .ytp-ad-overlay-container,
+                .ytp-ad-message-container,
+                .ytp-ad-action-interstitial,
+                .ytp-ad-image-overlay,
+                #player-ads,
+                #masthead-ad,
+                ytd-promoted-sparkles-web-renderer,
+                ytd-companion-slot-renderer,
+                ytd-promoted-video-renderer,
+                ytd-banner-promo-renderer,
+                ytd-ad-slot-renderer,
+                ytd-in-feed-ad-layout-renderer {
+                    display: none !important;
+                    visibility: hidden !important;
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    max-height: 0 !important;
+                    overflow: hidden !important;
+                    pointer-events: none !important;
+                }
+            `;
+            (document.head || document.documentElement).appendChild(st);
+        }
+    }
+
+    // 2. Subtle On-Screen SponsorBlock Toast
     function showSponsorToast(category, durationSec) {
         let toast = document.getElementById('__fokk_sb_toast');
         if (!toast) {
@@ -30,7 +69,7 @@
         }, 2500);
     }
 
-    // 2. Fetch Open-Source SponsorBlock Segments
+    // 3. Fetch Open-Source SponsorBlock Segments
     function fetchSponsorSegments(videoId) {
         if (!videoId || videoId === activeVideoId) return;
         activeVideoId = videoId;
@@ -61,7 +100,7 @@
             });
     }
 
-    // 3. Extract Video ID from current URL
+    // 4. Extract Video ID from current URL
     function updateActiveVideo() {
         const urlParams = new URLSearchParams(window.location.search);
         const vid = urlParams.get('v');
@@ -73,27 +112,53 @@
         }
     }
 
-    // 4. Native Ad Skipper: Clean, Event-Driven Button Trigger
-    function handleAdSlots() {
-        const player = document.getElementById('movie_player');
-        if (!player) return;
+    // 5. Resolve Player Container (Mobile m.youtube.com & Desktop)
+    function getPlayer() {
+        return document.getElementById('movie_player') ||
+            document.querySelector('.html5-video-player') ||
+            document.querySelector('#player-container-id') ||
+            document.querySelector('ytm-player') ||
+            document.getElementById('player');
+    }
 
-        // Auto-click native YouTube skip buttons as soon as exposed
-        const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, [id^="skip-button:"], .ytp-ad-overlay-close-button');
+    function isAdShowing() {
+        const player = getPlayer();
+        if (player && player.classList && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {
+            return true;
+        }
+        return !!document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, ytm-ad-badge, [class*="ad-showing"]');
+    }
+
+    // 6. Universal Ad Skipper: Handles Both Pre-Roll Video Ads & Banner Overlays
+    function handleAdSlots() {
+        ensureAdStyles();
+
+        // A. Auto-click native skip button immediately if exposed (Mobile + Desktop)
+        const skipBtn = document.querySelector(
+            '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, button.ytp-ad-skip-button-text, ' +
+            '.ytp-ad-skip-button-slot button, .videoAdUiSkipButton, [class*="skip-button"], ' +
+            'button[class*="skip"], [aria-label*="Skip" i], [aria-label*="skip ad" i], .ytp-ad-overlay-close-button'
+        );
         if (skipBtn) {
-            skipBtn.click();
+            try { skipBtn.click(); } catch(e) {}
             return;
         }
 
-        // Call official player skipAd API cleanly if player is showing an ad
-        if (player.classList && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {
-            if (typeof player.skipAd === 'function') {
-                try { player.skipAd(); } catch(e) {}
+        const player = getPlayer();
+        if (player && typeof player.skipAd === 'function') {
+            try { player.skipAd(); } catch(e) {}
+        }
+
+        // B. If an ad stream is actively playing, fast-advance past the ad segment cleanly
+        if (isAdShowing()) {
+            const video = document.querySelector('video');
+            if (video && !isNaN(video.duration) && isFinite(video.duration) && video.duration > 0) {
+                video.currentTime = video.duration - 0.05;
             }
         }
     }
 
-    // 5. Video Playback Monitor: SponsorBlock Skipper
+    // 7. Video Playback Monitor: SponsorBlock Skipper
     function checkSponsorSegments() {
         if (sponsorSegments.length === 0 || isSkipping) return;
         const video = document.querySelector('video');
@@ -114,12 +179,12 @@
         }
     }
 
-    // Attach listeners
+    // Init & Listeners
+    ensureAdStyles();
     updateActiveVideo();
     window.addEventListener('yt-navigate-finish', updateActiveVideo);
     window.addEventListener('popstate', updateActiveVideo);
 
-    // Continuous event loop on active video
     function attachVideoMonitor() {
         const video = document.querySelector('video');
         if (video && !video.__fokk_attached) {

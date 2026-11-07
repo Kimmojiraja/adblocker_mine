@@ -15,7 +15,7 @@ android {
         versionName = "2.2.0-exp"
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a")
         }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -59,6 +59,12 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -77,8 +83,8 @@ dependencies {
     // Brave adblock-rust Native JNI Content Blocker
     implementation("io.github.mlm-games:adblock:0.1.3")
 
-    // Mozilla GeckoView Firefox Quantum Engine
-    implementation("org.mozilla.geckoview:geckoview:128.0.20240704121409")
+    // Mozilla GeckoView Firefox Quantum Engine (ARM64 Optimized - 75% size reduction)
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:128.0.20240704121409")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -2226,6 +2226,10 @@ open class MediaHubActivity : AppCompatActivity() {
             tab.url = url
             tab.geckoSession?.loadUri(url)
             updateUrlBar(url, tab.title)
+            updateToolbarLayoutForUrl(url, animated = false)
+            if (!isHomePageUrl(url)) {
+                setBrowserChromeVisible(true)
+            }
             return
         }
         loadUrlInWebView(activeWebView, url)
@@ -2320,7 +2324,7 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun expandCommandBar(animated: Boolean = true) {
-        val isHome = isHomePageUrl(activeWebView?.url)
+        val isHome = isHomePageUrl(activeTab?.url ?: activeWebView?.url)
         if (isHome) {
             binding.topBar.visibility = View.GONE
             binding.layoutCollapsedBar.visibility = View.GONE
@@ -2348,7 +2352,7 @@ open class MediaHubActivity : AppCompatActivity() {
         binding.layoutCollapsedBar.visibility = View.GONE
         val containerLp = binding.mainContentLayout.layoutParams as? RelativeLayout.LayoutParams
 
-        val isHome = isHomePageUrl(activeWebView?.url)
+        val isHome = isHomePageUrl(activeTab?.url ?: activeWebView?.url)
         if (isHome) {
             binding.topBar.visibility = View.GONE
             browserChromeHidden = false
@@ -2423,6 +2427,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (tab === activeTab) {
                     binding.swipeRefreshLayout.isRefreshing = true
                     updateUrlBar(pageUrl, tab.title)
+                    updateToolbarLayoutForUrl(pageUrl, animated = false)
+                    if (!isHomePageUrl(pageUrl)) {
+                        setBrowserChromeVisible(true)
+                    }
                 }
             }
 
@@ -2430,6 +2438,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 if (tab === activeTab) {
                     binding.swipeRefreshLayout.isRefreshing = false
                     updateUrlBar(tab.url, tab.title)
+                    updateToolbarLayoutForUrl(tab.url, animated = false)
+                    if (!isHomePageUrl(tab.url)) {
+                        setBrowserChromeVisible(true)
+                    }
                 }
             }
 
@@ -2450,6 +2462,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 tab.url = pageUrl
                 if (tab === activeTab) {
                     updateUrlBar(pageUrl, tab.title)
+                    updateToolbarLayoutForUrl(pageUrl, animated = false)
+                    if (!isHomePageUrl(pageUrl)) {
+                        setBrowserChromeVisible(true)
+                    }
                 }
             }
 

@@ -199,6 +199,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var previousSystemUiVisibility: Int? = null
     private var previousRequestedOrientation: Int? = null
+    private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
     private var defusersScript = ""
     private var injectionScript = ""

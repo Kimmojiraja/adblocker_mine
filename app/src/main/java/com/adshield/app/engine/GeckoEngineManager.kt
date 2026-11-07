@@ -42,6 +42,13 @@ object GeckoEngineManager {
 
         val instance = GeckoRuntime.create(appContext, settings)
         Log.i(TAG, "GeckoRuntime created successfully")
+        instance.webExtensionController.ensureBuiltIn(
+            "resource://android/assets/fokk_extension/",
+            "adshield@fokk.internal"
+        ).accept(
+            { Log.i(TAG, "Fokk AdShield Native Extension registered") },
+            { e -> Log.e(TAG, "Failed to register Fokk AdShield Extension", e) }
+        )
         return instance
     }
 }

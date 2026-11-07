@@ -15,10 +15,10 @@
         return currentHost === name || currentHost.endsWith('.' + name);
     }
     const href = ((window.location && window.location.href) || '').toLowerCase();
-    const isFragileSocialApp = hostIs('x.com') || hostIs('twitter.com') || hostIs('instagram.com') ||
+    const isFragileSocialApp = hostIs('x.com') || hostIs('twitter.com') ||
         hostIs('threads.net') || hostIs('facebook.com') || href.includes('//x.com') || href.includes('//twitter.com');
     if (isFragileSocialApp) {
-        return; // Zero tampering on X (Twitter), Instagram, etc.
+        return; // Zero tampering on X (Twitter), Facebook, etc.
     }
     const isYouTube = hostIs('youtube.com') || hostIs('youtu.be') || currentHost.endsWith('.youtube.com');
 
@@ -1316,16 +1316,35 @@
     }
 
     if (window.location.hostname.includes('youtube.com')) {
-        setInterval(function() {
-            runYouTubeAdSkipper();
-            scrubYouTubeSponsored();
-        }, 200);
+        // Pure CSS hiding: processed directly in GPU/Compositor with ZERO JavaScript overhead during playback
+        try {
+            var ytAdCss = document.createElement('style');
+            ytAdCss.id = '__fokk_yt_ad_cleaner';
+            ytAdCss.innerHTML = 'ytd-ad-slot-renderer, ytm-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ytm-promoted-sparkles-web-renderer, ytm-promoted-sparkles-text-search-web-renderer, ytm-companion-ad-renderer, ytd-banner-promo-renderer, ytd-promoted-video-renderer, ytd-statement-banner-renderer, ytd-primetime-promo-renderer, ytd-rich-item-renderer:has(.badge-style-type-ad), ytd-video-renderer:has(.badge-style-type-ad), ytm-item-section-renderer:has([aria-label*="Sponsored" i]), ytm-item-section-renderer:has(.badge-style-type-ad), .ytp-ad-overlay-container, ytm-player-ad-overlay, .ytp-ad-player-overlay { display: none !important; }';
+            (document.head || document.documentElement).appendChild(ytAdCss);
+        } catch(e) {}
+
+        // Event-driven skip: runs on navigation and state change without constant CPU loops
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
-        window.addEventListener('yt-navigate-start', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+        window.addEventListener('yt-navigate-start', function() { runYouTubeAdSkipper(); }, { capture: true, passive: true });
         window.addEventListener('yt-navigate-finish', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('yt-page-data-updated', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('spfdone', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('popstate', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
+
+        // Observe player element for ad changes only (0% CPU when normal video plays)
+        var setupPlayerObserver = function() {
+            var playerEl = document.getElementById('movie_player') || document.querySelector('.html5-video-player, ytm-player');
+            if (playerEl && !playerEl.__fokk_observed) {
+                playerEl.__fokk_observed = true;
+                var obs = new MutationObserver(function() {
+                    runYouTubeAdSkipper();
+                });
+                obs.observe(playerEl, { attributes: true, attributeFilter: ['class'], childList: true });
+            }
+        };
+        setupPlayerObserver();
+        document.addEventListener('DOMContentLoaded', setupPlayerObserver);
     }
 
     // =========================================================================
@@ -1425,17 +1444,33 @@
     }
 
     if (window.location.hostname.includes('instagram.com')) {
-        // Run immediately on load; MutationObserver handles dynamic content
-        scrubInstagramAds();
-        // Also run on DOM changes for dynamically loaded feed items
+        // Pure CSS hiding: instahides sponsored posts and app banners directly in layout pipeline
         try {
-            const igObserver = new MutationObserver(function(mutations) {
-                let hasNew = false;
-                mutations.forEach(function(m) { if (m.addedNodes.length) hasNew = true; });
+            var igCss = document.createElement('style');
+            igCss.id = '__fokk_ig_cleaner';
+            igCss.innerHTML = 'article:has(a[href*="/about/ads"]), div[role="article"]:has(a[href*="/about/ads"]), article:has([aria-label*="Sponsored" i]), article:has([aria-label*="Paid partnership" i]), div[data-testid="banner-mobile-app"], div[class*="MobileAppBanner"], div[class*="x1n2onr6"]:has([href*="/about/ads"]), .smartbanner, .app-banner, [aria-label*="Get the Instagram app" i] { display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }';
+            (document.head || document.documentElement).appendChild(igCss);
+        } catch(e) {}
+
+        // Run immediately on load; MutationObserver handles dynamic feed content
+        scrubInstagramAds();
+        try {
+            var igObserver = new MutationObserver(function(mutations) {
+                var hasNew = false;
+                for (var i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes.length) { hasNew = true; break; }
+                }
                 if (hasNew) scrubInstagramAds();
             });
-            const feedRoot = document.querySelector('main') || document.body;
-            if (feedRoot) igObserver.observe(feedRoot, { childList: true, subtree: true });
+            var feedRoot = document.querySelector('main') || document.body;
+            if (feedRoot) {
+                igObserver.observe(feedRoot, { childList: true, subtree: true });
+            } else {
+                document.addEventListener('DOMContentLoaded', function() {
+                    var r = document.querySelector('main') || document.body;
+                    if (r) igObserver.observe(r, { childList: true, subtree: true });
+                });
+            }
         } catch (e) {}
     }
 

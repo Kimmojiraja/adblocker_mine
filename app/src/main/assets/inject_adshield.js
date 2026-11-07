@@ -958,7 +958,7 @@
         #adblock-gate,
         #adblock-notice,
 
-        /* Generic ad slots & banners (scoped to exclude YouTube to prevent player element collisions) */
+        /* Generic ad slots, wrappers & placeholder containers (scoped to exclude YouTube) */
         body:not([class*="ytm"]):not([id*="yt"]) ins.adsbygoogle,
         body:not([class*="ytm"]):not([id*="yt"]) .adsbygoogle,
         iframe[src*="doubleclick"],
@@ -967,8 +967,39 @@
         [data-ad-slot]:not([class*="ytp"]):not([class*="ytm"]),
         [data-ad-unit]:not([class*="ytp"]):not([class*="ytm"]),
         [data-ad-client]:not([class*="ytp"]):not([class*="ytm"]),
+        [data-google-query-id],
         [id^="div-gpt-ad"],
         [id*="-ad-slot"]:not([class*="ytp"]),
+        [id*="google_ads"]:not([class*="ytp"]),
+        [id*="dfp-ad"],
+        div[class*="ad-holder"],
+        div[class*="adHolder"],
+        div[class*="ht-ad"],
+        div[class*="desktopAd"],
+        div[class*="dh250"],
+        div[class*="ad-slot"],
+        div[class*="adSlot"],
+        div[class*="ad-wrapper"],
+        div[class*="adWrapper"],
+        div[class*="ad-container"]:not([class*="ytp"]):not([class*="ytm"]),
+        div[class*="adContainer"]:not([class*="ytp"]):not([class*="ytm"]),
+        div[class*="ad-box"],
+        div[class*="adBox"],
+        div[class*="ad-space"],
+        div[class*="adSpace"],
+        div[class*="advertisement-wrapper"],
+        div[class*="advertisement-holder"],
+        div[class*="advertisement-container"],
+        div[class*="sponsored-wrapper"],
+        span[class*="adText"],
+        span[class*="ad-text"],
+        div[class*="adLabel"],
+        div[class*="ad-label"],
+        div[class*="ad_label"],
+        div[class*="adText"],
+        div[class*="ad-text"],
+        div[class*="advertisement-label"],
+        span[class*="advertisement-label"],
         #tads,
         #tadsb,
 
@@ -1410,21 +1441,79 @@
 
         const adSelectors = [
             'div[id*="google_ads"]', 'div[id*="div-gpt-ad"]', 'div[id*="dfp-ad"]',
-            'div[class*="ad-slot"]', 'div[class*="ad-container"]', 'div[class*="advertisement"]',
-            'div[class*="taboola"]', 'div[id*="taboola"]', 'div[class*="outbrain"]', 'div[id*="outbrain"]',
-            '.trc_related_container', '.OUTBRAIN', 'aside[class*="ad"]', 'div[class*="sticky-ad"]',
+            'div[class*="ad-slot"]', 'div[class*="adSlot"]', 'div[class*="ad-container"]',
+            'div[class*="adContainer"]', 'div[class*="ad-holder"]', 'div[class*="adHolder"]',
+            'div[class*="ht-ad"]', 'div[class*="desktopAd"]', 'div[class*="dh250"]',
+            'div[class*="ad-wrapper"]', 'div[class*="adWrapper"]', 'div[class*="ad-box"]',
+            'div[class*="adBox"]', 'div[class*="ad-space"]', 'div[class*="adSpace"]',
+            'div[class*="advertisement"]', 'div[class*="taboola"]', 'div[id*="taboola"]',
+            'div[class*="outbrain"]', 'div[id*="outbrain"]', '.trc_related_container',
+            '.OUTBRAIN', 'aside[class*="ad"]', 'div[class*="sticky-ad"]',
             'div[class*="native-ad"]', 'div[class*="ad-banner"]', '#google_vignette',
-            'div[class*="sponsored-post"]', 'div[class*="sponsored-content"]'
+            'div[class*="sponsored-post"]', 'div[class*="sponsored-content"]',
+            'ins.adsbygoogle', '[data-ad-slot]', '[data-google-query-id]',
+            '[class*="adLabel"]', '[class*="ad-label"]', '[class*="ad_label"]',
+            '[class*="adText"]', '[class*="ad-text"]', '[class*="advertisement-label"]'
         ];
+
         try {
             document.querySelectorAll(adSelectors.join(',')).forEach(function(el) {
                 try {
+                    // Critical safeguard: Never touch legitimate article videos, audio, or media players!
+                    if (el.querySelector && el.querySelector('video, audio, iframe[src*="video"], iframe[src*="brightcove"], iframe[src*="jwplayer"], iframe[src*="youtube"], iframe[src*="dailymotion"], iframe[src*="vimeo"], twitter-tweet, .twitter-tweet, [data-testid="tweet"]')) {
+                        return;
+                    }
+                    if (el.closest && el.closest('video, [class*="player"], [id*="player"], twitter-tweet, .twitter-tweet')) {
+                        return;
+                    }
+
+                    const parent = el.parentElement;
                     el.style.setProperty('display', 'none', 'important');
                     el.style.setProperty('height', '0px', 'important');
                     el.style.setProperty('min-height', '0px', 'important');
+                    el.style.setProperty('margin', '0px', 'important');
+                    el.style.setProperty('padding', '0px', 'important');
                     el.remove();
+
+                    // If parent element only housed this ad or an "Advertisement" banner label, collapse the empty white wrapper
+                    if (parent && parent.tagName !== 'BODY' && parent.tagName !== 'MAIN' && parent.tagName !== 'ARTICLE') {
+                        const pText = (parent.innerText || parent.textContent || '').trim();
+                        if (pText.length === 0 || /^(advertisement|sponsored|promoted|ad)$/i.test(pText)) {
+                            if (!parent.querySelector('p, article, video, audio, h1, h2, h3, h4')) {
+                                parent.style.setProperty('display', 'none', 'important');
+                                parent.style.setProperty('height', '0px', 'important');
+                                parent.style.setProperty('min-height', '0px', 'important');
+                                parent.style.setProperty('margin', '0px', 'important');
+                                parent.style.setProperty('padding', '0px', 'important');
+                            }
+                        }
+                    }
                 } catch (e) {}
             });
+
+            // Target orphan "Advertisement" / "Sponsored" label containers and collapse their enclosing empty boxes
+            const labels = document.querySelectorAll('span, div, p, label');
+            const labelLimit = Math.min(labels.length, 250);
+            for (let i = 0; i < labelLimit; i++) {
+                const lbl = labels[i];
+                if (!lbl) continue;
+                const txt = (lbl.innerText || lbl.textContent || '').trim();
+                if (/^(advertisement|sponsored|promoted|ad)$/i.test(txt)) {
+                    const wrapper = lbl.closest('div[class*="ad"], div[class*="holder"], div[class*="wrapper"], div[class*="slot"], div[class*="banner"], aside');
+                    if (wrapper && wrapper.tagName !== 'BODY' && wrapper.tagName !== 'MAIN' && wrapper.tagName !== 'ARTICLE') {
+                        if (!wrapper.querySelector('article, video, audio, p:nth-of-type(2)')) {
+                            wrapper.style.setProperty('display', 'none', 'important');
+                            wrapper.style.setProperty('height', '0px', 'important');
+                            wrapper.style.setProperty('min-height', '0px', 'important');
+                            wrapper.style.setProperty('margin', '0px', 'important');
+                            wrapper.style.setProperty('padding', '0px', 'important');
+                            wrapper.remove();
+                        }
+                    } else {
+                        lbl.style.setProperty('display', 'none', 'important');
+                    }
+                }
+            }
         } catch (e) {}
     }
 
@@ -1651,36 +1740,42 @@
     function defuseClickjackingOverlays() {
         if (!isAiFilterEnabled) return;
         const host = window.location.hostname;
-        if (host.includes('youtube.com') || host.includes('instagram.com')) return;
+        if (host.includes('youtube.com') || host.includes('instagram.com') || host.includes('yahoo.com') || host.includes('hindustantimes.com') || host.includes('espn.com')) return;
         try {
             unlockPageScrolling();
             const vw = window.innerWidth || document.documentElement.clientWidth;
             const vh = window.innerHeight || document.documentElement.clientHeight;
             if (!vw || !vh || !document.body) return;
 
-            // 1. Inspect top-level body children and high z-index elements
-            const suspects = document.querySelectorAll('body > div, body > a, [style*="z-index"], [style*="zIndex"], [class*="overlay"], [class*="trap"], [id*="overlay"], [id*="trap"]');
-            const limit = Math.min(suspects.length, 40);
+            // Inspect suspicious floating overlay elements (never query broad 'body > div' to prevent breaking React/Next.js roots)
+            const suspects = document.querySelectorAll('body > a, [class*="overlay"], [class*="trap"], [id*="overlay"], [id*="trap"]');
+            const limit = Math.min(suspects.length, 30);
             for (let i = 0; i < limit; i++) {
                 const el = suspects[i];
-                if (!el || el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.tagName === 'NAV' || el.tagName === 'VIDEO' || el.tagName === 'IFRAME' || el.id === 'main' || el.id === 'app' || el.id === 'player') continue;
-                if (el.querySelector && el.querySelector('video, iframe, [class*="player"], [id*="player"], twitter-tweet, .twitter-tweet, [data-testid="tweet"]')) continue;
-                if (el.closest && el.closest('video, .video-player, [class*="player"], [id*="player"], .twitter-tweet, [data-testid="tweet"]')) continue;
+                if (!el || el === document.body || el === document.documentElement) continue;
+                if (el.tagName === 'MAIN' || el.tagName === 'ARTICLE' || el.tagName === 'NAV' || el.tagName === 'HEADER' || el.tagName === 'FOOTER' || el.tagName === 'SECTION' || el.tagName === 'VIDEO' || el.tagName === 'IFRAME') continue;
+                const elId = (el.id || '').toLowerCase();
+                if (elId === 'main' || elId === 'app' || elId === 'root' || elId === '__next' || elId === 'player' || elId.startsWith('s:') || elId.startsWith('react')) continue;
+                if (el.querySelector && el.querySelector('video, iframe, [class*="player"], [id*="player"], twitter-tweet, .twitter-tweet, [data-testid="tweet"], p, article, h1, h2, h3, nav')) continue;
+                if (el.closest && el.closest('video, .video-player, [class*="player"], [id*="player"], .twitter-tweet, [data-testid="tweet"], main, article')) continue;
 
                 const style = window.getComputedStyle(el);
                 const pos = style.position;
                 if (pos === 'fixed' || pos === 'absolute') {
                     const zIndex = parseInt(style.zIndex, 10);
-                    if (zIndex > 20 || isNaN(zIndex)) {
+                    // Clickjacking traps have very high z-index (at least 100), transparent appearance, and zero content
+                    if (!isNaN(zIndex) && zIndex >= 100) {
                         const rect = el.getBoundingClientRect();
-                        const coversScreen = rect.width >= vw * 0.65 && rect.height >= vh * 0.65;
+                        const coversScreen = rect.width >= vw * 0.75 && rect.height >= vh * 0.75;
                         const isTransparent = style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent';
-                        const hasNoRealContent = el.children.length === 0 || (el.innerText || '').trim().length === 0;
+                        const text = (el.innerText || el.textContent || '').trim();
+                        const hasNoRealContent = text.length === 0 && el.querySelectorAll('input, button, a, img').length === 0;
 
-                        if (coversScreen && (isTransparent || (hasNoRealContent && zIndex > 100))) {
+                        if (coversScreen && isTransparent && hasNoRealContent) {
                             el.style.setProperty('display', 'none', 'important');
                             el.style.setProperty('pointer-events', 'none', 'important');
-                            el.remove();
+                            el.style.setProperty('visibility', 'hidden', 'important');
+                            el.style.setProperty('opacity', '0', 'important');
                             unlockPageScrolling();
                         }
                     }

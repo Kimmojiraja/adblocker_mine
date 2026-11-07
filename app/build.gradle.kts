@@ -11,8 +11,12 @@ android {
         applicationId = "com.adshield.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 216
-        versionName = "2.1.6"
+        versionCode = 220
+        versionName = "2.2.0-exp"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -72,6 +76,9 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     // Brave adblock-rust Native JNI Content Blocker
     implementation("io.github.mlm-games:adblock:0.1.3")
+
+    // Mozilla GeckoView Firefox Quantum Engine
+    implementation("org.mozilla.geckoview:geckoview:128.0.20240704121409")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

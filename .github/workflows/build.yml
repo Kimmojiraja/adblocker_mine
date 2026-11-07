@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "experiment/*" ]
   workflow_dispatch:
 
 jobs:
@@ -62,7 +62,13 @@ jobs:
           VERSION=$(grep versionName app/build.gradle.kts | head -n 1 | awk -F'"' '{print $2}')
           TAG="v$VERSION"
           echo "Deploying release for $TAG"
+          EXTRA_FLAG=""
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            EXTRA_FLAG="--latest"
+          else
+            EXTRA_FLAG="--prerelease"
+          fi
           gh release create "$TAG" app/build/outputs/apk/debug/*.apk \
             --title "Fokk Shield $TAG" \
             --notes-file version.json \
-            --latest || gh release upload "$TAG" app/build/outputs/apk/debug/*.apk --clobber
+            $EXTRA_FLAG || gh release upload "$TAG" app/build/outputs/apk/debug/*.apk --clobber

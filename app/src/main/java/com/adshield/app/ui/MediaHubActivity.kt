@@ -2740,12 +2740,18 @@ open class MediaHubActivity : AppCompatActivity() {
                     val isYtAdUrl = urlStr.contains("/pagead/") ||
                         urlStr.contains("/api/stats/ads") ||
                         urlStr.contains("ad_break") ||
-                        urlStr.contains("doubleclick.net")
+                        urlStr.contains("doubleclick.net") ||
+                        urlStr.contains("googlesyndication.com") ||
+                        urlStr.contains("/ptracking") ||
+                        urlStr.contains("adformat=") ||
+                        (urlStr.contains("/youtubei/v1/log_event") && urlStr.contains("ad"))
                     if (isYtAdUrl && !isMediaRequest) {
                         recordFilteredRequest(view, host)
                         return createBlockedResourceResponse(urlStr)
                     }
-                    return super.shouldInterceptRequest(view, request)
+                    if (isMediaRequest || host.contains("googlevideo.com")) {
+                        return super.shouldInterceptRequest(view, request)
+                    }
                 }
 
                 // Legitimate media and video streaming infrastructure (YouTube, Brightcove, JWPlayer, Yahoo Video, Connatix, Vimeo, etc.)
@@ -3502,9 +3508,9 @@ open class MediaHubActivity : AppCompatActivity() {
         val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
         if (isSocialAppHost(pageHost) && pageHost?.contains("instagram.com") != true) return
 
-        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
+        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (all supported pages)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true
-        if (pageUrl != null && !isYt && !pageUrl.startsWith("file:///android_asset/")) {
+        if (pageUrl != null && !pageUrl.startsWith("file:///android_asset/")) {
             val cosmetic = AdShieldApp.instance.braveEngine.getCosmeticResources(pageUrl)
             if (cosmetic != null) {
                 if (cosmetic.selectors.isNotEmpty()) {
@@ -3528,9 +3534,52 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
 
-        // Scoped YouTube Media Enhancer (SponsorBlock + clean native skipper)
-        if (isYt && mediaEnhancerScript.isNotEmpty()) {
-            webView.evaluateJavascript(mediaEnhancerScript, null)
+        // Scoped YouTube Media Enhancer (SponsorBlock + clean native skipper + mobile promo collapse)
+        if (isYt) {
+            val ytAdCollapseJs = """
+                (function() {
+                    var el = document.getElementById('__fokk_yt_collapse_style');
+                    if (!el) {
+                        el = document.createElement('style');
+                        el.id = '__fokk_yt_collapse_style';
+                        (document.head || document.documentElement).appendChild(el);
+                    }
+                    el.textContent = `
+                        ytm-promoted-sparkles-web-renderer,
+                        ytm-companion-ad-renderer,
+                        ytm-companion-slot,
+                        ytm-promoted-video-renderer,
+                        ytm-compact-promoted-item-renderer,
+                        .ytm-promoted-sparkles-web-renderer,
+                        ad-slot-renderer,
+                        ytm-ad-badge,
+                        .ytp-ad-overlay-container,
+                        .ytp-ad-message-container,
+                        .ytp-ad-action-interstitial,
+                        .ytp-ad-image-overlay,
+                        #player-ads,
+                        #masthead-ad,
+                        ytd-promoted-sparkles-web-renderer,
+                        ytd-companion-slot-renderer,
+                        ytd-promoted-video-renderer,
+                        ytd-banner-promo-renderer,
+                        ytd-ad-slot-renderer,
+                        ytd-in-feed-ad-layout-renderer {
+                            display: none !important;
+                            visibility: hidden !important;
+                            height: 0 !important;
+                            min-height: 0 !important;
+                            max-height: 0 !important;
+                            overflow: hidden !important;
+                            pointer-events: none !important;
+                        }
+                    `;
+                })();
+            """.trimIndent()
+            webView.evaluateJavascript(ytAdCollapseJs, null)
+            if (mediaEnhancerScript.isNotEmpty()) {
+                webView.evaluateJavascript(mediaEnhancerScript, null)
+            }
         }
 
         // Scoped News & Publisher CMP Defuser (unlocks scroll & dismisses modals without layout distortion)

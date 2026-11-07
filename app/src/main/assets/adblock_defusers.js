@@ -389,6 +389,7 @@
 
     // 9. Intelligent Anti-Adblock Defuser & Auto-Dismissal (Generic across The Sun, Forbes, etc.)
     var scrubNagElements = function() {
+        if (host.includes('yahoo.com') || host.includes('espn.com')) return;
         try {
             var nagPhrases = [
                 'ad or script blocking',
@@ -422,7 +423,7 @@
             var dialogs = document.querySelectorAll('div[role="dialog"], div[class*="dialog"], div[class*="modal"], div[class*="overlay"], div[class*="popup"], div[class*="adblock"], div[id*="adblock"], div[id*="modal"], div[id*="dialog"], section[role="dialog"]');
             for (var d = 0; d < dialogs.length; d++) {
                 var dlg = dialogs[d];
-                if (!dlg) continue;
+                if (!dlg || dlg === document.body || dlg === document.documentElement) continue;
                 var dlgText = (dlg.innerText || dlg.textContent || '').toLowerCase();
                 var isAdblockNag = false;
                 for (var n = 0; n < nagPhrases.length; n++) {
@@ -453,8 +454,14 @@
                     if (clicked) break;
                 }
 
-                // 2. Hide the modal container and backdrop
-                var topModal = dlg.closest('div[class*="container"], div[class*="wrap"], div[style*="z-index"]') || dlg;
+                // 2. Hide the modal container and backdrop (avoid climbing to page layout containers)
+                var topModal = dlg.closest('div[role="dialog"], div[class*="modal"], div[class*="dialog"], div[class*="popup"], div[class*="adblock"], div[id*="modal"], div[id*="adblock"]') || dlg;
+                if (topModal === document.body || topModal === document.documentElement) {
+                    topModal = dlg;
+                }
+                if (topModal.querySelector && topModal.querySelector('main, article, h1, nav, #main, #content, #App, #app, #root')) {
+                    continue;
+                }
                 topModal.style.setProperty('display', 'none', 'important');
                 topModal.style.setProperty('opacity', '0', 'important');
                 topModal.style.setProperty('pointer-events', 'none', 'important');

@@ -2716,9 +2716,21 @@ open class MediaHubActivity : AppCompatActivity() {
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
                     acceptHeader.contains("audio/") ||
+                    acceptHeader.contains("application/x-mpegurl") ||
+                    acceptHeader.contains("application/vnd.apple.mpegurl") ||
+                    acceptHeader.contains("application/dash+xml") ||
                     host.contains("googlevideo.com") ||
                     urlStr.contains("/videoplayback") ||
-                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
+                    urlStr.contains(".m3u8") ||
+                    urlStr.contains(".mpd") ||
+                    urlStr.contains(".mp4") ||
+                    urlStr.contains(".m4s") ||
+                    urlStr.contains(".webm") ||
+                    urlStr.contains(".ts") ||
+                    urlStr.contains("mime=video") ||
+                    urlStr.contains("mime=audio") ||
+                    urlStr.contains("format=m3u8") ||
+                    listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts", ".aac", ".mp3", ".ogg")
                         .any { urlStr.substringBefore('?').endsWith(it) }
                 val isAdScript = urlStr.contains("/pagead/") ||
                         urlStr.contains("adsbygoogle.js") ||
@@ -2768,34 +2780,34 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
-                if (!isMediaRequest) {
-                    val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
-                        url = requestUrl ?: "",
-                        sourceUrl = pageUrl ?: "",
-                        mimeOrType = acceptHeader
-                    )
-                    if (braveDecision.matched) {
-                        recordFilteredRequest(view, host)
-                        val redirectUrl = braveDecision.redirect
-                        if (redirectUrl != null) {
-                            val redirectRes = createRedirectResponse(redirectUrl)
-                            if (redirectRes != null) return redirectRes
-                        }
-                        return createBlockedResourceResponse(urlStr)
-                    }
+                // Legitimate media and video streaming infrastructure (YouTube, Brightcove, JWPlayer, Yahoo Video, Connatix, Vimeo, etc.)
+                // must never be blocked by generic EasyList tracker or ad filters.
+                if (isMediaRequest || isStreamingHost(host)) {
+                    return super.shouldInterceptRequest(view, request)
                 }
 
-                if (isAdScript && !isMediaRequest) {
+                // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
+                val braveDecision = AdShieldApp.instance.braveEngine.checkNetworkRequest(
+                    url = requestUrl ?: "",
+                    sourceUrl = pageUrl ?: "",
+                    mimeOrType = acceptHeader
+                )
+                if (braveDecision.matched) {
+                    recordFilteredRequest(view, host)
+                    val redirectUrl = braveDecision.redirect
+                    if (redirectUrl != null) {
+                        val redirectRes = createRedirectResponse(redirectUrl)
+                        if (redirectRes != null) return redirectRes
+                    }
+                    return createBlockedResourceResponse(urlStr)
+                }
+
+                if (isAdScript) {
                     recordFilteredRequest(view, host)
                     return createBlockedResourceResponse(urlStr)
                 }
 
                 if (pageHost != null && !isCrossSiteRequest) {
-                    return super.shouldInterceptRequest(view, request)
-                }
-
-                if (isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -3803,7 +3815,7 @@ open class MediaHubActivity : AppCompatActivity() {
                 val hasText = text.isNotEmpty()
                 val isFocused = binding.urlInput.hasFocus()
                 binding.btnClearUrl.visibility = if (hasText && isFocused) View.VISIBLE else View.GONE
-                binding.btnSearchGo.visibility = if (hasText || isFocused) View.VISIBLE else View.GONE
+                binding.btnSearchGo.visibility = View.GONE
                 binding.btnVoiceSearch.visibility = if (hasText || isFocused) View.GONE else View.VISIBLE
                 if (isFocused) {
                     showRecentHistoryOrSuggestions(text)
@@ -3823,8 +3835,8 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
                 val hasText = binding.urlInput.text.isNotEmpty()
                 binding.btnClearUrl.visibility = if (hasText) View.VISIBLE else View.GONE
-                binding.btnSearchGo.visibility = View.VISIBLE
-                binding.btnVoiceSearch.visibility = View.GONE
+                binding.btnSearchGo.visibility = View.GONE
+                binding.btnVoiceSearch.visibility = if (hasText) View.GONE else View.VISIBLE
                 showRecentHistoryOrSuggestions(binding.urlInput.text.toString().trim())
             } else {
                 binding.cardSuggestions.visibility = View.GONE
@@ -6097,18 +6109,35 @@ open class MediaHubActivity : AppCompatActivity() {
         } else {
             binding.splitDivider.visibility = View.GONE
             binding.tabContainerSecondary.visibility = View.GONE
+            binding.tabContainerSecondary.removeAllViews()
 
             val secondaryTab = tabs.getOrNull(secondaryTabIndex)
             val secondaryWebView = secondaryTab?.webView
-            if (secondaryWebView != null) {
-                binding.tabContainerSecondary.removeView(secondaryWebView)
+            if (secondaryWebView != null && secondaryTabIndex != activeTabIndex) {
                 secondaryWebView.visibility = View.GONE
             }
             secondaryTabIndex = -1
 
+            // Ensure the active tab's WebView is cleanly attached to primary tabContainer and visible
+            val activeWv = activeTab?.webView
+            if (activeWv != null) {
+                (activeWv.parent as? ViewGroup)?.removeView(activeWv)
+                activeWv.visibility = View.VISIBLE
+                activeWv.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                binding.tabContainer.removeAllViews()
+                binding.tabContainer.addView(activeWv)
+                activeWv.requestLayout()
+            }
+
             val topLp = binding.tabContainer.layoutParams as? LinearLayout.LayoutParams
             topLp?.weight = 1.0f
             binding.tabContainer.layoutParams = topLp
+
+            applyWebViewVisibility()
+            updateUrlBar(activeTab?.url, activeTab?.title)
 
             Toast.makeText(this, "Single View Restored", Toast.LENGTH_SHORT).show()
         }
@@ -7218,11 +7247,16 @@ open class MediaHubActivity : AppCompatActivity() {
             "dailymotion.com", "dmcdn.net",
             "rumble.com", "streamable.com",
             "jwplayer.com", "jwplatform.com", "jwpcdn.com",
-            "brightcove.com", "brightcove.net", "boltdns.net",
+            "brightcove.com", "brightcove.net", "boltdns.net", "brightcovecdn.com",
             "wistia.com", "wistia.net", "wi.st",
             "twitch.tv", "ttvnw.net", "jtvnw.net",
             "soundcloud.com", "sndcdn.com",
-            "video.twimg.com", "ton.twitter.com"
+            "video.twimg.com", "ton.twitter.com",
+            // News & Sports article video delivery infrastructure
+            "video.yahoo.com", "yql.yahoo.com", "bats.video.yahoo.com",
+            "vidgyor.com", "playstream.media", "htmedia.in",
+            "connatix.com", "cnevids.com", "anvato.net", "kaltura.com",
+            "sendtonews.com", "ex.co", "playwire.com", "brid.tv", "videoelephant.com"
         )
         private val IPV4_ADDRESS_REGEX = Regex("\\d{1,3}(\\.\\d{1,3}){3}")
         // Includes India suffixes from the Mozilla Public Suffix List snapshot dated 2026-10-28

@@ -42,8 +42,10 @@ class BraveAdblockEngine(private val context: Context) {
                 val instance = AdblockEngine.create()
 
                 // Clean up legacy cache if present
-                val oldCacheFile = File(context.cacheDir, "adblock_rust_v1.bin")
-                if (oldCacheFile.exists()) oldCacheFile.delete()
+                val oldCacheFile1 = File(context.cacheDir, "adblock_rust_v1.bin")
+                if (oldCacheFile1.exists()) oldCacheFile1.delete()
+                val oldCacheFile2 = File(context.cacheDir, "adblock_rust_v2_easylist.bin")
+                if (oldCacheFile2.exists()) oldCacheFile2.delete()
 
                 val cacheFile = File(context.cacheDir, CACHE_FILE_NAME)
 
@@ -188,7 +190,7 @@ class BraveAdblockEngine(private val context: Context) {
 
     companion object {
         private const val TAG = "BraveAdblockEngine"
-        private const val CACHE_FILE_NAME = "adblock_rust_v2_easylist.bin"
+        private const val CACHE_FILE_NAME = "adblock_rust_v3_hybrid_resources.bin"
         private const val INITIALIZATION_WAIT_MS = 750L
 
         private val FALLBACK_ALLOW_DECISION = BlockDecision(

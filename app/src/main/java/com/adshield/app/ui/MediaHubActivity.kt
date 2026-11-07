@@ -201,10 +201,8 @@ open class MediaHubActivity : AppCompatActivity() {
     private var previousRequestedOrientation: Int? = null
     private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
-    private var defusersScript = ""
-    private var injectionScript = ""
-    private var fokkoScript = ""
-    private var fokkoCss = ""
+    private var mediaEnhancerScript = ""
+    private var newsDefuserScript = ""
     private var readerScript = ""
     private var readerCss = ""
     private var summarizerScript = ""
@@ -1043,6 +1041,24 @@ open class MediaHubActivity : AppCompatActivity() {
     }
 
     private fun loadInjectionScript() {
+        try {
+            assets.open("fokk_media_enhancer.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    mediaEnhancerScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load media enhancer script", e)
+        }
+        try {
+            assets.open("fokk_news_defuser.js").use { stream ->
+                BufferedReader(InputStreamReader(stream)).use { reader ->
+                    newsDefuserScript = reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load news defuser script", e)
+        }
         try {
             assets.open("fokk_reader.js").use { stream ->
                 BufferedReader(InputStreamReader(stream)).use { reader ->
@@ -3506,7 +3522,21 @@ open class MediaHubActivity : AppCompatActivity() {
                     """.trimIndent()
                     webView.evaluateJavascript(cosmeticJs, null)
                 }
+                if (cosmetic.js.isNotEmpty()) {
+                    webView.evaluateJavascript(cosmetic.js, null)
+                }
             }
+        }
+
+        // Scoped YouTube Media Enhancer (SponsorBlock + clean native skipper)
+        if (isYt && mediaEnhancerScript.isNotEmpty()) {
+            webView.evaluateJavascript(mediaEnhancerScript, null)
+        }
+
+        // Scoped News & Publisher CMP Defuser (unlocks scroll & dismisses modals without layout distortion)
+        val isNewsSite = isNewsOrPublisherHost(pageHost.orEmpty())
+        if (isNewsSite && newsDefuserScript.isNotEmpty()) {
+            webView.evaluateJavascript(newsDefuserScript, null)
         }
 
         // Custom User CSS
@@ -3522,6 +3552,18 @@ open class MediaHubActivity : AppCompatActivity() {
         if (customJs.isNotEmpty()) {
             webView.evaluateJavascript(customJs, null)
         }
+    }
+
+    private fun isNewsOrPublisherHost(host: String): Boolean {
+        if (host.isEmpty()) return false
+        val lower = host.lowercase(Locale.ROOT)
+        return lower.contains("thesun.co.uk") || lower.contains("the-sun.com") || lower.contains("thescottishsun.co.uk") ||
+            lower.contains("foxnews.com") || lower.contains("theguardian.com") || lower.contains("forbes.com") ||
+            lower.contains("independent.co.uk") || lower.contains("mirror.co.uk") || lower.contains("express.co.uk") ||
+            lower.contains("standard.co.uk") || lower.contains("dailymail.co.uk") || lower.contains("telegraph.co.uk") ||
+            lower.contains("bloomberg.com") || lower.contains("reuters.com") || lower.contains("nytimes.com") ||
+            lower.contains("washingtonpost.com") || lower.contains("usatoday.com") || lower.contains("latimes.com") ||
+            lower.contains("onmanorama.com") || lower.contains("indiatimes.com") || lower.contains("ndtv.com")
     }
 
     private fun isSocialAppHost(host: String?): Boolean {

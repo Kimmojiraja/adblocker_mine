@@ -22,6 +22,7 @@ class DnsOverHttpsEngine {
     companion object {
         private const val TAG = "FokkDoHEngine"
         const val PROVIDER_ADGUARD = "AdGuard Ad-Blocking (Default)"
+        const val PROVIDER_NEXTDNS = "NextDNS Ad-Blocking"
         const val PROVIDER_CONTROLD = "Control D Ad-Blocking"
         const val PROVIDER_MULLVAD = "Mullvad Ad-Blocking"
         const val PROVIDER_CLOUDFLARE = "Cloudflare (1.1.1.1)"
@@ -30,6 +31,7 @@ class DnsOverHttpsEngine {
 
         val ALL_PROVIDERS = arrayOf(
             PROVIDER_ADGUARD,
+            PROVIDER_NEXTDNS,
             PROVIDER_CONTROLD,
             PROVIDER_MULLVAD,
             PROVIDER_CLOUDFLARE,
@@ -39,6 +41,7 @@ class DnsOverHttpsEngine {
 
         fun getProviderByName(name: String): Provider {
             return when (name) {
+                PROVIDER_NEXTDNS -> Provider.NEXTDNS
                 PROVIDER_CONTROLD -> Provider.CONTROLD
                 PROVIDER_MULLVAD -> Provider.MULLVAD
                 PROVIDER_CLOUDFLARE -> Provider.CLOUDFLARE
@@ -51,6 +54,7 @@ class DnsOverHttpsEngine {
 
     enum class Provider(val displayName: String, val endpoint: String, val isAdBlocking: Boolean) {
         ADGUARD(PROVIDER_ADGUARD, "https://dns.adguard-dns.com/dns-query", true),
+        NEXTDNS(PROVIDER_NEXTDNS, "https://dns.nextdns.io/dns-query", true),
         CONTROLD(PROVIDER_CONTROLD, "https://freedns.controld.com/p0", true),
         MULLVAD(PROVIDER_MULLVAD, "https://adblock.doh.mullvad.net/dns-query", true),
         CLOUDFLARE(PROVIDER_CLOUDFLARE, "https://cloudflare-dns.com/dns-query", false),
@@ -86,6 +90,89 @@ class DnsOverHttpsEngine {
             dotIdx = cleanHost.indexOf('.', dotIdx + 1)
         }
         return false
+    }
+
+    /**
+     * Synchronous, thread-safe, low-latency live DNS lookup used by WebView network filter.
+     * Checks in-memory cache first (sub-millisecond). If not cached, queries DoH endpoint
+     * (e.g. NextDNS / AdGuard) and caches the response.
+     */
+    fun isHostBlocked(host: String): Boolean {
+        if (!isEnabled || !currentProvider.isAdBlocking || host.isBlank()) return false
+        val cleanHost = host.lowercase().trimEnd('.')
+
+        if (isKnownBlockedHost(cleanHost)) return true
+        val cached = cache[cleanHost]
+        if (cached != null) {
+            if (System.currentTimeMillis() < cached.expiresAtMs) {
+                return cached.isBlocked
+            }
+        }
+
+        if (cleanHost == "localhost" || cleanHost.endsWith(".local") || cleanHost.endsWith(".internal")) {
+            return false
+        }
+
+        return try {
+            val queryUrl = "${currentProvider.endpoint}?name=${cleanHost}&type=A"
+            val url = URL(queryUrl)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 1200
+                readTimeout = 1200
+                setRequestProperty("Accept", "application/dns-json")
+                setRequestProperty("User-Agent", "FokkShield/1.0")
+            }
+
+            if (conn.responseCode == 200) {
+                val responseStr = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                val json = JSONObject(responseStr)
+                val status = json.optInt("Status", -1)
+
+                // NXDOMAIN (status 3) on ad-blocking resolver indicates domain blocked
+                if (status == 3) {
+                    knownBlockedHosts.add(cleanHost)
+                    cache[cleanHost] = CacheEntry(emptyList(), isBlocked = true, System.currentTimeMillis() + 3600000L)
+                    return true
+                }
+
+                if (status == 0 && json.has("Answer")) {
+                    val answers = json.getJSONArray("Answer")
+                    var hasSinkholeIp = false
+                    val result = mutableListOf<InetAddress>()
+                    var minTtl = 300L
+
+                    for (i in 0 until answers.length()) {
+                        val record = answers.getJSONObject(i)
+                        val type = record.optInt("type", 1)
+                        if (type == 1) {
+                            val ip = record.optString("data", "").trim()
+                            val ttl = record.optLong("TTL", 300L)
+                            if (ttl < minTtl) minTtl = ttl
+                            if (ip == "0.0.0.0" || ip == "127.0.0.1" || ip == "::") {
+                                hasSinkholeIp = true
+                            } else if (ip.isNotEmpty()) {
+                                runCatching { result.add(InetAddress.getByName(ip)) }
+                            }
+                        }
+                    }
+
+                    if (hasSinkholeIp) {
+                        knownBlockedHosts.add(cleanHost)
+                        val ttlMs = (minTtl.coerceAtLeast(300L) * 1000L)
+                        cache[cleanHost] = CacheEntry(emptyList(), isBlocked = true, System.currentTimeMillis() + ttlMs)
+                        return true
+                    }
+
+                    val ttlMs = (minTtl.coerceAtLeast(60L) * 1000L)
+                    cache[cleanHost] = CacheEntry(result, isBlocked = false, System.currentTimeMillis() + ttlMs)
+                    return false
+                }
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun resolve(host: String): List<InetAddress> = withContext(Dispatchers.IO) {

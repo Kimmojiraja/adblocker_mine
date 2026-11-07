@@ -76,12 +76,14 @@ class MainActivity : AppCompatActivity() {
     private fun setupNativePrivateDns() {
         val providers = arrayOf(
             "AdGuard DNS (Recommended: Maximum Ad & Tracker Blocking)\nHostname: dns.adguard-dns.com",
+            "NextDNS (Advanced Cloud & Privacy Protection)\nHostname: dns.nextdns.io",
             "Mullvad Adblock (Strict Privacy & Zero Logs)\nHostname: adblock.dns.mullvad.net",
             "Cloudflare Security & Speed (Malware Protection)\nHostname: security.cloudflare-dns.com",
             "Control D Ad Blocker\nHostname: p2.freedns.controld.com"
         )
         val hostnames = arrayOf(
             "dns.adguard-dns.com",
+            "dns.nextdns.io",
             "adblock.dns.mullvad.net",
             "security.cloudflare-dns.com",
             "p2.freedns.controld.com"

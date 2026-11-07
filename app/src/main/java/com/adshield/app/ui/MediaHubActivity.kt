@@ -158,9 +158,7 @@ open class MediaHubActivity : AppCompatActivity() {
         var isHibernated: Boolean = false,
         var savedScrollY: Int = 0,
         val isPrivate: Boolean = false,
-        var webView: WebView? = null,
-        var geckoSession: com.adshield.app.engine.GeckoSessionAdapter? = null,
-        var geckoView: org.mozilla.geckoview.GeckoView? = null
+        var webView: WebView? = null
     )
 
     private data class PendingWebPermission(
@@ -201,6 +199,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var previousSystemUiVisibility: Int? = null
     private var previousRequestedOrientation: Int? = null
+    private var previousWindowWasFullscreen: Boolean? = null
     private var browserChromeHidden = false
     private var defusersScript = ""
     private var injectionScript = ""
@@ -2219,16 +2218,8 @@ open class MediaHubActivity : AppCompatActivity() {
         name in AUTHENTICATION_OR_SIGNATURE_PARAMETERS ||
             AUTHENTICATION_OR_SIGNATURE_PREFIXES.any { name.startsWith(it) } ||
             name.endsWith("_signature") || name.endsWith("_token")
-    private fun loadUrlInActiveWebView(url: String) {
-        val tab = activeTab
-        if (tab?.geckoSession != null) {
-            tab.url = url
-            tab.geckoSession?.loadUri(url)
-            updateUrlBar(url, tab.title)
-            return
-        }
-        loadUrlInWebView(activeWebView, url)
-    }
+
+    private fun loadUrlInActiveWebView(url: String) = loadUrlInWebView(activeWebView, url)
 
     private fun isWebUrl(rawUrl: String): Boolean = runCatching {
         val uri = Uri.parse(rawUrl)
@@ -2405,81 +2396,10 @@ open class MediaHubActivity : AppCompatActivity() {
                 }
                 .start()
         }
-    private fun createGeckoTab(url: String, isPrivate: Boolean = false): BrowserTab {
-        val geckoView = org.mozilla.geckoview.GeckoView(this)
-        geckoView.layoutParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        val initialTitle = if (url.contains("fokk_start.html")) "New Tab" else "Fokk"
-        val tab = BrowserTab(title = initialTitle, url = url, isPrivate = isPrivate, geckoView = geckoView)
-
-        val adapter = com.adshield.app.engine.GeckoSessionAdapter(this, isPrivate = isPrivate, listener = object : com.adshield.app.engine.GeckoSessionAdapter.Listener {
-            override fun onPageStarted(pageUrl: String) {
-                tab.url = pageUrl
-                if (tab === activeTab) {
-                    binding.swipeRefreshLayout.isRefreshing = true
-                    updateUrlBar(pageUrl, tab.title)
-                }
-            }
-
-            override fun onPageFinished(pageUrl: String, success: Boolean) {
-                if (tab === activeTab) {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                    updateUrlBar(tab.url, tab.title)
-                }
-            }
-
-            override fun onProgressChanged(progress: Int) {
-                if (tab === activeTab) {
-                    binding.swipeRefreshLayout.isRefreshing = progress in 1..99
-                }
-            }
-
-            override fun onTitleReceived(title: String) {
-                tab.title = title
-                if (tab === activeTab) {
-                    updateUrlBar(tab.url, title)
-                }
-            }
-
-            override fun onLocationChanged(pageUrl: String, canGoBack: Boolean, canGoForward: Boolean) {
-                tab.url = pageUrl
-                if (tab === activeTab) {
-                    updateUrlBar(pageUrl, tab.title)
-                }
-            }
-
-            override fun onTrackerBlocked(category: Int) {
-                tab.filteredRequests += 1
-                AdShieldApp.instance.incrementBlockedAds(1)
-                if (tab === activeTab) {
-                    updateShieldBadge(tab.filteredRequests)
-                }
-            }
-
-            override fun onFullScreenRequested(fullScreen: Boolean) {
-                setEdgeToEdge(fullScreen)
-            }
-        })
-
-        geckoView.setSession(adapter.session)
-        tab.geckoSession = adapter
-        if (url.isNotEmpty()) {
-            adapter.loadUri(url)
-        } else {
-            adapter.loadUri("resource://android/assets/fokk_start.html")
-        }
-        binding.tabContainer.addView(geckoView)
-        return tab
     }
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     private fun createTab(url: String, isPrivate: Boolean = false): BrowserTab {
-        val useGecko = prefs.getString(PREF_BROWSER_ENGINE, "gecko") == "gecko"
-        if (useGecko) {
-            return createGeckoTab(url, isPrivate)
-        }
         val webView = FocusedPaneWebView(this)
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.layoutParams = FrameLayout.LayoutParams(
@@ -3309,18 +3229,13 @@ open class MediaHubActivity : AppCompatActivity() {
             current.isHibernated = false
             current.webView?.resumeTimers()
         }
-        if (current.webView == null && current.geckoSession == null) {
+        if (current.webView == null) {
             val restored = createTab(current.url, current.isPrivate)
-            if (restored.geckoSession != null) {
-                current.geckoSession = restored.geckoSession
-                current.geckoView = restored.geckoView
-            } else {
-                val restoredWebView = restored.webView ?: return
-                current.webView = restoredWebView
-                applyDesktopMode(restoredWebView, current.isDesktop)
-            }
+            val restoredWebView = restored.webView ?: return
+            current.webView = restoredWebView
             current.isSuspended = false
             current.shouldLoadOnSelect = true
+            applyDesktopMode(restoredWebView, current.isDesktop)
             if (current.suspendedForMemory) {
                 current.suspendedForMemory = false
                 Toast.makeText(this, "Reloaded this background tab to free memory", Toast.LENGTH_SHORT).show()
@@ -3330,14 +3245,9 @@ open class MediaHubActivity : AppCompatActivity() {
         checkAndHibernateBackgroundTabs()
         if (current.shouldLoadOnSelect) {
             current.shouldLoadOnSelect = false
-            if (current.geckoSession != null) {
-                current.geckoSession?.loadUri(current.url)
-            } else {
-                loadUrlInWebView(current.webView, current.url)
-            }
+            loadUrlInWebView(current.webView, current.url)
         }
         updateUrlBar(current.url, current.title)
-        updateShieldBadge(current.filteredRequests)
         updateToolbarLayoutForUrl(current.url, animated = false)
 
         // Apply Private Tab styling if active
@@ -3368,10 +3278,6 @@ open class MediaHubActivity : AppCompatActivity() {
             pageUrlsByWebView.remove(webView)
             webView.destroy()
         }
-        removed.geckoView?.let { geckoView ->
-            binding.tabContainer.removeView(geckoView)
-        }
-        removed.geckoSession?.close()
 
         if (tabs.isEmpty()) {
             addNewTab("file:///android_asset/fokk_start.html", isPrivate = false)
@@ -4466,11 +4372,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
             Toast.makeText(this, "Browser filters saved. Reloading the current page…", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
-            if (activeTab?.geckoSession != null) {
-                activeTab?.geckoSession?.reload()
-            } else {
-                activeWebView?.reload()
-            }
+            activeWebView?.reload()
         }
 
         dialog.show()
@@ -5093,33 +4995,26 @@ open class MediaHubActivity : AppCompatActivity() {
             burnSession()
         }
 
-        val isStartPage = (activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()) &&
-            (activeTab?.geckoSession == null || activeTab?.url?.contains("fokk_start.html") == true)
+        val isStartPage = activeWebView?.url?.contains("fokk_start.html") == true || activeWebView?.url.isNullOrBlank()
         val isPrivateProfile = isIsolatedPrivateProfile
 
         // 1. Back button
-        val canGoBack = activeTab?.geckoSession?.canGoBack() ?: (activeWebView?.canGoBack() == true)
+        val canGoBack = activeWebView?.canGoBack() == true
         sheetBinding.btnMenuBack.alpha = if (canGoBack) 1.0f else 0.35f
         sheetBinding.btnMenuBack.isEnabled = canGoBack
         sheetBinding.btnMenuBack.setOnClickListener {
-            if (activeTab?.geckoSession != null) {
-                activeTab?.geckoSession?.goBack()
-                dialog.dismiss()
-            } else if (activeWebView?.canGoBack() == true) {
+            if (activeWebView?.canGoBack() == true) {
                 activeWebView?.goBack()
                 dialog.dismiss()
             }
         }
 
         // 2. Forward button
-        val canGoForward = activeTab?.geckoSession?.canGoForward() ?: (activeWebView?.canGoForward() == true)
+        val canGoForward = activeWebView?.canGoForward() == true
         sheetBinding.btnMenuForward.alpha = if (canGoForward) 1.0f else 0.35f
         sheetBinding.btnMenuForward.isEnabled = canGoForward
         sheetBinding.btnMenuForward.setOnClickListener {
-            if (activeTab?.geckoSession != null) {
-                activeTab?.geckoSession?.goForward()
-                dialog.dismiss()
-            } else if (activeWebView?.canGoForward() == true) {
+            if (activeWebView?.canGoForward() == true) {
                 activeWebView?.goForward()
                 dialog.dismiss()
             }
@@ -5127,11 +5022,7 @@ open class MediaHubActivity : AppCompatActivity() {
 
         // 2b. Quick Refresh button on navigation bar
         sheetBinding.btnMenuRefresh.setOnClickListener {
-            if (activeTab?.geckoSession != null) {
-                activeTab?.geckoSession?.reload()
-            } else {
-                activeWebView?.reload()
-            }
+            activeWebView?.reload()
             dialog.dismiss()
         }
 
@@ -6085,14 +5976,13 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun applyWebViewVisibility() {
         for (i in tabs.indices) {
-            val tab = tabs[i]
+            val webView = tabs[i].webView ?: continue
             val visible = if (isDualDeckMode) {
                 i == activeTabIndex || i == secondaryTabIndex
             } else {
                 i == activeTabIndex
             }
-            tab.webView?.visibility = if (visible && tab.geckoView == null) View.VISIBLE else View.GONE
-            tab.geckoView?.visibility = if (visible) View.VISIBLE else View.GONE
+            webView.visibility = if (visible) View.VISIBLE else View.GONE
         }
     }
 
@@ -6862,8 +6752,6 @@ open class MediaHubActivity : AppCompatActivity() {
         }
         if (customView != null) {
             hideCustomView()
-        } else if (activeTab?.geckoSession?.canGoBack() == true) {
-            activeTab?.geckoSession?.goBack()
         } else if (activeWebView?.canGoBack() == true) {
             activeWebView?.goBack()
         } else if (isIsolatedPrivateProfile) {
@@ -7493,7 +7381,6 @@ open class MediaHubActivity : AppCompatActivity() {
         private const val PREF_MX_GESTURES = "fokk_mx_gestures"
         private const val PREF_DECOY_CALCULATOR = "fokk_decoy_calculator"
         private const val PREF_DECOY_PIN = "fokk_decoy_pin"
-        private const val PREF_BROWSER_ENGINE = "fokk_browser_engine"
         private val LOCAL_BROWSER_DATA_KEYS = setOf(
             PREF_BROWSING_HISTORY,
             PREF_SESSION_TABS,

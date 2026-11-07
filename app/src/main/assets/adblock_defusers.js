@@ -217,6 +217,210 @@
         }
     } catch(e) {}
 
+    // 5.5. Google Interactive Media Ads (IMA SDK) HTML5 Stub (uBlock Origin google-ima.js)
+    // Eliminates 6-10s video player timeouts across JWPlayer, Brightcove, Video.js,
+    // Dailymotion, Yahoo Sports, BBC, Fox News, and news video players.
+    try {
+        if (!window.google || !window.google.ima) {
+            var imaSettings = {
+                setAutoPlayAdBreaks: noop,
+                setDisableCustomPlaybackForIOS10Plus: noop,
+                setLocale: noop,
+                setNumRedirects: noop,
+                setPlayerType: noop,
+                setPlayerVersion: noop,
+                setPpid: noop,
+                setVpaidAllowed: noop,
+                setVpaidMode: noop
+            };
+
+            var FakeAdsManager = function() {
+                var listeners = {};
+                this.addEventListener = function(type, handler) {
+                    listeners[type] = listeners[type] || [];
+                    listeners[type].push(handler);
+                };
+                this.removeEventListener = function(type, handler) {
+                    if (!listeners[type]) return;
+                    listeners[type] = listeners[type].filter(function(h) { return h !== handler; });
+                };
+                this.getCuePoints = function() { return []; };
+                this.getAdSkippableState = function() { return false; };
+                this.init = noop;
+                this.start = function() {
+                    setTimeout(function() {
+                        var evTypes = ['allAdsCompleted', 'contentResumeRequested', 'complete'];
+                        for (var i = 0; i < evTypes.length; i++) {
+                            var evType = evTypes[i];
+                            if (listeners[evType]) {
+                                for (var j = 0; j < listeners[evType].length; j++) {
+                                    try { listeners[evType][j]({ type: evType }); } catch(err) {}
+                                }
+                            }
+                        }
+                    }, 5);
+                };
+                this.stop = noop;
+                this.resume = noop;
+                this.pause = noop;
+                this.resize = noop;
+                this.discardAdBreak = noop;
+                this.destroy = noop;
+                this.getRemainingTime = function() { return 0; };
+                this.getVolume = function() { return 1; };
+                this.setVolume = noop;
+                this.isCustomClickTrackingUsed = function() { return false; };
+                this.isCustomPlaybackUsed = function() { return false; };
+            };
+
+            var FakeAdsLoader = function(adDisplayContainer) {
+                var listeners = {};
+                this.addEventListener = function(type, handler) {
+                    listeners[type] = listeners[type] || [];
+                    listeners[type].push(handler);
+                };
+                this.removeEventListener = function(type, handler) {
+                    if (!listeners[type]) return;
+                    listeners[type] = listeners[type].filter(function(h) { return h !== handler; });
+                };
+                this.contentComplete = noop;
+                this.destroy = noop;
+                this.getSettings = function() { return imaSettings; };
+                this.requestAds = function(adsRequest) {
+                    setTimeout(function() {
+                        var adsManagerLoadedListeners = listeners['adsManagerLoaded'];
+                        if (adsManagerLoadedListeners && adsManagerLoadedListeners.length > 0) {
+                            var fakeEvent = {
+                                type: 'adsManagerLoaded',
+                                getAdsManager: function() { return new FakeAdsManager(); },
+                                getUserRequestContext: function() {
+                                    return adsRequest ? adsRequest.userRequestContext : null;
+                                }
+                            };
+                            for (var k = 0; k < adsManagerLoadedListeners.length; k++) {
+                                try { adsManagerLoadedListeners[k](fakeEvent); } catch(err) {}
+                            }
+                        } else {
+                            var errorListeners = listeners['adError'];
+                            if (errorListeners) {
+                                var fakeErr = {
+                                    getError: function() {
+                                        return {
+                                            getMessage: function() { return 'No ads'; },
+                                            getType: function() { return 'AdError'; },
+                                            getErrorCode: function() { return 1009; }
+                                        };
+                                    }
+                                };
+                                for (var m = 0; m < errorListeners.length; m++) {
+                                    try { errorListeners[m](fakeErr); } catch(err) {}
+                                }
+                            }
+                        }
+                    }, 5);
+                };
+            };
+
+            var imaObj = {
+                settings: imaSettings,
+                AdDisplayContainer: function(container, video) {
+                    this.initialize = noop;
+                    this.destroy = noop;
+                },
+                AdsLoader: FakeAdsLoader,
+                AdsManager: FakeAdsManager,
+                AdsRequest: function() {
+                    this.adTagUrl = '';
+                    this.adsResponse = '';
+                    this.contentDuration = 0;
+                    this.contentKeywords = [];
+                    this.contentTitle = '';
+                    this.forceExperimentIds = [];
+                    this.linearAdSlotWidth = 0;
+                    this.linearAdSlotHeight = 0;
+                    this.liveStreamPrefetchSeconds = 0;
+                    this.nonLinearAdSlotWidth = 0;
+                    this.nonLinearAdSlotHeight = 0;
+                    this.pageUrl = '';
+                    this.userRequestContext = null;
+                    this.vastLoadTimeout = 0;
+                },
+                AdsRenderingSettings: function() {
+                    this.autoAlign = true;
+                    this.bitrate = -1;
+                    this.enablePreloading = false;
+                    this.loadVideoTimeout = -1;
+                    this.mimeTypes = null;
+                    this.playAdsAfterTime = -1;
+                    this.restoreCustomPlaybackStateOnPlayerInit = true;
+                    this.useStyledAcceleratedCounter = true;
+                    this.useStyledLinearId = true;
+                    this.useStyledNonLinearId = true;
+                },
+                AdError: {
+                    Type: { AD: 'ad', AD_LOAD: 'adLoad' },
+                    ErrorCode: {
+                        ADSLOT_NOT_EMPTY: 400,
+                        FAILED_TO_REQUEST_ADS: 1005,
+                        INVALID_ARGUMENTS: 1101,
+                        PLAYLIST_NO_CONTENT_FOUND: 1009,
+                        UNKNOWN_ERROR: 900,
+                        VAST_LOAD_TIMEOUT: 301,
+                        VIDEO_PLAY_ERROR: 400
+                    }
+                },
+                AdEvent: {
+                    Type: {
+                        AD_BREAK_READY: 'adBreakReady',
+                        AD_BUFFERING: 'adBuffering',
+                        AD_CAN_PLAY: 'adCanPlay',
+                        AD_METADATA: 'adMetadata',
+                        AD_PROGRESS: 'adProgress',
+                        ALL_ADS_COMPLETED: 'allAdsCompleted',
+                        CLICK: 'click',
+                        COMPLETE: 'complete',
+                        CONTENT_PAUSE_REQUESTED: 'contentPauseRequested',
+                        CONTENT_RESUME_REQUESTED: 'contentResumeRequested',
+                        DURATION_CHANGE: 'durationChange',
+                        EXPANDED_CHANGED: 'expandedChanged',
+                        FIRST_QUARTILE: 'firstQuartile',
+                        IMPRESSION: 'impression',
+                        INTERACTION: 'interaction',
+                        LINEAR_CHANGED: 'linearChanged',
+                        LOADED: 'loaded',
+                        LOG: 'log',
+                        MIDPOINT: 'midpoint',
+                        PAUSED: 'pause',
+                        RESUMED: 'resumed',
+                        SKIPPABLE_STATE_CHANGED: 'skippableStateChanged',
+                        SKIPPED: 'skipped',
+                        STARTED: 'started',
+                        THIRD_QUARTILE: 'thirdQuartile',
+                        USER_CLOSE: 'userClose',
+                        VOLUME_CHANGED: 'volumeChanged',
+                        VOLUME_MUTED: 'volumeMuted'
+                    }
+                },
+                AdErrorEvent: { Type: { AD_ERROR: 'adError' } },
+                AdsManagerLoadedEvent: { Type: { ADS_MANAGER_LOADED: 'adsManagerLoaded' } },
+                ViewMode: { NORMAL: 'normal', FULLSCREEN: 'fullscreen' },
+                OmidAccessMode: { FULL: 'full', DOMAIN: 'domain', LIMITED: 'limited' }
+            };
+
+            window.google = window.google || {};
+            try {
+                Object.defineProperty(window.google, 'ima', {
+                    get: function() { return imaObj; },
+                    set: function() {},
+                    configurable: true,
+                    enumerable: true
+                });
+            } catch(e) {
+                window.google.ima = imaObj;
+            }
+        }
+    } catch(e) {}
+
     // 6. Universal Bait Element Defuser & Dimension Spoofing
     // Modern anti-adblock scripts (The Sun, Admiral, Sourcepoint, BlockAdBlock) create bait elements
     // and check if their offsetHeight === 0 or display === 'none'. We spoof these checks cleanly.
@@ -360,15 +564,34 @@
     } catch(e) {}
 
     // 8. News Article Auto-Scroll Restorer & Paywall Curtain Neutralizer
+    var scrollLockClasses = [
+        'has-scroll-lock', 'no-scroll', 'modal-open', 'fc-dialog-open',
+        'sp-message-open', 'overflow-hidden', 'prevent-scroll', 'body-scroll-lock',
+        'is-locked', 'freeze-scroll', 'scroll-disabled', 'u-scroll-locked',
+        'gu-overflow-hidden', 'stop-scrolling', 'disable-scroll', 'fixed-scroll',
+        'didomi-popup-open', 'fides-overlay-open'
+    ];
+
     var restoreScroll = function() {
         try {
             var docEl = document.documentElement;
             var body = document.body;
+
+            // Remove lock classes from html and body
+            for (var i = 0; i < scrollLockClasses.length; i++) {
+                var c = scrollLockClasses[i];
+                if (docEl && docEl.classList && docEl.classList.contains(c)) docEl.classList.remove(c);
+                if (body && body.classList && body.classList.contains(c)) body.classList.remove(c);
+            }
+
             if (docEl) {
                 var s = docEl.style;
-                if (s.overflow === 'hidden' || s.overflowY === 'hidden') {
+                if (s.overflow === 'hidden' || s.overflowY === 'hidden' || s.position === 'fixed') {
                     s.setProperty('overflow', 'visible', 'important');
                     s.setProperty('overflow-y', 'auto', 'important');
+                    if (s.position === 'fixed') s.setProperty('position', 'static', 'important');
+                    s.setProperty('height', 'auto', 'important');
+                    s.setProperty('max-height', 'none', 'important');
                 }
             }
             if (body) {
@@ -376,21 +599,57 @@
                 if (bs.overflow === 'hidden' || bs.overflowY === 'hidden' || bs.position === 'fixed') {
                     bs.setProperty('overflow', 'visible', 'important');
                     bs.setProperty('overflow-y', 'auto', 'important');
-                    if (bs.position === 'fixed') {
-                        bs.setProperty('position', 'static', 'important');
-                    }
+                    if (bs.position === 'fixed') bs.setProperty('position', 'static', 'important');
+                    bs.setProperty('height', 'auto', 'important');
+                    bs.setProperty('max-height', 'none', 'important');
                 }
                 if (bs.filter && bs.filter.indexOf('blur') !== -1) {
                     bs.setProperty('filter', 'none', 'important');
                 }
+                if (bs.pointerEvents === 'none') {
+                    bs.setProperty('pointer-events', 'auto', 'important');
+                }
+            }
+
+            // Ensure dynamic anti-scroll CSS style tag is active
+            if (!document.getElementById('__fokk_scroll_enforcer')) {
+                var style = document.createElement('style');
+                style.id = '__fokk_scroll_enforcer';
+                style.innerHTML = 'html, body { overflow-y: auto !important; position: static !important; height: auto !important; max-height: none !important; } .has-scroll-lock, .no-scroll, .modal-open, .fc-dialog-open, .sp-message-open, .overflow-hidden, .prevent-scroll, .is-locked, .freeze-scroll, .scroll-disabled, .gu-overflow-hidden { overflow: visible !important; overflow-y: auto !important; position: static !important; }';
+                (document.head || document.documentElement).appendChild(style);
             }
         } catch(e) {}
     };
 
-    // 9. Intelligent Anti-Adblock Defuser & Auto-Dismissal (Generic across The Sun, Forbes, etc.)
+    // 9. Intelligent Anti-Adblock Defuser & Auto-Dismissal (Generic across The Sun, Fox News, Forbes, The Guardian)
     var scrubNagElements = function() {
         if (host.includes('yahoo.com') || host.includes('espn.com')) return;
         try {
+            // 1. Direct structural CMP selectors (Google Funding Choices, Sourcepoint, Admiral, Guardian, etc.)
+            var directCmpSelectors = [
+                '.fc-ab-root', '.fc-dialog-overlay', '.fc-dialog-container', '.fc-monetization-dialog',
+                '.sp_message_container', '[id^="sp_message_container"]',
+                '.message-overlay', 'div[id^="admr_"]', '.admiral-root',
+                '#didomi-host', '#didomi-popup',
+                '.contributions-banner', '.support-the-guardian', '.engagementBanner',
+                '[data-link-name*="adblock-sticky-message"]',
+                '.adblock-modal', '.adblock-overlay', '.adblock-dialog',
+                'div[class*="adblock-wall" i]', 'div[class*="anti-adblock" i]',
+                'div[id*="anti-adblock" i]'
+            ];
+            for (var sc = 0; sc < directCmpSelectors.length; sc++) {
+                var elements = document.querySelectorAll(directCmpSelectors[sc]);
+                for (var elIdx = 0; elIdx < elements.length; elIdx++) {
+                    var el = elements[elIdx];
+                    if (el && el !== document.body && el !== document.documentElement) {
+                        el.style.setProperty('display', 'none', 'important');
+                        el.style.setProperty('visibility', 'hidden', 'important');
+                        el.style.setProperty('pointer-events', 'none', 'important');
+                        try { el.remove(); } catch(err) {}
+                    }
+                }
+            }
+
             var nagPhrases = [
                 'ad or script blocking',
                 'interfering with this page',
@@ -398,9 +657,20 @@
                 'ad blocker detected',
                 'ad blocker',
                 'ad-blocker',
+                'adblock',
+                'ad block',
+                'content blocker',
                 'disable your ad blocker',
                 'turn off your ad blocker',
+                'pause your ad blocker',
                 'please allow ads',
+                'support our journalism',
+                'supporting our journalism',
+                'quality journalism',
+                'already a subscriber',
+                'continue without supporting',
+                'we noticed you are using an ad blocker',
+                'we notice you are using an ad blocker',
                 'bloqueur de publicité',
                 'werbeblocker'
             ];
@@ -434,13 +704,12 @@
                 }
                 if (!isAdblockNag) continue;
 
-                // 1. Try to auto-click secondary dismissal button / link (e.g. "Continue without supporting us")
+                // Auto-click secondary dismissal button / link (e.g. "Continue without supporting us")
                 var clickables = dlg.querySelectorAll('button, a, span[role="button"], div[role="button"]');
                 var clicked = false;
                 for (var c = 0; c < clickables.length; c++) {
                     var btn = clickables[c];
                     var btnText = (btn.innerText || btn.textContent || '').trim().toLowerCase();
-                    // Do not click the primary "disable ad blocker" button!
                     if (btnText.indexOf('disable') !== -1 && btnText.indexOf('without') === -1) continue;
                     for (var m = 0; m < dismissPhrases.length; m++) {
                         if (btnText.indexOf(dismissPhrases[m]) !== -1) {
@@ -454,7 +723,7 @@
                     if (clicked) break;
                 }
 
-                // 2. Hide the modal container and backdrop (avoid climbing to page layout containers)
+                // Hide the modal container and backdrop (avoid climbing to page layout containers)
                 var topModal = dlg.closest('div[role="dialog"], div[class*="modal"], div[class*="dialog"], div[class*="popup"], div[class*="adblock"], div[id*="modal"], div[id*="adblock"]') || dlg;
                 if (topModal === document.body || topModal === document.documentElement) {
                     topModal = dlg;
@@ -501,45 +770,53 @@
         restoreScroll();
     }
 
-    // High-performance debounced MutationObserver (Max 1 run per 400ms, zero layout thrashing)
+    // High-performance debounced MutationObserver (Continuous, throttled to max 1 run per 350ms)
     try {
         var nagScheduled = false;
-        var sweepsCount = 0;
         var nagObserver = new MutationObserver(function(mutations) {
-            if (nagScheduled || sweepsCount > 15) return;
-            var hasRelevantAddition = false;
+            if (nagScheduled) return;
+            var hasRelevantChange = false;
             for (var i = 0; i < mutations.length; i++) {
-                var added = mutations[i].addedNodes;
-                if (added && added.length > 0) {
-                    for (var j = 0; j < added.length; j++) {
-                        var node = added[j];
-                        if (node.nodeType === 1) {
-                            var tag = node.tagName;
-                            if (tag === 'DIV' || tag === 'SECTION' || tag === 'ASIDE' || tag === 'DIALOG') {
-                                hasRelevantAddition = true;
-                                break;
+                var m = mutations[i];
+                if (m.type === 'childList') {
+                    var added = m.addedNodes;
+                    if (added && added.length > 0) {
+                        for (var j = 0; j < added.length; j++) {
+                            var node = added[j];
+                            if (node.nodeType === 1) {
+                                var tag = node.tagName;
+                                if (tag === 'DIV' || tag === 'SECTION' || tag === 'ASIDE' || tag === 'DIALOG') {
+                                    hasRelevantChange = true;
+                                    break;
+                                }
                             }
                         }
                     }
+                } else if (m.type === 'attributes') {
+                    var target = m.target;
+                    if (target === document.documentElement || target === document.body) {
+                        hasRelevantChange = true;
+                    }
                 }
-                if (hasRelevantAddition) break;
+                if (hasRelevantChange) break;
             }
-            if (!hasRelevantAddition) return;
+            if (!hasRelevantChange) return;
 
             nagScheduled = true;
             setTimeout(function() {
                 nagScheduled = false;
-                sweepsCount++;
                 scrubNagElements();
-            }, 400);
+                restoreScroll();
+            }, 350);
         });
 
         var targetObserveNode = document.body || document.documentElement;
+        var observerConfig = { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] };
         if (targetObserveNode) {
-            nagObserver.observe(targetObserveNode, { childList: true, subtree: true });
+            nagObserver.observe(targetObserveNode, observerConfig);
         } else {
             document.addEventListener('DOMContentLoaded', function() {
-                if (document.body) nagObserver.observe(document.body, { childList: true, subtree: true });
+                if (document.body) nagObserver.observe(document.body, observerConfig);
             });
         }
     } catch(e) {}

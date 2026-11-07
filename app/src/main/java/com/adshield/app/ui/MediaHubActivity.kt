@@ -468,7 +468,7 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun isEliteDnsBlocked(host: String): Boolean {
         if (AdShieldApp.instance.blocklistEngine.isDomainBlocked(host)) return true
         if (AdShieldApp.instance.dohEngine.isKnownBlockedHost(host)) return true
-        return false
+        return AdShieldApp.instance.dohEngine.isHostBlocked(host)
     }
 
     private val wallpaperPickerLauncher = registerForActivityResult(
@@ -3491,6 +3491,7 @@ open class MediaHubActivity : AppCompatActivity() {
             urlStr.contains("adsbygoogle") -> "(function(){window.adsbygoogle=window.adsbygoogle||[];window.adsbygoogle.loaded=true;})();"
             urlStr.contains("gpt.js") || urlStr.contains("googletagservices") -> "(function(){window.googletag=window.googletag||{cmd:[],apiReady:true};window.googletag.pubads=window.googletag.pubads||function(){var s={addEventListener:function(){},clear:function(){},display:function(){},enableAsyncRendering:function(){},enableSingleRequest:function(){},getSlots:function(){return[];},getSlotIdMap:function(){return{};},isInitialLoadDisabled:function(){return false;},refresh:function(){},setTargeting:function(){}};return s;};})();"
             urlStr.contains("prebid") -> "(function(){window.pbjs=window.pbjs||{cmd:[],adUnits:[],que:[]};})();"
+            urlStr.contains("ima3.js") || urlStr.contains("imasdk.googleapis.com") -> "(function(){'use strict';if(window.google&&window.google.ima)return;var n=function(){};var m=function(){var l={};this.addEventListener=function(t,h){l[t]=l[t]||[];l[t].push(h);};this.removeEventListener=function(t,h){if(l[t])l[t]=l[t].filter(function(x){return x!==h;});};this.getCuePoints=function(){return[];};this.getAdSkippableState=function(){return false;};this.init=n;this.start=function(){setTimeout(function(){['allAdsCompleted','contentResumeRequested','complete'].forEach(function(e){if(l[e])l[e].forEach(function(f){try{f({type:e});}catch(err){}});});},5);};this.stop=n;this.resume=n;this.pause=n;this.resize=n;this.discardAdBreak=n;this.destroy=n;this.getRemainingTime=function(){return 0;};this.getVolume=function(){return 1;};this.setVolume=n;this.isCustomClickTrackingUsed=function(){return false;};this.isCustomPlaybackUsed=function(){return false;};};var s={setAutoPlayAdBreaks:n,setDisableCustomPlaybackForIOS10Plus:n,setLocale:n,setNumRedirects:n,setPlayerType:n,setPlayerVersion:n,setPpid:n,setVpaidAllowed:n,setVpaidMode:n};var L=function(c){var l={};this.addEventListener=function(t,h){l[t]=l[t]||[];l[t].push(h);};this.removeEventListener=function(t,h){if(l[t])l[t]=l[t].filter(function(x){return x!==h;});};this.contentComplete=n;this.destroy=n;this.getSettings=function(){return s;};this.requestAds=function(r){setTimeout(function(){var ml=l['adsManagerLoaded'];if(ml&&ml.length>0){var ev={type:'adsManagerLoaded',getAdsManager:function(){return new m();},getUserRequestContext:function(){return r?r.userRequestContext:null;}};ml.forEach(function(f){try{f(ev);}catch(err){}});}else{var el=l['adError'];if(el){var er={getError:function(){return{getMessage:function(){return'No ads';},getType:function(){return'AdError';},getErrorCode:function(){return 1009;}};}};el.forEach(function(f){try{f(er);}catch(err){}});}}},5);};};var ima={settings:s,AdDisplayContainer:function(c,v){this.initialize=n;this.destroy=n;},AdsLoader:L,AdsManager:m,AdsRequest:function(){this.adTagUrl='';this.adsResponse='';this.contentDuration=0;this.contentKeywords=[];this.contentTitle='';this.forceExperimentIds=[];this.linearAdSlotWidth=0;this.linearAdSlotHeight=0;this.liveStreamPrefetchSeconds=0;this.nonLinearAdSlotWidth=0;this.nonLinearAdSlotHeight=0;this.pageUrl='';this.userRequestContext=null;this.vastLoadTimeout=0;},AdsRenderingSettings:function(){this.autoAlign=true;this.bitrate=-1;this.enablePreloading=false;this.loadVideoTimeout=-1;this.mimeTypes=null;this.playAdsAfterTime=-1;this.restoreCustomPlaybackStateOnPlayerInit=true;this.useStyledAcceleratedCounter=true;this.useStyledLinearId=true;this.useStyledNonLinearId=true;},AdError:{Type:{AD:'ad',AD_LOAD:'adLoad'},ErrorCode:{ADSLOT_NOT_EMPTY:400,FAILED_TO_REQUEST_ADS:1005,INVALID_ARGUMENTS:1101,PLAYLIST_NO_CONTENT_FOUND:1009,UNKNOWN_ERROR:900,VAST_LOAD_TIMEOUT:301,VIDEO_PLAY_ERROR:400}},AdEvent:{Type:{AD_BREAK_READY:'adBreakReady',AD_BUFFERING:'adBuffering',AD_CAN_PLAY:'adCanPlay',AD_METADATA:'adMetadata',AD_PROGRESS:'adProgress',ALL_ADS_COMPLETED:'allAdsCompleted',CLICK:'click',COMPLETE:'complete',CONTENT_PAUSE_REQUESTED:'contentPauseRequested',CONTENT_RESUME_REQUESTED:'contentResumeRequested',DURATION_CHANGE:'durationChange',EXPANDED_CHANGED:'expandedChanged',FIRST_QUARTILE:'firstQuartile',IMPRESSION:'impression',INTERACTION:'interaction',LINEAR_CHANGED:'linearChanged',LOADED:'loaded',LOG:'log',MIDPOINT:'midpoint',PAUSED:'pause',RESUMED:'resumed',SKIPPABLE_STATE_CHANGED:'skippableStateChanged',SKIPPED:'skipped',STARTED:'started',THIRD_QUARTILE:'thirdQuartile',USER_CLOSE:'userClose',VOLUME_CHANGED:'volumeChanged',VOLUME_MUTED:'volumeMuted'}},AdErrorEvent:{Type:{AD_ERROR:'adError'}},AdsManagerLoadedEvent:{Type:{ADS_MANAGER_LOADED:'adsManagerLoaded'}},ViewMode:{NORMAL:'normal',FULLSCREEN:'fullscreen'},OmidAccessMode:{FULL:'full',DOMAIN:'domain',LIMITED:'limited'}};window.google=window.google||{};try{Object.defineProperty(window.google,'ima',{get:function(){return ima;},set:function(){},configurable:true,enumerable:true});}catch(e){window.google.ima=ima;}})();"
             urlStr.contains("analytics") || urlStr.contains("gtag") || urlStr.contains("ga.js") -> "(function(){window.ga=window.ga||function(){};window.gtag=window.gtag||function(){};})();"
             urlStr.contains("apstag") -> "(function(){window.apstag=window.apstag||{init:function(){},fetchBids:function(c,cb){if(typeof cb==='function')cb();}};})();"
             isJs -> "/* blocked by fokk brave-shield */"
@@ -3658,23 +3659,41 @@ open class MediaHubActivity : AppCompatActivity() {
                     s.id = '__fokk_amoled';
                     s.innerHTML = `
                         html, body {
-                            background-color: #000000 !important;
-                            color: #E2E8F0 !important;
+                            background-color: #12141a !important;
+                            color: #e4e7eb !important;
                         }
                         article, section, main, header, footer, nav, aside {
                             background-color: transparent !important;
-                            border-color: #1E293B !important;
+                            border-color: #27272a !important;
                         }
-                        input, textarea, select {
+                        h1, h2, h3, h4, h5, h6, p, li, dt, dd, blockquote, figcaption, label, time, address, cite, font {
+                            color: #e4e7eb !important;
+                        }
+                        b, strong, em, i, u, small {
                             color: inherit !important;
                         }
-                        h1, h2, h3, h4, h5, h6, p, span, li, dt, dd {
-                            color: inherit;
+                        span:not([class*="icon"]):not([aria-hidden="true"]) {
+                            color: inherit !important;
                         }
-                        a { color: #38BDF8 !important; }
-                        a:visited { color: #A78BFA !important; }
+                        a, a * {
+                            color: #38bdf8 !important;
+                        }
+                        a:visited, a:visited * {
+                            color: #a78bfa !important;
+                        }
+                        input, textarea, select {
+                            background-color: #1e222d !important;
+                            color: #f1f5f9 !important;
+                            border: 1px solid #334155 !important;
+                        }
+                        button, [role="button"] {
+                            background-color: #1e222d !important;
+                            color: #f1f5f9 !important;
+                            border-color: #334155 !important;
+                        }
                         /* Media Protection: NEVER invert or wash out photos, videos, canvas, or svgs */
                         img, video, canvas, svg, picture, [role="img"], iframe, [style*="background-image"] {
+                            background-color: transparent !important;
                             filter: none !important;
                             opacity: 1.0 !important;
                         }
@@ -6949,12 +6968,14 @@ open class MediaHubActivity : AppCompatActivity() {
     private fun showPrivateDnsHubDialog() {
         val providers = arrayOf(
             "AdGuard DNS (Recommended: Maximum Ad & Tracker Blocking)\nHostname: dns.adguard-dns.com",
+            "NextDNS (Advanced Cloud & Privacy Protection)\nHostname: dns.nextdns.io",
             "Mullvad Adblock (Strict Privacy & Zero Logs)\nHostname: adblock.dns.mullvad.net",
             "Cloudflare Security & Speed (Malware Protection)\nHostname: security.cloudflare-dns.com",
             "Control D Ad Blocker\nHostname: p2.freedns.controld.com"
         )
         val hostnames = arrayOf(
             "dns.adguard-dns.com",
+            "dns.nextdns.io",
             "adblock.dns.mullvad.net",
             "security.cloudflare-dns.com",
             "p2.freedns.controld.com"

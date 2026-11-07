@@ -2456,13 +2456,14 @@ open class MediaHubActivity : AppCompatActivity() {
             override fun onTrackerBlocked(category: Int) {
                 tab.filteredRequests += 1
                 AdShieldApp.instance.incrementBlockedAds(1)
-                if (tab === activeTab) {
-                    updateShieldBadge(tab.filteredRequests)
-                }
             }
 
             override fun onFullScreenRequested(fullScreen: Boolean) {
-                setEdgeToEdge(fullScreen)
+                if (fullScreen) {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                } else {
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                }
             }
         })
 
@@ -3340,7 +3341,6 @@ open class MediaHubActivity : AppCompatActivity() {
             }
         }
         updateUrlBar(current.url, current.title)
-        updateShieldBadge(current.filteredRequests)
         updateToolbarLayoutForUrl(current.url, animated = false)
 
         // Apply Private Tab styling if active

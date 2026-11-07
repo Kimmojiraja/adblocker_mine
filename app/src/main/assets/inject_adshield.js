@@ -245,21 +245,11 @@
                     if (!url || typeof url !== 'string') return response;
                     const host = window.location.hostname;
 
-                    // 1. YouTube Player Manifest & Navigation API (Zero-delay startup)
-                    if (host.includes('youtube.com') && (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next'))) {
-                        try {
-                            const clone = response.clone();
-                            const data = await clone.json();
-                            sanitizeYtPlayerResponse(data);
-                            return new Response(JSON.stringify(data), {
-                                status: response.status,
-                                statusText: response.statusText,
-                                headers: response.headers
-                            });
-                        } catch (e) {
-                            return response;
-                        }
-                    }
+                    // YouTube player / navigation responses: do NOT reconstruct the Response here.
+                    // Re-cloning and re-serializing the player manifest delays streaming-data
+                    // delivery and can leave the player stuck on a blank/buffering screen.
+                    // Ad data is still defused page-side via the Response.prototype.json hook below,
+                    // and ad network requests are blocked at the native network layer.
 
                     // 2. Reddit GraphQL Feed API
                     if (host.includes('reddit.com') && (url.includes('/api/v2/graphql') || url.includes('gql.reddit.com'))) {
@@ -345,25 +335,6 @@
                         else if (host.includes('instagram.com')) sanitizeInstagramData(data);
                     }
                     return data;
-                };
-            }
-        } catch (e) {}
-
-        // Response.prototype.text hook (Intercepts stringified JSON manifests)
-        try {
-            if (window.Response && Response.prototype && Response.prototype.text) {
-                const origResponseText = Response.prototype.text;
-                Response.prototype.text = async function() {
-                    const text = await origResponseText.apply(this, arguments);
-                    const host = window.location.hostname;
-                    if (host.includes('youtube.com') && typeof text === 'string' && (text.includes('adPlacements') || text.includes('playerAds'))) {
-                        try {
-                            const parsed = JSON.parse(text);
-                            sanitizeYtPlayerResponse(parsed);
-                            return JSON.stringify(parsed);
-                        } catch (e) {}
-                    }
-                    return text;
                 };
             }
         } catch (e) {}
@@ -501,22 +472,6 @@
                     userInteractedMute = true;
                 }
             }, { capture: true, passive: true });
-
-            const origMutedDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
-            if (origMutedDescriptor && origMutedDescriptor.set) {
-                Object.defineProperty(HTMLMediaElement.prototype, 'muted', {
-                    get: origMutedDescriptor.get,
-                    set: function(val) {
-                        // Only the real watch player may be forced audible. Feed and
-                        // thumbnail previews stay muted so scrolling the home page is quiet.
-                        if (val === true && isPrimaryYouTubeVideo(this) && !userInteractedMute) {
-                            return origMutedDescriptor.set.call(this, false);
-                        }
-                        return origMutedDescriptor.set.call(this, val);
-                    },
-                    configurable: true
-                });
-            }
         } catch (e) {}
 
         function isPrimaryYouTubeVideo(video) {
@@ -565,8 +520,6 @@
         if (window.location.hostname.includes('youtube.com')) {
             document.addEventListener('play', unmuteYouTubeVideo, { capture: true, passive: true });
             document.addEventListener('playing', unmuteYouTubeVideo, { capture: true, passive: true });
-            document.addEventListener('loadeddata', unmuteYouTubeVideo, { capture: true, passive: true });
-            document.addEventListener('canplay', unmuteYouTubeVideo, { capture: true, passive: true });
             window.addEventListener('yt-navigate-finish', unmuteYouTubeVideo, { capture: true, passive: true });
 
             // Force HTML5 Fullscreen API on player container rather than raw video element
@@ -1081,6 +1034,8 @@
         shreddit-ad-post,
         shreddit-comments-page-ad,
         shreddit-post[ad-unit],
+        shreddit-placement,
+        div[slot="ad"],
         [data-faceplate-tracking-context*='"promoted":true'],
         div[data-testid="ad-post"],
         div.promotedlink,
@@ -1113,6 +1068,15 @@
         .ytp-ad-text,
         .ytp-ad-preview-text,
         div[class*="ad-showing"] .ytp-ad-text,
+
+        /* YouTube ad slot & sponsored shelf renderers (all form factors) */
+        ytd-ad-slot-renderer,
+        ytm-ad-slot-renderer,
+        ytd-compact-ad-slot-renderer,
+        ytm-compact-ad-slot-renderer,
+        ytd-channel-ad-slot-renderer,
+        ytd-video-renderer:has(.yt-ad-badge),
+        ytm-video-renderer:has(.yt-ad-badge),
 
 
         /* News & Media Article Ad Units, Sponsored Boxes & Overlays */
@@ -1534,7 +1498,7 @@
         setInterval(function() {
             runYouTubeAdSkipper();
             scrubYouTubeSponsored();
-        }, 500);
+        }, 1000);
         document.addEventListener('loadeddata', runYouTubeAdSkipper, { capture: true, passive: true });
         window.addEventListener('yt-navigate-start', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });
         window.addEventListener('yt-navigate-finish', function() { runYouTubeAdSkipper(); scrubYouTubeSponsored(); }, { capture: true, passive: true });

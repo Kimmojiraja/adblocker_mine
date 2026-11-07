@@ -17,6 +17,12 @@ class BlocklistEngine(private val context: Context) {
     private val whitelistDomains = ConcurrentHashMap.newKeySet<String>()
     private val customBlockedDomains = ConcurrentHashMap.newKeySet<String>()
     private val customWhitelistDomains = ConcurrentHashMap.newKeySet<String>()
+    // @@ exception rules from the bundled blocklist (path-aware where specified)
+    private val exceptionDomains = ConcurrentHashMap.newKeySet<String>()
+    // Path-scoped network rules: ||host^path*  -> host => path rules to block
+    private val blockedPathRules = ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<PathRule>>()
+    // Path-scoped exceptions: @@||host^path* -> host => path rules to allow
+    private val exceptionPathRules = ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<PathRule>>()
     private val isReady = AtomicBoolean(false)
     private val decisionCache = ConcurrentHashMap<String, Boolean>()
 
@@ -28,17 +34,16 @@ class BlocklistEngine(private val context: Context) {
             val startTime = System.currentTimeMillis()
             var count = 0
 
-            // Load core blocklist from assets
+            // Load core blocklist from assets (plain domains ||host^ path rules and @@ exceptions supported)
             context.assets.open("blocklist_core.txt").use { inputStream ->
                 BufferedReader(InputStreamReader(inputStream)).use { reader ->
                     var line: String? = reader.readLine()
                     while (line != null) {
                         val trimmed = line.trim()
                         if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                            val normalized = normalizeDomain(trimmed)
-                            if (normalized.isNotEmpty()) {
-                                blockedDomains.add(normalized)
-                                coreBlockedDomains.add(normalized)
+                            val rule = parseRule(trimmed)
+                            if (rule != null) {
+                                applyRule(rule)
                                 count++
                             }
                         }
@@ -47,15 +52,109 @@ class BlocklistEngine(private val context: Context) {
                 }
             }
 
-            // Load user custom whitelist / blacklist
+            // Load user custom whitelist / blacklist (plain domains only)
             loadCustomRules()
 
             isReady.set(true)
             val elapsed = System.currentTimeMillis() - startTime
-            Log.d(TAG, "Blocklist initialized with $count domains in ${elapsed}ms")
+            Log.d(TAG, "Blocklist initialized with $count rules in ${elapsed}ms")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load blocklist", e)
         }
+    }
+
+    /**
+     * Path-scoped rule entry.
+     * [isWildcard] indicates prefix matching (e.g. ||host^path*); otherwise ABP separator
+     * semantics are applied so /tr only matches /tr, /tr/, /tr?... and not /translate.
+     */
+    private data class PathRule(
+        val prefix: String,
+        val isWildcard: Boolean
+    )
+
+    private data class Rule(
+        val exception: Boolean,
+        val host: String,
+        val pathRule: PathRule?
+    )
+
+    private fun parseRule(line: String): Rule? {
+        var body = line.trim()
+        var exception = false
+        if (body.startsWith("@@")) {
+            exception = true
+            body = body.substring(2).trim()
+        }
+        if (body.isEmpty()) return null
+
+        if (body.startsWith("||")) {
+            body = body.substring(2).trim()
+        }
+        if (body.isEmpty()) return null
+
+        var host: String
+        var pathPrefix: String? = null
+        var isWildcard = false
+
+        val sep = body.indexOf('^')
+        val slash = body.indexOf('/')
+        if (sep >= 0 && (slash < 0 || sep < slash)) {
+            // ^ anchor present: ||host^path*  (path starts immediately after ^, no leading slash)
+            host = body.substring(0, sep)
+            val rest = body.substring(sep + 1).trim()
+            if (rest.isNotEmpty()) {
+                if (rest.endsWith("*")) {
+                    isWildcard = true
+                }
+                var clean = rest.trimEnd('*').trimEnd('^').trim()
+                if (clean.isNotEmpty() && clean != "*") {
+                    if (!clean.startsWith("/")) clean = "/$clean"
+                    pathPrefix = clean
+                }
+            }
+        } else if (slash >= 0) {
+            host = body.substring(0, slash)
+            val rest = body.substring(slash).trim()
+            if (rest.endsWith("*")) {
+                isWildcard = true
+            }
+            var clean = rest.trimEnd('*').trimEnd('^').trim()
+            if (clean.isNotEmpty() && clean != "/" && clean != "*") {
+                pathPrefix = clean
+            }
+        } else {
+            host = body
+        }
+
+        val normalized = normalizeDomain(host)
+        if (normalized.isEmpty()) return null
+
+        val pathRule = if (!pathPrefix.isNullOrEmpty()) {
+            PathRule(pathPrefix, isWildcard)
+        } else {
+            null
+        }
+
+        return Rule(exception, normalized, pathRule)
+    }
+
+    private fun applyRule(rule: Rule) {
+        val pathRule = rule.pathRule
+        if (pathRule == null) {
+            if (rule.exception) {
+                exceptionDomains.add(rule.host)
+                whitelistDomains.add(rule.host)
+            } else {
+                blockedDomains.add(rule.host)
+                coreBlockedDomains.add(rule.host)
+            }
+            return
+        }
+
+        val ruleMap = if (rule.exception) exceptionPathRules else blockedPathRules
+        val list = ruleMap.getOrPut(rule.host) { java.util.concurrent.CopyOnWriteArrayList() }
+        list.add(pathRule)
     }
 
     private fun loadCustomRules() {
@@ -103,12 +202,14 @@ class BlocklistEngine(private val context: Context) {
         "recaptcha.net"
     )
 
+    /**
+     * Domain-level blocking decision (cached by raw domain). Path is NOT considered here;
+     * use [isUrlBlocked] for path-aware decisions.
+     */
     fun isDomainBlocked(rawDomain: String): Boolean {
         val cached = decisionCache[rawDomain]
         if (cached != null) return cached
 
-        // Application startup warms the list on IO, but WebView can issue requests
-        // before that task runs. Complete local initialization before failing open.
         if (!isReady.get()) initialize()
         if (!isReady.get()) return false
 
@@ -118,10 +219,11 @@ class BlocklistEngine(private val context: Context) {
             return false
         }
 
-        // Evaluate complete hierarchies in precedence order so a parent whitelist
-        // cannot be bypassed by an exact block entry for one of its subdomains.
+        // Precedence: explicit user/custom whitelist > user/custom block >
+        // bundled exceptions > essential services > bundled blocklist.
         val blocked = if (matchesDomainOrParent(domain, customWhitelistDomains)) false
         else if (matchesDomainOrParent(domain, customBlockedDomains)) true
+        else if (matchesDomainOrParent(domain, exceptionDomains)) false
         else if (isWhitelisted(domain)) false
         else matchesDomainOrParent(domain, coreBlockedDomains)
 
@@ -129,6 +231,67 @@ class BlocklistEngine(private val context: Context) {
             decisionCache[rawDomain] = blocked
         }
         return blocked
+    }
+
+    /**
+     * Evaluates path-scoped rules against a request path & full path.
+     * When [rule.isWildcard] is true, matches if path or fullPath starts with prefix.
+     * When false (default for ABP separator rules like ||facebook.com^tr), matches exact
+     * path, or separator boundary ('/', '?', '#'), preventing /tr from blocking /translate.
+     */
+    private fun matchesPathRule(path: String, fullPath: String, rule: PathRule): Boolean {
+        val p = rule.prefix
+        if (rule.isWildcard) {
+            return path.startsWith(p) || fullPath.startsWith(p)
+        }
+        return path == p ||
+            path.startsWith("$p/") ||
+            path.startsWith("$p?") ||
+            path.startsWith("$p#") ||
+            fullPath.startsWith("$p?") ||
+            fullPath.startsWith("$p/")
+    }
+
+    /**
+     * Full URL-aware blocking decision. Path-scoped rules (`||host^path*`, `@@||host^path*`)
+     * are evaluated first; otherwise falls back to the domain-level decision.
+     * Exceptions take precedence over blocks at every level.
+     */
+    fun isUrlBlocked(rawUrl: String): Boolean {
+        if (!isReady.get()) initialize()
+        if (!isReady.get()) return false
+
+        val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return false
+        val host = uri.host ?: return false
+        val domain = normalizeDomain(host)
+        if (domain.isEmpty()) return false
+
+        // User explicit custom rules always take highest precedence
+        if (matchesDomainOrParent(domain, customWhitelistDomains)) return false
+        if (matchesDomainOrParent(domain, customBlockedDomains)) return true
+
+        val rawPath = uri.path
+        val path = if (!rawPath.isNullOrEmpty()) rawPath else "/"
+        val query = uri.query
+        val fullPath = if (!query.isNullOrEmpty()) "$path?$query" else path
+
+        // Walk up the host hierarchy so rules on a parent domain apply to subdomains too.
+        var current = domain
+        while (true) {
+            // Path-scoped exceptions win first
+            exceptionPathRules[current]?.let { rules ->
+                if (rules.any { r -> matchesPathRule(path, fullPath, r) }) return false
+            }
+            // Path-scoped blocks
+            blockedPathRules[current]?.let { rules ->
+                if (rules.any { r -> matchesPathRule(path, fullPath, r) }) return true
+            }
+            val dotIndex = current.indexOf('.')
+            if (dotIndex < 0 || dotIndex == current.lastIndex) break
+            current = current.substring(dotIndex + 1)
+        }
+
+        return isDomainBlocked(domain)
     }
 
     private fun matchesDomainOrParent(domain: String, candidates: Set<String>): Boolean {
@@ -160,8 +323,6 @@ class BlocklistEngine(private val context: Context) {
         val normalized = normalizeDomain(domain)
         if (normalized.isNotEmpty()) {
             whitelistDomains.add(normalized)
-            // Keep the core rule in memory. The whitelist takes precedence while it is
-            // enabled and removing it must reliably restore the bundled protection.
             if (!coreBlockedDomains.contains(normalized)) blockedDomains.remove(normalized)
             customWhitelistDomains.add(normalized)
             customBlockedDomains.remove(normalized)

@@ -82,15 +82,21 @@ class BraveAdblockEngine(private val context: Context) {
                         Log.w(TAG, "Could not load adblock_rules_curated.txt", e)
                     }
 
-                    // 2. Load core blocklist domains and format as ABP network filters
+                    // 2. Load core blocklist domains and format as ABP network filters.
+                    // Plain domains become ||domain^; ||-anchored rules (incl. ||host^path*)
+                    // and @@ exceptions pass through natively to adblock-rust.
                     try {
                         context.assets.open("blocklist_core.txt").use { input ->
                             BufferedReader(InputStreamReader(input, Charsets.UTF_8)).use { reader ->
                                 reader.forEachLine { line ->
                                     val trimmed = line.trim()
                                     if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("!")) {
-                                        // Convert domain to standard ABP network rule
-                                        rulesBuilder.append("||").append(trimmed).append("^\n")
+                                        if (trimmed.startsWith("@@") || trimmed.startsWith("||")) {
+                                            rulesBuilder.append(trimmed).append('\n')
+                                        } else {
+                                            // Convert plain domain to standard ABP network rule
+                                            rulesBuilder.append("||").append(trimmed).append("^\n")
+                                        }
                                     }
                                 }
                             }

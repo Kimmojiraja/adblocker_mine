@@ -1197,40 +1197,14 @@
     }
 
     // =========================================================================
-    // YouTube Ad Skip & Overlay Remover (uBO Standard — Instant Ad Defuse & Buffering Killer)
+    // YouTube Ad Skip & Overlay Remover (uBO Standard — Clean Native Skip & Zero Video Tampering)
     // =========================================================================
     function runYouTubeAdSkipper() {
         if (!window.location.hostname.includes('youtube.com')) return;
 
         const playerEl = document.getElementById('movie_player') ||
                          document.querySelector('.html5-video-player, ytm-player, #player');
-        const video = document.querySelector('#movie_player video, .html5-video-player video, video');
-
-        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay, [class*="ytp-ad-"]');
-
-        if (isAdShowing && video) {
-            // Instant Video Ad Fast-Forward & Skip (Neutralizes unskippable & bumper ads in <30ms)
-            try {
-                video.muted = true;
-                video.playbackRate = 16.0;
-                if (isFinite(video.duration) && video.duration > 0.1) {
-                    video.currentTime = video.duration - 0.05;
-                }
-            } catch (e) {}
-        } else if (video) {
-            // Restore normal speed if previous ad boosted it
-            if (video.playbackRate > 2.0) {
-                try { video.playbackRate = 1.0; } catch (e) {}
-            }
-            // Eliminate fake 6-10s network-level adblock buffering stall
-            const spinner = document.querySelector('.ytp-spinner, .ytp-loading-spinner, ytm-spinner');
-            if (video.paused && !video.ended && (spinner || video.currentTime < 1.0)) {
-                try {
-                    const p = video.play();
-                    if (p && typeof p.catch === 'function') p.catch(function() {});
-                } catch (e) {}
-            }
-        }
+        const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay');
 
         // 1. Programmatically click native YouTube skip buttons immediately
         const skipButtons = [
@@ -1268,16 +1242,12 @@
             }
         } catch (e) {}
 
-        // 3. Remove YouTube anti-adblock enforcement modal & resume playback
+        // 3. Remove YouTube anti-adblock enforcement modal from DOM
         const enforcementModal = document.querySelector('ytd-enforcement-message-view-model, tp-yt-paper-dialog:has(ytd-enforcement-message-view-model), [dialog-type="enforcement"]');
         if (enforcementModal) {
             try {
                 enforcementModal.remove();
                 document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach(function(b) { b.remove(); });
-                if (video && video.paused) {
-                    const p2 = video.play();
-                    if (p2 && typeof p2.catch === 'function') p2.catch(function() {});
-                }
             } catch (e) {}
         }
 

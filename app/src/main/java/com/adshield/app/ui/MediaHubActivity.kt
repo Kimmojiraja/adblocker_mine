@@ -2708,13 +2708,6 @@ open class MediaHubActivity : AppCompatActivity() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                // Social apps are tightly coupled SPAs. Blocking their boot/runtime
-                // resources or rewriting their API payloads leaves blank feeds and
-                // broken notification routes.
-                if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
-                    return super.shouldInterceptRequest(view, request)
-                }
-
                 val urlStr = request.url.toString().lowercase()
                 val acceptHeader = request?.requestHeaders?.get("Accept").orEmpty().lowercase()
                 val isMediaRequest = acceptHeader.contains("video/") ||
@@ -2723,6 +2716,27 @@ open class MediaHubActivity : AppCompatActivity() {
                     urlStr.contains("/videoplayback") ||
                     listOf(".m3u8", ".mpd", ".mp4", ".webm", ".m4s", ".ts")
                         .any { urlStr.substringBefore('?').endsWith(it) }
+
+                // Social apps are tightly coupled SPAs. Allow core social infrastructure & feeds,
+                // but block known third-party ad networks, telemetry trackers, and ad pixels.
+                if (isSocialAppHost(pageHost) || isSocialInfrastructureHost(host)) {
+                    val isAdOrTracker = isDedicatedAdOrTrackerHost(host) ||
+                        urlStr.contains("/pagead/") ||
+                        urlStr.contains("doubleclick.net") ||
+                        urlStr.contains("/ads/") ||
+                        urlStr.contains("adservice.google.") ||
+                        urlStr.contains("googleadservices.com") ||
+                        urlStr.contains("googletagservices.com") ||
+                        urlStr.contains("amazon-adsystem.com") ||
+                        urlStr.contains("criteo.") ||
+                        urlStr.contains("taboola.com") ||
+                        urlStr.contains("outbrain.com")
+                    if (isAdOrTracker && !isMediaRequest) {
+                        recordFilteredRequest(view, host)
+                        return createBlockedResourceResponse(urlStr)
+                    }
+                    return super.shouldInterceptRequest(view, request)
+                }
                 val isAdScript = urlStr.contains("/pagead/") ||
                         urlStr.contains("adsbygoogle.js") ||
                         urlStr.contains("/adsbygoogle/") ||
@@ -3500,9 +3514,9 @@ open class MediaHubActivity : AppCompatActivity() {
         if (webView == null) return
         if (!isShieldEnabledFor(pageUrl)) return
         val pageHost = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull()
-        if (isSocialAppHost(pageHost)) return
+        val isSocial = isSocialAppHost(pageHost)
 
-        // Inject Brave adblock-rust cosmetic CSS element hiding & scriptlets (non-YouTube pages)
+        // Inject Brave adblock-rust cosmetic CSS element hiding (all pages except YouTube)
         val isYt = pageUrl?.contains("youtube.com") == true || pageUrl?.contains("youtu.be") == true
         if (pageUrl != null && !isYt && !pageUrl.startsWith("file:///android_asset/")) {
             val cosmetic = AdShieldApp.instance.braveEngine.getCosmeticResources(pageUrl)
@@ -3522,20 +3536,19 @@ open class MediaHubActivity : AppCompatActivity() {
                     """.trimIndent()
                     webView.evaluateJavascript(cosmeticJs, null)
                 }
-                if (cosmetic.js.isNotEmpty()) {
+                if (cosmetic.js.isNotEmpty() && !isSocial) {
                     webView.evaluateJavascript(cosmetic.js, null)
                 }
             }
         }
 
-        val supportsDocStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-        if (!supportsDocStart) {
-            if (defusersScript.isNotEmpty()) {
-                webView.evaluateJavascript(defusersScript, null)
-            }
-            if (injectionScript.isNotEmpty()) {
-                webView.evaluateJavascript(injectionScript, null)
-            }
+        // Always evaluate defusers and injectionScript in Main World to ensure in-flight JSON scrubbers
+        // (YouTube zero-delay, Reddit, X, Instagram) are active directly in page V8 context, bypassing CSP
+        if (defusersScript.isNotEmpty()) {
+            webView.evaluateJavascript(defusersScript, null)
+        }
+        if (injectionScript.isNotEmpty()) {
+            webView.evaluateJavascript(injectionScript, null)
         }
 
         val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
@@ -3596,6 +3609,29 @@ open class MediaHubActivity : AppCompatActivity() {
             normalized == "syndication.twitter.com" || normalized.endsWith(".syndication.twitter.com") ||
             normalized == "redditmedia.com" || normalized.endsWith(".redditmedia.com") ||
             normalized == "redd.it" || normalized.endsWith(".redd.it")
+    }
+
+    private fun isDedicatedAdOrTrackerHost(host: String?): Boolean {
+        val h = host?.lowercase(Locale.ROOT)?.substringBefore(':').orEmpty()
+        if (h.isEmpty()) return false
+        return h == "ads-twitter.com" || h.endsWith(".ads-twitter.com") ||
+            h == "analytics.twitter.com" || h.endsWith(".analytics.twitter.com") ||
+            h == "scribe.twitter.com" || h.endsWith(".scribe.twitter.com") ||
+            h == "ads-api.twitter.com" || h.endsWith(".ads-api.twitter.com") ||
+            h == "alb.reddit.com" || h.endsWith(".alb.reddit.com") ||
+            h == "events.reddit.com" || h.endsWith(".events.reddit.com") ||
+            h == "pixel.redditmedia.com" || h.endsWith(".pixel.redditmedia.com") ||
+            h == "advertising.reddit.com" || h.endsWith(".advertising.reddit.com") ||
+            h == "ads.reddit.com" || h.endsWith(".ads.reddit.com") ||
+            h == "pixel.facebook.com" || h.endsWith(".pixel.facebook.com") ||
+            h == "an.facebook.com" || h.endsWith(".an.facebook.com") ||
+            h == "doubleclick.net" || h.endsWith(".doubleclick.net") ||
+            h == "googleadservices.com" || h.endsWith(".googleadservices.com") ||
+            h == "googlesyndication.com" || h.endsWith(".googlesyndication.com") ||
+            h == "taboola.com" || h.endsWith(".taboola.com") ||
+            h == "outbrain.com" || h.endsWith(".outbrain.com") ||
+            h == "criteo.com" || h.endsWith(".criteo.com") ||
+            h == "criteo.net" || h.endsWith(".criteo.net")
     }
 
     /** The native bridge is permanently maintained so internal and start page actions never disconnect. */

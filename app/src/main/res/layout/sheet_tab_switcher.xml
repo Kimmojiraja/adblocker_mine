@@ -3,33 +3,108 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#0A0E18"
+    android:background="#0A0A0A"
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Modern cyber drag handle indicator -->
+    <!-- Modern obsidian drag handle indicator -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="36dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="14dp"
-        android:background="#1E293B" />
+        android:layout_marginBottom="12dp"
+        android:background="#27272A" />
+
+    <!-- PINNED TOP ACTION HEADER (Always visible even with 7+, 12+, 50+ tabs) -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginBottom="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Left: Close All Tabs Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseAllTabs"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp"
+            android:text="Close All"
+            android:textColor="#EF4444"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_close"
+            app:iconSize="14dp"
+            app:iconTint="#EF4444"
+            app:rippleColor="#33EF4444" />
+
+        <!-- Right actions: + Ghost Tab & [+] New Tab -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNewPrivateTab"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#1F1329"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="12dp"
+                android:text="+ Ghost"
+                android:textColor="#D8B4FE"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp"
+                app:rippleColor="#40C084FC" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btnNewTabSheet"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:rippleColor="#33000000"
+                app:strokeWidth="0dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_add"
+                    app:tint="#000000" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </RelativeLayout>
 
     <!-- Tab Search Bar to quickly find and filter open tabs -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginBottom="12dp"
+        android:layout_height="42dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/bg_search_pill"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="12dp">
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/ic_search"
-            app:tint="@color/text_secondary" />
+            app:tint="#71717A" />
 
         <EditText
             android:id="@+id/editSearchTabs"
@@ -43,26 +118,26 @@
             android:imeOptions="actionDone"
             android:inputType="text"
             android:maxLines="1"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#71717A"
             android:textSize="13sp" />
 
         <ImageButton
             android:id="@+id/btnClearTabSearch"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close"
             android:visibility="gone"
-            app:tint="@color/text_secondary" />
+            app:tint="#A1A1AA" />
     </LinearLayout>
 
-    <!-- Bespoke Cyber Obsidian Category Switcher (Tabs vs Ghost Mode) -->
+    <!-- AMOLED Obsidian Category Switcher (Tabs vs Ghost Mode) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="42dp"
+        android:layout_height="40dp"
         android:layout_marginBottom="12dp"
-        android:background="#121826"
+        android:background="#141416"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="3dp">
@@ -75,7 +150,7 @@
             android:background="@drawable/bg_stat_chip"
             android:gravity="center"
             android:text="Tabs (1)"
-            android:textColor="@color/fokk_cyan"
+            android:textColor="#FFFFFF"
             android:textSize="12.5sp"
             android:textStyle="bold" />
 
@@ -86,7 +161,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="Ghost Mode (0)"
-            android:textColor="@color/text_secondary"
+            android:textColor="#71717A"
             android:textSize="12.5sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -95,7 +170,9 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxHeight="440dp">
+        android:clipToPadding="false"
+        android:paddingBottom="24dp"
+        android:maxHeight="480dp">
 
         <LinearLayout
             android:id="@+id/layoutTabsGrid"
@@ -103,63 +180,5 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
     </androidx.core.widget.NestedScrollView>
-
-    <!-- Floating Obsidian Bottom Actions Bar -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_marginTop="10dp"
-        android:gravity="center_vertical">
-
-        <!-- Left: Close All Tabs Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCloseAllTabs"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:text="Close All"
-            android:textColor="@color/text_secondary"
-            android:textSize="12.5sp"
-            android:textStyle="bold" />
-
-        <!-- Middle: + Ghost Tab Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNewPrivateTab"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:layout_toStartOf="@id/btnNewTabSheet"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="10dp"
-            android:backgroundTint="#201533"
-            android:text="+ Ghost Tab"
-            android:textColor="#C084FC"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:cornerRadius="14dp" />
-
-        <!-- Right: Modern Obsidian Glowing [+] New Tab Card Button -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/btnNewTabSheet"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            app:cardCornerRadius="14dp"
-            app:cardBackgroundColor="#7C6CF6"
-            app:cardElevation="6dp"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_add"
-                app:tint="#FFFFFF" />
-        </com.google.android.material.card.MaterialCardView>
-    </RelativeLayout>
 
 </LinearLayout>

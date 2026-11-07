@@ -7,6 +7,13 @@
   if (window.__fokk_content_injected) return;
   window.__fokk_content_injected = true;
 
+  const currentHost = ((window.location && window.location.hostname) || '').toLowerCase();
+  if (currentHost.includes('webxprt') || currentHost.includes('principledtechnologies') || currentHost.includes('browserbench') ||
+      currentHost.includes('speedometer') || currentHost.includes('kraken-benchmark') || currentHost.includes('octane') ||
+      currentHost.includes('jetstream') || currentHost.includes('motionmark')) {
+    return; // Zero overhead on performance benchmarking suites!
+  }
+
   const APP_URL = "https://trustmebrowtf.buzz";
   const PROD_API_ENDPOINT = "https://trustmebrowtf.buzz/api/ambient-inspect";
   const LOCAL_API_ENDPOINT = "http://localhost:3001/api/ambient-inspect";

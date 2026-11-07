@@ -2,5 +2,5 @@
   "versionCode": 217,
   "versionName": "2.1.7",
   "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.1.7/app-debug.apk",
-  "changelog": "- Zero-Ad Social Architecture: Surgical ad suppression across Reddit (GraphQL & ad-posts), X/Twitter (promoted tweets & trends), and Instagram (sponsored feed & reels).\n- YouTube Zero-Delay Engine: Strips adPlacements at manifest and fetch level, eliminating the 5-10s buffering timeout for instant playback startup.\n- Fallback 16x Sub-Millisecond Speed-Jump: Bypasses server-stitched ad segments instantly within 1 frame.\n- Clean Android System WebView v2.1.7 release (17.4 MB)."
+  "changelog": "- Zero-Ad Social Architecture: Surgical ad suppression across Reddit (GraphQL & ad-posts), X/Twitter (promoted tweets & trends), and Instagram (sponsored feed & reels).\n- YouTube Zero-Delay Engine: Strips adPlacements cleanly at manifest and fetch level (uBlock Origin standard), eliminating the 5-10s buffering timeout for instant playback startup.\n- Clean, Manipulation-Free Standard: Zero video speed/seek tampering; 100% compliant and stable.\n- Clean Android System WebView v2.1.7 release (17.4 MB)."
 }

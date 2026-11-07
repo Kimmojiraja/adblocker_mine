@@ -1448,27 +1448,11 @@
             }
         }
 
-        // 2. High-speed 16x jump & native player skipAd API ONLY when an ad is actively showing
+        // 2. Call native player skipAd API ONLY when an ad is actively showing (Clean uBO Standard)
         try {
             const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay');
-            if (isAdShowing) {
-                if (playerEl && typeof playerEl.skipAd === 'function') {
-                    playerEl.skipAd();
-                }
-                const video = document.querySelector('video');
-                if (video) {
-                    video.muted = true;
-                    video.playbackRate = 16.0;
-                    if (video.duration && !isNaN(video.duration) && isFinite(video.duration)) {
-                        video.currentTime = Math.max(0, video.duration - 0.05);
-                    }
-                }
-            } else {
-                const video = document.querySelector('video');
-                if (video && video.playbackRate > 2.0) {
-                    video.playbackRate = 1.0;
-                    video.muted = false;
-                }
+            if (isAdShowing && playerEl && typeof playerEl.skipAd === 'function') {
+                playerEl.skipAd();
             }
         } catch (e) {}
 

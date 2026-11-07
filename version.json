@@ -1,6 +1,6 @@
 {
-  "versionCode": 209,
-  "versionName": "2.0.9",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.0.9/app-debug.apk",
+  "versionCode": 210,
+  "versionName": "2.1.0",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.1.0/app-debug.apk",
   "changelog": "- YouTube Shorts Restored: Re-enabled native Shorts shelves, swipe reels, and bottom navigation pivot tab with cold-boot unprompted auto-open guard.\n- YouTube Minimize/Resume Sync: Resolved playback desync where video played behind stuck buffering spinners or pause overlays when returning to the app.\n- Tab Switcher Redesign: Moved Close All, + Ghost, and New Tab buttons to a pinned top header for permanent visibility with 7+ or 12+ tabs, styled in sleek AMOLED obsidian pure dark theme.\n- Command Card Clean View: Removed redundant search magnifying glass icon on command card across web pages.\n- Dual Screen Bug Fix: Fixed blank screen when closing dual screen mode; active tab webview now re-attaches cleanly.\n- Yahoo Sports SPA Fix: Neutralized clickjacking overlay false-positives that caused a 0.5s white screen on Next.js streaming sites.\n- Article Videos Unblocked: Ensured article-relevant video streams (Brightcove, Connatix, JWPlayer, Vidgyor, Yahoo Video) load seamlessly.\n- Ad Blank Space Collapse: Collapsed empty ad placeholders, wrappers, and orphan 'Advertisement' labels on news sites (e.g. Hindustan Times)."
 }

@@ -1,6 +1,6 @@
 {
-  "versionCode": 218,
-  "versionName": "2.1.8",
-  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.1.8/app-debug.apk",
-  "changelog": "- YouTube Blank Screen & Buffering Resolved: Manifest streams pass without delay; ad breaks stripped in-place via Response.prototype.json (uBlock Origin standard).\n- ABP-Style Network Filtering: Added full support for ||host^ domain anchors, @@ exception rules, and path-scoped rules with boundary matching (e.g. ||facebook.com^tr blocks tracking pixels without breaking login).\n- Enhanced Social Ad Blocking: Hardened network rules for Reddit, TikTok, Snapchat, and LinkedIn ad endpoints.\n- Pure Android System WebView v2.1.8 release (17.4 MB)."
+  "versionCode": 219,
+  "versionName": "2.1.9",
+  "downloadUrl": "https://github.com/Kimmojiraja/fokk-project/releases/download/v2.1.9/app-debug.apk",
+  "changelog": "- YouTube Zero-Buffering & Startup Delay Fix: Eliminated XHR manifest re-serialization for /player, /next, /reel, and /browse, removing buffer stalls on watch, shorts, and feed playback.\n- In-Flight Page-Side Defuser: Ad data defused in-place via Response.prototype.json and JSON.parse without stalling data streams.\n- ABP-Style Network Filtering: Full support for ||host^ anchors, @@ exceptions, and path-scoped rules with boundary matching.\n- Pure Android System WebView v2.1.9 release (17.4 MB)."
 }

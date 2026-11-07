@@ -919,26 +919,11 @@
             };
             XMLHttpRequest.prototype.send = function(body) {
                 if (this._fokkTargetUrl && typeof this._fokkTargetUrl === 'string') {
-                    const isYt = this._fokkTargetUrl.includes('/youtubei/v1/player') ||
-                                 this._fokkTargetUrl.includes('/youtubei/v1/next') ||
-                                 this._fokkTargetUrl.includes('/youtubei/v1/reel/reel_item_watch') ||
-                                 this._fokkTargetUrl.includes('/youtubei/v1/browse');
-                    if (isYt) {
-                        const self = this;
-                        const modifyYtResponse = function() {
-                            if (self.readyState === 4 && self.status === 200) {
-                                try {
-                                    const data = JSON.parse(self.responseText);
-                                    sanitizeYtPlayerResponse(data);
-                                    const cleaned = JSON.stringify(data);
-                                    Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
-                                    Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
-                                } catch (e) {}
-                            }
-                        };
-                        this.addEventListener('readystatechange', modifyYtResponse, { capture: true });
-                        this.addEventListener('load', modifyYtResponse, { capture: true });
-                    }
+                    // YouTube player/navigation responses: do NOT parse+re-serialize XHR bodies.
+                    // Reconstructing manifests delays streaming-data delivery and can leave the
+                    // player stuck on a blank/buffering screen (same failure mode as fetch/text
+                    // reconstruction). Ad data is still defused page-side via JSON.parse and the
+                    // XMLHttpRequest.response getter hooks, and ad requests are blocked natively.
                     const isReddit = this._fokkTargetUrl.includes('/api/v2/graphql') ||
                                      this._fokkTargetUrl.includes('gql.reddit.com');
                     if (isReddit) {

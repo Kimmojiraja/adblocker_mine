@@ -1044,38 +1044,6 @@ open class MediaHubActivity : AppCompatActivity() {
 
     private fun loadInjectionScript() {
         try {
-            assets.open("adblock_defusers.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    defusersScript = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load adblock defusers script", e)
-        }
-        try {
-            assets.open("inject_adshield.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    injectionScript = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load injection script", e)
-        }
-        try {
-            assets.open("fokko_content.js").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    fokkoScript = reader.readText()
-                }
-            }
-            assets.open("fokko_content.css").use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    fokkoCss = reader.readText()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load Fokko AI assets", e)
-        }
-        try {
             assets.open("fokk_reader.js").use { stream ->
                 BufferedReader(InputStreamReader(stream)).use { reader ->
                     readerScript = reader.readText()
@@ -2406,27 +2374,7 @@ open class MediaHubActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
-        if (injectionScript.isEmpty() || defusersScript.isEmpty()) loadInjectionScript()
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            try {
-                if (defusersScript.isNotEmpty()) {
-                    WebViewCompat.addDocumentStartJavaScript(
-                        webView,
-                        defusersScript,
-                        setOf("*")
-                    )
-                }
-                if (injectionScript.isNotEmpty()) {
-                    WebViewCompat.addDocumentStartJavaScript(
-                        webView,
-                        injectionScript,
-                        setOf("*")
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to register document start script", e)
-            }
-        }
+        if (readerScript.isEmpty()) loadInjectionScript()
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
             try {
                 val method = WebSettingsCompat::class.java.methods.firstOrNull {
@@ -2788,6 +2736,29 @@ open class MediaHubActivity : AppCompatActivity() {
                 // must never be blocked by generic EasyList tracker or ad filters.
                 if (isMediaRequest || isStreamingHost(host)) {
                     return super.shouldInterceptRequest(view, request)
+                }
+
+                // 0. Intercept CMP consent banners and anti-adblock detection scripts at the network level
+                val isCmpOrNagScript = host.contains("cookielaw.org") ||
+                    host.contains("onetrust.com") ||
+                    host.contains("cookiebot.com") ||
+                    host.contains("consensu.org") ||
+                    host.contains("fundingchoicesmessages.google.com") ||
+                    host.contains("privacy-center.org") ||
+                    host.contains("didomi.io") ||
+                    host.contains("usercentrics.eu") ||
+                    host.contains("trustarc.com") ||
+                    host.contains("civiccomputing.com") ||
+                    host.contains("sp-prod.net") ||
+                    host.contains("getadmiral.com") ||
+                    host.contains("admiral.com") ||
+                    host.contains("blockadblock.com") ||
+                    urlStr.contains("sp_message") ||
+                    urlStr.contains("/otbanner") ||
+                    urlStr.contains("cookie-banner")
+                if (isCmpOrNagScript && !isMediaRequest) {
+                    recordFilteredRequest(view, host)
+                    return createBlockedResourceResponse(urlStr)
                 }
 
                 // 1. Check native Brave adblock-rust Engine for all non-YouTube websites
@@ -3493,7 +3464,9 @@ open class MediaHubActivity : AppCompatActivity() {
             urlStr.contains("prebid") -> "(function(){window.pbjs=window.pbjs||{cmd:[],adUnits:[],que:[]};})();"
             urlStr.contains("ima3.js") || urlStr.contains("imasdk.googleapis.com") -> "(function(){'use strict';if(window.google&&window.google.ima)return;var n=function(){};var m=function(){var l={};this.addEventListener=function(t,h){l[t]=l[t]||[];l[t].push(h);};this.removeEventListener=function(t,h){if(l[t])l[t]=l[t].filter(function(x){return x!==h;});};this.getCuePoints=function(){return[];};this.getAdSkippableState=function(){return false;};this.init=n;this.start=function(){setTimeout(function(){['allAdsCompleted','contentResumeRequested','complete'].forEach(function(e){if(l[e])l[e].forEach(function(f){try{f({type:e});}catch(err){}});});},5);};this.stop=n;this.resume=n;this.pause=n;this.resize=n;this.discardAdBreak=n;this.destroy=n;this.getRemainingTime=function(){return 0;};this.getVolume=function(){return 1;};this.setVolume=n;this.isCustomClickTrackingUsed=function(){return false;};this.isCustomPlaybackUsed=function(){return false;};};var s={setAutoPlayAdBreaks:n,setDisableCustomPlaybackForIOS10Plus:n,setLocale:n,setNumRedirects:n,setPlayerType:n,setPlayerVersion:n,setPpid:n,setVpaidAllowed:n,setVpaidMode:n};var L=function(c){var l={};this.addEventListener=function(t,h){l[t]=l[t]||[];l[t].push(h);};this.removeEventListener=function(t,h){if(l[t])l[t]=l[t].filter(function(x){return x!==h;});};this.contentComplete=n;this.destroy=n;this.getSettings=function(){return s;};this.requestAds=function(r){setTimeout(function(){var ml=l['adsManagerLoaded'];if(ml&&ml.length>0){var ev={type:'adsManagerLoaded',getAdsManager:function(){return new m();},getUserRequestContext:function(){return r?r.userRequestContext:null;}};ml.forEach(function(f){try{f(ev);}catch(err){}});}else{var el=l['adError'];if(el){var er={getError:function(){return{getMessage:function(){return'No ads';},getType:function(){return'AdError';},getErrorCode:function(){return 1009;}};}};el.forEach(function(f){try{f(er);}catch(err){}});}}},5);};};var ima={settings:s,AdDisplayContainer:function(c,v){this.initialize=n;this.destroy=n;},AdsLoader:L,AdsManager:m,AdsRequest:function(){this.adTagUrl='';this.adsResponse='';this.contentDuration=0;this.contentKeywords=[];this.contentTitle='';this.forceExperimentIds=[];this.linearAdSlotWidth=0;this.linearAdSlotHeight=0;this.liveStreamPrefetchSeconds=0;this.nonLinearAdSlotWidth=0;this.nonLinearAdSlotHeight=0;this.pageUrl='';this.userRequestContext=null;this.vastLoadTimeout=0;},AdsRenderingSettings:function(){this.autoAlign=true;this.bitrate=-1;this.enablePreloading=false;this.loadVideoTimeout=-1;this.mimeTypes=null;this.playAdsAfterTime=-1;this.restoreCustomPlaybackStateOnPlayerInit=true;this.useStyledAcceleratedCounter=true;this.useStyledLinearId=true;this.useStyledNonLinearId=true;},AdError:{Type:{AD:'ad',AD_LOAD:'adLoad'},ErrorCode:{ADSLOT_NOT_EMPTY:400,FAILED_TO_REQUEST_ADS:1005,INVALID_ARGUMENTS:1101,PLAYLIST_NO_CONTENT_FOUND:1009,UNKNOWN_ERROR:900,VAST_LOAD_TIMEOUT:301,VIDEO_PLAY_ERROR:400}},AdEvent:{Type:{AD_BREAK_READY:'adBreakReady',AD_BUFFERING:'adBuffering',AD_CAN_PLAY:'adCanPlay',AD_METADATA:'adMetadata',AD_PROGRESS:'adProgress',ALL_ADS_COMPLETED:'allAdsCompleted',CLICK:'click',COMPLETE:'complete',CONTENT_PAUSE_REQUESTED:'contentPauseRequested',CONTENT_RESUME_REQUESTED:'contentResumeRequested',DURATION_CHANGE:'durationChange',EXPANDED_CHANGED:'expandedChanged',FIRST_QUARTILE:'firstQuartile',IMPRESSION:'impression',INTERACTION:'interaction',LINEAR_CHANGED:'linearChanged',LOADED:'loaded',LOG:'log',MIDPOINT:'midpoint',PAUSED:'pause',RESUMED:'resumed',SKIPPABLE_STATE_CHANGED:'skippableStateChanged',SKIPPED:'skipped',STARTED:'started',THIRD_QUARTILE:'thirdQuartile',USER_CLOSE:'userClose',VOLUME_CHANGED:'volumeChanged',VOLUME_MUTED:'volumeMuted'}},AdErrorEvent:{Type:{AD_ERROR:'adError'}},AdsManagerLoadedEvent:{Type:{ADS_MANAGER_LOADED:'adsManagerLoaded'}},ViewMode:{NORMAL:'normal',FULLSCREEN:'fullscreen'},OmidAccessMode:{FULL:'full',DOMAIN:'domain',LIMITED:'limited'}};window.google=window.google||{};try{Object.defineProperty(window.google,'ima',{get:function(){return ima;},set:function(){},configurable:true,enumerable:true});}catch(e){window.google.ima=ima;}})();"
             urlStr.contains("analytics") || urlStr.contains("gtag") || urlStr.contains("ga.js") -> "(function(){window.ga=window.ga||function(){};window.gtag=window.gtag||function(){};})();"
-            urlStr.contains("apstag") -> "(function(){window.apstag=window.apstag||{init:function(){},fetchBids:function(c,cb){if(typeof cb==='function')cb();}};})();"
+            urlStr.contains("cookielaw") || urlStr.contains("onetrust") -> "(function(){window.OneTrust=window.OneTrust||{IsAlertBoxClosed:function(){return true;},Close:function(){}};})();"
+            urlStr.contains("cookiebot") -> "(function(){window.Cookiebot=window.Cookiebot||{consent:{necessary:true,preferences:false,statistics:false,marketing:false},hasResponse:true};})();"
+            urlStr.contains("fundingchoices") -> "(function(){window.googlefc=window.googlefc||{callbackQueue:[]};})();"
             isJs -> "/* blocked by fokk brave-shield */"
             else -> ""
         }
@@ -3533,25 +3506,7 @@ open class MediaHubActivity : AppCompatActivity() {
                     """.trimIndent()
                     webView.evaluateJavascript(cosmeticJs, null)
                 }
-                if (cosmetic.js.isNotEmpty()) {
-                    webView.evaluateJavascript(cosmetic.js, null)
-                }
             }
-        }
-
-        val supportsDocStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-        if (!supportsDocStart) {
-            if (defusersScript.isNotEmpty()) {
-                webView.evaluateJavascript(defusersScript, null)
-            }
-            if (injectionScript.isNotEmpty()) {
-                webView.evaluateJavascript(injectionScript, null)
-            }
-        }
-
-        val isAiFilter = prefs.getBoolean(PREF_AI_FILTER, true)
-        if (!isAiFilter) {
-            webView.evaluateJavascript("if (typeof setAiFilterEnabled === 'function') setAiFilterEnabled(false);", null)
         }
 
         // Custom User CSS
@@ -3567,24 +3522,6 @@ open class MediaHubActivity : AppCompatActivity() {
         if (customJs.isNotEmpty()) {
             webView.evaluateJavascript(customJs, null)
         }
-
-        // Fokko AI Fact Checker (X/Twitter, Reddit, Threads, Bluesky, LinkedIn, Web)
-        if (prefs.getBoolean(PREF_FOKKO_AI, true) && fokkoScript.isNotEmpty()) {
-            val host = runCatching { Uri.parse(pageUrl).host?.lowercase(Locale.ROOT) }.getOrNull() ?: ""
-            val urlLower = pageUrl?.lowercase(Locale.ROOT) ?: ""
-            val isAuthFlow = urlLower.contains("/login") || urlLower.contains("/signup") ||
-                urlLower.contains("/i/flow/login") || urlLower.contains("/oauth") ||
-                urlLower.contains("accounts.google.com") || urlLower.contains("appleid.apple.com")
-            val isExcluded = isAuthFlow || host.contains("spotify.com") || host.contains("netflix.com")
-            if (!isExcluded && (pageUrl?.startsWith("http://") == true || pageUrl?.startsWith("https://") == true)) {
-                if (fokkoCss.isNotEmpty()) {
-                    val safeCss = fokkoCss.replace("'", "\\'").replace("\n", " ").replace("\r", " ")
-                    val cssJs = "javascript:(function(){let s=document.getElementById('__fokk_ai_css');if(!s){s=document.createElement('style');s.id='__fokk_ai_css';(document.head||document.documentElement).appendChild(s);}s.innerHTML='$safeCss';})();"
-                    webView.evaluateJavascript(cssJs, null)
-                }
-                webView.evaluateJavascript(fokkoScript, null)
-            }
-        }
     }
 
     private fun isSocialAppHost(host: String?): Boolean {
@@ -3594,7 +3531,8 @@ open class MediaHubActivity : AppCompatActivity() {
             normalized == "twitter.com" || normalized.endsWith(".twitter.com") ||
             normalized == "instagram.com" || normalized.endsWith(".instagram.com") ||
             normalized == "threads.net" || normalized.endsWith(".threads.net") ||
-            normalized == "facebook.com" || normalized.endsWith(".facebook.com")
+            normalized == "facebook.com" || normalized.endsWith(".facebook.com") ||
+            normalized == "reddit.com" || normalized.endsWith(".reddit.com")
     }
 
     /** CDNs and API hosts these apps need. Filtering them surfaces a generic "try again" error. */
@@ -3609,7 +3547,9 @@ open class MediaHubActivity : AppCompatActivity() {
             normalized.endsWith(".facebook.net") || normalized == "facebook.net" ||
             normalized.endsWith(".xx.fbcdn.net") ||
             normalized == "platform.twitter.com" || normalized.endsWith(".platform.twitter.com") ||
-            normalized == "syndication.twitter.com" || normalized.endsWith(".syndication.twitter.com")
+            normalized == "syndication.twitter.com" || normalized.endsWith(".syndication.twitter.com") ||
+            normalized == "redditmedia.com" || normalized.endsWith(".redditmedia.com") ||
+            normalized == "redd.it" || normalized.endsWith(".redd.it")
     }
 
     /** The native bridge is permanently maintained so internal and start page actions never disconnect. */
@@ -7335,7 +7275,8 @@ open class MediaHubActivity : AppCompatActivity() {
         )
         private val TRACKING_QUERY_PARAMETERS = setOf(
             "fbclid", "gclid", "dclid", "gbraid", "wbraid", "msclkid", "mc_eid",
-            "igshid", "yclid", "twclid", "ttclid", "li_fat_id", "vero_id", "vero_conv"
+            "igshid", "si", "yclid", "twclid", "ttclid", "li_fat_id", "vero_id", "vero_conv",
+            "_hsenc", "_hsmi", "mkt_tok"
         )
         private val AUTHENTICATION_OR_SIGNATURE_PARAMETERS = setOf(
             "sig", "signature", "awsaccesskeyid", "token", "access_token", "refresh_token",

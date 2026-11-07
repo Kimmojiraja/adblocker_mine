@@ -17,9 +17,6 @@
     const href = ((window.location && window.location.href) || '').toLowerCase();
     const isFragileSocialApp = hostIs('x.com') || hostIs('twitter.com') || hostIs('instagram.com') ||
         hostIs('threads.net') || hostIs('facebook.com') || href.includes('//x.com') || href.includes('//twitter.com');
-    if (isFragileSocialApp) {
-        return; // Zero tampering on X (Twitter), Instagram, etc.
-    }
     const isYouTube = hostIs('youtube.com') || hostIs('youtu.be') || currentHost.endsWith('.youtube.com');
 
     // =========================================================================
@@ -85,7 +82,7 @@
             };
         } catch(e) {}
 
-        // 1. YouTube & Instagram Pre-Emptive Data Sanitizers (Inline & Dynamic)
+        // 1. YouTube, Reddit, X (Twitter) & Instagram Pre-Emptive Data Sanitizers
         function sanitizeYtPlayerResponse(obj, depth) {
             if (!obj || typeof obj !== 'object') return;
             if (!depth) depth = 0;
@@ -98,7 +95,7 @@
                     return;
                 }
 
-                // Defuse ad arrays and ad configs if present on this object (uBO standard: DELETE so 'adPlacements in obj' evaluates to false)
+                // Defuse ad arrays and ad configs so 'adPlacements in obj' evaluates to false (uBO standard)
                 delete obj.adPlacements;
                 delete obj.playerAds;
                 delete obj.adSlots;
@@ -138,6 +135,92 @@
             } catch (e) {}
         }
 
+        // Reddit GraphQL in-flight feed scrubber
+        function sanitizeRedditData(data) {
+            if (!data || typeof data !== 'object') return false;
+            let modified = false;
+            function cleanArray(arr, depth) {
+                if (!Array.isArray(arr) || depth > 8) return;
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    const item = arr[i];
+                    if (!item || typeof item !== 'object') continue;
+                    if (item.is_promoted === true ||
+                        item.isPromoted === true ||
+                        item.__typename === 'AdPost' ||
+                        item.__typename === 'PromotedPost' ||
+                        item.adMetadata ||
+                        item.adPlacementMetadata ||
+                        (item.node && (item.node.is_promoted === true || item.node.__typename === 'AdPost' || item.node.adMetadata)) ||
+                        (item.data && (item.data.is_promoted === true || item.data.promoted === true))) {
+                        arr.splice(i, 1);
+                        modified = true;
+                    } else {
+                        cleanObject(item, depth + 1);
+                    }
+                }
+            }
+            function cleanObject(obj, depth) {
+                if (!obj || typeof obj !== 'object' || depth > 8) return;
+                for (const key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        const val = obj[key];
+                        if (Array.isArray(val)) {
+                            cleanArray(val, depth + 1);
+                        } else if (val && typeof val === 'object') {
+                            cleanObject(val, depth + 1);
+                        }
+                    }
+                }
+            }
+            try { cleanObject(data, 0); } catch (e) {}
+            return modified;
+        }
+
+        // X (Twitter) GraphQL in-flight timeline scrubber
+        function sanitizeXData(data) {
+            if (!data || typeof data !== 'object') return false;
+            let modified = false;
+            function cleanEntries(instructions) {
+                if (!Array.isArray(instructions)) return;
+                for (let j = 0; j < instructions.length; j++) {
+                    const inst = instructions[j];
+                    if (inst && Array.isArray(inst.entries)) {
+                        for (let i = inst.entries.length - 1; i >= 0; i--) {
+                            const entry = inst.entries[i];
+                            const itemContent = entry && entry.content && (entry.content.itemContent || (entry.content.items && entry.content.items[0] && entry.content.items[0].item && entry.content.items[0].item.itemContent));
+                            if (itemContent && (itemContent.promotedMetadata || itemContent.promoted_metadata)) {
+                                inst.entries.splice(i, 1);
+                                modified = true;
+                            }
+                        }
+                    }
+                    if (inst && inst.entry) {
+                        const itemContent = inst.entry.content && inst.entry.content.itemContent;
+                        if (itemContent && (itemContent.promotedMetadata || itemContent.promoted_metadata)) {
+                            delete inst.entry;
+                            modified = true;
+                        }
+                    }
+                }
+            }
+            try {
+                if (data.data) {
+                    for (const k in data.data) {
+                        const sub = data.data[k];
+                        if (sub && typeof sub === 'object') {
+                            if (sub.timeline && Array.isArray(sub.timeline.instructions)) {
+                                cleanEntries(sub.timeline.instructions);
+                            }
+                            if (sub.home_timeline_urt && Array.isArray(sub.home_timeline_urt.instructions)) {
+                                cleanEntries(sub.home_timeline_urt.instructions);
+                            }
+                        }
+                    }
+                }
+            } catch (e) {}
+            return modified;
+        }
+
         // Hook ytInitialPlayerResponse so initial inline page data is sanitized before player boots
         let _ytInitialPlayerResponse = window.ytInitialPlayerResponse;
         if (_ytInitialPlayerResponse) sanitizeYtPlayerResponse(_ytInitialPlayerResponse);
@@ -151,6 +234,87 @@
                 configurable: true
             });
         } catch (e) {}
+
+        // Global fetch hook: intercepts in-flight JSON responses for YouTube, Reddit, X, and Instagram
+        if (window.fetch) {
+            const origFetch = window.fetch;
+            window.fetch = async function(input, init) {
+                const response = await origFetch.apply(this, arguments);
+                try {
+                    const url = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+                    if (!url || typeof url !== 'string') return response;
+                    const host = window.location.hostname;
+
+                    // 1. YouTube Player Manifest & Navigation API (Zero-delay startup)
+                    if (host.includes('youtube.com') && (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next'))) {
+                        try {
+                            const clone = response.clone();
+                            const data = await clone.json();
+                            sanitizeYtPlayerResponse(data);
+                            return new Response(JSON.stringify(data), {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: response.headers
+                            });
+                        } catch (e) {
+                            return response;
+                        }
+                    }
+
+                    // 2. Reddit GraphQL Feed API
+                    if (host.includes('reddit.com') && (url.includes('/api/v2/graphql') || url.includes('gql.reddit.com'))) {
+                        try {
+                            const clone = response.clone();
+                            const data = await clone.json();
+                            if (sanitizeRedditData(data)) {
+                                return new Response(JSON.stringify(data), {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    headers: response.headers
+                                });
+                            }
+                        } catch (e) {
+                            return response;
+                        }
+                    }
+
+                    // 3. X (Twitter) GraphQL Timeline API
+                    if ((host.includes('x.com') || host.includes('twitter.com')) && url.includes('/i/api/graphql/')) {
+                        try {
+                            const clone = response.clone();
+                            const data = await clone.json();
+                            if (sanitizeXData(data)) {
+                                return new Response(JSON.stringify(data), {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    headers: response.headers
+                                });
+                            }
+                        } catch (e) {
+                            return response;
+                        }
+                    }
+
+                    // 4. Instagram Timeline / Reels / Clips API
+                    if (host.includes('instagram.com') && (url.includes('/api/v1/feed/') || url.includes('/graphql/query') || url.includes('/api/v1/clips/'))) {
+                        try {
+                            const clone = response.clone();
+                            const data = await clone.json();
+                            if (sanitizeInstagramData(data)) {
+                                return new Response(JSON.stringify(data), {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    headers: response.headers
+                                });
+                            }
+                        } catch (e) {
+                            return response;
+                        }
+                    }
+                } catch (e) {}
+                return response;
+            };
+        }
 
         // uBlock Origin standard: Defuses YouTube ad data across ALL response parsing methods:
         // 1. window.JSON.parse — scoped to YouTube only to avoid blocking other sites
@@ -173,10 +337,33 @@
                 const origResponseJson = Response.prototype.json;
                 Response.prototype.json = async function() {
                     const data = await origResponseJson.apply(this, arguments);
-                    if (data && typeof data === 'object' && window.location.hostname.indexOf('youtube.com') !== -1) {
-                        sanitizeYtPlayerResponse(data);
+                    if (data && typeof data === 'object') {
+                        const host = window.location.hostname;
+                        if (host.includes('youtube.com')) sanitizeYtPlayerResponse(data);
+                        else if (host.includes('reddit.com')) sanitizeRedditData(data);
+                        else if (host.includes('x.com') || host.includes('twitter.com')) sanitizeXData(data);
+                        else if (host.includes('instagram.com')) sanitizeInstagramData(data);
                     }
                     return data;
+                };
+            }
+        } catch (e) {}
+
+        // Response.prototype.text hook (Intercepts stringified JSON manifests)
+        try {
+            if (window.Response && Response.prototype && Response.prototype.text) {
+                const origResponseText = Response.prototype.text;
+                Response.prototype.text = async function() {
+                    const text = await origResponseText.apply(this, arguments);
+                    const host = window.location.hostname;
+                    if (host.includes('youtube.com') && typeof text === 'string' && (text.includes('adPlacements') || text.includes('playerAds'))) {
+                        try {
+                            const parsed = JSON.parse(text);
+                            sanitizeYtPlayerResponse(parsed);
+                            return JSON.stringify(parsed);
+                        } catch (e) {}
+                    }
+                    return text;
                 };
             }
         } catch (e) {}
@@ -194,9 +381,12 @@
                     Object.defineProperty(XMLHttpRequest.prototype, 'response', {
                         get: function() {
                             const res = origXhrGetter.apply(this);
-                            if (this.responseType === 'json' && res && typeof res === 'object' &&
-                                window.location.hostname.indexOf('youtube.com') !== -1) {
-                                sanitizeYtPlayerResponse(res);
+                            if (this.responseType === 'json' && res && typeof res === 'object') {
+                                const host = window.location.hostname;
+                                if (host.includes('youtube.com')) sanitizeYtPlayerResponse(res);
+                                else if (host.includes('reddit.com')) sanitizeRedditData(res);
+                                else if (host.includes('x.com') || host.includes('twitter.com')) sanitizeXData(res);
+                                else if (host.includes('instagram.com')) sanitizeInstagramData(res);
                             }
                             return res;
                         },
@@ -796,6 +986,43 @@
                         this.addEventListener('readystatechange', modifyYtResponse, { capture: true });
                         this.addEventListener('load', modifyYtResponse, { capture: true });
                     }
+                    const isReddit = this._fokkTargetUrl.includes('/api/v2/graphql') ||
+                                     this._fokkTargetUrl.includes('gql.reddit.com');
+                    if (isReddit) {
+                        const self = this;
+                        const modifyRedditResponse = function() {
+                            if (self.readyState === 4 && self.status === 200) {
+                                try {
+                                    const data = JSON.parse(self.responseText);
+                                    if (sanitizeRedditData(data)) {
+                                        const cleaned = JSON.stringify(data);
+                                        Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
+                                        Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
+                                    }
+                                } catch (e) {}
+                            }
+                        };
+                        this.addEventListener('readystatechange', modifyRedditResponse, { capture: true });
+                        this.addEventListener('load', modifyRedditResponse, { capture: true });
+                    }
+                    const isX = this._fokkTargetUrl.includes('/i/api/graphql/');
+                    if (isX) {
+                        const self = this;
+                        const modifyXResponse = function() {
+                            if (self.readyState === 4 && self.status === 200) {
+                                try {
+                                    const data = JSON.parse(self.responseText);
+                                    if (sanitizeXData(data)) {
+                                        const cleaned = JSON.stringify(data);
+                                        Object.defineProperty(self, 'responseText', { value: cleaned, configurable: true });
+                                        Object.defineProperty(self, 'response', { value: cleaned, configurable: true });
+                                    }
+                                } catch (e) {}
+                            }
+                        };
+                        this.addEventListener('readystatechange', modifyXResponse, { capture: true });
+                        this.addEventListener('load', modifyXResponse, { capture: true });
+                    }
                     const isIg = this._fokkTargetUrl.includes('/graphql/query') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/timeline/') ||
                                  this._fokkTargetUrl.includes('/api/v1/feed/reels_tray/') ||
@@ -850,6 +1077,24 @@
     } catch (e) {}
 
     const cosmeticCss = `
+        /* Reddit Feed & Comment Ads */
+        shreddit-ad-post,
+        shreddit-comments-page-ad,
+        shreddit-post[ad-unit],
+        [data-faceplate-tracking-context*='"promoted":true'],
+        div[data-testid="ad-post"],
+        div.promotedlink,
+        .native-ad-container,
+
+        /* X (Twitter) Promoted Tweets & Trends */
+        div[data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
+        div[data-testid="placementTracking"],
+        div[data-testid="UserCell"]:has(path[d$="10H8.996V8h7v7z"]),
+        div[data-testid="trend"]:has(path[d$="10H8.996V8h7v7z"]),
+        a[href*="src=promoted_trend_click"],
+        .promoted-account,
+        .promotion,
+
         /* Instagram Sponsored & App Promo Hiding */
         a[href*="/about/ads"],
         div:has(> a[href*="/about/ads"]),
@@ -1203,18 +1448,44 @@
             }
         }
 
-        // 2. Call native player skipAd API ONLY when an ad is actively showing
+        // 2. High-speed 16x jump & native player skipAd API ONLY when an ad is actively showing
         try {
             const isAdShowing = document.querySelector('.ad-showing, .ad-interrupting, ytm-player-ad-overlay, .ytp-ad-player-overlay');
-            if (isAdShowing && playerEl && typeof playerEl.skipAd === 'function') {
-                playerEl.skipAd();
+            if (isAdShowing) {
+                if (playerEl && typeof playerEl.skipAd === 'function') {
+                    playerEl.skipAd();
+                }
+                const video = document.querySelector('video');
+                if (video) {
+                    video.muted = true;
+                    video.playbackRate = 16.0;
+                    if (video.duration && !isNaN(video.duration) && isFinite(video.duration)) {
+                        video.currentTime = Math.max(0, video.duration - 0.05);
+                    }
+                }
+            } else {
+                const video = document.querySelector('video');
+                if (video && video.playbackRate > 2.0) {
+                    video.playbackRate = 1.0;
+                    video.muted = false;
+                }
             }
         } catch (e) {}
 
-        // 3. Remove visual ad overlays from DOM
+        // 3. Remove visual ad overlays from DOM and dismiss stuck buffering spinners
         document.querySelectorAll('ytm-player-ad-overlay, .ytp-ad-player-overlay, .ytp-ad-overlay-container, ytm-promoted-sparkles-web-renderer').forEach(function(el) {
             try { el.remove(); } catch (e) {}
         });
+        const bufferingOverlay = document.querySelector('.ytm-player-control-overlay[data-buffering="true"], .player-control-overlay-buffering');
+        if (bufferingOverlay) {
+            bufferingOverlay.removeAttribute('data-buffering');
+            bufferingOverlay.removeAttribute('data-is-buffering');
+            bufferingOverlay.classList.remove('player-control-overlay-buffering');
+        }
+        const spinner = document.querySelector('.ytp-spinner');
+        if (spinner && document.querySelector('video:not([paused])')) {
+            spinner.style.display = 'none';
+        }
 
         // 4. Ensure active video is unmuted without forcing video.play() in a loop
         if (typeof window.__fokk_unmuteYt === 'function') {
@@ -1481,11 +1752,19 @@
                 try { el.remove(); } catch (e) {}
             });
         } else if (host.includes('reddit.com')) {
-            document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"]').forEach(function(el) {
+            document.querySelectorAll('xpromo-app-selector, shreddit-async-loader[bundlename="bottom_sheet"], shreddit-ad-post, shreddit-comments-page-ad, [data-faceplate-tracking-context*=\'"promoted":true\'], div[data-testid="ad-post"], div.promotedlink, .native-ad-container').forEach(function(el) {
                 try { el.remove(); } catch (e) {}
             });
             if (document.documentElement) document.documentElement.style.overflow = 'auto';
             if (document.body) document.body.style.overflow = 'auto';
+        } else if (host.includes('x.com') || host.includes('twitter.com')) {
+            document.querySelectorAll('div[data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]), div[data-testid="placementTracking"], .promoted-account, .promotion').forEach(function(el) {
+                try { el.remove(); } catch (e) {}
+            });
+        } else if (host.includes('instagram.com')) {
+            document.querySelectorAll('article:has(a[href*="/about/ads"]), div[role="article"]:has(a[href*="/about/ads"]), div:has(> [aria-label*="Sponsored"])').forEach(function(el) {
+                try { el.remove(); } catch (e) {}
+            });
         }
     }
 
